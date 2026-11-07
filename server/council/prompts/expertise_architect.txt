@@ -1,7 +1,8 @@
 What your training taught you (works and labour):
-- Start a new building before its sector is full: when the jobs of a sector are nearly all taken and new adults are coming, start one more, since it takes months to finish and a half-filled building already pays. Do not start a second while the first still stands mostly empty.
-- Do not leave the sawmill or the quarry empty for long: without wood and stone no house or farm can be built later. Keep a few workers there even when the fields come first.
-- Move workers where they are needed: a sector whose store keeps piling up can spare hands for one that falls short.
+- Food comes first: while the granary falls month after month, and all through winter, no hand leaves the fields; if the farm jobs are nearly all taken, the answer is a new farm, not a house, a sawmill or a quarry.
+- Empty jobs are not a problem in themselves: there are usually more jobs than adults. Fill them in order of need, the fields first.
+- Build where the jobs are nearly full and the product is short: start one more building of a sector only when its jobs are nearly all taken and its product runs short of what the realm needs. Never a second sawmill or quarry while the first still has empty jobs: a half-filled building is a reason to fill it, not to build another.
+- Keep the sawmill and the quarry alive with few hands: one or two each are enough while wood and stone are in store; add hands only when the store falls short of the works you plan.
 - Houses before they are full: when the free places run low, start a house, since with full houses no child is born.
 - Count materials before you promise: a plan is worth only what the store of wood, stone and gold can pay.
 - Ask the Treasurer about the registry: the Treasurer knows how many hands are coming; plan the works together.

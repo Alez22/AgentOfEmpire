@@ -6,8 +6,9 @@ Usage (inside the server container, which has the database and the key):
 
 Each scenario of lab/bench_scenarios.toml is a stored call (model_calls)
 with a known trap. Its system prompt and briefing are sent again; for the
-ministers the memory section is rebuilt with the current memory code, so a
-fix to the briefing is measured, not the old wording.
+ministers the memory section is rebuilt with the current memory code, and
+the craft block and the manual phrase of the system prompt with the current
+files, so a fix to either is measured, not the old wording.
 
 Nothing is written to the database: no game, no order, no model_calls row.
 Hidden costs: real OpenRouter calls, one at a time, each blocking up to
@@ -27,7 +28,7 @@ import psycopg
 
 from server.council import memory, persons
 from server.council.llm import LLMError, OpenRouterClient
-from server.council.meeting import (_ChancellorReply, _ChancellorSchema, _MinisterReply, _MinisterSchema,
+from server.council.meeting import (PROMPTS_DIR, _ChancellorReply, _ChancellorSchema, _MinisterReply, _MinisterSchema,
                                     _refusal_reason, _validate_plan, _validate_proposals)
 from server.council.settings import load_settings
 
@@ -66,6 +67,26 @@ def rebuild_memory(conn, call: dict, history_turns: int) -> str:
     cut = rest.find("\n## ")
     after = rest[cut:] if cut >= 0 else ""
     return before + new_section + after
+
+
+OLD_MANUAL_PHRASE = ": a half-filled building already pays."
+
+
+def rebuild_system(role: str, system: str) -> str:
+    """@brief The stored system prompt with the current craft and manual
+    wording, so a change to either is measured. The craft block runs from
+    its first line to the next blank line."""
+    system = system.replace(OLD_MANUAL_PHRASE, ".")
+    path = PROMPTS_DIR / f"expertise_{role}.txt"
+    if not path.exists():
+        return system
+    craft = path.read_text().strip()
+    first_line = craft.splitlines()[0]
+    start = system.find(first_line)
+    if start < 0:
+        return system
+    end = system.find("\n\n", start)
+    return system[:start] + craft + (system[end:] if end >= 0 else "")
 
 
 def _matches(order: dict, pattern: dict) -> bool:
@@ -150,10 +171,11 @@ def main(argv: list[str]) -> None:
         for scenario in scenarios:
             call = load_call(conn, scenario["call_id"])
             user = rebuild_memory(conn, call, settings.history_turns)
+            system = rebuild_system(call["role"], call["system"])
             report.append(f"\n=== {scenario['id']} ({call['role']}, call {scenario['call_id']}): {scenario['note']}")
             for candidate in candidates:
                 for attempt in range(1, repeat + 1):
-                    result = run_one(client, candidate, call["role"], call["system"], user)
+                    result = run_one(client, candidate, call["role"], system, user)
                     marks = score(scenario, result) if result["valid"] else {"forbidden": [], "missing": [],
                                                                              "empty_sector": False}
                     t = totals[candidate]

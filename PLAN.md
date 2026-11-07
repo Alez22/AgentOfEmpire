@@ -68,7 +68,7 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [x] Play a game with mandates, notes, debate and audiences together (game 7, 20 turns)
 - [x] The manual of the realm: how every element works, written from the config, in every counsellor prompt and on the sovereign's "Manuale" page
 - [x] The craft of each role (good practice, not laws) and the Treasurer's registry and ration consumption; the Architect's duty is a duty again
-- [ ] Model tiers: cheap models compared (games 9–15); proposal `low` gpt-oss-120b, `medium` GLM 5.3 Flash, `high` Flash with reasoning; to decide, and whether a tier also sets the reasoning effort; later a settings page for them
+- [ ] Model tiers: cheap models compared (games 9–17 and the bench); since 2026-11-08 every tier and every counsellor is GLM 5.3 Flash with reasoning "high" for development; still to decide the real tiers (and whether a tier also sets the reasoning effort); later a settings page for them
 - [x] Persons: a small catalog (12), the council drawn from the moderates at game start; name, gender, traits, story, model and salary come with the person; salaries paid by the engine; persons carry a tier (low, medium, high), never a model
 - [ ] Play a game to check manual and craft together, then remove the prompt rules they make redundant
 - [x] Game 7 fixes: the Architect may fill a new building with workers moved from a sector that needs them less (the growth trap); jobs per building in the briefing; a reply that ran up to the token cap is retried without reasoning
@@ -485,6 +485,16 @@ Same seed and persons as games 10 and 14–16. 10 turns, **$0.027 in 62 calls** 
 Mistake of the first run: scenarios 7 and 8 pointed at the Chancellor's end-of-season reflection (lessons), the first call of those turns; corrected to the meeting calls and run again.
 
 **Next**: fix the Architect's craft and the manual (when to build: a sector's jobs nearly full and its product needed; keep the farmers in winter), then run the bench again on the same scenarios; the tiers after that.
+
+**Second run, after the new Architect craft** (food first, empty jobs are no problem, build only where jobs are nearly full and the product short, no second sawmill/quarry while the first has empty jobs) and the manual without "a half-filled building already pays": the Architect's scenarios 4–6 clean in **25 runs out of 45 (11 before)**; GLM "high" 8 out of 9 (2 before), GLM "low" 5 (1), Flash "none" 5 (3), Flash "low" 5 (4), gpt-oss 2 (1). Treasurer and Chancellor about the same (noise). Two new faults:
+
+1. **Winter plans that empty the sawmill and the quarry** ("food 60 wood 0 stone 0", 6 runs in scenario 5): "no hand leaves the fields" is read as "every hand to the fields".
+2. **gpt-oss reads assign_workers as a change**: "food 0 wood 1 stone 0" to send one idle adult to the sawmill (3 runs), which would empty the fields. The order format says "adults per sector" but not that the numbers are totals after the order.
+
+**Flash "high"** on the same second run: **13 replies out of 24 hit the 8000-token cap** (invalid; the meeting would retry them without reasoning), 7122 output tokens and 31 s a call on average, $0.118 for 24 calls (0.005 a call, 7 times GLM "low"). The 11 that finished fell in no trap. Not usable with the present cap; a higher cap means more cost and calls near the 90 s deadline.
+
+Clean replies of the second run, out of 24: GLM "high" **21** (Treasurer 9/9, Architect 8/9, Chancellor 4/6), Flash "none" 18, GLM "low" 17, Flash "low" 16 (5 invalid), Flash "high" 11 (13 invalid), gpt-oss 10 (Chancellor 0/6).
+
 
 ### Lab: famine balance (2026-11-07)
 

@@ -24,33 +24,34 @@ max_audience_messages_per_turn = 6  # sovereign lines per council member per tur
 models_without_json_schema = ["inclusionai/ling-3.1-flash"]
 models_without_reasoning = ["mistralai/mistral-small-3.2-24b-instruct"]
 
-# Model tiers of the persons (server/council/personas.toml). For now every
-# tier is DeepSeek V4.1 Flash; low will be tested with a weaker model and
-# high with a stronger one (e.g. "deepseek/deepseek-v4-pro") before choosing.
-# Later the player chooses these on a settings page.
+# Model tiers of the persons (server/council/personas.toml). Since
+# 2026-11-08 every tier is GLM 5.3 Flash with reasoning "high" (set below,
+# per role): the best of the bench (PLAN.md, "Lab: bench of the council
+# models"), at about $0.001 a call. Later the player chooses these on a
+# settings page.
 [model_tiers]
-low = "deepseek/deepseek-v4.1-flash"
-medium = "deepseek/deepseek-v4.1-flash"
-high = "deepseek/deepseek-v4.1-flash"
+low = "z-ai/glm-5.3-flash"
+medium = "z-ai/glm-5.3-flash"
+high = "z-ai/glm-5.3-flash"
 
-# Start cheap: DeepSeek Flash for every role. Planned tiers, once the
-# prompts are tuned: chancellor "deepseek/deepseek-v4-pro", ministers "z-ai/glm-5.3".
+# Used for games created without persons, and for the roles without a person.
 [models]
-chancellor = "deepseek/deepseek-v4.1-flash"
-treasurer = "deepseek/deepseek-v4.1-flash"
-architect = "deepseek/deepseek-v4.1-flash"
-# Economy tier in the design doc; same cheap model for now, no reasoning.
+chancellor = "z-ai/glm-5.3-flash"
+treasurer = "z-ai/glm-5.3-flash"
+architect = "z-ai/glm-5.3-flash"
+# Short texts, no reasoning: DeepSeek Flash, not benched against GLM yet.
 square_voice = "deepseek/deepseek-v4.1-flash"
 # The people decide their behaviour and petitions (server/council/people.py).
 people = "deepseek/deepseek-v4.1-flash"
 
-# Reasoning effort per role ("none", "low", "high", "max"); a role missing
-# here uses the model default (high for DeepSeek V4.1 Flash). Reasoning is
-# billed as output tokens and is most of the time and cost of a call.
+# Reasoning effort per role ("none", "low", "medium", "high"); a role missing
+# here uses the model default. Reasoning is billed as output tokens and is
+# most of the time and cost of a call. GLM 5.3 Flash: "high" about 1300-1500
+# output tokens a call, 9-11 s; "medium" wrote less than "low" (game 17).
 [reasoning_effort]
-chancellor = "low"
-treasurer = "low"
-architect = "low"
+chancellor = "high"
+treasurer = "high"
+architect = "high"
 square_voice = "none"
 people = "none"
 

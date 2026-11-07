@@ -579,7 +579,7 @@ def test_briefing_lists_the_jobs_of_each_building(db, realm, settings):
     architect = client.calls[1]["user"]
     assert "farm: wood 40, stone 10, gold 0, 2 turns, 15 jobs" in architect
     assert "house: wood 30, stone 30, gold 20, 3 turns, houses 20 people" in architect
-    assert "Move workers where they are needed" in client.calls[1]["system"]  # the Architect's craft
+    assert "Empty jobs are not a problem in themselves" in client.calls[1]["system"]  # the Architect's craft
 
 
 def test_a_reply_that_ran_up_to_the_cap_is_retried_without_reasoning(db, realm, settings):

@@ -53,6 +53,6 @@ def test_manual_page_in_italian(database_url, settings):
         created = ui.post("/ui/games", data={"realm_name": "Valdoro"}, follow_redirects=False)
         realm_id = int(re.search(r"/ui/realms/(\d+)", created.headers["location"]).group(1))
         page = html.unescape(ui.get(f"/ui/realms/{realm_id}/manual").text)
-        assert "Fattoria." in page and "15 posti di lavoro" in page and "già a metà conviene" in page
+        assert "Fattoria." in page and "15 posti di lavoro" in page and "anche se non è piena." in page
         assert "l'oro non compra cibo" in page
         assert "Manuale" in ui.get(f"/ui/realms/{realm_id}").text  # the tab

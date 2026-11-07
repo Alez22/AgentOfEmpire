@@ -39,8 +39,9 @@ def prompt_text(config: Config) -> str:
                     f"{PRODUCT[spec.sector]} a month")
             if spec.sector == "food":
                 line += f" at the season's yield ({seasons})"
-            line += (". It yields for every worker in it, even when not all its jobs are filled: "
-                     "a half-filled building already pays.")
+            # A fact only: "a half-filled building already pays" was read as "build
+            # another" (bench 2026-11-07); when to build is the Architect's craft.
+            line += ". It yields for every worker in it, even when not all its jobs are filled."
         else:
             line = f"- {kind}: {cost}; houses {spec.housing} people; no jobs."
         lines.append(line)
@@ -84,7 +85,7 @@ def page_sections(config: Config) -> list[dict]:
             text = (f"{cost} {spec.jobs} posti di lavoro; ogni lavoratore produce {spec.output_per_worker} "
                     f"{PRODUCT_IT[spec.sector]} al mese")
             text += f", secondo la stagione ({seasons})." if spec.sector == "food" else "."
-            text += " Rende per ogni lavoratore, anche se non è piena: già a metà conviene."
+            text += " Rende per ogni lavoratore, anche se non è piena."
         else:
             text = f"{cost} Ospita {spec.housing} persone; nessun posto di lavoro."
         buildings.append({"name": BUILDING_IT.get(kind, kind), "text": text})
