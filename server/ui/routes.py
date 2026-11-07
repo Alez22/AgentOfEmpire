@@ -23,7 +23,7 @@ from fastapi.templating import Jinja2Templates
 
 from engine.config import load_raw_config
 from engine.turn import food_needed, housing_capacity, jobs_in_sector, season_of
-from server.council import audience, debate, meeting, people
+from server.council import audience, debate, mandates, meeting, people
 from server.council.briefing import months_until_winter
 from server.db import games
 from server.sovereign_view import sovereign_state
@@ -259,6 +259,59 @@ def answer_petition(realm_id: int, answer: str = Form(...), conn=Depends(_connec
     except (meeting.CouncilError, ValueError) as error:
         return _turn_page(realm_id, str(error))
     return _turn_page(realm_id)
+
+
+# ------------------------------------------------------------- government
+
+def _government_page(realm_id: int, error: str = "") -> RedirectResponse:
+    url = f"/ui/realms/{realm_id}/government"
+    if error:
+        url += f"?error={quote(error)}"
+    return RedirectResponse(url, status_code=303)
+
+
+def _government_context(request: Request, conn: psycopg.Connection, realm_id: int) -> dict:
+    jobs = request.app.state.council_jobs
+    kind = jobs.running_kind(realm_id) or ""
+    game = games.load_game(conn, games.realm_game_id(conn, realm_id))
+    return {
+        "realm_id": realm_id,
+        "offices": mandates.government(conn, realm_id),
+        "open_turn": game["open_turn"],
+        "running": kind.startswith("mandate:"),
+        "running_role": kind.removeprefix("mandate:") if kind.startswith("mandate:") else None,
+        "job_errors": {role: jobs.last_error(realm_id, f"mandate:{role}") for role in mandates.MANDATE_ROLES},
+        "max_chars": mandates.MAX_REQUEST_CHARS,
+    }
+
+
+@router.get("/ui/realms/{realm_id}/government", response_class=HTMLResponse)
+def government_page(request: Request, realm_id: int, error: str = "", conn=Depends(_connection)):
+    if games.realm_game_id(conn, realm_id) is None:
+        return _not_found(request, f"il regno {realm_id}")
+    context = _government_context(request, conn, realm_id)
+    context.update({"error": error, "nav": "government"})
+    return templates.TemplateResponse(request, "government.html", context)
+
+
+@router.get("/ui/realms/{realm_id}/government/panel", response_class=HTMLResponse)
+def government_panel(request: Request, realm_id: int, conn=Depends(_connection)):
+    """@brief Polled by HTMX every 2 s while the chancellery reviews a request."""
+    if games.realm_game_id(conn, realm_id) is None:
+        return _not_found(request, f"il regno {realm_id}")
+    return templates.TemplateResponse(request, "_government.html", _government_context(request, conn, realm_id))
+
+
+@router.post("/ui/realms/{realm_id}/government/{role}")
+def request_mandate(request: Request, realm_id: int, role: str, text: str = Form(...)):
+    settings = request.app.state.council_settings
+    text = text.strip()
+    return _start_round(
+        request, realm_id, f"mandate:{role}",
+        lambda conn: mandates.check_request(conn, realm_id, role, text),
+        lambda conn, client: mandates.review(conn, realm_id, role, text, client, settings),
+        back=lambda error="": _government_page(realm_id, error),
+    )
 
 
 # ------------------------------------------------- kingdom and chronicle

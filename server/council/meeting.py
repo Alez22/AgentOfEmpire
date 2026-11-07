@@ -415,9 +415,16 @@ def _order_formats(ctx: MeetingContext) -> str:
     return render_prompt("order_formats.txt", max_tax_rate=ctx.config.economy.max_tax_rate)
 
 
+def mandate_block(ctx: MeetingContext, actor: Actor) -> str:
+    """@brief The approved mandate lines for this actor's prompt ("" if none)."""
+    from server.council import mandates  # the mandates module builds on this one
+    return mandates.prompt_block(ctx, actor)
+
+
 def _minister_system(ctx: MeetingContext, actor: Actor) -> str:
     return render_prompt(
         "minister_system.txt",
+        mandate=mandate_block(ctx, actor),
         role_title=ROLE_TITLES[actor.role],
         display_name=DISPLAY_NAMES[actor.role],
         realm_name=ctx.realm_name,
@@ -432,6 +439,7 @@ def _minister_system(ctx: MeetingContext, actor: Actor) -> str:
 def _chancellor_system(ctx: MeetingContext, actor: Actor) -> str:
     return render_prompt(
         "chancellor_system.txt",
+        mandate=mandate_block(ctx, actor),
         realm_name=ctx.realm_name,
         traits=describe_traits(actor.traits),
         treasurer_name=DISPLAY_NAMES["treasurer"],
@@ -556,6 +564,7 @@ def is_reflection_turn(turn: int) -> bool:
 def _lessons_system(ctx: MeetingContext, actor: Actor) -> str:
     return render_prompt(
         "lessons_system.txt",
+        mandate=mandate_block(ctx, actor),
         role_title=ROLE_TITLES[actor.role],
         display_name=DISPLAY_NAMES[actor.role],
         realm_name=ctx.realm_name,

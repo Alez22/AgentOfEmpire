@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field
 from engine import check_plans
 from engine.config import load_raw_config
 from engine.orders import Order
-from server.council import audience, debate, meeting, people
+from server.council import audience, debate, mandates, meeting, people
 from server.council.jobs import CouncilJobs
 from server.council.llm import FakeClient, OpenRouterClient
 from server.council.settings import CouncilSettings, load_settings
@@ -229,6 +229,28 @@ def _add_routes(app: FastAPI) -> None:
         finally:
             jobs.release(realm_id)
         return _open_turn_messages(conn, realm_id)
+
+    @app.get("/realms/{realm_id}/mandates")
+    def get_mandates(realm_id: int, conn=Depends(_connection)):
+        """Each office, its mandate in force and the last request."""
+        _require_realm_game(conn, realm_id)
+        return mandates.government(conn, realm_id)
+
+    @app.post("/realms/{realm_id}/mandates/{role}", status_code=201)
+    def request_mandate(realm_id: int, role: str, body: DirectiveRequest, request: Request,
+                        conn=Depends(_connection)):
+        """The chancellery reviews the request (runs inside the request)."""
+        _require_realm_game(conn, realm_id)
+        jobs = request.app.state.council_jobs
+        if not jobs.reserve(realm_id, f"mandate:{role}"):
+            raise HTTPException(409, "the council of this realm is busy")
+        try:
+            return mandates.review(conn, realm_id, role, body.text, request.app.state.llm_client,
+                                   request.app.state.council_settings)
+        except meeting.CouncilError as error:
+            raise HTTPException(409, str(error)) from error
+        finally:
+            jobs.release(realm_id)
 
     @app.post("/realms/{realm_id}/council/debate", status_code=201)
     def ask_debate(realm_id: int, request: Request, conn=Depends(_connection)):

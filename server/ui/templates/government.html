@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Il governo{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Il governo</div>
+  <h1>I tuoi consiglieri</h1>
+  <p class="hint">A ogni consigliere puoi dare un mandato: le linee che seguirà mese dopo mese, finché non lo cambi. La richiesta passa dalla cancelleria: il Cancelliere la approva e la redige con parole sue, oppure la respinge spiegando perché. Le direttive del mese restano più forti del mandato.</p>
+</section>
+
+{% if error %}<div class="banner error" role="alert">{{ error }}</div>{% endif %}
+
+{% include "_government.html" %}
+{% endblock %}

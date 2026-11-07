@@ -22,6 +22,7 @@ from server.council.meeting import (
     load_context,
     render_prompt,
     _note_lines,
+    mandate_block,
     people_this_month,
     square_voices,
 )
@@ -127,6 +128,7 @@ def _briefing(ctx: MeetingContext, actor) -> str:
 def _system(ctx: MeetingContext, actor) -> str:
     return render_prompt(
         "audience_system.txt",
+        mandate=mandate_block(ctx, actor),
         role_title=ROLE_TITLES[actor.role],
         display_name=DISPLAY_NAMES[actor.role],
         realm_name=ctx.realm_name,

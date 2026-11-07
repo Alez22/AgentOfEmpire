@@ -1,0 +1,42 @@
+{# Government panel. While the chancellery reviews a request it reloads
+   itself every 2 s (HTMX); the first panel without "running" stops. #}
+<div id="government"
+  {% if running %}hx-get="/ui/realms/{{ realm_id }}/government/panel" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+{% for office in offices %}
+{% set who = labels.ROLES[office.role] %}
+<section class="card" style="border-top: 3px solid {{ who.color }}">
+  <div class="speaker">
+    <div class="avatar" style="background: {{ who.color }}" aria-hidden="true">{{ who.initial }}</div>
+    <div><div class="name">{{ who.name }}</div></div>
+  </div>
+  <h3>Mandato in vigore</h3>
+  {% if office.mandate %}
+  <p class="directive">«{{ office.mandate }}»</p>
+  <p class="hint">Redatto dalla cancelleria nel turno {{ office.mandate_turn }}.</p>
+  {% else %}
+  <p class="hint">Nessun mandato: segue soltanto i compiti del suo ruolo.</p>
+  {% endif %}
+
+  {% if office.last %}
+  <details {% if office.last.decision == "rejected" %}open{% endif %}>
+    <summary>Ultima richiesta: {% if office.last.decision == "approved" %}approvata{% else %}respinta{% endif %} (turno {{ office.last.turn }})</summary>
+    <p>«{{ office.last.request }}»</p>
+    <p class="hint">La cancelleria: {{ office.last.reply }}</p>
+  </details>
+  {% endif %}
+
+  {% if job_errors[office.role] %}<div class="banner error" role="alert">La cancelleria si è interrotta: {{ job_errors[office.role] }}</div>{% endif %}
+
+  {% if running and running_role == office.role %}
+  <div class="waiting" role="status"><span class="dot" aria-hidden="true"></span> La cancelleria esamina la richiesta…</div>
+  {% elif open_turn %}
+  <form method="post" action="/ui/realms/{{ realm_id }}/government/{{ office.role }}">
+    <label class="field">Il mandato che vorresti
+      <textarea name="text" maxlength="{{ max_chars }}" placeholder="Es. «Costruisci solo dove ci sono braccia libere: prima le case, poi le fattorie»" required></textarea>
+    </label>
+    <button type="submit" {% if running %}disabled{% endif %}>Manda alla cancelleria</button>
+  </form>
+  {% endif %}
+</section>
+{% endfor %}
+</div>

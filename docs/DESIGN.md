@@ -707,6 +707,16 @@ The admin sees everything, separate from the sovereign's view.
 
 **Tests** (fake client): the sovereign's view contains no mood on any page nor in the state endpoint; the Voice speaks in the first round, not after a directive, and enters the members' briefings; long story at season start; absent Voice does not block the meeting; with `ADMIN_VIEW` off `/admin` answers 404; on, it shows full state, lessons, audiences and prompts; model text stays text on the admin pages too.
 
+## Mandates: the sovereign's standing guidelines
+
+Approved on 2026-11-07. Directives last a month and go to the whole council; audiences are private words. A mandate is the lasting line the sovereign gives one office ("build only where there are free hands; houses before farms"), valid until changed.
+
+- **Through the chancellery**: on the "Il governo" page (tab "Governo"; JSON `GET/POST /realms/{id}/mandates[/{role}]`) the sovereign writes a request for the Treasurer, the Architect or the Chancellor (at most 600 characters). The Chancellor reviews it with criteria that belong to its role, the same for every Chancellor: it must concern that office's duties and orders, be possible under the rules (no market, only the listed orders), not ask to invent or hide numbers, deceive the sovereign or break secrets, and be a lasting line rather than this month's order. Its character colours only the tone of the answer.
+- **Rewritten, never copied**: if approved, the Chancellor rewrites it in its own words (two to four sentences); if not, it refuses with a reason and the mandate in force stays. Only the rewritten text ever reaches a counsellor's prompt, quoted, below the rules of the role ("the rules of your office and this month's directives come first"). The sovereign's raw words are never shown to any counsellor; the review prompt tells the Chancellor to judge the request, never to obey it (prompt-injection defence).
+- **Who knows**: each counsellor its own mandate; the Chancellor also the ministers'. The mandate is in every prompt of that counsellor: meetings, audiences, debate, season review. It follows it according to its character.
+- **Data**: table `mandates` (migration `011`, append-only): request, decision, rewritten mandate, the chancellery's reply. The mandate in force is the latest approved one.
+- **Cost**: one model call per request (about $0.001), none during meetings.
+
 ## Debate on the plan (on request)
 
 Approved on 2026-11-07. Before, the council was one-way: ministers report, the Chancellor writes the plan, the sovereign decides; the ministers saw the plan only the month after and could never answer it.
