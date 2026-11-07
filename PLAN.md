@@ -11,11 +11,11 @@ This file is the starting point of every work session: read it at the start and 
 | Part | What it does | Where |
 | --- | --- | --- |
 | Engine | deterministic monthly simulation: economy, seasons, food spoilage, demography, mood, unrest | `engine/`, values in `engine/config.toml` |
-| Database | PostgreSQL 18.6 in Docker, 9 migrations, row-level security, append-only logs, replay | `db/migrations/`, `server/db/` |
+| Database | PostgreSQL 18.6 in Docker, 10 migrations, row-level security, append-only logs, replay | `db/migrations/`, `server/db/` |
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (DeepSeek V4.1 Flash for all); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 174 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 178 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -62,6 +62,8 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [x] The people decide (effort, births, petitions) with a cheap model, inside limits by mood band; stored per turn, replays exact (see "The people decide" in `docs/DESIGN.md`)
 - [x] Play a game to see the people's decisions (game 5): readable and consistent
 - [x] Secret notes between counsellors: one a month to one colleague, inside the usual reply, delivered at the next meeting, unknown to everyone else (see `docs/DESIGN.md`)
+- [x] Debate on request: the ministers comment on the plan before approval (see `docs/DESIGN.md`)
+- [x] The Chancellor's role stands above the parties (role duty in its prompt)
 - [ ] Play a game to see whether counsellors use notes, make pacts, and what they tell the sovereign when asked
 - [x] Counsellor prompts: quote only briefing numbers, never count idle adults or jobs yourself, never present a suggestion as a rule in force; the Chancellor's assignments within adults and jobs (game 6)
 - [x] Petitions weighted by the relief they bring (10–30), wider ranges for effort and births (after game 5)
@@ -86,6 +88,7 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 
 - [ ] More classes: artisans and merchants, clergy, soldiers; each with its own memory horizon in the square (peasants 2–3 months, merchants and clergy a year or more)
 - [ ] Marshal and Ambassador
+- [ ] Roles as data (`roles.toml`: title, duties, obligations, orders) separate from persons (traits, résumé, name), before hiring and dismissing counsellors
 - [ ] Tile map and more states, automatic ones too
 - [ ] Market, trade and diplomacy (they give gold a use)
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)

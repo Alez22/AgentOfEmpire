@@ -32,6 +32,12 @@
     </ul>
     {% endif %}
   </article>
+  {% elif m.kind == "comment" %}
+  <article class="card comment" style="border-left: 3px solid {{ labels.ROLES.get(m.speaker, labels.SOVEREIGN).color }}">
+    {{ speaker_block(m) }}
+    <div class="kicker">{% if m.payload.stance == "object" %}Contrario al piano{% else %}D'accordo con il piano{% endif %}</div>
+    <p class="report">{{ m.content }}</p>
+  </article>
   {% elif m.kind == "voice" %}
   <article class="card voice">
     <div class="kicker">{% if m.payload.season %}La stagione vista dalla piazza{% else %}Si dice in piazza{% endif %}</div>
@@ -143,6 +149,13 @@
       </form>
       {% else %}
       <p class="hint">Il consiglio non propone nulla questo mese.</p>
+      {% endif %}
+
+      {% if not debated %}
+      <form method="post" action="/ui/realms/{{ realm_id }}/debate">
+        <button type="submit">Chiedi il parere dei ministri sul piano</button>
+        <p class="hint">Tesoriere e Architetta dicono se sono d'accordo, davanti a te. Il piano non cambia: decidi tu.</p>
+      </form>
       {% endif %}
 
       {% if council.directives_left > 0 %}

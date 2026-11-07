@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field
 from engine import check_plans
 from engine.config import load_raw_config
 from engine.orders import Order
-from server.council import audience, meeting, people
+from server.council import audience, debate, meeting, people
 from server.council.jobs import CouncilJobs
 from server.council.llm import FakeClient, OpenRouterClient
 from server.council.settings import CouncilSettings, load_settings
@@ -229,6 +229,22 @@ def _add_routes(app: FastAPI) -> None:
         finally:
             jobs.release(realm_id)
         return _open_turn_messages(conn, realm_id)
+
+    @app.post("/realms/{realm_id}/council/debate", status_code=201)
+    def ask_debate(realm_id: int, request: Request, conn=Depends(_connection)):
+        """The ministers comment on the latest plan (runs inside the request)."""
+        _require_realm_game(conn, realm_id)
+        jobs = request.app.state.council_jobs
+        if not jobs.reserve(realm_id, "debate"):
+            raise HTTPException(409, "the council of this realm is busy")
+        try:
+            debate.hold_debate(conn, realm_id, request.app.state.llm_client,
+                               request.app.state.council_settings)
+        except meeting.CouncilError as error:
+            raise HTTPException(409, str(error)) from error
+        finally:
+            jobs.release(realm_id)
+        return [m for m in _open_turn_messages(conn, realm_id) if m["kind"] == "comment"]
 
     @app.get("/realms/{realm_id}/council")
     def get_council(realm_id: int, turn: int, conn=Depends(_connection)):

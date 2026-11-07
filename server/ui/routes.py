@@ -23,7 +23,7 @@ from fastapi.templating import Jinja2Templates
 
 from engine.config import load_raw_config
 from engine.turn import food_needed, housing_capacity, jobs_in_sector, season_of
-from server.council import audience, meeting, people
+from server.council import audience, debate, meeting, people
 from server.council.briefing import months_until_winter
 from server.db import games
 from server.sovereign_view import sovereign_state
@@ -94,9 +94,10 @@ def _council_context(request: Request, conn: psycopg.Connection, realm_id: int, 
     context = {
         "realm_id": realm_id,
         # Only a council round counts here; a private audience has its own page.
-        "running": jobs.running_kind(realm_id) in ("meeting", "directive"),
+        "running": jobs.running_kind(realm_id) in ("meeting", "directive", "debate"),
         # A failed meeting or directive round; audience failures stay on their page.
-        "job_error": jobs.last_error(realm_id, "meeting") or jobs.last_error(realm_id, "directive"),
+        "job_error": (jobs.last_error(realm_id, "meeting") or jobs.last_error(realm_id, "directive")
+                      or jobs.last_error(realm_id, "debate")),
         "open_turn": game["open_turn"],
         "council": None,
         "messages": [],
@@ -104,6 +105,7 @@ def _council_context(request: Request, conn: psycopg.Connection, realm_id: int, 
         "orders": [],
         "rounds": [],
         "people": None,
+        "debated": False,
     }
     if game["open_turn"] is None:
         return context
@@ -116,6 +118,9 @@ def _council_context(request: Request, conn: psycopg.Connection, realm_id: int, 
         {"number": n, "messages": [m for m in context["messages"] if m["round"] == n]}
         for n in round_numbers
     ]
+    latest_round = max((m["round"] for m in context["messages"]), default=0)
+    context["debated"] = any(m["kind"] == "comment" and m["round"] == latest_round
+                             for m in context["messages"])
     summaries = [m for m in context["messages"] if m["kind"] == "summary"]
     if summaries:
         context["plan"] = summaries[-1]["payload"]
@@ -204,6 +209,17 @@ def give_directive(request: Request, realm_id: int, text: str = Form(...)):
         request, realm_id, "directive",
         lambda conn: meeting.check_directive_allowed(conn, realm_id, settings),
         lambda conn, client: meeting.give_directive(conn, realm_id, client, settings, text),
+    )
+
+
+@router.post("/ui/realms/{realm_id}/debate")
+def ask_debate(request: Request, realm_id: int):
+    """@brief The ministers comment on the plan, in the background."""
+    settings = request.app.state.council_settings
+    return _start_round(
+        request, realm_id, "debate",
+        lambda conn: debate.check_debate_allowed(conn, realm_id),
+        lambda conn, client: debate.hold_debate(conn, realm_id, client, settings),
     )
 
 

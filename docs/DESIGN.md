@@ -28,6 +28,9 @@ Multiplayer *[Lost: details]*: each player leads a **state**, formed by **a sing
 
 ## Character personalities
 
+**Role and person** (principle, 2026-11-07): a role is the office (title, duties, obligations such as the Chancellor's impartiality, allowed orders) and never changes during a game; a person fills it and has its own traits, résumé and, later, name. Today the role lives in the code (`ROLE_TITLES`, `ROLE_DUTIES`, `ROLE_ACTIONS` in `server/council/meeting.py`) and in the role's prompt templates; the person in the `actors` row of the game (traits). When counsellors can be hired and dismissed, the role data moves to one file (e.g. `server/council/roles.toml`) and persons stay in the database.
+
+
 *[Lost: intro sentence, beginning "Every minister…".]* A personality has three layers:
 
 1. **Role** (fixed): skills, allowed actions, visibility level of information. The same for every Treasurer.
@@ -704,12 +707,23 @@ The admin sees everything, separate from the sovereign's view.
 
 **Tests** (fake client): the sovereign's view contains no mood on any page nor in the state endpoint; the Voice speaks in the first round, not after a directive, and enters the members' briefings; long story at season start; absent Voice does not block the meeting; with `ADMIN_VIEW` off `/admin` answers 404; on, it shows full state, lessons, audiences and prompts; model text stays text on the admin pages too.
 
+## Debate on the plan (on request)
+
+Approved on 2026-11-07. Before, the council was one-way: ministers report, the Chancellor writes the plan, the sovereign decides; the ministers saw the plan only the month after and could never answer it.
+
+- **On request**: a button "Chiedi il parere dei ministri sul piano" next to the directive (JSON: `POST /realms/{id}/council/debate`), once per plan, until the plan is approved. A directive opens a new round, with a new plan that can be debated again.
+- **Who speaks**: the Treasurer, then the Architect. Each reads its own report and proposals, the Chancellor's summary, the plan with what is feasible, and what was already said in the debate; it answers in at most two sentences: agree or object, and why. Prompt `debate_system.txt` (role, duties, character).
+- **The plan does not change**: the sovereign decides. Comments are council messages of kind `comment` (migration `010`), council level, shown on the turn page.
+- **Cost**: one call per minister, about $0.001–0.002 and 10–30 seconds, only when asked.
+- Public, unlike the secret notes: in council a minister may say one thing while its note said another.
+
 ## Secret notes between counsellors
 
 Approved on 2026-11-07, after game 6 (the Chancellor already suspected the Treasurer but had no way to act).
 
 - **One a month, to one colleague**: the Treasurer, the Architect and the Chancellor may each add a note to their usual council reply (`"note": {"to": role, "text": ...}`), so it costs **no extra call**. Only for a purpose: a proposal, a pact, a warning, an answer. A second round after a directive cannot add a second note.
 - **Delivered at the next meeting**: the recipient finds it in its briefing ("## Secret notes", the last three turns, received and sent), and also in its private audiences and its season review, where it can learn whom to trust.
+- **The Chancellor stands above the parties**: its role text says it may hear every counsellor, also in notes, but weighs their words for the good of the realm, not to repay a favour; how faithfully depends on its character (loyalty, honesty). A role duty, not a personality trait.
 - **Entirely secret**: not even the fact that a note was sent is recorded anywhere else: no event, no chronicle, no square. Table `counsel_notes` (migration `009`), append-only, no grant to `agent_reader`.
 - **The sovereign can only ask**: in a private audience the counsellor sees its notes and the rule that the sovereign does not know whether any note exists; it may tell, deny or keep silent, according to its character (honesty trait).
 - **Admin**: the turn page lists the notes written that turn.
