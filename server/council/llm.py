@@ -127,8 +127,9 @@ class OpenRouterClient:
 # Default answers of the fake council: plausible, always valid orders.
 FAKE_MINISTER_REPLIES = {
     "treasurer": {
-        "report": "Maestà, le casse reggono. Propongo di mantenere razioni normali.",
-        "proposals": [{"action": "set_ration", "ration": "normal"}],
+        # A feast, not "set_ration normal": a no-change order is dropped from plans.
+        "report": "Maestà, le casse reggono. Propongo una piccola festa per il popolo.",
+        "proposals": [{"action": "hold_feast", "gold": 10}],
     },
     "architect": {
         "report": "Maestà, una nuova fattoria ci proteggerebbe dal prossimo inverno.",

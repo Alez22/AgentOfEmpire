@@ -60,7 +60,7 @@ def test_meeting_stores_two_reports_and_a_checked_plan(db, realm, settings):
     ]
     plan = messages[2]["payload"]["plan"]
     assert plan == [
-        {"proposer": "treasurer", "order": {"action": "set_ration", "ration": "normal"}},
+        {"proposer": "treasurer", "order": {"action": "hold_feast", "gold": 10}},
         {"proposer": "architect", "order": {"action": "build", "building": "farm"}},
     ]
     assert [v["accepted"] for v in messages[2]["payload"]["check"]["verdicts"]] == [True, True]
@@ -204,7 +204,7 @@ def test_next_briefing_remembers_what_was_approved(db, realm, settings):
     architect_briefing = client.calls[1]["user"]
     assert "turn 1 (January): you proposed build farm." in architect_briefing
     assert "Approved: build farm carried out." in architect_briefing
-    assert "Also decided that turn: set_ration normal (Il Tesoriere)." in architect_briefing
+    assert "Also decided that turn: hold_feast 10 (Il Tesoriere)." in architect_briefing
     assert "Afterwards: food 2000 → " in architect_briefing
 
 
@@ -275,7 +275,7 @@ def test_first_meeting_of_a_season_writes_lessons_used_at_once(db, realm, settin
     ]
     reflection = client.calls[0]["user"]
     assert "## What happened this season" in reflection
-    assert "turn 3 (March): you proposed set_ration normal." in reflection
+    assert "turn 3 (March): you proposed hold_feast 10." in reflection
     assert _lesson_texts(db, realm_id, "treasurer") == [lesson]
     assert f"[new in turn 4] {lesson}" in client.calls[3]["user"]  # same meeting
     assert lesson not in client.calls[4]["user"]  # never in a colleague's briefing
@@ -398,9 +398,9 @@ def test_chancellor_learns_what_the_sovereign_removes_and_asks(db, realm, settin
     client = FakeClient()
     meeting.hold_meeting(db, realm_id, client, settings)  # turn 4
     chancellor_reflection = client.calls[2]["user"]
-    assert "turn 2 (February): your plan: 1) set_ration normal (Il Tesoriere); 2) build farm (L'Architetta)." in chancellor_reflection
+    assert "turn 2 (February): your plan: 1) hold_feast 10 (Il Tesoriere); 2) build farm (L'Architetta)." in chancellor_reflection
     assert 'Directives of the sovereign: "Niente spese inutili".' in chancellor_reflection
-    assert "The sovereign approved it, removing 1) set_ration normal." in chancellor_reflection
+    assert "The sovereign approved it, removing 1) hold_feast 10." in chancellor_reflection
     assert "turn 3 (March)" in chancellor_reflection
     assert "The sovereign did not approve the plan." in chancellor_reflection
     assert "what the sovereign tends to approve" in client.calls[2]["system"]
@@ -490,3 +490,39 @@ def test_no_council_prompt_contains_the_mood(db, realm, settings):
         assert "/1000" not in prompt and "threshold" not in prompt and "Mood of" not in prompt
         assert f"mood {mood}" not in prompt and f" {mood} " not in prompt
     assert "- Unrest: calm" in client.calls[3]["user"]
+
+
+def test_briefings_show_the_harvest_and_the_empty_jobs(db, realm, settings):
+    _, realm_id = realm
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)  # January: farms at 50 %
+    treasurer, architect = client.calls[0]["user"], client.calls[1]["user"]
+    # 54 farmers x 15 x 50 % = 405; 2000 + 405 - 860 eaten = 1545, minus 2 % rot = 1515.
+    assert ("Harvest expected this month if nothing changes: 405 food (winter: farms yield 50%). "
+            "After eating and rot the store would go from 2000 to about 1515: it shrinks.") in treasurer
+    assert "Without any harvest it would last about 2.3 months." in treasurer
+    assert "Jobs without workers: food 6, wood 6, stone 8." in architect
+    assert "Expected this month if nothing changes: food +405, wood +24, stone +8." in architect
+
+
+def test_orders_that_change_nothing_leave_the_plan(db, realm, settings):
+    _, realm_id = realm
+    plan = [
+        {"proposer": "treasurer", "order": {"action": "set_tax", "rate": 10}},        # taxes already 10
+        {"proposer": "treasurer", "order": {"action": "set_ration", "ration": "normal"}},
+        {"proposer": "architect", "order": {"action": "assign_workers", "food": 54, "wood": 4, "stone": 2}},
+        {"proposer": "architect", "order": {"action": "build", "building": "farm"}},
+    ]
+    chancellor = json.dumps({"summary": "Maestà, ecco il piano.", "plan": plan})
+    meeting.hold_meeting(db, realm_id, FakeClient({"chancellor": [chancellor]}), settings)
+    payload = _summary(db, realm_id)["payload"]
+    assert [item["order"]["action"] for item in payload["plan"]] == ["build"]
+    assert [d["reason"] for d in payload["discarded"]] == ["NO_CHANGE"] * 3
+
+
+def test_prompts_say_there_is_no_market(db, realm, settings):
+    _, realm_id = realm
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)
+    for call in client.calls:
+        assert "gold cannot buy food" in call["system"] and "it brings no food" in call["system"]

@@ -115,6 +115,11 @@ per_death = -5
 feast_gold_per_point = 2
 feast_max = 100
 feast_repeat_pct = 50
+# A famine is a shock, not only a lower target: with 25 % inertia per month
+# a one- or two-month famine barely moved the mood (game 2: 8 % of the
+# people died, unrest stayed calm). Lab variant D, approved 2026-11-07.
+famine_shock_per_missing_pct = 4  # per point of missing food, at once
+death_shock = 10  # per death of the month, at once
 
 [unrest]
 threshold = 350

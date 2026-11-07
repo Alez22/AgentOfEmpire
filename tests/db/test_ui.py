@@ -65,7 +65,7 @@ def test_full_month_from_the_phone(ui):
     assert ui.post(f"/ui/realms/{realm_id}/meeting", follow_redirects=False).status_code == 303
     panel = _wait_for_council(ui, realm_id)
     assert "Il Tesoriere" in panel and "L'Architetta" in panel and "Il Cancelliere" in panel
-    assert "Razione normale" in panel and "Costruire: fattoria" in panel
+    assert "Festa per il popolo: 10 oro" in panel and "Costruire: fattoria" in panel
     assert "Approva il piano" in panel and "2 rimaste" in panel
 
     # Keep only the second order of the plan (the farm).

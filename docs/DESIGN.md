@@ -303,7 +303,7 @@ One turn = one month, resolved by a single function `resolve_turn(state, orders,
 6. **Food consumption**: per person and per age group, times the ration. If food is short, everything is eaten and the missing part becomes hunger. Then the remaining stock loses 2 % to spoilage.
 7. **Demography**: first deaths per group (base mortality + hunger), then ageing of the survivors (children → adults in about 30 turns, adults → elders more slowly), finally births (adults, mood; zero with hunger or full housing). Everything goes through the thousandth accumulators.
 8. **Workers**: if the assigned workers exceed the adults left, they are reduced proportionally.
-9. **Mood**: a target mood is computed from food, taxes, ration, housing and deaths; the real mood moves towards the target by a fixed fraction per turn, so changes have inertia. A feast is added at once, after this move.
+9. **Mood**: a target mood is computed from food, taxes, ration, housing and deaths; the real mood moves towards the target by a fixed fraction per turn, so changes have inertia. A feast is added at once, after this move, and a famine is subtracted at once (shock per point of missing food and per death).
 10. **Unrest**: while mood stays below the threshold, `low_mood_turns` grows and `unrest` rises one level every N turns (protests → strike → revolt); above the threshold it goes down.
 11. **Closing**: events to the bus; at season-end turns a full snapshot is marked.
 
@@ -389,6 +389,7 @@ Target mood = 500 ‰ + sum of modifiers; the real mood moves 25 % of the distan
 | Full housing | −100 |
 | Deaths | −5 per death in the month |
 | Feast | +1 per 2 gold spent, at most +100; half effect if there was a feast the turn before |
+| Famine shock (immediate, not through the target) | −4 per point % of missing food, −10 per death of the month (approved 2026-11-07 after game 2 and the lab: without it a famine that killed 8 % of the people left the unrest calm) |
 
 | Unrest | Condition | Effect |
 | --- | --- | --- |
@@ -535,11 +536,15 @@ One meeting per turn: Treasurer and Architect propose, the Chancellor puts it to
 
 | Role | Actions it may propose | What it sees in the briefing |
 | --- | --- | --- |
-| Treasurer | `set_tax`, `set_ration`, `hold_feast` | gold, income and upkeep, food and months of reserve, tax rate, ration, unrest level (no mood number) |
-| Architect | `build`, `assign_workers` | wood, stone, buildings and sites, free tiles, workers and jobs per sector, idle adults, housing and population |
+| Treasurer | `set_tax`, `set_ration`, `hold_feast` | gold, income and upkeep, food, consumption, months it would last without harvest, **harvest expected this month and where the store would end** (`expected_output` in the engine, exact when the turn has no orders), tax rate, ration, unrest level (no mood number) |
+| Architect | `build`, `assign_workers` | wood, stone, buildings and sites, free tiles, workers and jobs per sector, idle adults, **jobs without workers** ("a new building adds jobs, not workers"), **output expected this month**, housing and population |
 | Chancellor | no actions of its own: it recombines the ministers' | everything above, plus the turn's reports, proposals and conflicts |
 
 Everyone sees turn, season and months to winter, and council-level events. An order proposed outside one's role is dropped and noted.
+
+**Orders that change nothing** (a tax rate, ration or worker assignment equal to the one in force) are dropped from the plan the sovereign reads, recorded as discarded with `NO_CHANGE`. They were in most plans of games 1 and 2.
+
+**Facts every counsellor prompt states** (added after game 2): there is no market yet, so gold cannot buy food and a feast only lifts the mood; use the months to winter and the expected harvest; nobody knows the mood as a number. Ministers speak only of their own orders, cite the two or three numbers that matter, and bring back a refused measure when the situation has clearly changed (hunger, deaths, protests, strike) instead of treating a refusal as a taboo. The Architect builds only where free adults can fill the new jobs.
 
 ### Personality in the prototype
 
@@ -664,7 +669,8 @@ This applies to the Turn and Kingdom pages and to the `GET /realms/{id}/state` e
   - **Why the people feel as they do**, heaviest first and in words ("the taxes (crushing); the short ration (heavy)"): the engine's own mood factors (`mood_factors` in `engine/turn.py`), limited to what the people feel directly (taxes, ration, hunger, crowded houses, mourning). The reserve bonus is left out because it would reveal the granaries. The prompt asks it to talk most about the heaviest burden and never to invent events. Added after game 1, where the square blamed hunger while the taxes weighed most, and the council believed it.
   - **Not the granaries**, not even in words: the people cannot know the stock or the treasury, they can only guess from the ration, hunger and feasts (and may guess wrong). Ration and taxes, which they feel directly.
   - The events of the months told (famine, unrest, construction, births and deaths, audiences as a fact) and the decisions of the crown carried out.
-  - **What it said in the last two turns**, to keep the thread (the same people, events that move on) without repeating the same images.
+  - **What it said in the last two turns**, to keep the thread (the same people, events that move on) without repeating the same images or carrying an old complaint forward.
+  - Prompt rules tightened after game 2: no numbers even in words ("cinque bare"), no invented events (sales, carts, envoys).
 - **What it says**: pleas, market rumours, complaints, celebrations, in Italian, **never numbers**. The prompt asks it to weigh what just happened more: after a famine it may exaggerate the anger, and it may miss slowly growing discontent.
 - **Who hears it**: the sovereign, on the turn page, and the council members, in their briefing ("## What they say in the square", the last three months, each with its month). Visibility: court.
 - **Model**: cheap tier without reasoning (DeepSeek V4.1 Flash to start, like the others), about $0.0001–0.0002 per story, within the cap per game.

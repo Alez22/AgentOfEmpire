@@ -15,7 +15,7 @@ This file is the starting point of every work session: read it at the start and 
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (DeepSeek V4.1 Flash for all); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 136 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 142 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -54,7 +54,9 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [x] Play 12–24 turns from the phone and note what does not work (game 7, 12 months; see "Field test notes")
 - [x] Fix the bugs found in the test: mood only to the Voice (the council hears the square), 90 s deadline on the whole call, 8000 output tokens cap, bad lesson actions discarded one by one
 - [x] Voice of the square: only evident facts (court clearance, no granaries: the people only guess them), its own words of the last two turns, month windows aligned with the story; audience fact public, births and deaths court level
-- [ ] Play again to check the fixes: no mood numbers in reports, no calls over ~90 s, lesson reviews applied, the square keeps a thread
+- [x] Fixes from game 2: expected harvest and vacant jobs in the briefings, no-change orders dropped from plans, "no market / a feast brings no food" in every counsellor prompt, months to winter, own role only, refused measures may come back, reports with numbers, Voice without numbers in words or invented events
+- [x] Famine balance: variant D applied (immediate shock −4 per missing point, −10 per death; `engine/config.toml`)
+- [ ] Play again to check the fixes: no mood numbers in reports, no calls over ~90 s, lesson reviews applied, the square keeps a thread, rations cut only when the harvest does not cover
 - [ ] Decide on tiles and workers (overbuilding, housing dead end, idle adults)
 - [ ] Tune engine values (food, taxes, mood)
 - [ ] Review the council and square prompts
@@ -145,6 +147,43 @@ Goal: stress the people (taxes 20 % then 30 %, reduced ration, every feast refus
 3. **Overbuilding again**: 9 farms, 135 farm jobs for 65 adults; the Architect proposed a farm almost every month and invented a "mulino ad acqua" that is not in the catalogue. The Chancellor stopped some of them.
 4. **Time sense**: "l'inverno è vicino" in June, "alle porte" in August, although the briefing says how many months are left.
 5. **Small slips**: the Architect speaks as if it set taxes; the Treasurer asks to "buy grain" (no market yet); a no-op `set_tax 30` in a plan; a wrong sum by the Chancellor ("restano 476 oro"); the Voice said the tax changed three times (it was twice).
+
+### Game 2 "Grananera" (2026-11-07, played by Claude; stress: a real famine)
+
+Normal ration kept, half the farmers moved to wood and stone in winter, every ration cut refused. Granary empty at turn 5, famine at turns 5–6 (25 % then 11 % of the food missing), 8 deaths (103 → 95 people). 10 turns, $0.094 in 52 calls (about $0.009 per turn), no refused reply, slowest call 34 s, no mood number in 33 reports.
+
+| Turn | 1 | 3 | 5 | 6 | 7 | 8 | 10 | 11 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Food | 2000 | 835 | 17 | 0 | 0 | 232 | 705 | 1028 |
+| Mood (hidden) | 600 | 534 | 497 | 454 | 460 | 470 | 467 | 462 |
+| Unrest | calm | calm | calm | calm | calm | calm | calm | calm |
+
+**What worked**: the square did not know the granaries and said nothing of hunger until bread ran short ("la fame non morde ancora"), then told the famine with force ("cinque bare han lasciato il borgo", "si è mangiato mentre si seppelliva"). The new felt causes work: with taxes at 10 % the square spoke of the tax collector. The Architect noticed that sawmill and quarry have only 10 jobs each. Lessons are rich and practical ("le fattorie nuove non producono grano nell'immediato: vanno avviate prima"). The Chancellor learned the sovereign's refusals.
+
+**Problems**
+
+1. **The briefing has no production**: the Treasurer sees stock, consumption and "reserve 0.8 months", never what the fields will yield. So the council predicts empty granaries while they fill (summer), and proposes cutting rations almost every month (games 7, 1 and 2).
+2. **A famine barely touches the mood**: 8 % of the people died and the unrest stayed calm (mood 497 → 454), while taxes at 30 % caused a revolt in game 1. Hunger (−6 per missing point, at most −400, but a 25 % shortage is only −150) and deaths (−5 each) weigh too little against taxes (−10 per point).
+3. **The council believes gold buys food**: the Treasurer and the Chancellor proposed a feast "per comprare cibo" and higher taxes "per acquistare grano". There is no market; a feast only lifts the mood.
+4. **The Voice still invents and sometimes counts**: "il grano nuovo è già mezzo venduto" (no market) was repeated by the Treasurer as a fact; "cinque bare a maggio, tre a giugno" breaks the no-numbers rule. Keeping the thread also kept a stale complaint (the tax collector, with taxes at 5 %).
+5. **Overbuilding again**: 9 farms (135 jobs) for 61 adults, all tiles used by turn 7; later "non posso costruire".
+6. **No-op orders in most plans**: `set_tax 10` with taxes at 10 %, `set_ration normal` with the ration normal.
+7. **Refusals become taboos**: once the sovereign refused the reduced ration, nobody proposed it again, not even with the granary empty and people dying ("non è una via praticabile").
+8. Sometimes a report is vague, with no numbers at all (Architect turn 2, Treasurer turn 9).
+
+### Lab: famine balance (2026-11-07)
+
+The exact orders of games 1 and 2 replayed under mood variants (the base replay reproduces both games exactly). Mood month by month, from turn 2.
+
+| Variant | Taxes 30 % (game 1) | Famine (game 2) |
+| --- | --- | --- |
+| Today | revolt at turn 8 | 497 454 460 470 …: always calm |
+| A: hunger −12/point, max −500, death −15 | revolt at turn 8 | 497 404 398 423 …: calm |
+| B: hunger −15/point, max −600, death −20 | revolt at turn 8 | 497 379 368 401 …: calm |
+| **D: immediate shock −4 per missing point, −10 per death** | revolt at turn 8 | 497 **304 273 (protests)** 329 359 377 …: protests for 3 months, then recovery |
+| E: immediate shock −6 / −15 | revolt at turn 8 | 229 180 260 307: strike for 3 months |
+
+Making hunger weigh more in the target is not enough: the mood moves only 25 % of the way each month and a famine lasts one or two months. A famine has to be a shock, like a feast in reverse. **Applied: D.** Two new `[mood]` values; they default to 0, so games saved before keep their own rules and replay unchanged (no `ENGINE_VERSION` bump needed).
 
 ## Open decisions
 

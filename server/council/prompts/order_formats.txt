@@ -1,5 +1,5 @@
 - {{"action": "set_tax", "rate": <integer 0-{max_tax_rate}>}}   tax rate in percent
 - {{"action": "set_ration", "ration": "reduced" | "normal" | "abundant"}}
-- {{"action": "hold_feast", "gold": <integer > 0>}}   gold spent on a feast for the people
+- {{"action": "hold_feast", "gold": <integer > 0>}}   gold spent on a feast: it lifts the people's mood for a while, brings no food
 - {{"action": "build", "building": "farm" | "sawmill" | "quarry" | "house"}}
 - {{"action": "assign_workers", "food": <int>, "wood": <int>, "stone": <int>}}   adults per sector; the total cannot exceed the adults

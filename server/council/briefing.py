@@ -10,6 +10,7 @@ from collections import Counter
 from engine.config import Config
 from engine.state import GameState
 from engine.turn import (
+    expected_output,
     food_needed,
     housing_capacity,
     jobs_in_sector,
@@ -44,14 +45,34 @@ def header_lines(state: GameState) -> list[str]:
     return [f"# Briefing, turn {state.turn}: {month}, {season_of(state.turn)}; {winter_text}"]
 
 
+def _farm_season_pct(state: GameState, config: Config) -> int:
+    economy = config.economy
+    return {"winter": economy.farm_winter_pct, "spring": economy.farm_spring_pct,
+            "summer": economy.farm_summer_pct, "autumn": economy.farm_autumn_pct}[season_of(state.turn)]
+
+
+def food_outlook_line(state: GameState, config: Config) -> str:
+    """@brief This month's harvest and where the store would end, if nothing changes."""
+    harvest = expected_output(state, config)["food"]
+    needed = food_needed(state, config)
+    left = max(0, state.food + harvest - needed)
+    left -= left * config.economy.food_spoilage_pct // 100
+    trend = "it grows" if left > state.food else "it shrinks" if left < state.food else "it holds"
+    return (f"- Harvest expected this month if nothing changes: {harvest} food "
+            f"({season_of(state.turn)}: farms yield {_farm_season_pct(state, config)}%). "
+            f"After eating and rot the store would go from {state.food} to about {left}: {trend}.")
+
+
 def treasury_lines(state: GameState, config: Config) -> list[str]:
     return [
         "## Treasury and people",
         f"- Gold: {state.gold}. Tax income per month at {state.tax_rate}%: "
         f"{monthly_tax_income(state, config)}. Building upkeep per month: {monthly_upkeep(state, config)}.",
         f"- Food in store: {state.food}. Eaten per month at '{state.ration}' ration: "
-        f"{food_needed(state, config)}. Reserve: about {_reserve_months_text(state, config)} months. "
+        f"{food_needed(state, config)}. Without any harvest it would last about "
+        f"{_reserve_months_text(state, config)} months. "
         f"Stored food rots by {config.economy.food_spoilage_pct}% per month.",
+        food_outlook_line(state, config),
         f"- Tax rate: {state.tax_rate}% (maximum {config.economy.max_tax_rate}%). Ration: {state.ration}.",
         # No mood number, threshold or months below it: the council, like the
         # sovereign, knows the people only from the square (see square_lines).
@@ -61,10 +82,15 @@ def treasury_lines(state: GameState, config: Config) -> list[str]:
     ]
 
 
+def _vacant(state: GameState, config: Config, sector: str) -> int:
+    return max(0, jobs_in_sector(state, config, sector) - getattr(state.workers, sector))
+
+
 def works_lines(state: GameState, config: Config) -> list[str]:
     active = Counter(b.kind for b in state.buildings if b.turns_left == 0)
     building = [f"{b.kind} ({b.turns_left} turns left)" for b in state.buildings if b.turns_left > 0]
     idle = state.adults - state.workers.total()
+    output = expected_output(state, config)
     costs = [
         f"{kind}: wood {spec.wood}, stone {spec.stone}, gold {spec.gold}, {spec.build_turns} turns"
         for kind, spec in config.buildings.items()
@@ -79,6 +105,11 @@ def works_lines(state: GameState, config: Config) -> list[str]:
         f"wood {state.workers.wood}/{jobs_in_sector(state, config, 'wood')}, "
         f"stone {state.workers.stone}/{jobs_in_sector(state, config, 'stone')}. "
         f"Adults: {state.adults}, without work: {idle}. Workers beyond the jobs produce nothing.",
+        f"- Jobs without workers: food {_vacant(state, config, 'food')}, wood {_vacant(state, config, 'wood')}, "
+        f"stone {_vacant(state, config, 'stone')}. A new building adds jobs, not workers: "
+        "it produces nothing unless adults are free to fill it.",
+        f"- Expected this month if nothing changes: food +{output['food']}, wood +{output['wood']}, "
+        f"stone +{output['stone']}.",
         f"- Housing: {state.population()} people, {housing_capacity(state, config)} places.",
         "- Building costs: " + "; ".join(costs) + ".",
     ]

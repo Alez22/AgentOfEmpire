@@ -1,6 +1,7 @@
 import pytest
 
-from engine import parse_order, resolve_turn
+from engine import new_game, parse_order, resolve_turn
+from engine.turn import food_needed
 from engine.state import Workers
 
 
@@ -82,3 +83,43 @@ def test_stored_food_spoils_after_consumption(start_state, config):
     stock_after_eating = 10_000 + 405 - 860
     assert spoiled[0].data["amount"] == stock_after_eating * config.economy.food_spoilage_pct // 100
     assert result.state.food == stock_after_eating - spoiled[0].data["amount"]
+
+
+def test_expected_output_matches_a_month_without_orders(config):
+    """The briefing's harvest estimate is exactly what the month yields."""
+    from engine.turn import expected_output
+    state = new_game(config, seed=5)
+    for _ in range(14):  # every season, with sites finishing and the fixed rule at work
+        if state.turn == 3:
+            state = resolve_turn(state, [parse_order({"action": "build", "building": "farm"})[0]], config).state
+            continue
+        estimate = expected_output(state, config)
+        result = resolve_turn(state, [], config)
+        spoiled = sum(e.data["amount"] for e in result.events if e.kind == "food_spoiled")
+        if not any(e.kind == "famine" for e in result.events):
+            needed = food_needed(state, config)
+            assert result.state.food == state.food + estimate["food"] - needed - spoiled
+        assert result.state.wood == state.wood + estimate["wood"]
+        state = result.state
+
+
+def test_famine_is_an_immediate_shock(config):
+    from dataclasses import replace
+    state = new_game(config, seed=5)
+    state.food = 0  # nothing left: this month is a famine
+    with_shock = resolve_turn(state, [], config)
+    without = resolve_turn(state, [], replace(config, mood=replace(
+        config.mood, famine_shock_per_missing_pct=0, death_shock=0)))
+    famine = next(e for e in with_shock.events if e.kind == "famine")
+    deaths = next(e for e in with_shock.events if e.kind == "demography").data["deaths"]
+    expected_drop = famine.data["missing_pct"] * 4 + deaths * 10
+    assert without.state.mood - with_shock.state.mood == expected_drop > 0
+
+
+def test_configs_saved_before_the_shock_keep_their_rules():
+    from engine.config import config_from_dict, load_raw_config
+    raw = load_raw_config()
+    for key in ("famine_shock_per_missing_pct", "death_shock"):
+        del raw["mood"][key]
+    old = config_from_dict(raw)
+    assert (old.mood.famine_shock_per_missing_pct, old.mood.death_shock) == (0, 0)

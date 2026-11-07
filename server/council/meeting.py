@@ -37,7 +37,9 @@ ROLE_ACTIONS = {
 ROLE_TITLES = {"treasurer": "Treasurer", "architect": "Architect", "chancellor": "Chancellor"}
 ROLE_DUTIES = {
     "treasurer": "the treasury, taxes, food rations and feasts for the people.",
-    "architect": "construction and the assignment of adults to fields, sawmills and quarries.",
+    "architect": ("construction and the assignment of adults to fields, sawmills and quarries. "
+                  "Build only where free adults can fill the new jobs: a building without workers "
+                  "produces nothing and still costs upkeep."),
     "chancellor": "chairing the council: turning the ministers' proposals into one plan for the sovereign.",
 }
 LESSON_HINTS = {
@@ -336,6 +338,31 @@ def _validate_plan(raw_plan: list) -> tuple[list[dict], list[dict]]:
     return plan, discarded
 
 
+def _changes_nothing(state: GameState, order: dict) -> bool:
+    """@brief An order that only repeats what is already in force."""
+    action = order["action"]
+    if action == "set_tax":
+        return order["rate"] == state.tax_rate
+    if action == "set_ration":
+        return order["ration"] == state.ration
+    if action == "assign_workers":
+        workers = state.workers
+        return (order["food"], order["wood"], order["stone"]) == (workers.food, workers.wood, workers.stone)
+    return False
+
+
+def _drop_no_change(state: GameState, plan: list[dict]) -> tuple[list[dict], list[dict]]:
+    """@brief Keep useless orders out of the plan the sovereign reads (they
+    were in most plans of games 1 and 2: set_tax 10 with taxes at 10%)."""
+    kept, dropped = [], []
+    for item in plan:
+        if _changes_nothing(state, item["order"]):
+            dropped.append({"item": item, "reason": "NO_CHANGE"})
+        else:
+            kept.append(item)
+    return kept, dropped
+
+
 def _run_check(ctx: MeetingContext, items: list[dict]) -> dict:
     """@brief Engine dry run of a list of {proposer, order} in list order."""
     orders = [parse_order(item["order"])[0] for item in items]
@@ -569,6 +596,8 @@ def _chancellor_turn(ctx: MeetingContext, round_number: int, events: list[dict],
     else:
         plan, discarded = _validate_plan(reply.plan)
         summary = reply.summary
+    plan, no_change = _drop_no_change(ctx.state, plan)
+    discarded += no_change
     payload = {"plan": plan, "discarded": discarded, "absent": reply is None,
                "status": status, "check": _run_check(ctx, plan)}
     insert_message(ctx, round_number, "summary", actor, summary, payload)

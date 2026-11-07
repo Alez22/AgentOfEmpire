@@ -97,6 +97,11 @@ class MoodConfig:
     feast_gold_per_point: int
     feast_max: int
     feast_repeat_pct: int
+    # Immediate mood loss in the month of a famine (a feast in reverse).
+    # Defaults 0: games saved before these keys existed keep their own rules,
+    # so their results and replays do not change.
+    famine_shock_per_missing_pct: int = 0
+    death_shock: int = 0
 
 
 @dataclass(frozen=True)

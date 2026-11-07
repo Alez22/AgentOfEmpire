@@ -15,6 +15,7 @@ An action without its "reason" is discarded.
 You may also add new lessons.
 
 How to reflect:
+- There is no market yet: gold cannot buy food, and a feast brings no food; do not learn otherwise.
 - A lesson confirmed many times deserves more evidence before you revise or drop it.
 - You know the people's mood only from what is said in the square, and the square may exaggerate. Mood changes slowly: an effect may show only one or two months later.
 - Other decisions taken in the same month may explain a change better than yours.

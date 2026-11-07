@@ -320,11 +320,13 @@ def _feast_bonus(state: GameState, config: Config) -> int:
 def _update_mood(
     state: GameState, config: Config, needed: int, missing_pct: int, deaths: int
 ) -> None:
-    """@brief Move mood toward its target (inertia), then add the feast bonus."""
+    """@brief Move mood toward its target (inertia), then add the feast bonus
+    and subtract the shock of a famine and its deaths, both immediate."""
     target = _target_mood(state, config, needed, missing_pct, deaths)
     # Python's // floors negative numbers too, which is still deterministic.
     state.mood += (target - state.mood) * config.mood.approach_pct // 100
     state.mood += _feast_bonus(state, config)
+    state.mood -= missing_pct * config.mood.famine_shock_per_missing_pct + deaths * config.mood.death_shock
     state.mood = max(0, min(1000, state.mood))
 
 
@@ -357,6 +359,27 @@ def _check_game_over(state: GameState, events: list[Event]) -> None:
         state.game_over = "revolt"
     if state.game_over:
         events.append(Event("game_over", {"reason": state.game_over}))
+
+
+def expected_output(state: GameState, config: Config) -> dict[str, int]:
+    """@brief What fields, sawmills and quarries will yield this month if no
+    order changes anything: the steps before production run on a copy
+    (fixed rules, sites finishing this month, upkeep paid or not), so the
+    estimate matches resolve_turn exactly when the turn has no orders.
+
+    Why: the council saw stock and consumption but no harvest, and kept
+    predicting empty granaries while they filled (games 7, 1 and 2).
+    Cost: one deepcopy of a small state; no randomness is used here.
+    """
+    trial = copy.deepcopy(state)
+    events: list[Event] = []
+    _apply_fixed_rules(trial, config, events)
+    _advance_construction(trial, events)
+    upkeep_paid = _collect_taxes_and_upkeep(trial, config, events)
+    before = {"food": trial.food, "wood": trial.wood, "stone": trial.stone}
+    _produce(trial, config, upkeep_paid)
+    return {"food": trial.food - before["food"], "wood": trial.wood - before["wood"],
+            "stone": trial.stone - before["stone"]}
 
 
 def resolve_turn(state: GameState, orders: list[Order], config: Config) -> TurnResult:
