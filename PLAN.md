@@ -310,6 +310,23 @@ Minimal intervention: approved the plans, granted two petitions, refused one, on
 3. **Runaway replies are frequent**: five calls hit the 8000-token cap in turns 13–18 (empty content after reasoning, or a looping string); all were retried, but each wastes about $0.0045. Cost of these ten turns $0.116 vs $0.085 for the first ten. A reasoning budget (OpenRouter `reasoning.max_tokens`) would cut the waste.
 4. **A refused ration petition is very costly** (effort −20 %): to watch, it may make refusing almost never worth it.
 
+### Game 7 "Montebello", turns 21–30 (after the growth-trap fix)
+
+New Architect mandate at turn 21, then only approvals. $0.099 in 62 calls; the whole game, 30 turns: $0.30 (about $0.010 per turn, so a 120-turn game would cost about $1.20). One call hit the output cap and was retried without reasoning; replay exact.
+
+| Turn | 21 | 22 | 23 | 24 | 25 | 26 | 27 | 28 | 29 | 30 | 31 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Food | 524 | 803 | 1238 | 1638 | 2018 | 1541 | 1078 | 622 | 739 | 844 | 915 |
+| Mood (hidden) | 473 | 479 | 484 | 465 | 483 | 476 | 482 | 486 | 489 | 491 | 470 |
+| People | 113 | 114 | 115 | 114 | 115 | 116 | 117 | 118 | 119 | 120 | 120 |
+
+**What worked**: with the fix the Architect moved the ten woodcutters to the fields at once (70, then 75 farmers): October's harvest reached 1439 and the third winter started with 2018 food, so no ration cut was needed and the council said so ("ridurre il pane in inverno accenderebbe il malumore senza salvare il granaio"). The Chancellor saw housing at 117/120 and proposed a house. The notes became a private debate between the Treasurer ("servono altre fattorie") and the Architect ("una fattoria da 15 posti resterebbe quasi vuota"), month after month.
+
+**Problems**
+
+1. **A milder growth trap**: with every worker already in the fields and one new adult a month, the Architect waits for 15 free adults before building a farm, so none is built. It ignores that a half-filled farm already pays (15 food per worker against 1 gold of upkeep) and that building takes two months. The duty should say so.
+2. **Little to do in a stable realm**: in ten turns the sovereign only approved; no petitions, no crisis, mood flat around 480. Mid-game needs more choices (known: more classes, a use for gold, the map).
+
 ### Lab: famine balance (2026-11-07)
 
 The exact orders of games 1 and 2 replayed under mood variants (the base replay reproduces both games exactly). Mood month by month, from turn 2.
