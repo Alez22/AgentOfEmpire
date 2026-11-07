@@ -44,7 +44,7 @@
     <tr><th>Motivo</th><td>{{ people.reason }}</td></tr>
     {% if people.petition %}
     <tr><th>Supplica</th><td>«{{ people.petition_text }}» — {{ labels.order_label(people.petition) }}
-      ({{ labels.PETITION_ANSWERS.get(people.answer, "senza risposta") }})</td></tr>
+      ({{ labels.PETITION_ANSWERS.get(people.answer, "senza risposta") }}){% if people.petition_weight is not none %} · in gioco: umore ±{{ people.petition_weight }}{% endif %}</td></tr>
     {% endif %}
   </table>
   {% else %}

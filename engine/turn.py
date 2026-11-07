@@ -376,8 +376,13 @@ def _people_effects(config: Config, people: PeopleChoice | None) -> tuple[int, i
     the game has no [people] rules or nobody decided anything."""
     if people is None or config.people is None:
         return 0, 100, 0
-    petition_mood = {"granted": config.people.petition_granted_mood,
-                     "refused": config.people.petition_refused_mood}.get(people.petition, 0)
+    if people.petition is None:
+        return people.effort_pct, people.birth_pct, 0
+    if people.petition_weight is not None:  # proportional petitions
+        petition_mood = people.petition_weight if people.petition == "granted" else -people.petition_weight
+    else:  # games saved with the fixed values of the first version
+        petition_mood = (config.people.petition_granted_mood if people.petition == "granted"
+                         else config.people.petition_refused_mood) or 0
     return people.effort_pct, people.birth_pct, petition_mood
 
 

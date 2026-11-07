@@ -9,6 +9,7 @@ a discontented one cannot work with zeal. Whoever decides only chooses
 inside these ranges; clamp_choice() enforces them.
 """
 
+import copy
 from dataclasses import dataclass
 
 from engine.config import Config, PeopleConfig
@@ -22,6 +23,29 @@ class PeopleChoice:
     effort_pct: int = 0  # added to the yield of fields, sawmill and quarry
     birth_pct: int = 100  # multiplier of this month's births
     petition: str | None = None  # "granted" or "refused"; None = no petition
+    petition_weight: int | None = None  # mood at stake; None = the fixed old values
+
+
+def petition_weight(state: GameState, config: Config, order: dict) -> int:
+    """@brief Mood at stake in a petition: half the relief the asked order
+    brings to the people's burdens, within the configured limits.
+    Game 5: a fixed +30 made even a trivial request (a 10-gold feast, a tax
+    already below the free rate) worth far more than its own effect.
+    """
+    from engine.turn import food_needed, mood_factors  # turn imports this module
+    people = config.people
+    if order["action"] == "hold_feast":
+        relief = min(config.mood.feast_max, order["gold"] // config.mood.feast_gold_per_point)
+    else:
+        after = copy.copy(state)
+        if order["action"] == "set_tax":
+            after.tax_rate = order["rate"]
+        if order["action"] == "set_ration":
+            after.ration = order["ration"]
+        before_sum = sum(mood_factors(state, config, food_needed(state, config), 0, 0).values())
+        after_sum = sum(mood_factors(after, config, food_needed(after, config), 0, 0).values())
+        relief = after_sum - before_sum
+    return max(people.petition_min_mood, min(people.petition_max_mood, relief // 2))
 
 
 def mood_band(state: GameState, people: PeopleConfig) -> str:

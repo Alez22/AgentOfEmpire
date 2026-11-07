@@ -715,11 +715,13 @@ Approved on 2026-11-07, after game 4: the square's opinion must turn into what t
 
 | Behaviour | Effect in the engine | Content (mood > 550) | Neutral | Discontented (< 400) |
 | --- | --- | --- | --- | --- |
-| Effort | percent added to the yield of fields, sawmill and quarry | 0 to +10 | −5 to +5 | −20 to 0 |
-| Births | percent of this month's births | 100 to 120 | 90 to 110 | 50 to 100 |
-| Petition (optional, rare) | a request to the crown: one `set_tax`, `set_ration` or `hold_feast` that changes something, with the people's words | granted: mood +30 at once and the order runs first in the turn; refused or unanswered: mood −30 at once | | |
+| Effort | percent added to the yield of fields, sawmill and quarry | 0 to +15 | −8 to +8 | −25 to 0 |
+| Births | percent of this month's births | 100 to 125 | 95 to 110 | 60 to 100 |
+| Petition (optional, rare) | a request to the crown: one `set_tax`, `set_ration` or `hold_feast` that changes something, with the people's words | granted: the order decides its law for the turn (it runs first, the plan's orders on the same law are not sent) and the mood rises at once by the petition's weight; refused or unanswered: it falls by the same | | |
 
-3. The choice is stored in `people_decisions` (migration `007`, append-only), the sovereign's answer in `petition_answers`. The resolution and the replay read them like orders, so **the engine stays deterministic**. Values outside the limits are clamped; an impossible petition (no change, not the people's to ask, more gold than the treasury holds, no words) is dropped. If the model is silent, fixed rules take the middle of each range.
+**Weight of a petition** (after game 5): half the relief the asked order brings to the people's burdens, between 10 and 30, computed when the people decide (`petition_weight` in `engine/people.py`) and stored with the decision. Taxes 10 → 7 % is worth 15, a ration back from reduced to normal 30, a request that relieves nothing only 10. A fixed +30 made trivial requests worth far more than their own effect, a "mood pump". Ranges widened at the same time: effort moved little and births stayed below 100 % almost every month.
+
+3. The choice is stored in `people_decisions` (migrations `007` and `008`, append-only), the sovereign's answer in `petition_answers`. The resolution and the replay read them like orders, so **the engine stays deterministic**. Values outside the limits are clamped; an impossible petition (no change, not the people's to ask, more gold than the treasury holds, no words) is dropped. If the model is silent, fixed rules take the middle of each range.
 
 **Who sees what**
 

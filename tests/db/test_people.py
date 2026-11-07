@@ -52,9 +52,31 @@ def test_effort_births_and_petition_change_the_month():
     usual = resolve_turn(state, [], config).state
     zeal = resolve_turn(state, [], config, PeopleChoice(effort_pct=10)).state
     assert zeal.food > usual.food and zeal.wood > usual.wood
-    granted = resolve_turn(state, [], config, PeopleChoice(petition="granted")).state
-    refused = resolve_turn(state, [], config, PeopleChoice(petition="refused")).state
-    assert granted.mood - usual.mood == 30 and usual.mood - refused.mood == 30
+    granted = resolve_turn(state, [], config, PeopleChoice(petition="granted", petition_weight=15)).state
+    refused = resolve_turn(state, [], config, PeopleChoice(petition="refused", petition_weight=15)).state
+    assert granted.mood - usual.mood == 15 and usual.mood - refused.mood == 15
+
+
+def test_petition_weight_follows_the_relief():
+    """Half the relief to the people's burdens, between 10 and 30 (game 5)."""
+    from engine.people import petition_weight
+    config = load_config()
+    state = new_game(config, seed=1)  # taxes 10 %, normal ration
+    assert petition_weight(state, config, {"action": "set_tax", "rate": 7}) == 15   # -50 -> -20
+    assert petition_weight(state, config, {"action": "hold_feast", "gold": 10}) == 10  # +5: the minimum
+    state.tax_rate = 5
+    assert petition_weight(state, config, {"action": "set_tax", "rate": 4}) == 10  # no relief at all
+    state.ration = "reduced"
+    assert petition_weight(state, config, {"action": "set_ration", "ration": "normal"}) == 30  # capped
+
+
+def test_games_saved_with_fixed_petitions_keep_them():
+    config = load_config()
+    old = replace(config, people=replace(config.people, petition_granted_mood=30, petition_refused_mood=-30,
+                                         petition_min_mood=None, petition_max_mood=None))
+    state = new_game(old, seed=1)
+    usual = resolve_turn(state, [], old).state
+    assert resolve_turn(state, [], old, PeopleChoice(petition="granted")).state.mood - usual.mood == 30
 
 
 def test_neutral_choice_and_old_configs_change_nothing():
@@ -74,8 +96,8 @@ def test_meeting_stores_a_choice_kept_inside_the_mood_band(db, realm, settings):
     meeting.hold_meeting(db, realm_id, client, settings)
     roles = [call["role"] for call in client.calls]
     assert roles[:2] == ["square_voice", "people"]  # after the square, before the council
-    assert "Allowed this month: effort_pct from -5 to 5" in client.calls[1]["user"]  # mood 500: neutral
-    assert _decision(db, realm_id)[:2] == (5, 110)
+    assert "Allowed this month: effort_pct from -8 to 8" in client.calls[1]["user"]  # mood 500: neutral
+    assert _decision(db, realm_id)[:2] == (8, 110)
     assert _decision(db, realm_id)[4] == "model"
 
 
@@ -83,7 +105,7 @@ def test_silent_model_falls_back_to_the_rules(db, realm, settings):
     _, realm_id = realm
     client = FakeClient({"people": [LLMError("timeout", "too slow")]})
     meeting.hold_meeting(db, realm_id, client, settings)
-    assert _decision(db, realm_id)[:2] == (0, 100) and _decision(db, realm_id)[4] == "rules"
+    assert _decision(db, realm_id)[:2] == (0, 102) and _decision(db, realm_id)[4] == "rules"
 
 
 @pytest.mark.parametrize("petition", [
@@ -175,7 +197,7 @@ def test_sovereign_sees_the_people_and_answers_the_petition(database_url, settin
                 break
         page = html.unescape(ui.get(f"/ui/realms/{realm_id}").text)
         assert "I contadini lavorano svogliati; le famiglie rimandano i figli." in page
-        assert "Resa di campi, segheria e cava: -5%" in page  # neutral band: clamped to -5
+        assert "Resa di campi, segheria e cava: -8%" in page  # neutral band: kept at -8
         assert "«Una festa, Maestà, per dimenticare il freddo.»" in page and "Esaudisci" in page
         assert "SEGRETO" not in page
         ui.post(f"/ui/realms/{realm_id}/petition", data={"answer": "refused"})

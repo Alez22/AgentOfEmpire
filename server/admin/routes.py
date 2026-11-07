@@ -143,12 +143,14 @@ def admin_turn(request: Request, realm_id: int, turn: int, conn=Depends(_admin_c
 def _people_decision(conn: psycopg.Connection, realm_id: int, turn: int) -> dict | None:
     """@brief The whole decision of the people, the model's reason included."""
     row = conn.execute(
-        "SELECT d.effort_pct, d.birth_pct, d.petition, d.petition_text, d.reason, d.source, a.answer"
+        "SELECT d.effort_pct, d.birth_pct, d.petition, d.petition_text, d.reason, d.source, a.answer,"
+        " d.petition_weight"
         " FROM people_decisions d LEFT JOIN petition_answers a ON a.decision_id = d.id"
         " WHERE d.realm_id = %s AND d.turn = %s",
         (realm_id, turn),
     ).fetchone()
-    keys = ("effort_pct", "birth_pct", "petition", "petition_text", "reason", "source", "answer")
+    keys = ("effort_pct", "birth_pct", "petition", "petition_text", "reason", "source", "answer",
+            "petition_weight")
     return None if row is None else dict(zip(keys, row))
 
 

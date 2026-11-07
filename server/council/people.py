@@ -17,7 +17,7 @@ from psycopg.types.json import Jsonb
 from pydantic import BaseModel
 
 from engine import parse_order
-from engine.people import allowed_ranges, clamp_choice, mood_band, rule_choice
+from engine.people import allowed_ranges, clamp_choice, mood_band, petition_weight, rule_choice
 from server.council import voice
 from server.council.briefing import MONTHS
 from server.council.meeting import (
@@ -185,11 +185,15 @@ def decide(ctx: MeetingContext) -> None:
     else:
         effort, births = rule_choice(ctx.state, ctx.config)
         petition, text, reason, source = None, "", "fixed rules: the model did not answer", "rules"
+    weight = None
+    if petition and ctx.config.people.petition_max_mood is not None:
+        weight = petition_weight(ctx.state, ctx.config, petition)
     ctx.conn.execute(
         "INSERT INTO people_decisions (game_id, realm_id, turn, actor_id, effort_pct, birth_pct,"
-        " petition, petition_text, reason, source) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+        " petition, petition_text, reason, source, petition_weight)"
+        " VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
         (ctx.game_id, ctx.realm_id, ctx.turn, actor.id if actor else None, effort, births,
-         Jsonb(petition) if petition else None, text, reason, source),
+         Jsonb(petition) if petition else None, text, reason, source, weight),
     )
 
 

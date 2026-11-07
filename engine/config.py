@@ -124,8 +124,15 @@ class PeopleConfig:
     birth_content: list[int]  # [min, max] percent multiplier of births
     birth_neutral: list[int]
     birth_discontent: list[int]
-    petition_granted_mood: int  # immediate mood change when the sovereign grants
-    petition_refused_mood: int  # ... refuses, or does not answer
+    # Proportional petitions (2026-11-07): granting is worth half the relief
+    # the asked order brings to the people's burdens, within [min, max];
+    # refusing (or not answering) costs the same. Computed when the people
+    # decide and stored with the decision (petition_weight).
+    petition_min_mood: int | None = None
+    petition_max_mood: int | None = None
+    # Fixed values of the first version, kept for games saved with them.
+    petition_granted_mood: int | None = None
+    petition_refused_mood: int | None = None
 
 
 @dataclass(frozen=True)

@@ -135,11 +135,14 @@ strike_output_pct = 70
 [people]
 content_above = 550
 discontent_below = 400
-effort_content = [0, 10]  # percent added to the yield of fields, sawmill, quarry
-effort_neutral = [-5, 5]
-effort_discontent = [-20, 0]
-birth_content = [100, 120]  # percent of this month's births
-birth_neutral = [90, 110]
-birth_discontent = [50, 100]
-petition_granted_mood = 30  # at once, in the month of the answer
-petition_refused_mood = -30  # refused or left unanswered
+# Ranges widened after game 5: effort moved little, births stayed cautious.
+effort_content = [0, 15]  # percent added to the yield of fields, sawmill, quarry
+effort_neutral = [-8, 8]
+effort_discontent = [-25, 0]
+birth_content = [100, 125]  # percent of this month's births
+birth_neutral = [95, 110]
+birth_discontent = [60, 100]
+# Granting a petition: half the relief it brings to the people's burdens,
+# at once, within these limits; refusing or not answering costs the same.
+petition_min_mood = 10
+petition_max_mood = 30

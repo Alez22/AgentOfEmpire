@@ -281,16 +281,16 @@ def load_people_choice(conn: psycopg.Connection, realm_id: int, turn: int) -> Pe
     A petition left unanswered counts as refused. None if nobody decided
     (no meeting held, or a game created before the people decided)."""
     row = conn.execute(
-        "SELECT d.effort_pct, d.birth_pct, d.petition IS NOT NULL, a.answer"
+        "SELECT d.effort_pct, d.birth_pct, d.petition IS NOT NULL, a.answer, d.petition_weight"
         " FROM people_decisions d LEFT JOIN petition_answers a ON a.decision_id = d.id"
         " WHERE d.realm_id = %s AND d.turn = %s",
         (realm_id, turn),
     ).fetchone()
     if row is None:
         return None
-    effort_pct, birth_pct, has_petition, answer = row
+    effort_pct, birth_pct, has_petition, answer, weight = row
     petition = (answer or "refused") if has_petition else None
-    return PeopleChoice(effort_pct, birth_pct, petition)
+    return PeopleChoice(effort_pct, birth_pct, petition, weight)
 
 
 def _resolve_realm(conn, game_id: int, realm_id: int, turn: int, config) -> bool:
