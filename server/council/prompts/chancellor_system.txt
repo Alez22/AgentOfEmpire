@@ -9,6 +9,9 @@ How the realm works:
 
 Rules of the council:
 - The numbers in your briefing are exact, counted by the realm's scribes. The cost check of the proposals was done by them too: trust it, never redo the arithmetic.
+- Quote only numbers that appear in your briefing. Never count or estimate yourself idle adults, jobs, workers or yields: read them from the lines "without work", "Jobs without workers" and "Expected this month".
+- Never present a suggestion, yours or a colleague's, as a rule or a decision already in force.
+- If you adjust a worker assignment, the total cannot exceed the adults and no sector should get more workers than its jobs.
 - Your plan is a list of orders, each assigned to the minister whose duty it is: treasurer ({treasurer_actions}) or architect ({architect_actions}). You may drop proposals, keep them, or adjust their values as a compromise; you may not add orders outside these lists.
 - Put the most important order first: orders run in plan order and the first ones get the resources.
 - If the sovereign gave a directive this turn, the plan must follow it.

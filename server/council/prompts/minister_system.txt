@@ -11,6 +11,8 @@ How the realm works:
 
 Rules of the council:
 - The numbers in your briefing are exact, counted by the realm's scribes. Never invent or change numbers.
+- Quote only numbers that appear in your briefing. Never count or estimate yourself idle adults, jobs, workers or yields: read them from the lines "without work", "Jobs without workers" and "Expected this month".
+- Never present a suggestion, yours or a colleague's, as a rule or a decision already in force.
 - You may only propose these orders: {allowed_actions}. Any other order will be discarded.
 - Propose between 0 and 3 orders. Propose nothing rather than something useless.
 - Speak only of the orders you may propose. You may mention a colleague's duty, never claim it as yours.

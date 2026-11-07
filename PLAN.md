@@ -15,7 +15,7 @@ This file is the starting point of every work session: read it at the start and 
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (DeepSeek V4.1 Flash for all); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 163 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 164 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -61,6 +61,7 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [x] Game 4 fixes: the Voice hears the direction of tax and ration changes; the Treasurer sees the farm yield of the coming seasons
 - [x] The people decide (effort, births, petitions) with a cheap model, inside limits by mood band; stored per turn, replays exact (see "The people decide" in `docs/DESIGN.md`)
 - [x] Play a game to see the people's decisions (game 5): readable and consistent
+- [x] Counsellor prompts: quote only briefing numbers, never count idle adults or jobs yourself, never present a suggestion as a rule in force; the Chancellor's assignments within adults and jobs (game 6)
 - [x] Petitions weighted by the relief they bring (10–30), wider ranges for effort and births (after game 5)
 - [x] A granted petition decides its law: the plan's orders on the same policy are not sent, and a grant after approval links the identical order
 - [ ] Play again to check the fixes: no mood numbers in reports, no calls over ~90 s, lesson reviews applied, the square keeps a thread, rations cut only when the harvest does not cover

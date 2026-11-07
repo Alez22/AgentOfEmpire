@@ -557,3 +557,15 @@ def test_treasurer_sees_the_coming_seasons(db, realm, settings):
     assert ("- Coming seasons, with today's farmers: spring 100% (about 810 a month); "
             "summer 120% (about 972 a month); autumn 130% (about 1053 a month). "
             "Months left in this season: 3.") in client.calls[0]["user"]
+
+
+def test_counsellors_must_quote_only_their_briefing_numbers(db, realm, settings):
+    """Game 6: the Chancellor invented "ten idle workers" and a rule in force."""
+    _, realm_id = realm
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)
+    audience.speak(db, realm_id, "chancellor", "Quanti sono gli oziosi?", client, settings)
+    for call in client.calls:
+        assert "Quote only numbers that appear in your briefing" in call["system"]
+        assert "as a rule or a decision already in force" in call["system"]
+    assert "the total cannot exceed the adults" in client.calls[2]["system"]  # the Chancellor
