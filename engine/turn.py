@@ -16,6 +16,7 @@ from dataclasses import dataclass
 
 from engine.config import Config
 from engine.orders import Order
+from engine.people import PeopleChoice
 from engine.state import Event, GameState, Workers
 from engine.validator import OrderResult, apply_orders
 
@@ -120,7 +121,8 @@ def _collect_taxes_and_upkeep(state: GameState, config: Config, events: list[Eve
 
 
 def _sector_output(
-    state: GameState, config: Config, sector: str, building_kind: str, upkeep_paid: bool
+    state: GameState, config: Config, sector: str, building_kind: str, upkeep_paid: bool,
+    effort_pct: int = 0,
 ) -> int:
     economy = config.economy
     employed = min(getattr(state.workers, sector), jobs_in_sector(state, config, sector))
@@ -137,13 +139,15 @@ def _sector_output(
         output = output * config.unrest.strike_output_pct // 100
     if not upkeep_paid:
         output = output * economy.unpaid_upkeep_output_pct // 100
+    # The people's effort this month (engine/people.py); 0 changes nothing.
+    output = output * (100 + effort_pct) // 100
     return output
 
 
-def _produce(state: GameState, config: Config, upkeep_paid: bool) -> None:
-    state.food += _sector_output(state, config, "food", "farm", upkeep_paid)
-    state.wood += _sector_output(state, config, "wood", "sawmill", upkeep_paid)
-    state.stone += _sector_output(state, config, "stone", "quarry", upkeep_paid)
+def _produce(state: GameState, config: Config, upkeep_paid: bool, effort_pct: int = 0) -> None:
+    state.food += _sector_output(state, config, "food", "farm", upkeep_paid, effort_pct)
+    state.wood += _sector_output(state, config, "wood", "sawmill", upkeep_paid, effort_pct)
+    state.stone += _sector_output(state, config, "stone", "quarry", upkeep_paid, effort_pct)
 
 
 def _consume_food(state: GameState, config: Config, events: list[Event]) -> tuple[int, int]:
@@ -219,7 +223,8 @@ def _birth_modifier_pct(state: GameState, config: Config) -> int:
     return 100
 
 
-def _apply_births(state: GameState, config: Config, missing_pct: int, housing_full: bool) -> int:
+def _apply_births(state: GameState, config: Config, missing_pct: int, housing_full: bool,
+                  birth_pct: int = 100) -> int:
     if missing_pct > 0 or housing_full:
         return 0
     milli_births = (
@@ -228,6 +233,8 @@ def _apply_births(state: GameState, config: Config, missing_pct: int, housing_fu
         * _birth_modifier_pct(state, config)
         // 100
     )
+    # The families' choice this month (engine/people.py); 100 changes nothing.
+    milli_births = milli_births * birth_pct // 100
     state.birth_acc += milli_births
     births = state.birth_acc // 1000
     state.birth_acc %= 1000
@@ -236,7 +243,7 @@ def _apply_births(state: GameState, config: Config, missing_pct: int, housing_fu
 
 
 def _update_demography(
-    state: GameState, config: Config, missing_pct: int, events: list[Event]
+    state: GameState, config: Config, missing_pct: int, events: list[Event], birth_pct: int = 100
 ) -> int:
     """@brief Deaths, then aging of the survivors, then births.
     @return Number of deaths this month (used by the mood step).
@@ -244,7 +251,7 @@ def _update_demography(
     housing_full = state.population() >= housing_capacity(state, config)
     deaths = _apply_deaths(state, config, missing_pct)
     _apply_aging(state, config)
-    births = _apply_births(state, config, missing_pct, housing_full)
+    births = _apply_births(state, config, missing_pct, housing_full, birth_pct)
     events.append(Event("demography", {"births": births, "deaths": deaths}))
     return deaths
 
@@ -318,15 +325,18 @@ def _feast_bonus(state: GameState, config: Config) -> int:
 
 
 def _update_mood(
-    state: GameState, config: Config, needed: int, missing_pct: int, deaths: int
+    state: GameState, config: Config, needed: int, missing_pct: int, deaths: int,
+    petition_mood: int = 0,
 ) -> None:
-    """@brief Move mood toward its target (inertia), then add the feast bonus
-    and subtract the shock of a famine and its deaths, both immediate."""
+    """@brief Move mood toward its target (inertia), then add the feast bonus,
+    subtract the shock of a famine and its deaths, and add the effect of
+    the sovereign's answer to a petition: all immediate."""
     target = _target_mood(state, config, needed, missing_pct, deaths)
     # Python's // floors negative numbers too, which is still deterministic.
     state.mood += (target - state.mood) * config.mood.approach_pct // 100
     state.mood += _feast_bonus(state, config)
     state.mood -= missing_pct * config.mood.famine_shock_per_missing_pct + deaths * config.mood.death_shock
+    state.mood += petition_mood
     state.mood = max(0, min(1000, state.mood))
 
 
@@ -361,7 +371,17 @@ def _check_game_over(state: GameState, events: list[Event]) -> None:
         events.append(Event("game_over", {"reason": state.game_over}))
 
 
-def expected_output(state: GameState, config: Config) -> dict[str, int]:
+def _people_effects(config: Config, people: PeopleChoice | None) -> tuple[int, int, int]:
+    """@brief (effort %, births %, petition mood) of this month; neutral when
+    the game has no [people] rules or nobody decided anything."""
+    if people is None or config.people is None:
+        return 0, 100, 0
+    petition_mood = {"granted": config.people.petition_granted_mood,
+                     "refused": config.people.petition_refused_mood}.get(people.petition, 0)
+    return people.effort_pct, people.birth_pct, petition_mood
+
+
+def expected_output(state: GameState, config: Config, people: PeopleChoice | None = None) -> dict[str, int]:
     """@brief What fields, sawmills and quarries will yield this month if no
     order changes anything: the steps before production run on a copy
     (fixed rules, sites finishing this month, upkeep paid or not), so the
@@ -377,7 +397,7 @@ def expected_output(state: GameState, config: Config) -> dict[str, int]:
     _advance_construction(trial, events)
     upkeep_paid = _collect_taxes_and_upkeep(trial, config, events)
     before = {"food": trial.food, "wood": trial.wood, "stone": trial.stone}
-    _produce(trial, config, upkeep_paid)
+    _produce(trial, config, upkeep_paid, _people_effects(config, people)[0])
     return {"food": trial.food - before["food"], "wood": trial.wood - before["wood"],
             "stone": trial.stone - before["stone"]}
 
@@ -392,11 +412,14 @@ def jobs_at_harvest(state: GameState, config: Config) -> dict[str, int]:
     return {sector: jobs_in_sector(trial, config, sector) for sector in ("food", "wood", "stone")}
 
 
-def resolve_turn(state: GameState, orders: list[Order], config: Config) -> TurnResult:
+def resolve_turn(state: GameState, orders: list[Order], config: Config,
+                 people: PeopleChoice | None = None) -> TurnResult:
     """@brief Simulate one month. Pure function: the input state is not modified.
     @param state State at the start of the turn.
     @param orders Parsed orders of this turn (see orders.parse_order).
     @param config Balance values.
+    @param people What the people decided this month (stored with the turn
+           like the orders, so replays stay exact); None = nothing.
     @return New state, per-order verdicts and the events of the month.
     @throws ValueError if the game is already over.
     """
@@ -409,12 +432,13 @@ def resolve_turn(state: GameState, orders: list[Order], config: Config) -> TurnR
     _apply_fixed_rules(new_state, config, events)
     _advance_construction(new_state, events)
     upkeep_paid = _collect_taxes_and_upkeep(new_state, config, events)
-    _produce(new_state, config, upkeep_paid)
+    effort_pct, birth_pct, petition_mood = _people_effects(config, people)
+    _produce(new_state, config, upkeep_paid, effort_pct)
     needed, missing_pct = _consume_food(new_state, config, events)
     _spoil_food(new_state, config, events)
-    deaths = _update_demography(new_state, config, missing_pct, events)
+    deaths = _update_demography(new_state, config, missing_pct, events, birth_pct)
     _rescale_workers(new_state, events)
-    _update_mood(new_state, config, needed, missing_pct, deaths)
+    _update_mood(new_state, config, needed, missing_pct, deaths, petition_mood)
     _update_unrest(new_state, config, events)
     _check_game_over(new_state, events)
 

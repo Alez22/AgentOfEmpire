@@ -12,6 +12,7 @@ from psycopg.types.json import Jsonb
 
 from engine import ENGINE_VERSION, parse_order, resolve_turn
 from engine.config import Config, config_from_dict
+from engine.people import PeopleChoice
 from engine.snapshot import FORMAT_VERSION, state_from_dict, state_to_dict
 from engine.state import GameState, new_game
 from server.council.personality import generate_traits
@@ -275,6 +276,23 @@ def _insert_events(conn, game_id: int, realm_id: int, turn: int, events) -> None
         )
 
 
+def load_people_choice(conn: psycopg.Connection, realm_id: int, turn: int) -> PeopleChoice | None:
+    """@brief What the people decided for this turn, as the engine needs it.
+    A petition left unanswered counts as refused. None if nobody decided
+    (no meeting held, or a game created before the people decided)."""
+    row = conn.execute(
+        "SELECT d.effort_pct, d.birth_pct, d.petition IS NOT NULL, a.answer"
+        " FROM people_decisions d LEFT JOIN petition_answers a ON a.decision_id = d.id"
+        " WHERE d.realm_id = %s AND d.turn = %s",
+        (realm_id, turn),
+    ).fetchone()
+    if row is None:
+        return None
+    effort_pct, birth_pct, has_petition, answer = row
+    petition = (answer or "refused") if has_petition else None
+    return PeopleChoice(effort_pct, birth_pct, petition)
+
+
 def _resolve_realm(conn, game_id: int, realm_id: int, turn: int, config) -> bool:
     """@brief Resolve one realm and store everything it produced.
     @return True if this realm's game is over (now or already before).
@@ -287,7 +305,8 @@ def _resolve_realm(conn, game_id: int, realm_id: int, turn: int, config) -> bool
     parsed, rejected = load_parsed_orders(conn, realm_id, turn)
     for order_id, code, message in rejected:
         _insert_order_result(conn, order_id, False, code, message)
-    result = resolve_turn(state, [order for _, order in parsed], config)
+    result = resolve_turn(state, [order for _, order in parsed], config,
+                          load_people_choice(conn, realm_id, turn))
     # The engine returns verdicts in its own evaluation order (by priority);
     # match them back to the stored rows through the order objects themselves.
     order_id_by_object = {id(order): order_id for order_id, order in parsed}

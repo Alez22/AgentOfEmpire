@@ -52,7 +52,7 @@ MAX_PROPOSALS = 3
 # The names also go into the prompts: "Architect" is neutral in English and
 # the models would otherwise call the Architetta "l'architetto".
 DISPLAY_NAMES = {"treasurer": "Il Tesoriere", "architect": "L'Architetta", "chancellor": "Il Cancelliere",
-                 "square_voice": "La Voce della piazza"}
+                 "square_voice": "La Voce della piazza", "people": "Il popolo"}
 ABSENT_TEXT = "{name} non si è presentato al consiglio questo mese."
 BUDGET_TEXT = "Il fondo per i consiglieri è esaurito: {name} tace fino alla fine della partita."
 FALLBACK_SUMMARY = (
@@ -447,6 +447,28 @@ def insert_message(ctx: MeetingContext, round_number: int, kind: str,
     )
 
 
+def _people_kwargs(ctx: MeetingContext) -> dict:
+    choice, lines = people_this_month(ctx)
+    return {"people": choice, "people_lines": lines}
+
+
+def people_this_month(ctx: MeetingContext) -> tuple[object, list[str]]:
+    """@brief The people's choice for the open turn (for the harvest estimate)
+    and what the council may know of it: the behaviour in words and the
+    petition, which is public. Empty when the people decided nothing."""
+    from server.council import people  # the people module builds on this one
+    choice = games.load_people_choice(ctx.conn, ctx.realm_id, ctx.turn)
+    decisions = people.recent_decisions(ctx.conn, ctx.realm_id, ctx.turn, ctx.turn)
+    if not decisions:
+        return None, []
+    lines = ["## The people this month"] + people.decision_lines(decisions, ctx.turn)
+    petition = decisions[0]["petition"]
+    if petition and decisions[0]["answer"] is None:
+        lines.append(f"- If the sovereign grants the petition, this order runs first: "
+                     f"{memory.order_text(petition)}. Advise the sovereign on it.")
+    return choice, lines
+
+
 SQUARE_MEMORY_TURNS = 3  # turns of the square's words in each council briefing
 
 
@@ -573,7 +595,7 @@ def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
         _history(ctx, actor, ctx.settings.history_turns), directives,
         [memory.lesson_line(lesson) for lesson in memory.current_lessons(ctx.conn, actor.id)],
         *_audience_memory(ctx, actor),
-        square_voices=square_voices(ctx),
+        square_voices=square_voices(ctx), **_people_kwargs(ctx),
     )
     schema = _MinisterSchema.model_json_schema()
     reply, status = _ask(ctx, actor, _minister_system(ctx, actor), user, schema, _MinisterReply)
@@ -597,7 +619,7 @@ def _chancellor_turn(ctx: MeetingContext, round_number: int, events: list[dict],
         user = briefing.chancellor_briefing(
             ctx.state, ctx.config, events, directives, reports, proposals,
             _check_lines(ctx, proposals, check), lessons, *_audience_memory(ctx, actor),
-            square_voices=square_voices(ctx),
+            square_voices=square_voices(ctx), **_people_kwargs(ctx),
         )
         schema = _ChancellorSchema.model_json_schema()
         reply, status = _ask(ctx, actor, _chancellor_system(ctx, actor), user, schema, _ChancellorReply)
@@ -717,6 +739,8 @@ def hold_meeting(conn: psycopg.Connection, realm_id: int, client, settings: Coun
     # Imported here: the voice module builds on this one (no import cycle).
     from server.council import voice
     voice.speak_in_square(ctx)  # the people first, so the council hears them
+    from server.council import people
+    people.decide(ctx)  # then what they will do this month (and maybe a petition)
     _run_round(ctx, 1)
     return 1
 

@@ -131,3 +131,7 @@ table.numbers tr + tr { border-top: 1px solid var(--line); }
 .card.voice .report { font-style: italic; }
 
 pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(--ground); border: 1px solid var(--line); color: var(--text-soft); font: 12px/1.5 ui-monospace, "SFMono-Regular", Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 480px; overflow: auto; }
+
+/* The people's petition: two buttons side by side, wrapping on a narrow phone. */
+.petition-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.petition-actions form { margin: 0; }

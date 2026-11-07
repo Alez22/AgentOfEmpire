@@ -704,6 +704,34 @@ The admin sees everything, separate from the sovereign's view.
 
 **Tests** (fake client): the sovereign's view contains no mood on any page nor in the state endpoint; the Voice speaks in the first round, not after a directive, and enters the members' briefings; long story at season start; absent Voice does not block the meeting; with `ADMIN_VIEW` off `/admin` answers 404; on, it shows full state, lessons, audiences and prompts; model text stays text on the admin pages too.
 
+## The people decide
+
+Approved on 2026-11-07, after game 4: the square's opinion must turn into what the people do, otherwise the sovereign governs a people that never acts. First use of the decision service planned for Jev (state + typed questions → a bounded choice).
+
+**Each month**, at the meeting, right after the Voice of the square and before the council:
+
+1. A cheap model (`people` in `council.toml`, DeepSeek V4.1 Flash without reasoning, about $0.0002) plays the peasants as a whole. It reads how they feel (the mood band and the exact mood, never to be written), what weighs on them (the same felt factors as the square), the unrest, ration and taxes, what the square said, the crown's decisions of last month and its own last two decisions.
+2. It chooses, inside the limits of the mood band (`[people]` in `engine/config.toml`, checked by `engine/people.py`):
+
+| Behaviour | Effect in the engine | Content (mood > 550) | Neutral | Discontented (< 400) |
+| --- | --- | --- | --- | --- |
+| Effort | percent added to the yield of fields, sawmill and quarry | 0 to +10 | −5 to +5 | −20 to 0 |
+| Births | percent of this month's births | 100 to 120 | 90 to 110 | 50 to 100 |
+| Petition (optional, rare) | a request to the crown: one `set_tax`, `set_ration` or `hold_feast` that changes something, with the people's words | granted: mood +30 at once and the order runs first in the turn; refused or unanswered: mood −30 at once | | |
+
+3. The choice is stored in `people_decisions` (migration `007`, append-only), the sovereign's answer in `petition_answers`. The resolution and the replay read them like orders, so **the engine stays deterministic**. Values outside the limits are clamped; an impossible petition (no change, not the people's to ask, more gold than the treasury holds, no words) is dropped. If the model is silent, fixed rules take the middle of each range.
+
+**Who sees what**
+
+- **Sovereign**: on the turn page, the behaviour in words ("I contadini lavorano svogliati; le famiglie rimandano i figli"), the numbers in a "I conti" box, and the petition with "Esaudisci" and "Respingi". JSON: `GET /realms/{id}/people?turn=N`, `POST /realms/{id}/people/petition`.
+- **Council**: "## The people this month" in every briefing (behaviour in words, the petition and what granting it would do); the harvest estimate includes the people's effort.
+- **Square**: the next month it is told what the people did and how the crown answered, and tells it.
+- **Admin**: everything, including the model's reason and whether the model or the rules decided (turn page, agents page).
+
+**Games saved before** have no `[people]` section in their config: the people decide nothing and their results do not change.
+
+**Next behaviours** (after a played test): tax evasion (part of the taxes not collected), emigration (families leave after long, deep discontent), voluntary work (a site finishes a month early when the mood is high). The strike stays as the fixed extreme of the unrest ladder.
+
 ## Web UI
 
 Server-rendered pages (FastAPI with Jinja2 templates), phone first, in the style of the mockups: dark ground, gold, Cormorant Garamond titles, one colour per council member. Every action is a plain form followed by a redirect, so it works without JavaScript and reloading the page does not repeat the action; HTMX (vendored, not from a CDN) is used only to refresh the council and audience panels. Approved instead of TypeScript for the prototype: the map will come as a separate component or with the move to TypeScript, without changing the APIs. All text shown to players is in Italian.

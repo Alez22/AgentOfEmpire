@@ -114,6 +114,21 @@ class UnrestConfig:
 
 
 @dataclass(frozen=True)
+class PeopleConfig:
+    """Limits of what the people may decide each month (engine/people.py)."""
+    content_above: int  # mood above this: content band
+    discontent_below: int  # mood below this: discontented band
+    effort_content: list[int]  # [min, max] percent added to all yields
+    effort_neutral: list[int]
+    effort_discontent: list[int]
+    birth_content: list[int]  # [min, max] percent multiplier of births
+    birth_neutral: list[int]
+    birth_discontent: list[int]
+    petition_granted_mood: int  # immediate mood change when the sovereign grants
+    petition_refused_mood: int  # ... refuses, or does not answer
+
+
+@dataclass(frozen=True)
 class Config:
     start: StartConfig
     buildings: dict[str, BuildingConfig]
@@ -121,6 +136,9 @@ class Config:
     demography: DemographyConfig
     mood: MoodConfig
     unrest: UnrestConfig
+    # None for games saved before the people decided anything: they keep
+    # their own rules and replay unchanged.
+    people: PeopleConfig | None = None
 
 
 def load_raw_config(path: Path = DEFAULT_CONFIG_PATH) -> dict:
@@ -154,4 +172,5 @@ def config_from_dict(raw: dict) -> Config:
         demography=DemographyConfig(**raw["demography"]),
         mood=MoodConfig(**raw["mood"]),
         unrest=UnrestConfig(**raw["unrest"]),
+        people=PeopleConfig(**raw["people"]) if "people" in raw else None,
     )

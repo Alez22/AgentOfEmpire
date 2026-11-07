@@ -21,6 +21,7 @@ from server.council.meeting import (
     ask_text,
     load_context,
     render_prompt,
+    people_this_month,
     square_voices,
 )
 from server.council.personality import describe_traits
@@ -103,12 +104,15 @@ def _briefing(ctx: MeetingContext, actor) -> str:
     previous audiences (the current one included, up to the new line)."""
     events = games.list_visible_events(ctx.conn, ctx.game_id, ctx.realm_id, ctx.turn - 1, Clearance.COUNCIL)
     lessons = [memory.lesson_line(lesson) for lesson in memory.current_lessons(ctx.conn, actor.id)]
+    choice, people_lines = people_this_month(ctx)
     if actor.role == "treasurer":
-        sections = briefing.treasury_lines(ctx.state, ctx.config)
+        sections = briefing.treasury_lines(ctx.state, ctx.config, choice)
     elif actor.role == "architect":
-        sections = briefing.works_lines(ctx.state, ctx.config)
+        sections = briefing.works_lines(ctx.state, ctx.config, choice)
     else:
-        sections = briefing.treasury_lines(ctx.state, ctx.config) + briefing.works_lines(ctx.state, ctx.config)
+        sections = (briefing.treasury_lines(ctx.state, ctx.config, choice)
+                    + briefing.works_lines(ctx.state, ctx.config, choice))
+    sections = sections + people_lines
     dialogue = memory.audience_dialogue(
         ctx.conn, actor.id, ctx.turn - memory.AUDIENCE_HISTORY_TURNS, ctx.turn
     )

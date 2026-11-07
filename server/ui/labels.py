@@ -33,6 +33,7 @@ ROLES = {
     "architect": {"name": "L'Architetta", "color": "#7DB3E0", "initial": "A"},
     "chancellor": {"name": "Il Cancelliere", "color": "#D4AF5A", "initial": "C"},
     "square_voice": {"name": "La piazza", "color": "#C9A27E", "initial": "P"},
+    "people": {"name": "Il popolo", "color": "#B7A88A", "initial": "V"},
 }
 SOVEREIGN = {"name": "Il sovrano", "color": "#ECE5D6", "initial": "S"}
 
@@ -89,3 +90,27 @@ def event_label(kind: str, data: dict) -> str:
     if kind == "workers_rescaled":
         return "Meno adulti di prima: i lavoratori sono stati ridistribuiti."
     return f"{kind}: {data}"
+
+
+def people_words(effort_pct: int, birth_pct: int) -> str:
+    """@brief What the people do this month, as the sovereign sees it."""
+    if effort_pct >= 5:
+        work = "I contadini lavorano con slancio"
+    elif effort_pct > 0:
+        work = "I contadini lavorano volentieri"
+    elif effort_pct == 0:
+        work = "I contadini lavorano come sempre"
+    elif effort_pct > -10:
+        work = "I contadini lavorano svogliati"
+    else:
+        work = "I contadini lavorano a stento"
+    if birth_pct > 100:
+        families = "le famiglie vogliono figli"
+    elif birth_pct < 100:
+        families = "le famiglie rimandano i figli"
+    else:
+        families = "le famiglie vivono come sempre"
+    return f"{work}; {families}."
+
+
+PETITION_ANSWERS = {"granted": "esaudita", "refused": "respinta"}

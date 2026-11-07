@@ -12,7 +12,7 @@ import psycopg
 from engine import resolve_turn
 from engine.config import config_from_dict
 from engine.snapshot import state_from_dict, state_to_json
-from server.db.games import load_parsed_orders
+from server.db.games import load_parsed_orders, load_people_choice
 
 
 @dataclass
@@ -30,7 +30,8 @@ def _replay_realm(conn: psycopg.Connection, realm_id: int, config) -> ReplayMism
     state = state_from_dict(snapshots[0][1])
     for turn, stored_state in snapshots[1:]:
         parsed, _ = load_parsed_orders(conn, realm_id, turn - 1)
-        state = resolve_turn(state, [order for _, order in parsed], config).state
+        people = load_people_choice(conn, realm_id, turn - 1)
+        state = resolve_turn(state, [order for _, order in parsed], config, people).state
         stored_json = state_to_json(state_from_dict(stored_state))
         replayed_json = state_to_json(state)
         if stored_json != replayed_json:

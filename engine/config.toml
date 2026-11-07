@@ -127,3 +127,19 @@ protest_turns = 2
 strike_turns = 4
 revolt_turns = 6
 strike_output_pct = 70
+
+# What the people may decide each month (engine/people.py). A cheap model
+# chooses inside these ranges from the square's words and what weighs on
+# the people; fixed rules take the middle when the model is silent.
+# Without this section (games saved before) the people decide nothing.
+[people]
+content_above = 550
+discontent_below = 400
+effort_content = [0, 10]  # percent added to the yield of fields, sawmill, quarry
+effort_neutral = [-5, 5]
+effort_discontent = [-20, 0]
+birth_content = [100, 120]  # percent of this month's births
+birth_neutral = [90, 110]
+birth_discontent = [50, 100]
+petition_granted_mood = 30  # at once, in the month of the answer
+petition_refused_mood = -30  # refused or left unanswered

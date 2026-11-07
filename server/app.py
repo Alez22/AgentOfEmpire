@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field
 from engine import check_plans
 from engine.config import load_raw_config
 from engine.orders import Order
-from server.council import audience, meeting
+from server.council import audience, meeting, people
 from server.council.jobs import CouncilJobs
 from server.council.llm import FakeClient, OpenRouterClient
 from server.council.settings import CouncilSettings, load_settings
@@ -40,6 +40,10 @@ POOL_MAX_CONNECTIONS = 10  # well below the PostgreSQL default limit of 100
 
 class DirectiveRequest(BaseModel):
     text: str = Field(min_length=1, max_length=500)
+
+
+class PetitionAnswer(BaseModel):
+    answer: str = Field(pattern="^(granted|refused)$")
 
 
 class ApproveRequest(BaseModel):
@@ -97,6 +101,7 @@ def create_app(
     app.state.admin_view = (os.environ.get("ADMIN_VIEW") == "1") if admin_view is None else admin_view
     _add_routes(app)
     _add_audience_routes(app)
+    _add_people_routes(app)
     app.include_router(ui_router)
     app.include_router(admin_router)
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -266,6 +271,26 @@ def _add_audience_routes(app: FastAPI) -> None:
         finally:
             jobs.release(realm_id)
         return {"answer": answer}
+
+
+def _add_people_routes(app: FastAPI) -> None:
+    @app.get("/realms/{realm_id}/people")
+    def get_people(realm_id: int, turn: int, conn=Depends(_connection)):
+        """What the people decided that turn: behaviour, numbers, petition."""
+        _require_realm_game(conn, realm_id)
+        decision = people.decision_for_sovereign(conn, realm_id, turn)
+        if decision is None:
+            raise HTTPException(404, f"the people decided nothing in turn {turn}")
+        return decision
+
+    @app.post("/realms/{realm_id}/people/petition", status_code=201)
+    def answer_petition(realm_id: int, body: PetitionAnswer, conn=Depends(_connection)):
+        _require_realm_game(conn, realm_id)
+        try:
+            people.answer_petition(conn, realm_id, body.answer)
+        except meeting.CouncilError as error:
+            raise HTTPException(409, str(error)) from error
+        return {"answer": body.answer}
 
 
 def _open_turn_messages(conn: psycopg.Connection, realm_id: int) -> list[dict]:

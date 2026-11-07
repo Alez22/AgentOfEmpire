@@ -66,6 +66,40 @@
       {% endif %}
     {% endfor %}
 
+    {% if people %}
+    <article class="card people" style="border-top: 3px solid {{ labels.ROLES.people.color }}">
+      <div class="kicker">Il popolo questo mese</div>
+      <p class="report">{{ labels.people_words(people.effort_pct, people.birth_pct) }}</p>
+      <details>
+        <summary>I conti</summary>
+        <ul class="events">
+          <li>Resa di campi, segheria e cava: {{ "%+d"|format(people.effort_pct) }}%</li>
+          <li>Nascite del mese: {{ people.birth_pct }}% del solito</li>
+        </ul>
+      </details>
+      {% if people.petition %}
+      <h3>Una supplica al sovrano</h3>
+      <p class="directive">«{{ people.petition_text }}»</p>
+      <p class="hint">Chiede: {{ labels.order_label(people.petition) }}.
+        {% if not people.answer %}Esaudirla la mette in atto per prima; respingerla, o non rispondere, scontenta il popolo.{% endif %}</p>
+      {% if people.answer %}
+      <p class="hint">Supplica {{ labels.PETITION_ANSWERS[people.answer] }}.</p>
+      {% else %}
+      <div class="petition-actions">
+        <form method="post" action="/ui/realms/{{ realm_id }}/petition">
+          <input type="hidden" name="answer" value="granted">
+          <button class="primary" type="submit">Esaudisci</button>
+        </form>
+        <form method="post" action="/ui/realms/{{ realm_id }}/petition">
+          <input type="hidden" name="answer" value="refused">
+          <button type="submit">Respingi</button>
+        </form>
+      </div>
+      {% endif %}
+      {% endif %}
+    </article>
+    {% endif %}
+
     {% if running %}
       <div class="waiting" role="status"><span class="dot" aria-hidden="true"></span>
         Il consiglio discute… Puoi chiudere la pagina: la riunione continua e la ritrovi qui.</div>

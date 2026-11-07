@@ -23,7 +23,7 @@ from fastapi.templating import Jinja2Templates
 
 from engine.config import load_raw_config
 from engine.turn import food_needed, housing_capacity, jobs_in_sector, season_of
-from server.council import audience, meeting
+from server.council import audience, meeting, people
 from server.council.briefing import months_until_winter
 from server.db import games
 from server.sovereign_view import sovereign_state
@@ -103,9 +103,11 @@ def _council_context(request: Request, conn: psycopg.Connection, realm_id: int, 
         "plan": None,
         "orders": [],
         "rounds": [],
+        "people": None,
     }
     if game["open_turn"] is None:
         return context
+    context["people"] = people.decision_for_sovereign(conn, realm_id, game["open_turn"])
     settings = request.app.state.council_settings
     context["council"] = meeting.council_state(conn, realm_id, settings)
     context["messages"] = meeting.list_messages(conn, realm_id, game["open_turn"])
@@ -229,6 +231,16 @@ def resolve_turn(request: Request, realm_id: int, conn=Depends(_connection)):
     try:
         games.resolve_open_turn(conn, game_id)
     except (games.NoOpenTurnError, games.GamePausedError, games.EngineVersionError) as error:
+        return _turn_page(realm_id, str(error))
+    return _turn_page(realm_id)
+
+
+@router.post("/ui/realms/{realm_id}/petition")
+def answer_petition(realm_id: int, answer: str = Form(...), conn=Depends(_connection)):
+    """@brief The sovereign grants or refuses the people's petition."""
+    try:
+        people.answer_petition(conn, realm_id, answer)
+    except (meeting.CouncilError, ValueError) as error:
         return _turn_page(realm_id, str(error))
     return _turn_page(realm_id)
 

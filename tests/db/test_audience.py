@@ -25,7 +25,7 @@ def settings():
     # Without the Voice of the square, so call positions stay as written
     # here; the voice has its own tests in test_voice.py.
     loaded = load_settings()
-    models = {role: model for role, model in loaded.models.items() if role != "square_voice"}
+    models = {role: model for role, model in loaded.models.items() if role not in ("square_voice", "people")}
     return replace(loaded, provider="fake", models=models)
 
 

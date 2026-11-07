@@ -20,6 +20,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
 from server.council import audience, meeting, voice
+from server.council.meeting import render_prompt
 from server.council.personality import TRAITS, trait_word
 from server.db import games
 from server.db.replay import replay_game
@@ -134,8 +135,21 @@ def admin_turn(request: Request, realm_id: int, turn: int, conn=Depends(_admin_c
         "messages": messages,
         "calls": [dict(zip(keys, row)) for row in calls],
         "orders": games.list_orders(conn, realm_id, turn),
+        "people": _people_decision(conn, realm_id, turn),
     }
     return templates.TemplateResponse(request, "admin_turn.html", context)
+
+
+def _people_decision(conn: psycopg.Connection, realm_id: int, turn: int) -> dict | None:
+    """@brief The whole decision of the people, the model's reason included."""
+    row = conn.execute(
+        "SELECT d.effort_pct, d.birth_pct, d.petition, d.petition_text, d.reason, d.source, a.answer"
+        " FROM people_decisions d LEFT JOIN petition_answers a ON a.decision_id = d.id"
+        " WHERE d.realm_id = %s AND d.turn = %s",
+        (realm_id, turn),
+    ).fetchone()
+    keys = ("effort_pct", "birth_pct", "petition", "petition_text", "reason", "source", "answer")
+    return None if row is None else dict(zip(keys, row))
 
 
 @router.get("/realms/{realm_id}/lessons", response_class=HTMLResponse)
@@ -175,7 +189,7 @@ def admin_audiences(request: Request, realm_id: int, conn=Depends(_admin_connect
 
 # ------------------------------------------------------------------ agents
 
-AGENT_ORDER = ("chancellor", "treasurer", "architect", "square_voice")
+AGENT_ORDER = ("chancellor", "treasurer", "architect", "square_voice", "people")
 
 
 def _prompt_context(conn: psycopg.Connection, realm_id: int, settings) -> meeting.MeetingContext:
@@ -205,6 +219,9 @@ def _system_prompts(ctx: meeting.MeetingContext, actor: meeting.Actor) -> list[d
     """@brief Every system prompt this agent can receive, built by the same
     functions the council uses, so the page cannot drift from what is sent.
     """
+    if actor.role == "people":
+        return [{"label": "Decisione del mese", "text": render_prompt(
+            "people_system.txt", realm_name=ctx.realm_name, language=ctx.settings.language)}]
     if actor.role == "square_voice":
         return [
             {"label": "Racconto del mese", "text": voice.voice_system(ctx, season=False)},

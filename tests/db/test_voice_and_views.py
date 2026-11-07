@@ -110,7 +110,7 @@ def test_every_call_keeps_its_prompts(db, realm, settings):
     rows = db.execute(
         "SELECT prompt_system, prompt_user FROM model_calls WHERE game_id = %s", (game_id,)
     ).fetchall()
-    assert len(rows) == 4 and all(system and user for system, user in rows)
+    assert len(rows) == 5 and all(system and user for system, user in rows)  # voice, people, council
 
 
 # ------------------------------------------------------------------ views

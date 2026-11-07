@@ -35,6 +35,24 @@
 </section>
 
 <section class="card">
+  <h2>Il popolo</h2>
+  {% if people %}
+  <table class="numbers">
+    <tr><th>Impegno nel lavoro</th><td>{{ "%+d"|format(people.effort_pct) }}%</td></tr>
+    <tr><th>Nascite</th><td>{{ people.birth_pct }}%</td></tr>
+    <tr><th>Deciso da</th><td>{% if people.source == "model" %}modello{% else %}regole fisse{% endif %}</td></tr>
+    <tr><th>Motivo</th><td>{{ people.reason }}</td></tr>
+    {% if people.petition %}
+    <tr><th>Supplica</th><td>«{{ people.petition_text }}» — {{ labels.order_label(people.petition) }}
+      ({{ labels.PETITION_ANSWERS.get(people.answer, "senza risposta") }})</td></tr>
+    {% endif %}
+  </table>
+  {% else %}
+  <p class="hint">Il popolo non ha deciso nulla in questo turno.</p>
+  {% endif %}
+</section>
+
+<section class="card">
   <h2>Chiamate ai modelli</h2>
   {% for c in calls %}
   <article class="card {% if c.status != 'ok' %}muted{% endif %}">

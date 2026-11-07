@@ -86,7 +86,7 @@ def _decision_words(raw: dict, before: dict | None) -> str:
     return order_text(raw)
 
 
-def _carried_out(conn: psycopg.Connection, realm_id: int, first_turn: int, last_turn: int) -> list[str]:
+def carried_out(conn: psycopg.Connection, realm_id: int, first_turn: int, last_turn: int) -> list[str]:
     rows = conn.execute(
         "SELECT o.turn, o.raw FROM orders o JOIN order_results r ON r.order_id = o.id"
         " WHERE o.realm_id = %s AND o.turn >= %s AND o.turn <= %s AND r.accepted ORDER BY o.id",
@@ -188,12 +188,27 @@ def facts_for_the_square(ctx: MeetingContext, season: bool) -> str:
     ]
     events = _told_events(ctx, first_turn, ctx.turn - 1)
     lines.append("- What happened: " + ("; ".join(events) if events else "nothing remarkable") + ".")
-    orders = _carried_out(ctx.conn, ctx.realm_id, first_turn, ctx.turn - 1)
+    orders = carried_out(ctx.conn, ctx.realm_id, first_turn, ctx.turn - 1)
     lines.append("- Decisions of the crown carried out: " + ("; ".join(orders) if orders else "none") + ".")
+    # Imported here: the people module builds on this one (no import cycle).
+    from server.council import people
+    past = people.recent_decisions(ctx.conn, ctx.realm_id, first_turn, ctx.turn - 1)
+    if past:
+        lines += ["## What the people did (tell it, in your own words)"] + people.decision_lines(past, ctx.turn)
     own = _own_words(ctx)
     if own:
         lines += ["## What you said before (keep the thread; do not repeat the same images)"] + own
     return "\n".join(lines)
+
+
+def square_text(ctx: MeetingContext) -> str:
+    """@brief What the Voice said this turn ("" if it was silent)."""
+    row = ctx.conn.execute(
+        "SELECT content FROM council_messages WHERE realm_id = %s AND turn = %s AND kind = 'voice'"
+        " ORDER BY id DESC LIMIT 1",
+        (ctx.realm_id, ctx.turn),
+    ).fetchone()
+    return row[0] if row else ""
 
 
 def voice_system(ctx: MeetingContext, season: bool) -> str:

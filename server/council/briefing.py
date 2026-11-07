@@ -51,9 +51,9 @@ def _farm_season_pct(turn: int, config: Config) -> int:
             "summer": economy.farm_summer_pct, "autumn": economy.farm_autumn_pct}[season_of(turn)]
 
 
-def food_outlook_line(state: GameState, config: Config) -> str:
+def food_outlook_line(state: GameState, config: Config, people=None) -> str:
     """@brief This month's harvest and where the store would end, if nothing changes."""
-    harvest = expected_output(state, config)["food"]
+    harvest = expected_output(state, config, people)["food"]  # the people's effort included
     needed = food_needed(state, config)
     left = max(0, state.food + harvest - needed)
     left -= left * config.economy.food_spoilage_pct // 100
@@ -80,7 +80,7 @@ def season_outlook_line(state: GameState, config: Config, harvest: int) -> str:
             + f". Months left in this season: {3 - (state.turn - 1) % 3}.")
 
 
-def treasury_lines(state: GameState, config: Config) -> list[str]:
+def treasury_lines(state: GameState, config: Config, people=None) -> list[str]:
     return [
         "## Treasury and people",
         f"- Gold: {state.gold}. Tax income per month at {state.tax_rate}%: "
@@ -89,7 +89,7 @@ def treasury_lines(state: GameState, config: Config) -> list[str]:
         f"{food_needed(state, config)}. Without any harvest it would last about "
         f"{_reserve_months_text(state, config)} months. "
         f"Stored food rots by {config.economy.food_spoilage_pct}% per month.",
-        food_outlook_line(state, config),
+        food_outlook_line(state, config, people),
         f"- Tax rate: {state.tax_rate}% (maximum {config.economy.max_tax_rate}%). Ration: {state.ration}.",
         # No mood number, threshold or months below it: the council, like the
         # sovereign, knows the people only from the square (see square_lines).
@@ -103,11 +103,11 @@ def _vacant(state: GameState, config: Config, sector: str) -> int:
     return max(0, jobs_in_sector(state, config, sector) - getattr(state.workers, sector))
 
 
-def works_lines(state: GameState, config: Config) -> list[str]:
+def works_lines(state: GameState, config: Config, people=None) -> list[str]:
     active = Counter(b.kind for b in state.buildings if b.turns_left == 0)
     building = [f"{b.kind} ({b.turns_left} turns left)" for b in state.buildings if b.turns_left > 0]
     idle = state.adults - state.workers.total()
-    output = expected_output(state, config)
+    output = expected_output(state, config, people)
     costs = [
         f"{kind}: wood {spec.wood}, stone {spec.stone}, gold {spec.gold}, {spec.build_turns} turns"
         for kind, spec in config.buildings.items()
@@ -191,13 +191,14 @@ def minister_briefing(
     role: str, state: GameState, config: Config, events: list[dict],
     history: list[str], directives: list[str], lessons: list[str],
     audiences: list[str] = (), audience_facts: list[str] = (), square_voices: list = (),
+    people=None, people_lines: list[str] = (),
 ) -> str:
     """@brief Full briefing of a minister; each role sees only its own section.
     Lessons come first: they are the lens through which the numbers are read.
     """
-    section = treasury_lines(state, config) if role == "treasurer" else works_lines(state, config)
+    section = treasury_lines(state, config, people) if role == "treasurer" else works_lines(state, config, people)
     lines = (header_lines(state) + lessons_lines(lessons) + section + events_lines(events)
-             + square_lines(list(square_voices))
+             + square_lines(list(square_voices)) + list(people_lines)
              + history_lines(history) + audience_lines(list(audiences))
              + audience_fact_lines(list(audience_facts)) + directive_lines(directives))
     return "\n".join(lines)
@@ -207,13 +208,15 @@ def chancellor_briefing(
     state: GameState, config: Config, events: list[dict], directives: list[str],
     reports: dict[str, str], proposals: list[dict], check_lines: list[str], lessons: list[str],
     audiences: list[str] = (), audience_facts: list[str] = (), square_voices: list = (),
+    people=None, people_lines: list[str] = (),
 ) -> str:
     """@brief The Chancellor sees both sections, the reports, the proposals
     (also as one JSON line, easy to quote back) and the scribes' cost check.
     """
     lines = (header_lines(state) + lessons_lines(lessons)
-             + treasury_lines(state, config) + works_lines(state, config))
-    lines += (events_lines(events) + square_lines(list(square_voices)) + audience_lines(list(audiences))
+             + treasury_lines(state, config, people) + works_lines(state, config, people))
+    lines += (events_lines(events) + square_lines(list(square_voices)) + list(people_lines)
+              + audience_lines(list(audiences))
               + audience_fact_lines(list(audience_facts)) + directive_lines(directives))
     lines.append("## Reports of the ministers")
     lines += [f"- {role}: {text}" for role, text in reports.items()]

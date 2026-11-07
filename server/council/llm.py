@@ -158,6 +158,9 @@ class FakeClient:
             return "In piazza si mormora che il pane basti, ma le madri guardano già all'inverno."
         if schema is None:  # private audience: plain text
             return f"Maestà, il vostro {role} vi ascolta e terrà conto delle vostre parole."
+        if role == "people":
+            return json.dumps({"effort_pct": 0, "birth_pct": 100, "petition": None,
+                               "reason": "Test: nothing weighs on the people."})
         if "new_lessons" in schema.get("properties", {}):
             return json.dumps({"actions": [], "new_lessons": [f"Lezione di prova del {role} (turno 1)"]})
         if role != "chancellor":
