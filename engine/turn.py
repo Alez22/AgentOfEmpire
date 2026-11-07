@@ -382,6 +382,16 @@ def expected_output(state: GameState, config: Config) -> dict[str, int]:
             "stone": trial.stone - before["stone"]}
 
 
+def jobs_at_harvest(state: GameState, config: Config) -> dict[str, int]:
+    """@brief Jobs per sector when this month's production runs: active
+    buildings plus the sites that finish this month. Workers beyond these
+    produce nothing (game 3: the Chancellor sent 63 adults to 60 farm jobs).
+    """
+    trial = copy.deepcopy(state)
+    _advance_construction(trial, [])
+    return {sector: jobs_in_sector(trial, config, sector) for sector in ("food", "wood", "stone")}
+
+
 def resolve_turn(state: GameState, orders: list[Order], config: Config) -> TurnResult:
     """@brief Simulate one month. Pure function: the input state is not modified.
     @param state State at the start of the turn.

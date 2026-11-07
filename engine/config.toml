@@ -6,7 +6,7 @@
 children = 30
 adults = 60
 elders = 10
-food = 2000
+food = 1600  # was 2000: a sensible player now reaches spring with a thin margin (lab, game 3)
 wood = 150
 stone = 100
 gold = 100
@@ -16,7 +16,7 @@ workers_wood = 4
 workers_stone = 2
 tax_rate = 10
 ration = "normal"
-mood = 600
+mood = 500  # was 600: equal to the base, so the mood no longer drifts down by itself
 farms = 4
 sawmills = 1
 quarries = 1

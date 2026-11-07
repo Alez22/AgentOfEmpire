@@ -18,6 +18,7 @@ from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ValidationError
 
 from engine import check_plans, parse_order
+from engine.turn import jobs_at_harvest
 from engine.config import Config
 from engine.orders import Order
 from engine.state import GameState
@@ -374,10 +375,22 @@ def _run_check(ctx: MeetingContext, items: list[dict]) -> dict:
     return {"verdicts": verdicts, "spent": report.spent, "remaining": report.remaining}
 
 
-def _check_lines(items: list[dict], check: dict) -> list[str]:
+def _idle_beyond_jobs(order: dict, jobs: dict[str, int]) -> str:
+    """@brief Warning for an assignment that puts workers where no job waits
+    (legal, but they produce nothing); "" when every worker has a job."""
+    if order["action"] != "assign_workers":
+        return ""
+    excess = [f"{order[s] - jobs[s]} {s} workers beyond the {jobs[s]} jobs"
+              for s in ("food", "wood", "stone") if order[s] > jobs[s]]
+    return ("; WARNING: " + ", ".join(excess) + " would produce nothing") if excess else ""
+
+
+def _check_lines(ctx: MeetingContext, items: list[dict], check: dict) -> list[str]:
+    jobs = jobs_at_harvest(ctx.state, ctx.config)
     lines = []
     for item, verdict in zip(items, check["verdicts"]):
         outcome = "affordable" if verdict["accepted"] else f"REJECTED {verdict['code']}: {verdict['message']}"
+        outcome += _idle_beyond_jobs(item["order"], jobs)
         lines.append(f"{item['proposer']} {json.dumps(item['order'])}: {outcome}")
     lines.append(f"Spent if all accepted ones run: {check['spent']}; left: {check['remaining']}")
     return lines
@@ -583,7 +596,7 @@ def _chancellor_turn(ctx: MeetingContext, round_number: int, events: list[dict],
         lessons = [memory.lesson_line(lesson) for lesson in memory.current_lessons(ctx.conn, actor.id)]
         user = briefing.chancellor_briefing(
             ctx.state, ctx.config, events, directives, reports, proposals,
-            _check_lines(proposals, check), lessons, *_audience_memory(ctx, actor),
+            _check_lines(ctx, proposals, check), lessons, *_audience_memory(ctx, actor),
             square_voices=square_voices(ctx),
         )
         schema = _ChancellorSchema.model_json_schema()

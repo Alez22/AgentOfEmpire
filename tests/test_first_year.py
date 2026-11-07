@@ -18,14 +18,14 @@ def _play(state, config, turns):
 
 def test_winter_drains_the_food_reserve(start_state, config):
     end_of_winter = _play(start_state, config, 3)[-1]
-    # Hand check: 2000 - 3 * (405 - 860) = 635, minus 2 % spoilage per month = about 570
-    assert 550 <= end_of_winter.food <= 720
+    # Hand check: 1600 - 3 * (860 - 405) = 235, minus 2 % spoilage per month = about 195
+    assert 150 <= end_of_winter.food <= 260
 
 
 def test_first_year_ends_with_less_food_than_it_started(start_state, config):
     end_of_year = _play(start_state, config, 12)[-1]
-    # Engine: about 1460 with 2 % spoilage (the fixed rule adds farmers in spring)
-    assert 1300 <= end_of_year.food < 2000
+    # Engine: about 1150 with 2 % spoilage (the fixed rule adds farmers in spring)
+    assert 1000 <= end_of_year.food < 1600
 
 
 def test_population_grows_slowly(start_state, config):

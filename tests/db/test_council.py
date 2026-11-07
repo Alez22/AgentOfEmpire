@@ -77,7 +77,7 @@ def test_briefings_contain_engine_numbers_and_traits_as_words(db, realm, setting
     meeting.hold_meeting(db, realm_id, client, settings)
     treasurer_call = client.calls[0]
     assert "Gold: 100." in treasurer_call["user"]
-    assert "Food in store: 2000." in treasurer_call["user"]
+    assert "Food in store: 1600." in treasurer_call["user"]
     assert "Free tiles" not in treasurer_call["user"]  # the architect's section only
     assert any(word in treasurer_call["system"] for word in ("cautious", "bold", "balanced"))
     assert "L'Architetta" in client.calls[1]["system"]
@@ -205,7 +205,7 @@ def test_next_briefing_remembers_what_was_approved(db, realm, settings):
     assert "turn 1 (January): you proposed build farm." in architect_briefing
     assert "Approved: build farm carried out." in architect_briefing
     assert "Also decided that turn: hold_feast 10 (Il Tesoriere)." in architect_briefing
-    assert "Afterwards: food 2000 → " in architect_briefing
+    assert "Afterwards: food 1600 → " in architect_briefing
 
 
 def test_out_of_range_exclusion_is_refused(db, realm, settings):
@@ -497,10 +497,10 @@ def test_briefings_show_the_harvest_and_the_empty_jobs(db, realm, settings):
     client = FakeClient()
     meeting.hold_meeting(db, realm_id, client, settings)  # January: farms at 50 %
     treasurer, architect = client.calls[0]["user"], client.calls[1]["user"]
-    # 54 farmers x 15 x 50 % = 405; 2000 + 405 - 860 eaten = 1545, minus 2 % rot = 1515.
+    # 54 farmers x 15 x 50 % = 405; 1600 + 405 - 860 eaten = 1145, minus 2 % rot = 1123.
     assert ("Harvest expected this month if nothing changes: 405 food (winter: farms yield 50%). "
-            "After eating and rot the store would go from 2000 to about 1515: it shrinks.") in treasurer
-    assert "Without any harvest it would last about 2.3 months." in treasurer
+            "After eating and rot the store would go from 1600 to about 1123: it shrinks.") in treasurer
+    assert "Without any harvest it would last about 1.8 months." in treasurer
     assert "Jobs without workers: food 6, wood 6, stone 8." in architect
     assert "Expected this month if nothing changes: food +405, wood +24, stone +8." in architect
 
@@ -526,3 +526,25 @@ def test_prompts_say_there_is_no_market(db, realm, settings):
     meeting.hold_meeting(db, realm_id, client, settings)
     for call in client.calls:
         assert "gold cannot buy food" in call["system"] and "it brings no food" in call["system"]
+
+
+def test_chancellor_is_warned_of_workers_beyond_the_jobs(db, realm, settings):
+    _, realm_id = realm
+    too_many = {"action": "assign_workers", "food": 40, "wood": 15, "stone": 5}  # sawmill: 10 jobs
+    architect = json.dumps({"report": "Maestà, più legna.", "proposals": [too_many]})
+    client = FakeClient({"architect": [architect]})
+    meeting.hold_meeting(db, realm_id, client, settings)
+    chancellor_briefing = client.calls[2]["user"]
+    assert "WARNING: 5 wood workers beyond the 10 jobs would produce nothing" in chancellor_briefing
+
+
+def test_jobs_at_harvest_count_sites_finishing_this_month(db, realm, settings):
+    from engine.turn import jobs_at_harvest
+    game_id, realm_id = realm
+    state = games.load_latest_state(db, realm_id)
+    config = games.load_game_config(db, game_id)
+    assert jobs_at_harvest(state, config)["food"] == 60
+    state.buildings[0].turns_left = 1  # a farm site that finishes this month
+    assert jobs_at_harvest(state, config)["food"] == 60
+    state.buildings[1].turns_left = 2  # still building at harvest time
+    assert jobs_at_harvest(state, config)["food"] == 45

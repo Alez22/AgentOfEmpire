@@ -15,7 +15,7 @@ This file is the starting point of every work session: read it at the start and 
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (DeepSeek V4.1 Flash for all); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 142 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 144 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -56,6 +56,8 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [x] Voice of the square: only evident facts (court clearance, no granaries: the people only guess them), its own words of the last two turns, month windows aligned with the story; audience fact public, births and deaths court level
 - [x] Fixes from game 2: expected harvest and vacant jobs in the briefings, no-change orders dropped from plans, "no market / a feast brings no food" in every counsellor prompt, months to winter, own role only, refused measures may come back, reports with numbers, Voice without numbers in words or invented events
 - [x] Famine balance: variant D applied (immediate shock −4 per missing point, −10 per death; `engine/config.toml`)
+- [x] Workers beyond the jobs: the Chancellor's cost check warns (`jobs_at_harvest` in the engine)
+- [x] Tension: start food 1600 and start mood 500 (lab above); without orders the realm now revolts in the second winter
 - [ ] Play again to check the fixes: no mood numbers in reports, no calls over ~90 s, lesson reviews applied, the square keeps a thread, rations cut only when the harvest does not cover
 - [ ] Decide on tiles and workers (overbuilding, housing dead end, idle adults)
 - [ ] Tune engine values (food, taxes, mood)
@@ -205,6 +207,21 @@ The exact orders of games 1 and 2 replayed under mood variants (the base replay 
 | E: immediate shock −6 / −15 | revolt at turn 8 | 229 180 260 307: strike for 3 months |
 
 Making hunger weigh more in the target is not enough: the mood moves only 25 % of the way each month and a famine lasts one or two months. A famine has to be a shock, like a feast in reverse. **Applied: D.** Two new `[mood]` values; they default to 0, so games saved before keep their own rules and replay unchanged (no `ENGINE_VERSION` bump needed).
+
+### Lab: tension for a sensible player (2026-11-07)
+
+The accepted orders of games 1 (greedy), 2 (famine) and 3 (sensible) replayed under start and winter variants. The orders are fixed, so the replay does not show how a council would react (e.g. cutting the ration when the store runs low): it shows how close each player comes to the edge.
+
+| Variant | Greedy (g1) | Famine (g2) | Sensible (g3) |
+| --- | --- | --- | --- |
+| Today | revolt at turn 8 | 2 famine months, 9 deaths, protests | lowest food 684, always calm |
+| Start mood 500 | revolt at turn 7 | 9 deaths, strike | lowest food 684, mood 485–501 |
+| Start food 1600 | revolt at turn 8 | 7 famine months, 33 deaths, revolt | **lowest food 316**, calm |
+| Winter farms 40 % | revolt at turn 8 | 31 deaths, revolt | lowest food 433, calm |
+| **Food 1600 + mood 500** | revolt at turn 7 | 33 deaths, revolt | **lowest food 316**, mood 485–501, calm |
+| Food 1500 + winter 40 % + mood 500 | revolt at turn 7 | 36 deaths, revolt | 1 famine month, 3 deaths |
+
+**Applied (2026-11-07): food 1600 and start mood 500.** The sensible player reaches the spring with about a third of a month of food: the first winter becomes a real decision (cut the ration or not) without forcing a famine. A start mood equal to the base removes the slow drift the square misread as "un lutto che non ha nome". To be confirmed by a played game, since the council adapts.
 
 ## Open decisions
 

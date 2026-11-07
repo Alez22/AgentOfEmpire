@@ -333,12 +333,12 @@ The values live in `engine/config.toml`, read with the standard library's `tomll
 | Parameter | Value |
 | --- | --- |
 | Population (children / adults / elders) | 30 / 60 / 10 |
-| Food / wood / stone / gold | 2000 / 150 / 100 / 100 |
+| Food / wood / stone / gold | 1600 / 150 / 100 / 100 (food was 2000 until 2026-11-07) |
 | Buildings | 4 farms, 1 sawmill, 1 quarry, 6 houses |
 | Free tiles | 7 |
 | Workers (food / wood / stone) | 54 / 4 / 2 |
 | Tax rate / ration | 10 % / normal |
-| Mood | 600 ‰ |
+| Mood | 500 ‰, equal to the base (was 600: it drifted down by itself and the square read the drift as a sorrow without a cause) |
 | First turn | January (winter) |
 
 #### Buildings
@@ -402,9 +402,9 @@ Target mood = 500 ‰ + sum of modifiers; the real mood moves 25 % of the distan
 
 With no orders from the sovereign, the first year should go like this (`tests/test_first_year.py`):
 
-- **Food**: at full output 54 × 15 = 810 units are produced per month and 860 eaten; then 2 % of the stock spoils. Winter takes the reserve from 2000 to about 570 and the year closes at about 1460, helped by the fixed rule that sends new adults to the 6 free farm jobs. Without orders the second winter empties the granary: hunger.
+- **Food**: at full output 54 × 15 = 810 units are produced per month and 860 eaten; then 2 % of the stock spoils. Winter takes the reserve from 1600 to about 195, spring holds it near 100, and the year closes at about 1150, helped by the fixed rule that sends new adults to the 6 free farm jobs. Without orders the second winter is a famine and the people revolt at turn 20: a passive sovereign loses in the second year.
 - **Population**: +8 people in the first year (108); the houses (120 places) last about 2 years.
-- **Mood**: 451 ‰ at year end with taxes at 10 %, always above the threshold. At 30 % the revolt comes at turn 10.
+- **Mood**: from 500 to about 430 ‰ at year end with taxes at 10 %, always above the threshold.
 - **Gold**: +30 from taxes, −12 upkeep, so +18 per month.
 - **Wood**: 4 workers × 6 = 24 per month, so a farm (40 wood) costs almost two months of production.
 
