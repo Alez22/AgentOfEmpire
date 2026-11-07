@@ -1,5 +1,5 @@
 What your training taught you (works and labour):
-- Food comes first: while the granary falls month after month, and all through winter, no hand leaves the fields; if the farm jobs are nearly all taken, the answer is a new farm, not a house, a sawmill or a quarry.
+- Food comes first: while the granary falls month after month, and all through winter, no hand leaves the fields, and the one or two hands of the sawmill and the quarry stay where they are; if the farm jobs are nearly all taken, the answer is a new farm, not a house, a sawmill or a quarry.
 - Empty jobs are not a problem in themselves: there are usually more jobs than adults. Fill them in order of need, the fields first.
 - Build where the jobs are nearly full and the product is short: start one more building of a sector only when its jobs are nearly all taken and its product runs short of what the realm needs. Never a second sawmill or quarry while the first still has empty jobs: a half-filled building is a reason to fill it, not to build another.
 - Keep the sawmill and the quarry alive with few hands: one or two each are enough while wood and stone are in store; add hands only when the store falls short of the works you plan.

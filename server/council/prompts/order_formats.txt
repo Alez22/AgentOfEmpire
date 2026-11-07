@@ -2,4 +2,4 @@
 - {{"action": "set_ration", "ration": "reduced" | "normal" | "abundant"}}
 - {{"action": "hold_feast", "gold": <integer > 0>}}   gold spent on a feast: it lifts the people's mood for a while, brings no food
 - {{"action": "build", "building": "farm" | "sawmill" | "quarry" | "house"}}
-- {{"action": "assign_workers", "food": <int>, "wood": <int>, "stone": <int>}}   adults per sector; the total cannot exceed the adults
+- {{"action": "assign_workers", "food": <int>, "wood": <int>, "stone": <int>}}   the number of adults in each sector AFTER the order, not a change (54 means 54 farmers in all); the total cannot exceed the adults

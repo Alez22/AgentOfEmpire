@@ -496,6 +496,25 @@ Mistake of the first run: scenarios 7 and 8 pointed at the Chancellor's end-of-s
 Clean replies of the second run, out of 24: GLM "high" **21** (Treasurer 9/9, Architect 8/9, Chancellor 4/6), Flash "none" 18, GLM "low" 17, Flash "low" 16 (5 invalid), Flash "high" 11 (13 invalid), gpt-oss 10 (Chancellor 0/6).
 
 
+### Game 18 "Roccafonda" (2026-11-08, every agent on GLM 5.3 Flash "high"; new Architect craft and the three fixes)
+
+Same seed and persons as games 10 and 14–17. New since game 17: the Architect's craft (food first...), the manual without "already pays", "Not approved by the sovereign" in the ministers' memory, assign_workers as totals in the order format, the idle-adults warning. 10 turns, **$0.032 in 59 calls**, no refused reply, no runaway, calls up to 17 s. The kingdom stayed calm all game, food 1296, gold 48 (taxes 8% then 6% for a petition and the Treasurer).
+
+**Better**
+
+1. **The Architect** proposed the fifth farm on its own in April ("il bisogno è scritto nei posti pieni"), asked for no sawmill or quarry in ten months ("né seconde fabbriche mentre i primi posti son vuoti"), kept 2 and 1 hands at the sawmill and the quarry, sent every new adult to the fields, and proposed a house only in July with births running and 15 free places (approved).
+2. **The memory fix works**: in February the Architect wrote "concordo con la Sua scelta di gennaio di non costruire, e non ripresento il progetto".
+3. **The Chancellor** dropped the Treasurer's reduced ration in March with the numbers ("con razione normale il granaio arriva a primavera con circa 260 sacchi").
+4. No assign_workers read as a change.
+
+**Still weak**
+
+1. **The February plan moved two farmers to the sawmill in winter** (55/4/1), while the Architect's own report said "nei mesi freddi nessuna mano lascia i campi" (refused).
+2. **Garbled words, mostly in the Voice of the square**: "recatrimba", "badoreggia", "battisce", "favoredella", "targheggia", "l'incensière"; once three paragraphs long; a recurring invented villager ("Serena"). The counsellors too: "Ilconfigs", "would sour", "gonarsi", "in store".
+3. The Treasurer called the gold "sufficient" while it fell from 104 to 48 (the house, upkeep and salaries above 19 a month of taxes).
+
+**Voice and people on GLM "high"**: the same cost as Flash "none" (about 0.0002 a call: GLM reasons little there), a little slower (2.7–2.9 s against 1.3–1.8). The people's decisions looked sound (effort +1 to +6, births 102–105%, one petition). The Voice's Italian is worse than with Flash: the Voice went back to Flash "none", the people stay on GLM "high".
+
 ### Lab: famine balance (2026-11-07)
 
 The exact orders of games 1 and 2 replayed under mood variants (the base replay reproduces both games exactly). Mood month by month, from turn 2.

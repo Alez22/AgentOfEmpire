@@ -39,10 +39,12 @@ high = "z-ai/glm-5.3-flash"
 chancellor = "z-ai/glm-5.3-flash"
 treasurer = "z-ai/glm-5.3-flash"
 architect = "z-ai/glm-5.3-flash"
-# Short texts, no reasoning: DeepSeek Flash, not benched against GLM yet.
+# The Voice stays on DeepSeek Flash without reasoning: on GLM "high" its
+# Italian had invented words (game 18), and its text reaches the sovereign as is.
 square_voice = "deepseek/deepseek-v4.1-flash"
-# The people decide their behaviour and petitions (server/council/people.py).
-people = "deepseek/deepseek-v4.1-flash"
+# The people decide their behaviour and petitions (server/council/people.py);
+# GLM "high" since 2026-11-08 (game 18: sound decisions, same cost as Flash).
+people = "z-ai/glm-5.3-flash"
 
 # Reasoning effort per role ("none", "low", "medium", "high"); a role missing
 # here uses the model default. Reasoning is billed as output tokens and is
@@ -53,7 +55,7 @@ chancellor = "high"
 treasurer = "high"
 architect = "high"
 square_voice = "none"
-people = "none"
+people = "high"
 
 # USD per million tokens, used only when a response carries no cost field.
 [prices.'deepseek/deepseek-v4.1-flash']

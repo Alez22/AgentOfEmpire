@@ -398,12 +398,25 @@ def _idle_beyond_jobs(order: dict, jobs: dict[str, int]) -> str:
     return ("; WARNING: " + ", ".join(excess) + " would produce nothing") if excess else ""
 
 
+def _idle_left(order: dict, adults: int) -> str:
+    """@brief Warning for an assignment that leaves adults without work.
+
+    Why: gpt-oss read assign_workers as a change ("food 0 wood 1 stone 0" to
+    send one idle adult to the sawmill), which would empty the fields; the
+    numbers are totals, and a big idle count shows the misreading.
+    """
+    if order["action"] != "assign_workers":
+        return ""
+    idle = adults - order["food"] - order["wood"] - order["stone"]
+    return f"; WARNING: {idle} adults would be left without work" if idle > 0 else ""
+
+
 def _check_lines(ctx: MeetingContext, items: list[dict], check: dict) -> list[str]:
     jobs = jobs_at_harvest(ctx.state, ctx.config)
     lines = []
     for item, verdict in zip(items, check["verdicts"]):
         outcome = "affordable" if verdict["accepted"] else f"REJECTED {verdict['code']}: {verdict['message']}"
-        outcome += _idle_beyond_jobs(item["order"], jobs)
+        outcome += _idle_beyond_jobs(item["order"], jobs) + _idle_left(item["order"], ctx.state.adults)
         lines.append(f"{item['proposer']} {json.dumps(item['order'])}: {outcome}")
     lines.append(f"Spent if all accepted ones run: {check['spent']}; left: {check['remaining']}")
     return lines

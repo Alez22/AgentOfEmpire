@@ -538,6 +538,16 @@ def test_chancellor_is_warned_of_workers_beyond_the_jobs(db, realm, settings):
     assert "WARNING: 5 wood workers beyond the 10 jobs would produce nothing" in chancellor_briefing
 
 
+def test_chancellor_is_warned_of_adults_left_without_work(db, realm, settings):
+    _, realm_id = realm
+    as_a_change = {"action": "assign_workers", "food": 0, "wood": 1, "stone": 0}  # read as a change
+    architect = json.dumps({"report": "Maestà, un uomo alla segheria.", "proposals": [as_a_change]})
+    client = FakeClient({"architect": [architect]})
+    meeting.hold_meeting(db, realm_id, client, settings)
+    adults = games.load_latest_state(db, realm_id).adults
+    assert f"WARNING: {adults - 1} adults would be left without work" in client.calls[2]["user"]
+
+
 def test_jobs_at_harvest_count_sites_finishing_this_month(db, realm, settings):
     from engine.turn import jobs_at_harvest
     game_id, realm_id = realm
