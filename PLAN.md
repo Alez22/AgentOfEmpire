@@ -68,7 +68,7 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [x] Play a game with mandates, notes, debate and audiences together (game 7, 20 turns)
 - [x] The manual of the realm: how every element works, written from the config, in every counsellor prompt and on the sovereign's "Manuale" page
 - [x] The craft of each role (good practice, not laws) and the Treasurer's registry and ration consumption; the Architect's duty is a duty again
-- [ ] Model tiers: test a weaker model as `low` (how much worse does a game get?), then choose the three tiers; later a settings page for them
+- [ ] Model tiers: weaker model tested (game 9: Mistral Small 3.2 fits `low`); choose `medium` and `high`; later a settings page for them
 - [x] Persons: a small catalog (12), the council drawn from the moderates at game start; name, gender, traits, story, model and salary come with the person; salaries paid by the engine; persons carry a tier (low, medium, high), never a model
 - [ ] Play a game to check manual and craft together, then remove the prompt rules they make redundant
 - [x] Game 7 fixes: the Architect may fill a new building with workers moved from a sector that needs them less (the growth trap); jobs per building in the briefing; a reply that ran up to the token cap is retried without reasoning
@@ -349,6 +349,20 @@ New Architect mandate at turn 21, then only approvals. $0.099 in 62 calls; the w
 1. **Overbuilding and abandoned sectors**: the manual needs the other half of the rule: build a new building of a sector when its jobs are nearly full, and keep some workers at the sawmill and the quarry so wood and stone do not stop.
 2. **The abundant ration with an empty granary**: in April, with 344 food, the Treasurer proposed the abundant ration and the Chancellor kept it (it was approved by a mistake of mine as the test player). The next month the council itself went back to normal. The briefing gives the consumption at the current ration only; it should give it at every ration.
 3. **Runaway replies are still about one call in twenty** (three in this game), now cheap to recover; a repetition penalty could be tried.
+
+### Game 9 "Pianalta" (2026-11-07, weaker-model test: Mistral Small 3.2 for the three counsellors)
+
+Counsellors (Brunilde Masi, Bertoldo Sassi, Matteo Alberi) on `mistralai/mistral-small-3.2-24b-instruct`; the Voice and the people stayed on DeepSeek Flash. 10 turns, **$0.0166 in 62 calls** (the three counsellors: $0.0134, against roughly $0.10 for the same work on Flash in game 8), no refused reply, no runaway, slowest call 9.3 s (usually 2–6 s). The kingdom ended calm, food 830, gold 41 (falling slowly all game).
+
+**What gets worse with the weaker model**
+
+1. **Shallow reports**: two or three sentences, often only a description of the situation with no number and no proposal ("il popolo è stanco").
+2. **Craft and role ignored**: the Treasurer flip-flops on the ration (reduced in July with the granary growing, abundant in August, again in October) and proposes a feast nearly every month with gold at 40–60; the Architect talks about taxes and morale and proposes a house every month, even against the sovereign's directive "niente nuove case" and with 34 free places.
+3. **Invented or stale facts**: food figures that are not in the briefing; once the Chancellor summarised a feast and an abundant ration the Treasurer had not proposed that month (carried over from the month before).
+4. **The Chancellor rubber-stamps**: the plans keep everything the ministers asked for; it did catch once an impossible worker plan (68 workers for 65 adults).
+5. The sovereign had to reject most of the plans to keep the gold; a less careful player would have emptied the treasury with feasts.
+
+**Verdict**: usable as the `low` tier (cheap, fast, valid JSON), not as a default counsellor. A low-tier person should be a cheap hire with visibly weaker advice, which is what this model gives.
 
 ### Lab: famine balance (2026-11-07)
 
