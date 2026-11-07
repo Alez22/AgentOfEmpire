@@ -269,24 +269,40 @@ def _rescale_workers(state: GameState, events: list[Event]) -> None:
     events.append(Event("workers_rescaled", {"workers": new_counts}))
 
 
+def mood_factors(
+    state: GameState, config: Config, needed: int, missing_pct: int, deaths: int
+) -> dict[str, int]:
+    """@brief The named parts of the target mood (base excluded), in per mille.
+
+    Public so the Voice of the square can tell WHY the people feel as they
+    do. _target_mood is their sum: changing a part here changes the game.
+    @param missing_pct Share of the food that was missing this month.
+    @param deaths Deaths of this month.
+    """
+    mood_cfg = config.mood
+    ration = 0
+    if state.ration == "reduced":
+        ration = mood_cfg.ration_reduced
+    if state.ration == "abundant":
+        ration = mood_cfg.ration_abundant
+    taxed_points = max(0, state.tax_rate - mood_cfg.tax_free_rate)
+    reserve_ok = state.food > mood_cfg.reserve_bonus_months * needed
+    housing_full = state.population() >= housing_capacity(state, config)
+    return {
+        "ration": ration,
+        "taxes": taxed_points * mood_cfg.tax_per_point,
+        "hunger": max(mood_cfg.famine_max, missing_pct * mood_cfg.famine_per_missing_pct),
+        "reserve": mood_cfg.reserve_bonus if reserve_ok else 0,
+        "housing": mood_cfg.housing_full if housing_full else 0,
+        "deaths": deaths * mood_cfg.per_death,
+    }
+
+
 def _target_mood(
     state: GameState, config: Config, needed: int, missing_pct: int, deaths: int
 ) -> int:
-    mood_cfg = config.mood
-    target = mood_cfg.base
-    if state.ration == "reduced":
-        target += mood_cfg.ration_reduced
-    if state.ration == "abundant":
-        target += mood_cfg.ration_abundant
-    taxed_points = max(0, state.tax_rate - mood_cfg.tax_free_rate)
-    target += taxed_points * mood_cfg.tax_per_point
-    target += max(mood_cfg.famine_max, missing_pct * mood_cfg.famine_per_missing_pct)
-    if state.food > mood_cfg.reserve_bonus_months * needed:
-        target += mood_cfg.reserve_bonus
-    if state.population() >= housing_capacity(state, config):
-        target += mood_cfg.housing_full
-    target += deaths * mood_cfg.per_death
-    return max(0, min(1000, target))
+    factors = mood_factors(state, config, needed, missing_pct, deaths)
+    return max(0, min(1000, config.mood.base + sum(factors.values())))
 
 
 def _feast_bonus(state: GameState, config: Config) -> int:

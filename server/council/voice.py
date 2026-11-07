@@ -10,6 +10,7 @@ it may exaggerate after a shock and miss a slow change).
 import psycopg
 from psycopg.types.json import Jsonb
 
+from engine.turn import food_needed, mood_factors
 from server.council.briefing import MONTHS
 from server.council.memory import order_text
 from server.council.meeting import (
@@ -82,6 +83,56 @@ def _told_events(ctx: MeetingContext, first_turn: int, last_turn: int) -> list[s
     return told
 
 
+# What the people feel directly. "reserve" (the engine's bonus for a large
+# stock) is left out on purpose: telling it would reveal the granaries.
+FELT_FACTORS = {
+    "taxes": ("the taxes", "the taxes"),
+    "ration": ("the short ration", "the generous ration"),
+    "hunger": ("hunger", "hunger"),
+    "housing": ("crowded houses, no room for new families", "crowded houses"),
+    "deaths": ("mourning for the dead", "mourning"),
+}
+
+
+def _weight_words(value: int) -> str:
+    size = abs(value)
+    if size >= 200:
+        return "crushing" if value < 0 else "great"
+    if size >= 100:
+        return "heavy" if value < 0 else "strong"
+    if size >= 40:
+        return "felt"
+    return "slight"
+
+
+def _last_month(ctx: MeetingContext) -> tuple[int, int]:
+    """@brief (missing food %, deaths) of the month just resolved."""
+    missing_pct, deaths = 0, 0
+    for event in games.list_visible_events(ctx.conn, ctx.game_id, ctx.realm_id, ctx.turn - 1, Clearance.COURT):
+        if event["kind"] == "famine":
+            missing_pct = event["data"].get("missing_pct", 0)
+        if event["kind"] == "demography":
+            deaths = event["data"].get("deaths", 0)
+    return missing_pct, deaths
+
+
+def feelings_line(ctx: MeetingContext) -> str:
+    """@brief Why the people feel as they do, heaviest first, in words.
+
+    Game 1: with only the mood series the voice guessed the cause and chose
+    hunger while the taxes weighed most; the council believed it. These are
+    the engine's own mood factors, so the square complains about real causes.
+    """
+    missing_pct, deaths = _last_month(ctx) if ctx.turn > 1 else (0, 0)
+    factors = mood_factors(ctx.state, ctx.config, food_needed(ctx.state, ctx.config), missing_pct, deaths)
+    felt = [(name, value) for name, value in factors.items() if name in FELT_FACTORS and value]
+    felt.sort(key=lambda item: -abs(item[1]))
+    burdens = [f"{FELT_FACTORS[n][0]} ({_weight_words(v)})" for n, v in felt if v < 0]
+    joys = [f"{FELT_FACTORS[n][1]} ({_weight_words(v)})" for n, v in felt if v > 0]
+    return ("- What weighs on the people, heaviest first: " + ("; ".join(burdens) or "nothing in particular")
+            + ". What cheers them: " + ("; ".join(joys) or "nothing in particular") + ".")
+
+
 def _own_words(ctx: MeetingContext) -> list[str]:
     rows = ctx.conn.execute(
         "SELECT turn, content FROM council_messages WHERE realm_id = %s AND kind = 'voice'"
@@ -104,6 +155,7 @@ def facts_for_the_square(ctx: MeetingContext, season: bool) -> str:
         "- Mood of the peasants (0-1000; NEVER say these numbers), oldest first: "
         + _mood_series(ctx.conn, ctx.realm_id, mood_from, ctx.turn) + ".",
         f"- Unrest: {state.unrest}; months in a row of deep discontent: {state.low_mood_turns}.",
+        feelings_line(ctx),
         # No granaries, not even in words: the people cannot know the stock,
         # they can only guess it from the ration, hunger and feasts.
         f"- Ration: {state.ration}. Taxes: {state.tax_rate}%.",

@@ -137,6 +137,10 @@ The spy does not *[Lost]*; **the engine** *[Lost]*. No *[Lost]*.
 - **Responses**: repression (Marshal) works at once but leaves resentment; concessions (Treasurer) cost but really calm things down.
 - **Coup**: if the sovereign loses the trust of both people and council, an ambitious minister can try to seize power with the support of a discontented class.
 - **Nobody is left out**: whoever loses the throne does not leave the game, but starts again as the leader of a faction in exile trying to win back the kingdom.
+- **Today (prototype)**: revolt is automatic and final. Six months in a row below the threshold → revolt → game over. Protests have no effect, a strike costs 30 % of all production (taxes are still collected in full).
+- **Revolt as odds, and regimes** (idea, 2026-11-07, for when soldiers exist): reaching "revolt" opens a contest instead of ending the game. Each month, with the engine's seeded generator (replay stays exact), the strength of the revolt (how deep and how long the discontent, how many are angry, whether a leader or a faction backs it) is weighed against the strength of order (soldiers and their loyalty, guards, fortifications, propaganda once the press exists). Outcomes by degrees: riots and damaged buildings, tiles out of control, a siege of the castle, and only at the end deposition, after which the sovereign leads a faction in exile.
+  - **A militarised regime** lowers the odds of a popular revolt, but every soldier costs upkeep, soldiers are a class with their own mood (unpaid or misused, they join the revolt), repression leaves a long resentment (longer for classes with a long memory), the Marshal's ambition makes a coup more likely as the army grows, and reputation abroad falls. So "regime" becomes a real way to govern, stable in the short run and fragile to its own army.
+  - The sovereign never sees the odds: the signals come from the square, the Marshal's reports and the spies.
 
 ## Architecture
 
@@ -657,6 +661,7 @@ This applies to the Turn and Kingdom pages and to the `GET /realms/{id}/state` e
 - **What it knows**: only what is evident to the people. It reads events with **court** clearance, so palace accounts (upkeep, spoilage, rescaled workers) never reach it.
   - The exact mood: in a monthly story over the peasants' memory horizon (`PEASANT_MEMORY_MONTHS = 3`, the current month and the two before); in a season story the three months of the season plus the starting value, so the trend shows and the story covers exactly the season.
   - Unrest level and months of deep discontent.
+  - **Why the people feel as they do**, heaviest first and in words ("the taxes (crushing); the short ration (heavy)"): the engine's own mood factors (`mood_factors` in `engine/turn.py`), limited to what the people feel directly (taxes, ration, hunger, crowded houses, mourning). The reserve bonus is left out because it would reveal the granaries. The prompt asks it to talk most about the heaviest burden and never to invent events. Added after game 1, where the square blamed hunger while the taxes weighed most, and the council believed it.
   - **Not the granaries**, not even in words: the people cannot know the stock or the treasury, they can only guess from the ration, hunger and feasts (and may guess wrong). Ration and taxes, which they feel directly.
   - The events of the months told (famine, unrest, construction, births and deaths, audiences as a fact) and the decisions of the crown carried out.
   - **What it said in the last two turns**, to keep the thread (the same people, events that move on) without repeating the same images.

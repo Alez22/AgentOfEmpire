@@ -15,7 +15,7 @@ This file is the starting point of every work session: read it at the start and 
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (DeepSeek V4.1 Flash for all); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 134 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 136 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -76,7 +76,7 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [ ] Marshal and Ambassador
 - [ ] Tile map and more states, automatic ones too
 - [ ] Market, trade and diplomacy (they give gold a use)
-- [ ] Espionage, war, revolts and coups
+- [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
 - [ ] Eras, variable trust and loyalty, leaks
 - [ ] Press by era: rumours only, then government communiqués (propaganda, also to other states), then independent journalism (see Progress in `docs/DESIGN.md`)
 - [ ] Jev instead of the fixed rules
@@ -122,6 +122,29 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - The Architect alone spends half ($0.129) and averages 27 s per call; Treasurer 11 s, Voice 2 s.
 
 **Proposed order of work**: (1) fix the four bugs; (2) decide on tiles and workers; (3) more tension (harder winters or smaller stocks, tried with `lab/compare_variants.py`); (4) small fixes: drop no-op orders, Chancellor aware in audiences that it can only recombine (Voice months: done).
+
+### Game 1 "Valdoro" (2026-11-07, played by Claude as a greedy sovereign; new database)
+
+Goal: stress the people (taxes 20 % then 30 %, reduced ration, every feast refused) with the fixes of game 7 in place. Revolt at the end of turn 8. $0.080 in 50 calls, about $0.010 per turn.
+
+| Turn | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Mood (hidden) | 600 | 500 | 400 | 325 | 268 | 226 | 207 | 216 | 249 |
+| Unrest | calm | calm | calm | calm | protests | protests | strike | strike | revolt |
+| Tax / ration | 10 / normal | 20 / reduced | 30 / reduced | | | | | 30 / normal | 30 / abundant |
+| Food | 2000 | 1738 | 1481 | 1259 | 1483 | 1711 | 1988 | 1855 | 1457 |
+
+**Fixes confirmed**: no mood number in 33 reports and summaries, nor in audiences; slowest call 34 s; both lesson reviews applied with nothing discarded; the output cap fired once (an Architect reply spent all 8000 tokens reasoning and came back empty, then the retry worked).
+
+**What worked**: from the square alone the sovereign felt the mood fall month by month ("più cupa", "la piazza non siede più", "hanno posato gli attrezzi"), before protests and strike. The Voice keeps a thread (the widow Marchi in every month). Lessons are now qualitative and learned from the square ("il silenzio in piazza con la razione calata è avviso, non consenso"). The Chancellor learned the sovereign's line and stopped offering tax cuts and feasts, and it vetoed useless farms.
+
+**Problems**
+
+1. **The square names the wrong cause.** *(Fixed: the Voice now receives the felt mood factors in words, heaviest first, and must not invent events.)* The engine's mood was driven by taxes (−250 at 30 %) more than by the ration (−150), but the Voice spoke only of hunger while the granaries kept filling, and invented a fact ("i carri sono partiti per la città del signore"). The ministers took it as true; the Treasurer said in audience "lo sciopero è fame, non calcolo" and advised against cutting taxes. Following the council, the sovereign raised the ration and the kingdom revolted anyway. Idea: give the Voice what weighs on the people (heavy taxes, short ration, deaths, full houses), in words, so it complains about the real causes; and forbid inventing events that are not in its facts.
+2. **Council courtesy turns into a death spiral**: the Chancellor's lesson "non offrire abbassamenti senza ordine esplicito" is realistic, but nobody warned that taxes were the main cause. Maybe a counsellor of low loyalty or high honesty should still say it.
+3. **Overbuilding again**: 9 farms, 135 farm jobs for 65 adults; the Architect proposed a farm almost every month and invented a "mulino ad acqua" that is not in the catalogue. The Chancellor stopped some of them.
+4. **Time sense**: "l'inverno è vicino" in June, "alle porte" in August, although the briefing says how many months are left.
+5. **Small slips**: the Architect speaks as if it set taxes; the Treasurer asks to "buy grain" (no market yet); a no-op `set_tax 30` in a plan; a wrong sum by the Chancellor ("restano 476 oro"); the Voice said the tax changed three times (it was twice).
 
 ## Open decisions
 

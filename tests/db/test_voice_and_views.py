@@ -280,3 +280,24 @@ def test_season_story_covers_exactly_the_season(db, realm, settings):
     assert "January" in mood_line and "April" in mood_line and "December" not in mood_line
     values = mood_line.split("oldest first: ")[1].split(", ")
     assert len(values) == 4  # start of the season + its three months
+
+
+def test_voice_hears_why_the_people_feel_so(db, realm, settings):
+    """Game 1: the square blamed hunger while the taxes weighed most."""
+    _, realm_id = realm
+    from server.council import voice
+    ctx = meeting.load_context(db, realm_id, FakeClient(), settings)
+    ctx.state.tax_rate, ctx.state.ration = 30, "reduced"
+    line = voice.feelings_line(ctx)
+    assert line.startswith("- What weighs on the people, heaviest first: the taxes (crushing); the short ration (heavy).")
+    assert "What cheers them: nothing in particular." in line
+    ctx.state.tax_rate, ctx.state.ration = 5, "abundant"
+    assert voice.feelings_line(ctx).endswith("What cheers them: the generous ration (strong).")
+
+
+def test_voice_never_hears_the_reserve_bonus(db, realm, settings):
+    _, realm_id = realm
+    from server.council import voice
+    ctx = meeting.load_context(db, realm_id, FakeClient(), settings)
+    ctx.state.tax_rate, ctx.state.food = 5, 100_000  # a huge stock: reserve bonus on
+    assert "nothing in particular. What cheers them: nothing in particular." in voice.feelings_line(ctx)
