@@ -264,6 +264,29 @@ Granted, refused and granted again tax petitions, imposed a reduced ration in Ju
 2. **The people petition on the very first turn** again (taxes 10 → 7 %), when the tax is their only, slight burden.
 3. **An odd sentence of the square became a lesson** for two counsellors ("dar da mangiare a chi lavora non sfama chi non lavora").
 
+### Game 7 "Montebello", turns 1–10 (2026-11-07, Claude as sovereign; mandates, notes, debate, audiences)
+
+Three mandates, one changed at turn 6; one debate; three audiences about notes; two petitions granted. $0.085 in 69 calls, replay exact.
+
+| Turn | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Food | 1600 | 1110 | 907 | 456 | 441 | 415 | 390 | 516 | 655 | 799 | 1011 |
+| Mood (hidden) | 500 | 502 | 461 | 493 | 487 | 482 | 479 | 465 | 466 | 455 | 473 |
+
+**Mandates**: the chancellery approved all four requests and rewrote them sensibly. It kept the valid part of a mixed request and explained the cut ("ho escluso l'acquisto di grano dai mercanti, perché il regno non ha mercato"), and twice refused "build in advance" as against the role ("non ho accolto il preparare fattorie vuote in anticipo"). Counsellors quote their mandate in council ("come vuole il mio mandato"). A loosely worded mandate is read literally: "cut the ration only if the harvest is not enough" made the Treasurer ask for the reduced ration in January with 1600 in store.
+
+**Notes**: 10 in 10 turns, all used to coordinate: the Chancellor pre-negotiated with the ministers ("non proporre la festa", "tieni pronta la razione ridotta per l'autunno: allora la sosterrò"), and they confirmed. No intrigue with these moderate characters. In audiences all three told the truth about their notes, and their stories matched the table.
+
+**Chancellor**: a good arbiter. It overruled the Treasurer's ration cut with the seasonal outlook ("d'estate e d'autunno i campi rendono più del consumo, 1046 e 1133 contro 890").
+
+**Problems**
+
+1. **Runaway reply again**: at turn 4 the Treasurer's first try was empty, the second hit the 8000-token cap; the Treasurer was absent that month. Second runaway in the playtests (also game 1).
+2. **Mandates contain the orders' code names** ("set_tax", "set_ration"), which the sovereign reads on the government page.
+3. **No growth in sight**: all adults employed, the chancellery forbids building before free hands exist, a farm takes two months, births stay at 96–100 %. Ten turns: no building, population 100 → 106, mood slowly down. Projection: the second winter starts with about 1200 food against a deficit of about 470 a month, so a famine is likely by March if nothing changes.
+4. **The debate adds little when the plan has no conflict**: both ministers agreed.
+5. **Notes make the council consensual**: disagreements are settled in private before the meeting, so the sovereign sees fewer conflicts.
+
 ### Lab: famine balance (2026-11-07)
 
 The exact orders of games 1 and 2 replayed under mood variants (the base replay reproduces both games exactly). Mood month by month, from turn 2.
