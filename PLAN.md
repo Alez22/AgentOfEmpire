@@ -15,7 +15,7 @@ This file is the starting point of every work session: read it at the start and 
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (DeepSeek V4.1 Flash for all); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 159 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 161 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -60,7 +60,8 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [x] Tension: start food 1600 and start mood 500 (lab above); without orders the realm now revolts in the second winter
 - [x] Game 4 fixes: the Voice hears the direction of tax and ration changes; the Treasurer sees the farm yield of the coming seasons
 - [x] The people decide (effort, births, petitions) with a cheap model, inside limits by mood band; stored per turn, replays exact (see "The people decide" in `docs/DESIGN.md`)
-- [ ] Play a game to see the people's decisions: readable, not random, petitions that make sense
+- [x] Play a game to see the people's decisions (game 5): readable and consistent
+- [x] A granted petition decides its law: the plan's orders on the same policy are not sent, and a grant after approval links the identical order
 - [ ] Play again to check the fixes: no mood numbers in reports, no calls over ~90 s, lesson reviews applied, the square keeps a thread, rations cut only when the harvest does not cover
 - [ ] Decide on tiles and workers (overbuilding, housing dead end, idle adults)
 - [ ] Tune engine values (food, taxes, mood)
@@ -215,6 +216,26 @@ Check of the new start values and of the fixes from games 2–3. 10 turns, $0.07
 2. **The Treasurer sees only this month's harvest**: in May and June it asked to cut the ration "per accumulare per l'inverno" while summer (120 %) and autumn (130 %) were about to fill the granary. The briefing shows the season yield of this month only.
 3. The square keeps a vague rumour about grain going "per strade che noi non vediamo" (allowed as gossip, but recurring).
 4. The Architect's sums are sometimes wrong ("togliere cinque contadini per darne quattro al legno e tre alla pietra"); the Chancellor corrected it.
+
+### Game 5 "Borgoverde" (2026-11-07, Claude as sovereign; first game where the people decide)
+
+Granted, refused and granted again tax petitions, imposed a reduced ration in June, granted the ration petition. 10 turns, $0.080 in 62 calls (the people: $0.0017), no refused reply, slowest call 37 s, no mood number in 33 reports, replay exact.
+
+| Turn | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Mood (hidden) | 500 | 525 | 518 | 478 | 513 | 509 | 469 | 495 | 501 | 489 |
+| Effort % | 0 | +3 | −2 | −3 | +3 | +4 | +1 | +2 | +3 | +1 |
+| Births % | 100 | 90 | 92 | 92 | 103 | 108 | 96 | 95 | 96 | 93 |
+| Petition | taxes 10→7, granted | | taxes 7→5, refused | again, granted | | | ration back to normal, granted | | | |
+
+**What worked**: the people's choices are readable and consistent with their reasons ("the crown refused us in March, so we work less"). After a refusal effort fell and the square said "il Sovrano ci ascolta quando vuole lui"; after a grant effort rose and births recovered. The council advised on every petition and the Chancellor once left out of the plan the order the petition would carry out. The square told the petitions and the answers the next month. Every decision came from the model (never the fallback).
+
+**Problems**
+
+1. **A granted petition duplicates the plan's order**: the petition's `set_tax 7` ran first and the plan's identical one was rejected as `DUPLICATE_POLICY` (harmless noise). Granting should drop the plan's orders on the same policy.
+2. **Petitions as a mood pump**: every grant is +30 at once, also for a small burden (taxes 10 → 7 % at turn 1, with the mood neutral). The real cost is the policy itself, and once taxes reach 5 % there is nothing left to ask; to watch in a longer game.
+3. **Births stay below 100 %** in almost every month (90–96 %), even when the people were content with the crown: the model leans to caution, so growth is slower than before.
+4. Effort moves little (−3 to +4 %): visible in the numbers, subtle in play.
 
 ### Lab: famine balance (2026-11-07)
 

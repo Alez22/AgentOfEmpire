@@ -182,3 +182,35 @@ def test_sovereign_sees_the_people_and_answers_the_petition(database_url, settin
         page = html.unescape(ui.get(f"/ui/realms/{realm_id}").text)
         assert "Supplica respinta." in page and "Esaudisci" not in page
         assert ui.get(f"/realms/{realm_id}/people?turn=1").json()["answer"] == "refused"
+
+
+def test_granted_petition_keeps_the_plan_from_repeating_its_law(db, realm, settings):
+    """Game 5: the plan's set_tax was rejected as a duplicate of the petition's."""
+    _, realm_id = realm
+    petition = {"order": {"action": "set_tax", "rate": 7}, "text": "Maestà, la gabella pesa."}
+    plan = [{"proposer": "treasurer", "order": {"action": "set_tax", "rate": 7}},
+            {"proposer": "architect", "order": {"action": "build", "building": "farm"}}]
+    client = FakeClient({"people": [_people_reply(0, 100, petition)],
+                         "chancellor": [json.dumps({"summary": "Maestà.", "plan": plan})]})
+    meeting.hold_meeting(db, realm_id, client, settings)
+    people.answer_petition(db, realm_id, "granted")
+    meeting.approve_plan(db, realm_id, excluded=[])
+    assert [o["raw"]["action"] for o in list_orders(db, realm_id, 1)] == ["set_tax", "build"]
+
+
+def test_petition_granted_after_the_plan_links_the_same_order(db, realm, settings):
+    _, realm_id = realm
+    petition = {"order": {"action": "set_tax", "rate": 7}, "text": "Maestà, la gabella pesa."}
+    plan = [{"proposer": "treasurer", "order": {"action": "set_tax", "rate": 7}}]
+    client = FakeClient({"people": [_people_reply(0, 100, petition)],
+                         "chancellor": [json.dumps({"summary": "Maestà.", "plan": plan})]})
+    meeting.hold_meeting(db, realm_id, client, settings)
+    meeting.approve_plan(db, realm_id, excluded=[])
+    people.answer_petition(db, realm_id, "granted")
+    orders = list_orders(db, realm_id, 1)
+    assert len(orders) == 1
+    linked = db.execute(
+        "SELECT a.order_id FROM petition_answers a JOIN people_decisions d ON d.id = a.decision_id"
+        " WHERE d.realm_id = %s", (realm_id,),
+    ).fetchone()[0]
+    assert linked == orders[0]["id"]

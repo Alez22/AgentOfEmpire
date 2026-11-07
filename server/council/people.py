@@ -213,11 +213,24 @@ def answer_petition(conn: psycopg.Connection, realm_id: int, answer: str) -> Non
     if answered is not None:
         raise PetitionError("the petition was already answered")
     with conn.transaction():
-        order_id = games.submit_order(conn, realm_id, petition, priority=-1) if answer == "granted" else None
+        order_id = None
+        if answer == "granted":
+            # Plan already approved with the very same order: link it, no duplicate.
+            order_id = _same_order_this_turn(conn, realm_id, ctx.turn, petition)
+            if order_id is None:
+                order_id = games.submit_order(conn, realm_id, petition, priority=-1)
         conn.execute(
             "INSERT INTO petition_answers (decision_id, answer, order_id) VALUES (%s, %s, %s)",
             (decision_id, answer, order_id),
         )
+
+
+def _same_order_this_turn(conn: psycopg.Connection, realm_id: int, turn: int, order: dict) -> int | None:
+    row = conn.execute(
+        "SELECT id FROM orders WHERE realm_id = %s AND turn = %s AND raw = %s ORDER BY id LIMIT 1",
+        (realm_id, turn, Jsonb(order)),
+    ).fetchone()
+    return row[0] if row else None
 
 
 def decision_for_sovereign(conn: psycopg.Connection, realm_id: int, turn: int) -> dict | None:

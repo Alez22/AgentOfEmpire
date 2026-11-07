@@ -778,6 +778,17 @@ def council_state(conn: psycopg.Connection, realm_id: int, settings: CouncilSett
     )
 
 
+def _granted_petition_action(conn: psycopg.Connection, realm_id: int, turn: int) -> str | None:
+    """@brief The action ("set_tax", ...) of this turn's granted petition, if any."""
+    row = conn.execute(
+        "SELECT d.petition->>'action' FROM people_decisions d"
+        " JOIN petition_answers a ON a.decision_id = d.id"
+        " WHERE d.realm_id = %s AND d.turn = %s AND a.answer = 'granted'",
+        (realm_id, turn),
+    ).fetchone()
+    return row[0] if row else None
+
+
 def approve_plan(conn: psycopg.Connection, realm_id: int, excluded: list[int]) -> list[int]:
     """@brief Turn the latest plan into orders of the turn, each recorded with
     the minister who proposed it. Plan order becomes the order priority.
@@ -800,10 +811,13 @@ def approve_plan(conn: psycopg.Connection, realm_id: int, excluded: list[int]) -
         out_of_range = [index for index in excluded if not 0 <= index < len(plan)]
         if out_of_range:
             raise ValueError(f"plan has {len(plan)} orders, cannot exclude {out_of_range}")
+        granted = _granted_petition_action(conn, realm_id, ctx.turn)
         order_ids = []
         for index, item in enumerate(plan):
             if index in excluded:
                 continue
+            if item["order"]["action"] == granted:
+                continue  # a granted petition already decides this law (game 5)
             proposer = ctx.actors[item["proposer"]]
             order_ids.append(
                 games.submit_order(conn, realm_id, item["order"], priority=index, actor_id=proposer.id)
