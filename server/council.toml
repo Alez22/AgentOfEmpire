@@ -1,0 +1,46 @@
+# Council settings (server side). Model ids checked against the OpenRouter
+# model list on 2026-11-06. Changing a model needs no code change.
+
+# "fake" = deterministic answers, no network, no cost (tests, free play).
+# "openrouter" = real models; needs OPENROUTER_API_KEY in .env.
+provider = "fake"
+base_url = "https://openrouter.ai/api/v1"
+language = "Italian"  # language of every text the sovereign reads
+
+budget_usd_per_game = 1.0
+timeout_seconds = 60
+max_directives_per_turn = 2
+history_turns = 6  # past turns of own proposals (and what followed) in each briefing
+max_lessons = 10  # active lessons per council member; no automatic forgetting
+max_audience_messages_per_turn = 6  # sovereign lines per council member per turn
+
+# Start cheap: DeepSeek Flash for every role. Planned tiers, once the
+# prompts are tuned: chancellor "deepseek/deepseek-v4-pro", ministers "z-ai/glm-5.3".
+[models]
+chancellor = "deepseek/deepseek-v4.1-flash"
+treasurer = "deepseek/deepseek-v4.1-flash"
+architect = "deepseek/deepseek-v4.1-flash"
+# Economy tier in the design doc; same cheap model for now, no reasoning.
+square_voice = "deepseek/deepseek-v4.1-flash"
+
+# Reasoning effort per role ("none", "low", "high", "max"); a role missing
+# here uses the model default (high for DeepSeek V4.1 Flash). Reasoning is
+# billed as output tokens and is most of the time and cost of a call.
+[reasoning_effort]
+chancellor = "low"
+treasurer = "low"
+architect = "low"
+square_voice = "none"
+
+# USD per million tokens, used only when a response carries no cost field.
+[prices.'deepseek/deepseek-v4.1-flash']
+input = 0.051
+output = 0.567
+
+[prices.'deepseek/deepseek-v4-pro']
+input = 0.75
+output = 1.50
+
+[prices.'z-ai/glm-5.3']
+input = 0.07
+output = 1.40

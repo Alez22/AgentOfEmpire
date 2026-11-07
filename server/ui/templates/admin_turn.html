@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Turno {{ turn }} · amministrazione{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Amministrazione · partita {{ game.id }} · regno {{ realm_id }}</div>
+  <h1>Turno {{ turn }} · {{ labels.month_name(turn) }}</h1>
+  <p class="hint"><a href="/admin/games/{{ game.id }}">← Partita</a></p>
+  <nav class="tabs" aria-label="Turni">
+    {% for t in turns %}<a href="/admin/realms/{{ realm_id }}/turns/{{ t }}" {% if t == turn %}aria-current="page"{% endif %}>{{ t }}</a>{% endfor %}
+  </nav>
+</section>
+
+<section class="card">
+  <h2>Messaggi del consiglio</h2>
+  {% for m in messages %}
+  <article class="card">
+    <div class="kicker">giro {{ m.round }} · {{ m.kind }} · {{ labels.ROLES.get(m.speaker, labels.SOVEREIGN).name }}</div>
+    <p>{{ m.content }}</p>
+    <details><summary>Dati</summary><pre class="code">{{ m.payload_json }}</pre></details>
+  </article>
+  {% else %}
+  <p class="hint">Nessun messaggio in questo turno.</p>
+  {% endfor %}
+</section>
+
+<section class="card">
+  <h2>Ordini</h2>
+  {% for o in orders %}
+  <p>{{ labels.order_label(o.raw) }} —
+    {% if o.accepted is none %}in attesa{% elif o.accepted %}eseguito{% else %}rifiutato ({{ o.rejection_code }}){% endif %}
+    {% if o.issued_by_actor_id %}· dal consiglio{% else %}· dal sovrano{% endif %}</p>
+  {% else %}
+  <p class="hint">Nessun ordine.</p>
+  {% endfor %}
+</section>
+
+<section class="card">
+  <h2>Chiamate ai modelli</h2>
+  {% for c in calls %}
+  <article class="card {% if c.status != 'ok' %}muted{% endif %}">
+    <div class="kicker">#{{ c.id }} · {{ labels.ROLES.get(c.role, {}).get("name", c.role) }} · {{ c.status }}</div>
+    <p class="hint">{{ c.model }} · {{ c.input_tokens }} → {{ c.output_tokens }} token · ${{ "%.6f"|format(c.cost_usd) }} · {{ (c.latency_ms / 1000)|round(1) }} s</p>
+    {% if c.error %}<div class="banner error">{{ c.error }}</div>{% endif %}
+    {% if c.reply_excerpt %}<details><summary>Risposta rifiutata</summary><pre class="code">{{ c.reply_excerpt }}</pre></details>{% endif %}
+    {% if c.prompt_system %}<details><summary>Prompt di sistema</summary><pre class="code">{{ c.prompt_system }}</pre></details>{% endif %}
+    {% if c.prompt_user %}<details><summary>Briefing inviato</summary><pre class="code">{{ c.prompt_user }}</pre></details>{% endif %}
+  </article>
+  {% else %}
+  <p class="hint">Nessuna chiamata in questo turno.</p>
+  {% endfor %}
+</section>
+{% endblock %}

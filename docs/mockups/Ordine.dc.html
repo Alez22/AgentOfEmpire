@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Un ordine, quattro interpretazioni</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#D4AF5A}a:hover{color:#E8C778}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #14120E; color: #ECE5D6; font-family: Inter, system-ui, sans-serif; padding: 32px 40px; display: flex; flex-direction: column; gap: 22px; overflow: hidden">
+
+  <header style="display: flex; justify-content: space-between; align-items: flex-end; gap: 32px">
+    <div>
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #A8A090">Il sovrano ha proclamato</div>
+      <p style="margin: 8px 0 0; font-family: 'Cormorant Garamond', serif; font-size: 40px; font-weight: 600; line-height: 1.1; color: #F2EBDD">«Preparati all'inverno, ma non lasciare scoperto il guado.»</p>
+    </div>
+    <div style="flex: none; display: flex; gap: 8px">
+      <button style="height: 44px; padding: 0 16px; border-radius: 8px; border: 1px solid #3A352B; background: transparent; color: #ECE5D6; font: 500 13px Inter, sans-serif">Chiedi chiarimenti</button>
+      <button style="height: 44px; padding: 0 18px; border-radius: 8px; border: none; background: #D4AF5A; color: #1A1813; font: 600 13px Inter, sans-serif">Approva i piani</button>
+    </div>
+  </header>
+
+  <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 10px; background: #3A1E14; border: 1px solid #7A3A26">
+    <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2 L19 18 H1 Z M10 8 V12 M10 15 V15.5" fill="none" stroke="#F5B98A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    <span style="flex: 1; font-size: 14px; color: #FFE1D4">I piani di Bertoldo e Ansaldo chiedono insieme 540 legno. Ne hai 410. Uno dei due dovrà cedere.</span>
+    <button style="height: 36px; padding: 0 14px; border-radius: 6px; border: 1px solid #F5B98A; background: transparent; color: #FFE1D4; font: 600 12px Inter, sans-serif">Lascia decidere al consiglio</button>
+  </div>
+
+  <section style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; flex: 1; min-height: 0">
+    <sc-for list="{{plans}}" as="p" hint-placeholder-count="4">
+      <article style="box-sizing: border-box; padding: 18px; border-radius: 12px; background: #1C1A14; border: 1px solid {{p.border}}; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; gap: 10px; align-items: center">
+          <div style="width: 36px; height: 36px; border-radius: 50%; background: {{p.color}}; color: #1A1813; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700">{{p.initial}}</div>
+          <div style="flex: 1">
+            <div style="font-size: 14px; font-weight: 600; color: {{p.color}}">{{p.name}}</div>
+            <div style="font-size: 11px; color: #A8A090">{{p.role}}</div>
+          </div>
+        </div>
+        <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #A8A090">Come l'ho capito</div>
+        <p style="margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 18px; line-height: 1.3; color: #F2EBDD">{{p.reading}}</p>
+        <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #A8A090">Piano</div>
+        <ol style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; line-height: 1.4; color: #DDD5C4">
+          <sc-for list="{{p.steps}}" as="s" hint-placeholder-count="3">
+            <li>{{s}}</li>
+          </sc-for>
+        </ol>
+        <div style="margin-top: auto; padding-top: 12px; border-top: 1px solid #2E2A22; display: flex; flex-direction: column; gap: 6px">
+          <div style="display: flex; justify-content: space-between; font-size: 12px"><span style="color: #A8A090">Regole passate a Jev</span><span style="font-weight: 600">{{p.rules}}</span></div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px"><span style="color: #A8A090">Costo</span><span style="font-weight: 600">{{p.cost}}</span></div>
+          <div style="display: flex; gap: 6px; margin-top: 6px">
+            <button style="flex: 1; height: 34px; border-radius: 6px; border: 1px solid #3A352B; background: transparent; color: #ECE5D6; font: 500 12px Inter, sans-serif">Correggi</button>
+            <button style="flex: 1; height: 34px; border-radius: 6px; border: 1px solid #3A352B; background: transparent; color: #ECE5D6; font: 500 12px Inter, sans-serif">Annulla</button>
+          </div>
+        </div>
+      </article>
+    </sc-for>
+  </section>
+
+  <section style="display: flex; gap: 12px; align-items: stretch">
+    <sc-for list="{{layers}}" as="l" hint-placeholder-count="3">
+      <div style="flex: 1; box-sizing: border-box; padding: 14px 16px; border-radius: 10px; background: #1A1813; border: 1px solid #2E2A22; display: flex; gap: 14px; align-items: center">
+        <div style="flex: none; width: 40px; height: 40px; border-radius: 8px; background: #221F18; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 700; color: #D4AF5A">{{l.num}}</div>
+        <div style="flex: 1">
+          <div style="display: flex; justify-content: space-between"><span style="font-size: 13px; font-weight: 600">{{l.title}}</span><span style="font-size: 11px; color: #A8A090">{{l.pace}}</span></div>
+          <div style="font-size: 12px; color: #B8B09F; margin-top: 2px">{{l.detail}}</div>
+        </div>
+      </div>
+    </sc-for>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      plans: [
+        { initial: 'A', name: 'Ansaldo', role: 'Tesoriere', color: '#8FC07A', border: '#2E2A22', reading: 'Inverno significa scorte. Il guado è affare di Bertoldo.', steps: ['Due fattorie sul lato ovest', '4 villici dalla cava ai campi', 'Razionare il grano da dicembre'], rules: '5', cost: '240 legno' },
+        { initial: 'B', name: 'Bertoldo', role: 'Maresciallo', color: '#E07A4F', border: '#7A3A26', reading: '"Non lasciare scoperto" vuol dire presidio pieno, per tutto l\'inverno.', steps: ['Addestrare 40 arcieri', 'Torre di guardia sul guado', 'Ronde notturne lungo il fiume'], rules: '7', cost: '300 legno · 150 oro' },
+        { initial: 'G', name: 'Gisella', role: 'Architetta', color: '#7DB3E0', border: '#2E2A22', reading: 'Prima riparo e mura, poi tutto il resto.', steps: ['Palizzata nord, metà lunghezza', 'Coprire il granaio', 'Rinviare la caserma'], rules: '3', cost: '200 legno · 120 pietra' },
+        { initial: 'I', name: 'Ilaria', role: 'Ambasciatrice', color: '#C3A2E0', border: '#2E2A22', reading: 'Il sovrano non ha detto nulla su Morvan. Tratto, ma non chiudo.', steps: ['Offerta per 400 grano', 'Niente passaggio sul fiume', 'Riferire prima di firmare'], rules: '1', cost: '120 oro' }
+      ],
+      layers: [
+        { num: '1', title: 'Motore di gioco', pace: 'ogni tick', detail: 'Esegue i comandi validi, muove le unità, raccoglie' },
+        { num: '2', title: 'Jev · decisioni rapide', pace: 'ogni 1–2 s', detail: '16 nuove regole da questo ordine, con soglia di confidenza' },
+        { num: '3', title: 'Ministri · LLM via OpenRouter', pace: 'a ogni consiglio', detail: 'Rivedono i piani e gestiscono i casi incerti' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

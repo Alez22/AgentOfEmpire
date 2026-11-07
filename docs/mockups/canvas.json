@@ -1,0 +1,60 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Consiglio.dc.html": {
+      "h": 900,
+      "title": "2 · Sala del consiglio",
+      "w": 1440,
+      "x": 1730,
+      "y": 48
+    },
+    "Main.dc.html": {
+      "h": 900,
+      "title": "1 · Il regno in tempo reale",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Ordine.dc.html": {
+      "h": 900,
+      "title": "3 · Un ordine, quattro interpretazioni",
+      "w": 1440,
+      "x": 0,
+      "y": 1020
+    },
+    "Spie.dc.html": {
+      "h": 900,
+      "title": "4 · Intercettazioni e allarmi",
+      "w": 1440,
+      "x": 1520,
+      "y": 1020
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-11-06T10:00:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas"
+  },
+  "notes": {
+    "title": {
+      "kind": "title1",
+      "maxW": 2960,
+      "text": "Il Consiglio del Regno — UX",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Consiglio.dc.html",
+    "Ordine.dc.html",
+    "Spie.dc.html"
+  ],
+  "pages": [],
+  "title": "Il Consiglio del Regno"
+}

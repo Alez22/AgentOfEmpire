@@ -1,0 +1,11 @@
+# Copy to compose.override.yaml (ignored by git) and set this PC's Tailscale
+# address (tailscale ip -4). Compose loads the override automatically and
+# adds this binding to the one in compose.yaml.
+# No authentication yet: do not add other people to the Tailscale network
+# before accounts exist.
+# If Docker starts before Tailscale, this binding fails: run
+# "docker compose up -d server" once Tailscale is up.
+services:
+  server:
+    ports:
+      - "<tailscale-ip>:8000:8000"

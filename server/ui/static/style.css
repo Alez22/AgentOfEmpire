@@ -1,0 +1,133 @@
+/* AgentOfEmpire - phone-first single column, palette of the UX mockups. */
+:root {
+  --ground: #14120E;
+  --card: #1C1A14;
+  --card-raised: #221F18;
+  --line: #2E2A22;
+  --line-strong: #3A352B;
+  --text: #ECE5D6;
+  --text-soft: #DDD5C4;
+  --muted: #A8A090;      /* 7:1 on --ground */
+  --gold: #D4AF5A;
+  --gold-strong: #E8C778;
+  --danger: #E8907A;     /* 6:1 on --card */
+  --ok: #9CCB8A;
+  --radius: 12px;
+  --display: "Cormorant Garamond", Georgia, serif;
+  --body: Inter, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--text);
+  font: 400 16px/1.5 var(--body);
+}
+
+a { color: var(--gold); }
+a:hover { color: var(--gold-strong); }
+
+.page { max-width: 680px; margin: 0 auto; padding: 16px 16px 96px; display: flex; flex-direction: column; gap: 16px; }
+
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.brand { font: 700 22px/1 var(--display); color: var(--text); text-decoration: none; letter-spacing: 0.02em; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tabs a { min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; color: var(--muted); text-decoration: none; font-weight: 500; font-size: 14px; }
+.tabs a[aria-current="page"] { color: var(--text); background: var(--card-raised); }
+
+.kicker { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1, h2, h3 { font-family: var(--display); font-weight: 700; line-height: 1.1; margin: 0; }
+h1 { font-size: 34px; }
+h2 { font-size: 24px; }
+h3 { font-size: 20px; }
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.card.muted { opacity: 0.75; }
+
+.banner { border-radius: var(--radius); padding: 12px 14px; font-size: 14px; }
+.banner.error { background: #3A1F19; color: #F6CFC5; border: 1px solid #5A2E25; }
+.banner.info { background: var(--card-raised); color: var(--text-soft); border: 1px solid var(--line-strong); }
+.banner.end { background: #2A2416; color: var(--gold-strong); border: 1px solid #4A3E22; font-family: var(--display); font-size: 22px; }
+
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.stat { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+.stat .label { font-size: 12px; color: var(--muted); }
+.stat .value { font-size: 20px; font-weight: 600; }
+.stat .note { font-size: 12px; color: var(--muted); }
+
+.events { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; color: var(--text-soft); font-size: 15px; }
+
+.speaker { display: flex; align-items: center; gap: 10px; }
+.avatar { width: 40px; height: 40px; flex: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #1A1813; font: 700 22px/1 var(--display); }
+.speaker .name { font: 700 20px/1.1 var(--display); }
+.speaker .meta { font-size: 12px; color: var(--muted); }
+.report { margin: 0; font: 500 19px/1.35 var(--display); color: #F2EBDD; }
+.directive { margin: 0; font-style: italic; color: var(--text-soft); }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.chip { font-size: 13px; padding: 4px 10px; border-radius: 999px; background: var(--card-raised); border: 1px solid var(--line-strong); color: var(--text-soft); }
+.chip.discarded { color: var(--muted); text-decoration: line-through; }
+
+.plan { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.plan label { display: flex; gap: 12px; align-items: flex-start; min-height: 44px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line-strong); background: var(--card-raised); cursor: pointer; }
+.plan input[type="checkbox"] { width: 22px; height: 22px; margin: 2px 0 0; accent-color: var(--gold); flex: none; }
+.plan .what { font-weight: 600; }
+.plan .who { font-size: 13px; color: var(--muted); }
+.plan .verdict-ok { font-size: 13px; color: var(--ok); }
+.plan .verdict-no { font-size: 13px; color: var(--danger); }
+
+details { border-top: 1px solid var(--line); padding-top: 8px; }
+summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--muted); font-size: 14px; }
+
+form { margin: 0; display: flex; flex-direction: column; gap: 10px; }
+label.field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; color: var(--muted); }
+input[type="text"], textarea {
+  width: 100%; min-height: 44px; padding: 10px 12px; border-radius: 10px;
+  border: 1px solid var(--line-strong); background: var(--ground); color: var(--text);
+  font: 400 16px/1.4 var(--body);  /* 16px avoids the zoom on iPhone */
+}
+textarea { min-height: 88px; resize: vertical; }
+
+button {
+  min-height: 48px; padding: 0 18px; border-radius: 10px; border: 1px solid var(--line-strong);
+  background: transparent; color: var(--text); font: 600 16px var(--body); cursor: pointer;
+}
+button.primary { background: var(--gold); border-color: var(--gold); color: #1A1813; }
+button.primary:hover { background: var(--gold-strong); }
+button:disabled { opacity: 0.5; cursor: default; }
+
+.waiting { display: flex; align-items: center; gap: 12px; color: var(--text-soft); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--gold); animation: pulse 1.2s ease-in-out infinite; flex: none; }
+@keyframes pulse { 0%, 100% { opacity: 0.25; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .dot { animation: none; } }
+
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+
+table.numbers { width: 100%; border-collapse: collapse; font-size: 15px; }
+table.numbers th { text-align: left; font-weight: 400; color: var(--muted); padding: 6px 0; }
+table.numbers td { text-align: right; font-weight: 600; padding: 6px 0; font-variant-numeric: tabular-nums; }
+table.numbers tr + tr { border-top: 1px solid var(--line); }
+
+.game-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.game-list a { display: flex; justify-content: space-between; gap: 12px; align-items: center; min-height: 56px; padding: 12px 14px; border-radius: 10px; background: var(--card); border: 1px solid var(--line); color: var(--text); text-decoration: none; }
+.game-list .sub { font-size: 13px; color: var(--muted); }
+
+.audience-links { display: flex; flex-direction: column; gap: 8px; }
+.audience-links a { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 8px 12px; border-radius: 10px; background: var(--card-raised); border: 1px solid var(--line-strong); color: var(--text); text-decoration: none; font: 700 20px/1.1 var(--display); }
+
+.dialogue { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.turn-mark { align-self: center; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); padding-top: 4px; }
+.bubble { max-width: 88%; padding: 10px 14px; border-radius: 14px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.bubble.mine { align-self: flex-end; background: #2A2416; border: 1px solid #4A3E22; color: var(--text); border-bottom-right-radius: 4px; }
+.bubble.theirs { align-self: flex-start; background: var(--card-raised); border: 1px solid var(--line-strong); border-left: 3px solid var(--gold); color: #F2EBDD; font: 500 18px/1.4 var(--display); border-bottom-left-radius: 4px; }
+.bubble .who { display: block; font: 600 12px/1.2 var(--body); letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 4px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+.card.voice { background: #1F1B14; border-color: #3A3226; border-left: 3px solid #C9A27E; }
+.card.voice .report { font-style: italic; }
+
+pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(--ground); border: 1px solid var(--line); color: var(--text-soft); font: 12px/1.5 ui-monospace, "SFMono-Regular", Menlo, monospace; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 480px; overflow: auto; }

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ realm.name }} · cronaca{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Partita {{ game.id }}</div>
+  <h1>Cronaca di {{ realm.name }}</h1>
+</section>
+{% for month in months %}
+<section class="card">
+  <h2>Turno {{ month.turn }} · {{ labels.month_name(month.turn) }}</h2>
+  {% if month.events %}
+  <ul class="events">
+    {% for e in month.events %}<li>{{ labels.event_label(e.kind, e.data) }}</li>{% endfor %}
+  </ul>
+  {% else %}
+  <p class="hint">Nessun evento.</p>
+  {% endif %}
+</section>
+{% else %}
+<p class="hint">Non è ancora passato nessun mese.</p>
+{% endfor %}
+{% endblock %}

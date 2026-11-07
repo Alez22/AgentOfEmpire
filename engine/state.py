@@ -1,0 +1,104 @@
+"""@brief Game state of one city and the events produced by a turn.
+
+Every number is an integer so that the same state + orders always give
+the same result (deterministic replay). Fractions of people are kept in
+accumulators measured in thousandths of a person.
+"""
+
+from dataclasses import dataclass, field
+
+from engine.config import Config
+
+RATIONS = ("reduced", "normal", "abundant")
+UNREST_LEVELS = ("calm", "protests", "strike", "revolt")
+SECTORS = ("food", "wood", "stone")
+
+
+@dataclass
+class Building:
+    kind: str
+    turns_left: int  # 0 = active, > 0 = still under construction
+
+
+@dataclass
+class Workers:
+    food: int
+    wood: int
+    stone: int
+
+    def total(self) -> int:
+        return self.food + self.wood + self.stone
+
+
+@dataclass
+class Event:
+    kind: str
+    data: dict = field(default_factory=dict)
+
+
+@dataclass
+class GameState:
+    turn: int
+    rng_seed: int  # stored for replay; no random rule uses it yet
+    food: int
+    wood: int
+    stone: int
+    gold: int
+    children: int
+    adults: int
+    elders: int
+    birth_acc: int  # thousandths of a person, 0..999
+    death_acc: list[int]  # [children, adults, elders]
+    aging_acc: list[int]  # [children -> adults, adults -> elders]
+    workers: Workers
+    buildings: list[Building]
+    free_tiles: int
+    tax_rate: int
+    ration: str
+    mood: int  # per mille, 0..1000
+    low_mood_turns: int
+    unrest: str
+    last_feast_turn: int  # 0 = never
+    feast_gold_this_turn: int = 0  # set by hold_feast, consumed by the mood step
+    game_over: str | None = None  # reason, or None while the game runs
+
+    def population(self) -> int:
+        return self.children + self.adults + self.elders
+
+
+def new_game(config: Config, seed: int) -> GameState:
+    """@brief Build the starting state from the [start] section.
+    @param config Loaded balance values.
+    @param seed Seed saved in the state for future random rules.
+    @return Fresh state at turn 1 (January).
+    """
+    start = config.start
+    buildings = (
+        [Building("farm", 0) for _ in range(start.farms)]
+        + [Building("sawmill", 0) for _ in range(start.sawmills)]
+        + [Building("quarry", 0) for _ in range(start.quarries)]
+        + [Building("house", 0) for _ in range(start.houses)]
+    )
+    return GameState(
+        turn=1,
+        rng_seed=seed,
+        food=start.food,
+        wood=start.wood,
+        stone=start.stone,
+        gold=start.gold,
+        children=start.children,
+        adults=start.adults,
+        elders=start.elders,
+        birth_acc=0,
+        death_acc=[0, 0, 0],
+        aging_acc=[0, 0],
+        workers=Workers(start.workers_food, start.workers_wood, start.workers_stone),
+        buildings=buildings,
+        free_tiles=start.free_tiles,
+        tax_rate=start.tax_rate,
+        ration=start.ration,
+        mood=start.mood,
+        low_mood_turns=0,
+        unrest="calm",
+        last_feast_turn=0,
+    )

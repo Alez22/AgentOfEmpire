@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Amministrazione · AgentOfEmpire{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Amministrazione · sola lettura</div>
+  <h1>Tutte le partite</h1>
+</section>
+<section class="card">
+  {% if games %}
+  <ul class="game-list">
+    {% for g in games %}
+    <li>
+      <a href="/admin/games/{{ g.id }}">
+        <span><strong>Partita {{ g.id }}</strong> <span class="sub">· {{ g.realms }}</span></span>
+        <span class="sub">
+          {% if g.open_turn %}turno {{ g.open_turn }}{% else %}{{ g.status }}{% endif %}
+          · {{ g.calls }} chiamate · ${{ "%.4f"|format(g.spent_usd) }}
+        </span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="hint">Nessuna partita.</p>
+  {% endif %}
+</section>
+{% endblock %}

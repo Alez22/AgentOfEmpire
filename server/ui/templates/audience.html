@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Udienza privata · {{ who.name }}{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Udienza privata</div>
+  <h1>{{ who.name }}</h1>
+  <p class="hint">Nessun altro sente cosa vi dite: gli altri consiglieri sanno solo che l'udienza c'è stata. Qui non si danno ordini: quelli passano dal consiglio.</p>
+</section>
+
+{% if error %}<div class="banner error" role="alert">{{ error }}</div>{% endif %}
+
+{% include "_audience.html" %}
+
+<p><a href="/ui/realms/{{ realm_id }}">← Torna al turno</a></p>
+{% endblock %}

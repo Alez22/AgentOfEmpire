@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Lezioni · amministrazione{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Amministrazione · partita {{ game.id }} · regno {{ realm_id }}</div>
+  <h1>Lezioni dei consiglieri</h1>
+  <p class="hint">Segrete per il sovrano e per gli altri consiglieri. <a href="/admin/games/{{ game.id }}">← Partita</a></p>
+</section>
+{% for role, lessons in by_role|dictsort %}
+<section class="card">
+  <h2>{{ labels.ROLES.get(role, {}).get("name", role) }}</h2>
+  <ul class="events">
+    {% for l in lessons %}
+    <li {% if l.status != "active" %}class="hint"{% endif %}>
+      <strong>#{{ l.id }} [{{ l.status }}]</strong> {{ l.text }}
+      <br><span class="hint">scritta al turno {{ l.origin_turn }}
+      {% if l.confirmations %}· confermata {{ l.confirmations }} volte, l'ultima al turno {{ l.last_confirmed_turn }}{% endif %}
+      {% if l.previous_lesson_id %}· corregge la #{{ l.previous_lesson_id }}{% endif %}
+      {% if l.status != "active" %}· {{ l.status }} al turno {{ l.status_turn }}: {{ l.status_reason }}{% endif %}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% else %}
+<p class="hint">Nessuna lezione ancora.</p>
+{% endfor %}
+{% endblock %}

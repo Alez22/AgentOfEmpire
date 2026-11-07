@@ -1,0 +1,43 @@
+{# Dialogue panel. While the council member answers it reloads itself every
+   2 s (HTMX); the first panel rendered without "running" stops the polling. #}
+<section id="audience" class="card"
+  {% if running %}hx-get="/ui/realms/{{ realm_id }}/audience/{{ role }}/panel" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+
+  {% if job_error %}<div class="banner error" role="alert">Si è interrotto qualcosa: {{ job_error }}</div>{% endif %}
+
+  {% if lines %}
+  <ol class="dialogue">
+    {% for line in lines %}
+      {% if loop.first or line.turn != loop.previtem.turn %}
+      <li class="turn-mark">Turno {{ line.turn }} · {{ labels.month_name(line.turn) }}</li>
+      {% endif %}
+      {% if line.speaker == "sovereign" %}
+      <li class="bubble mine"><span class="sr-only">Tu: </span>{{ line.content }}</li>
+      {% else %}
+      <li class="bubble theirs" style="border-left-color: {{ who.color }}"><span class="who" style="color: {{ who.color }}">{{ who.name }}</span>{{ line.content }}</li>
+      {% endif %}
+    {% endfor %}
+  </ol>
+  {% else %}
+  <p class="hint">Non avete ancora parlato in privato.</p>
+  {% endif %}
+
+  {% if running %}
+    <div class="waiting" role="status"><span class="dot" aria-hidden="true"></span>{{ who.name }} riflette…</div>
+  {% elif unanswered %}
+    <p class="hint">Non ha risposto. Risponderà insieme alla tua prossima battuta.</p>
+  {% endif %}
+
+  {% if not open_turn %}
+    <p class="hint">La partita è finita.</p>
+  {% elif lines_left > 0 %}
+  <form method="post" action="/ui/realms/{{ realm_id }}/audience/{{ role }}">
+    <label class="field">Parla con {{ who.name }} ({{ lines_left }} {% if lines_left == 1 %}battuta rimasta{% else %}battute rimaste{% endif %} questo mese)
+      <textarea name="text" maxlength="500" required {% if running %}disabled{% endif %}></textarea>
+    </label>
+    <button class="primary" type="submit" {% if running %}disabled{% endif %}>Invia</button>
+  </form>
+  {% else %}
+    <p class="hint">Per questo mese avete parlato abbastanza.</p>
+  {% endif %}
+</section>

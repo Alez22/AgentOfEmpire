@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Partita {{ game.id }} · amministrazione{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Amministrazione · partita {{ game.id }} · seed {{ game.seed }} · motore {{ game.engine_version }}</div>
+  <h1>Partita {{ game.id }}</h1>
+  <p class="hint">Stato: {{ game.status }}{% if game.open_turn %}, turno aperto {{ game.open_turn }}{% endif %}. <a href="/admin">← Tutte le partite</a></p>
+</section>
+
+<section class="card">
+  <h2>Replay</h2>
+  {% if replay %}
+    {% if replay.ok %}
+    <div class="banner info" role="status">Il replay coincide con tutti gli snapshot salvati.</div>
+    {% else %}
+    <div class="banner error" role="alert">Il regno {{ replay.mismatch.realm_id }} non coincide al turno {{ replay.mismatch.turn }}.</div>
+    <details><summary>Salvato</summary><pre class="code">{{ replay.mismatch.stored }}</pre></details>
+    <details><summary>Rigiocato</summary><pre class="code">{{ replay.mismatch.replayed }}</pre></details>
+    {% endif %}
+  {% endif %}
+  <form method="post" action="/admin/games/{{ game.id }}/replay">
+    <button type="submit">Controlla il replay</button>
+  </form>
+  <p class="hint">Rigioca la partita dagli ordini salvati. Non scrive nulla.</p>
+</section>
+
+<section class="card">
+  <h2>Spesa per consigliere</h2>
+  {% if spend %}
+  <table class="numbers">
+    {% for s in spend %}
+    <tr><th>{{ labels.ROLES.get(s.role, {}).get("name", s.role) }}</th>
+        <td>{{ s.calls }} chiamate{% if s.failed %} ({{ s.failed }} non riuscite){% endif %} · ${{ "%.4f"|format(s.usd) }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="hint">Nessuna chiamata ai modelli.</p>
+  {% endif %}
+</section>
+
+{% for realm in realms %}
+<section class="card">
+  <h2>{{ realm.name }} · turno {{ realm.turn }}</h2>
+  <table class="numbers">
+    <tr><th>Umore (nascosto al sovrano)</th><td>{{ realm.mood }} / 1000</td></tr>
+  </table>
+  <p>
+    <a href="/admin/realms/{{ realm.id }}/turns/{{ realm.turn }}">Turno da dentro</a> ·
+    <a href="/admin/realms/{{ realm.id }}/lessons">Lezioni</a> ·
+    <a href="/admin/realms/{{ realm.id }}/audiences">Udienze</a> ·
+    <a href="/ui/realms/{{ realm.id }}">Vista del sovrano</a>
+  </p>
+  <details><summary>Stato completo</summary><pre class="code">{{ realm.state_json }}</pre></details>
+</section>
+{% endfor %}
+{% endblock %}

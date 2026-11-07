@@ -1,0 +1,126 @@
+{# Council panel. While a round runs it reloads itself every 2 s (HTMX);
+   the first panel rendered without "running" stops the polling. #}
+{% macro speaker_block(m) %}
+  {% set who = labels.ROLES.get(m.speaker, labels.SOVEREIGN) %}
+  <div class="speaker">
+    <div class="avatar" style="background: {{ who.color }}" aria-hidden="true">{{ who.initial }}</div>
+    <div>
+      <div class="name">{{ who.name }}</div>
+      {% if m.payload.absent %}<div class="meta">assente</div>{% endif %}
+    </div>
+  </div>
+{% endmacro %}
+
+{% macro message_card(m) %}
+  {% if m.kind == "directive" %}
+  <article class="card">
+    {{ speaker_block(m) }}
+    <p class="directive">«{{ m.content }}»</p>
+  </article>
+  {% elif m.kind == "report" %}
+  <article class="card {% if m.payload.absent %}muted{% endif %}" style="border-top: 3px solid {{ labels.ROLES.get(m.speaker, labels.SOVEREIGN).color }}">
+    {{ speaker_block(m) }}
+    <p class="report">{{ m.content }}</p>
+    {% if m.payload.proposals %}
+    <ul class="chips" aria-label="Proposte">
+      {% for o in m.payload.proposals %}<li class="chip">{{ labels.order_label(o) }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    {% if m.payload.discarded %}
+    <ul class="chips" aria-label="Proposte scartate">
+      {% for d in m.payload.discarded %}<li class="chip discarded">scartata: {{ labels.rejection_label(d.reason) }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+  </article>
+  {% elif m.kind == "voice" %}
+  <article class="card voice">
+    <div class="kicker">{% if m.payload.season %}La stagione vista dalla piazza{% else %}Si dice in piazza{% endif %}</div>
+    <p class="report">{{ m.content }}</p>
+  </article>
+  {% elif m.kind == "summary" %}
+  <article class="card" style="border-top: 3px solid {{ labels.ROLES.chancellor.color }}">
+    {{ speaker_block(m) }}
+    <p class="report">{{ m.content }}</p>
+  </article>
+  {% endif %}
+{% endmacro %}
+
+<section id="council" class="card"
+  {% if running %}hx-get="/ui/realms/{{ realm_id }}/council-panel" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+  <h2>Il consiglio</h2>
+
+  {% if job_error %}<div class="banner error" role="alert">La riunione si è interrotta: {{ job_error }}</div>{% endif %}
+
+  {% if not open_turn %}
+    <p class="hint">La partita è finita.</p>
+  {% else %}
+
+    {% for r in rounds %}
+      {% if not loop.last %}
+      <details>
+        <summary>{% if r.number == 1 %}Prima riunione{% else %}Giro {{ r.number }}{% endif %} · {{ r.messages|length }} interventi</summary>
+        {% for m in r.messages %}{{ message_card(m) }}{% endfor %}
+      </details>
+      {% else %}
+        {% for m in r.messages %}{{ message_card(m) }}{% endfor %}
+      {% endif %}
+    {% endfor %}
+
+    {% if running %}
+      <div class="waiting" role="status"><span class="dot" aria-hidden="true"></span>
+        Il consiglio discute… Puoi chiudere la pagina: la riunione continua e la ritrovi qui.</div>
+
+    {% elif council.rounds_held == 0 %}
+      <p class="hint">Tesoriere e Architetta presenteranno le loro proposte, il Cancelliere le riunirà in un piano. Ci vuole circa un minuto.</p>
+      <form method="post" action="/ui/realms/{{ realm_id }}/meeting">
+        <button class="primary" type="submit">Convoca il consiglio</button>
+      </form>
+
+    {% elif council.approved %}
+      <h3>Ordini approvati</h3>
+      <ul class="chips">
+        {% for o in orders %}<li class="chip">{{ labels.order_label(o.raw) }}</li>{% endfor %}
+      </ul>
+      <p class="hint">Saranno eseguiti quando chiudi il mese.</p>
+
+    {% elif plan is not none %}
+      <h3>Il piano</h3>
+      {% if plan.plan %}
+      <form method="post" action="/ui/realms/{{ realm_id }}/approve">
+        <input type="hidden" name="plan_size" value="{{ plan.plan|length }}">
+        <ul class="plan">
+          {% for item in plan.plan %}
+          {% set verdict = plan.check.verdicts[loop.index0] %}
+          <li>
+            <label>
+              <input type="checkbox" name="keep" value="{{ loop.index0 }}" checked>
+              <span>
+                <span class="what">{{ labels.order_label(item.order) }}</span><br>
+                <span class="who">{{ labels.ROLES.get(item.proposer, labels.SOVEREIGN).name }}</span>
+                {% if verdict.accepted %}<span class="verdict-ok">· si può fare</span>
+                {% else %}<span class="verdict-no">· non si può: {{ labels.rejection_label(verdict.code) }}</span>{% endif %}
+              </span>
+            </label>
+          </li>
+          {% endfor %}
+        </ul>
+        <p class="hint">Togli la spunta agli ordini che non vuoi. Gli ordini vengono eseguiti in quest'ordine.</p>
+        <button class="primary" type="submit">Approva il piano</button>
+      </form>
+      {% else %}
+      <p class="hint">Il consiglio non propone nulla questo mese.</p>
+      {% endif %}
+
+      {% if council.directives_left > 0 %}
+      <form method="post" action="/ui/realms/{{ realm_id }}/directive">
+        <label class="field">Oppure dai una direttiva al consiglio ({{ council.directives_left }} {% if council.directives_left == 1 %}rimasta{% else %}rimaste{% endif %})
+          <textarea name="text" maxlength="500" placeholder="Es. «Risparmiate legno, l'inverno sarà lungo»" required></textarea>
+        </label>
+        <button type="submit">Invia la direttiva</button>
+      </form>
+      {% else %}
+      <p class="hint">Hai dato tutte le direttive di questo mese.</p>
+      {% endif %}
+    {% endif %}
+  {% endif %}
+</section>

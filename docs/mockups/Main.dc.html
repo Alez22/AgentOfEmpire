@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Il regno in tempo reale</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#D4AF5A}a:hover{color:#E8C778}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #14120E; color: #ECE5D6; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+  <header style="height: 64px; box-sizing: border-box; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #2E2A22; background: #1A1813">
+    <div style="display: flex; align-items: baseline; gap: 16px">
+      <span style="font-family: 'Cormorant Garamond', serif; font-size: 26px; font-weight: 700; color: #ECE5D6">Regno di Valdora</span>
+      <span style="font-size: 13px; color: #A8A090">Anno 3 · Autunno · settimana 9 di 12</span>
+    </div>
+    <div style="display: flex; gap: 12px">
+      <sc-for list="{{resources}}" as="res" hint-placeholder-count="4">
+        <div style="display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 8px; background: #221F18; border: 1px solid #2E2A22">
+          <span style="width: 10px; height: 10px; border-radius: 50%; background: {{res.color}}"></span>
+          <span style="font-size: 12px; color: #A8A090">{{res.name}}</span>
+          <span style="font-size: 15px; font-weight: 600">{{res.value}}</span>
+          <span style="font-size: 12px; color: {{res.rateColor}}">{{res.rate}}</span>
+        </div>
+      </sc-for>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px">
+      <button style="height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #3A352B; background: transparent; color: #ECE5D6; font: 500 13px Inter, sans-serif">Pausa</button>
+      <button style="height: 40px; padding: 0 14px; border-radius: 8px; border: 1px solid #3A352B; background: transparent; color: #ECE5D6; font: 500 13px Inter, sans-serif">Velocità 1×</button>
+      <button style="height: 40px; padding: 0 16px; border-radius: 8px; border: none; background: #D4AF5A; color: #1A1813; font: 600 13px Inter, sans-serif">Convoca il consiglio</button>
+    </div>
+  </header>
+
+  <div style="flex: 1; display: flex; min-height: 0">
+
+    <main style="flex: 1; padding: 24px; position: relative">
+      <div style="position: relative; width: 992px; height: 676px; border-radius: 12px; overflow: hidden; border: 1px solid #2E2A22">
+        <div style="display: grid; grid-template-columns: repeat(20, minmax(0, 1fr)); grid-auto-rows: 52px; width: 992px">
+          <sc-for list="{{tiles}}" as="t" hint-placeholder-count="260">
+            <div style="background: {{t.bg}}; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.12)"></div>
+          </sc-for>
+        </div>
+
+        <sc-for list="{{places}}" as="p" hint-placeholder-count="6">
+          <div style="position: absolute; left: {{p.x}}px; top: {{p.y}}px; display: flex; flex-direction: column; align-items: center; gap: 4px">
+            <div style="width: 30px; height: 30px; border-radius: 6px; background: #1A1813; border: 2px solid {{p.color}}; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 16px; color: {{p.color}}">{{p.glyph}}</div>
+            <span style="padding: 2px 8px; border-radius: 4px; background: rgba(20,18,14,0.85); font-size: 11px; color: #ECE5D6; white-space: nowrap">{{p.label}}</span>
+          </div>
+        </sc-for>
+
+        <div style="position: absolute; left: 860px; top: 250px; display: flex; flex-direction: column; align-items: center; gap: 4px">
+          <svg width="96" height="40" viewBox="0 0 96 40" aria-hidden="true"><path d="M92 20 H14 M26 8 L10 20 L26 32" fill="none" stroke="#E5684A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="8 6"></path></svg>
+          <span style="padding: 3px 8px; border-radius: 4px; background: #5A1F14; font-size: 11px; font-weight: 600; color: #FFD9CF">Goti · 3 schiere</span>
+        </div>
+
+        <div style="position: absolute; left: 16px; bottom: 16px; width: 360px; box-sizing: border-box; padding: 14px 16px; border-radius: 10px; background: rgba(26,24,19,0.94); border: 1px solid #3A352B">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px">
+            <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #A8A090">Decisioni rapide</span>
+            <span style="font-size: 11px; color: #A8A090">Jev · ~0,2 s</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <sc-for list="{{fast}}" as="f" hint-placeholder-count="4">
+              <div style="display: flex; align-items: center; gap: 10px; font-size: 12px">
+                <span style="color: #8C8576; width: 38px">{{f.time}}</span>
+                <span style="flex: 1; color: #ECE5D6">{{f.text}}</span>
+                <span style="padding: 2px 6px; border-radius: 4px; font-weight: 600; background: {{f.chipBg}}; color: {{f.chipFg}}">{{f.conf}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #2E2A22; font-size: 11px; color: #A8A090">Confidenza sotto 0,6 → la decisione sale al ministro</div>
+        </div>
+      </div>
+    </main>
+
+    <aside style="width: 400px; box-sizing: border-box; border-left: 1px solid #2E2A22; background: #1A1813; display: flex; flex-direction: column">
+      <div style="padding: 18px 20px 12px; border-bottom: 1px solid #2E2A22">
+        <div style="display: flex; justify-content: space-between; align-items: center">
+          <h2 style="margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 700">Voci dal consiglio</h2>
+          <span style="font-size: 12px; color: #9FD08A">● in corso</span>
+        </div>
+        <div style="display: flex; gap: 6px; margin-top: 12px">
+          <button style="padding: 6px 10px; border-radius: 999px; border: none; background: #ECE5D6; color: #1A1813; font: 600 12px Inter, sans-serif">Tutti</button>
+          <button style="padding: 6px 10px; border-radius: 999px; border: 1px solid #3A352B; background: transparent; color: #CFC7B6; font: 500 12px Inter, sans-serif">Economia</button>
+          <button style="padding: 6px 10px; border-radius: 999px; border: 1px solid #3A352B; background: transparent; color: #CFC7B6; font: 500 12px Inter, sans-serif">Guerra</button>
+          <button style="padding: 6px 10px; border-radius: 999px; border: 1px solid #3A352B; background: transparent; color: #CFC7B6; font: 500 12px Inter, sans-serif">Diplomazia</button>
+        </div>
+      </div>
+
+      <div style="flex: 1; overflow: hidden; padding: 16px 20px; display: flex; flex-direction: column; gap: 16px">
+        <sc-for list="{{messages}}" as="m" hint-placeholder-count="5">
+          <div style="display: flex; gap: 12px">
+            <div style="flex: none; width: 36px; height: 36px; border-radius: 50%; background: {{m.color}}; color: #1A1813; display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 18px">{{m.initial}}</div>
+            <div style="flex: 1; min-width: 0">
+              <div style="display: flex; gap: 8px; align-items: baseline">
+                <span style="font-size: 13px; font-weight: 600; color: {{m.color}}">{{m.name}}</span>
+                <span style="font-size: 11px; color: #8C8576">{{m.role}} · {{m.time}}</span>
+              </div>
+              <p style="margin: 4px 0 0; font-size: 13px; line-height: 1.45; color: #DDD5C4">{{m.text}}</p>
+              <sc-if value="{{m.hasRequest}}" hint-placeholder-val="{{false}}">
+                <div style="margin-top: 8px; padding: 10px; border-radius: 8px; background: #221F18; border: 1px solid #3A352B">
+                  <div style="font-size: 12px; color: #ECE5D6; margin-bottom: 8px">Richiesta: <strong>300 legno · 150 oro</strong></div>
+                  <div style="display: flex; gap: 6px">
+                    <button style="flex: 1; height: 32px; border-radius: 6px; border: none; background: #D4AF5A; color: #1A1813; font: 600 12px Inter, sans-serif">Approva</button>
+                    <button style="flex: 1; height: 32px; border-radius: 6px; border: 1px solid #3A352B; background: transparent; color: #ECE5D6; font: 500 12px Inter, sans-serif">Metà</button>
+                    <button style="flex: 1; height: 32px; border-radius: 6px; border: 1px solid #3A352B; background: transparent; color: #ECE5D6; font: 500 12px Inter, sans-serif">Rifiuta</button>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </aside>
+  </div>
+
+  <footer style="height: 88px; box-sizing: border-box; padding: 14px 24px; border-top: 1px solid #2E2A22; background: #1A1813; display: flex; align-items: center; gap: 16px">
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+      <label for="order" style="font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: #A8A090">Ordine del sovrano</label>
+      <div style="display: flex; gap: 8px; align-items: center">
+        <input id="order" type="text" placeholder="Es. «Preparati all'inverno, ma non lasciare scoperto il guado»" style="flex: 1; height: 40px; box-sizing: border-box; padding: 0 14px; border-radius: 8px; border: 1px solid #3A352B; background: #14120E; color: #ECE5D6; font: 400 14px Inter, sans-serif">
+        <button style="height: 40px; padding: 0 18px; border-radius: 8px; border: none; background: #D4AF5A; color: #1A1813; font: 600 13px Inter, sans-serif">Proclama</button>
+      </div>
+    </div>
+    <div style="width: 360px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end">
+      <button style="padding: 6px 10px; border-radius: 999px; border: 1px solid #3A352B; background: transparent; color: #CFC7B6; font: 500 12px Inter, sans-serif">Priorità all'economia</button>
+      <button style="padding: 6px 10px; border-radius: 999px; border: 1px solid #3A352B; background: transparent; color: #CFC7B6; font: 500 12px Inter, sans-serif">Non fidarti di Morvan</button>
+      <button style="padding: 6px 10px; border-radius: 999px; border: 1px solid #3A352B; background: transparent; color: #CFC7B6; font: 500 12px Inter, sans-serif">Tieni il guado</button>
+    </div>
+    <div style="width: 150px; text-align: right; font-size: 11px; line-height: 1.5; color: #A8A090">Costo stagione<br><span style="font-size: 14px; color: #ECE5D6; font-weight: 600">[COSTO] · 41k token</span></div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  // Build a small deterministic terrain grid (20 x 13) for the mockup map.
+  buildTiles() {
+    const tiles = [];
+    for (let r = 0; r < 13; r++) {
+      const riverCol = 7 + Math.round(Math.sin(r / 2.2) * 1.5);
+      for (let c = 0; c < 20; c++) {
+        let bg = ((r + c) % 3 === 0) ? '#56703F' : '#5E7944';
+        if (c < 5 && r < 6) bg = ((r * c) % 2) ? '#2F4A2A' : '#355230';
+        if (c > 12 && c < 16 && r > 7) bg = ((r + c) % 2) ? '#2F4A2A' : '#355230';
+        if (r > 9 && c < 6) bg = ((r + c) % 2) ? '#7A7058' : '#857A60';
+        if (c >= 11 && c <= 13 && r >= 3 && r <= 5) bg = ((c + r) % 2) ? '#B59A52' : '#C2A65C';
+        if (c === riverCol || (c === riverCol + 1 && r % 4 === 1)) bg = '#3E6B8A';
+        if (c >= 17) bg = c === 17 ? '#3A3A33' : '#2A2925';
+        tiles.push({ bg });
+      }
+    }
+    return tiles;
+  }
+  renderVals() {
+    return {
+      tiles: this.buildTiles(),
+      resources: [
+        { name: 'Cibo', value: '1.240', rate: '+18/min', color: '#C2A65C', rateColor: '#9FD08A' },
+        { name: 'Legno', value: '410', rate: '−6/min', color: '#8A6A44', rateColor: '#F09A7E' },
+        { name: 'Pietra', value: '620', rate: '+4/min', color: '#9C978A', rateColor: '#9FD08A' },
+        { name: 'Oro', value: '305', rate: '+2/min', color: '#D4AF5A', rateColor: '#9FD08A' }
+      ],
+      places: [
+        { x: 545, y: 300, glyph: 'C', label: 'Castello', color: '#D4AF5A' },
+        { x: 560, y: 160, glyph: 'F', label: 'Campi · 6 villici', color: '#C2A65C' },
+        { x: 120, y: 120, glyph: 'S', label: 'Segheria · 9 villici', color: '#9FD08A' },
+        { x: 120, y: 560, glyph: 'P', label: 'Cava', color: '#CFC7B6' },
+        { x: 640, y: 420, glyph: 'K', label: 'Caserma · 60%', color: '#E07A4F' },
+        { x: 370, y: 330, glyph: 'G', label: 'Guado · 8 arcieri', color: '#E07A4F' }
+      ],
+      fast: [
+        { time: '14:02', text: '3 villici dai campi → legno', conf: '0,93', chipBg: '#24361E', chipFg: '#9FD08A' },
+        { time: '14:01', text: 'Arcieri restano al guado', conf: '0,88', chipBg: '#24361E', chipFg: '#9FD08A' },
+        { time: '13:59', text: 'Torre a est o nuova fattoria?', conf: '0,41', chipBg: '#4A2A12', chipFg: '#F5B98A' },
+        { time: '13:58', text: 'Esploratore torna al castello', conf: '0,97', chipBg: '#24361E', chipFg: '#9FD08A' }
+      ],
+      messages: [
+        { initial: 'B', name: 'Bertoldo', role: 'Maresciallo', time: '14:01', color: '#E07A4F', hasRequest: false, text: 'Esploratori a est: tre schiere gote verso il guado. Arrivo stimato a inizio inverno.' },
+        { initial: 'A', name: 'Ansaldo', role: 'Tesoriere', time: '14:01', color: '#8FC07A', hasRequest: false, text: 'Il granaio copre 9 settimane, l\'inverno ne chiede 14. Propongo due fattorie prima delle palizzate.' },
+        { initial: 'G', name: 'Gisella', role: 'Architetta', time: '14:02', color: '#7DB3E0', hasRequest: false, text: 'Ansaldo, quel legno è già destinato alla palizzata nord. Non posso fare entrambe le cose.' },
+        { initial: 'B', name: 'Bertoldo', role: 'Maresciallo', time: '14:02', color: '#E07A4F', hasRequest: true, text: 'Una palizzata non ferma tre schiere. Servono 40 arcieri entro fine stagione.' },
+        { initial: 'I', name: 'Ilaria', role: 'Ambasciatrice', time: '14:03', color: '#C3A2E0', hasRequest: false, text: 'Morvan venderebbe grano. In cambio chiede libero passaggio sul fiume.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

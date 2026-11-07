@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Udienze · amministrazione{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Amministrazione · partita {{ game.id }} · regno {{ realm_id }}</div>
+  <h1>Udienze private</h1>
+  <p class="hint"><a href="/admin/games/{{ game.id }}">← Partita</a></p>
+</section>
+{% for role, lines in by_role|dictsort %}
+{% set who = labels.ROLES.get(role, labels.SOVEREIGN) %}
+<section class="card">
+  <h2>{{ who.name }}</h2>
+  <ol class="dialogue">
+    {% for line in lines %}
+      {% if loop.first or line.turn != loop.previtem.turn %}<li class="turn-mark">Turno {{ line.turn }}</li>{% endif %}
+      {% if line.speaker == "sovereign" %}
+      <li class="bubble mine">{{ line.content }}</li>
+      {% else %}
+      <li class="bubble theirs" style="border-left-color: {{ who.color }}">{{ line.content }}</li>
+      {% endif %}
+    {% endfor %}
+  </ol>
+</section>
+{% else %}
+<p class="hint">Nessuna udienza.</p>
+{% endfor %}
+{% endblock %}

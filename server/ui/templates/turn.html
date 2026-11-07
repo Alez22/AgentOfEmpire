@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ realm.name }} · turno {{ state.turn }}{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Partita {{ game.id }} · turno {{ state.turn }}</div>
+  <h1>{{ realm.name }}, {{ labels.month_name(state.turn) }}</h1>
+  <p class="hint">{{ season|capitalize }} · {% if winter_in == 0 %}è inverno{% else %}inverno fra {{ winter_in }} {% if winter_in == 1 %}mese{% else %}mesi{% endif %}{% endif %}</p>
+</section>
+
+{% if error %}<div class="banner error" role="alert">{{ error }}</div>{% endif %}
+{% if state.game_over %}<div class="banner end">{{ labels.GAME_OVER.get(state.game_over, state.game_over) }}</div>{% endif %}
+
+<section class="stats" aria-label="Il regno in breve">
+  <div class="stat"><div class="label">Cibo</div><div class="value">{{ state.food }}</div></div>
+  <div class="stat"><div class="label">Oro</div><div class="value">{{ state.gold }}</div></div>
+  <div class="stat"><div class="label">Malcontento</div><div class="value">{{ labels.UNREST.get(state.unrest, state.unrest) }}</div></div>
+  <div class="stat"><div class="label">Legno</div><div class="value">{{ state.wood }}</div></div>
+  <div class="stat"><div class="label">Pietra</div><div class="value">{{ state.stone }}</div></div>
+  <div class="stat"><div class="label">Abitanti</div><div class="value">{{ state.children + state.adults + state.elders }}</div></div>
+</section>
+
+{% if last_month %}
+<section class="card">
+  <h2>Il mese scorso</h2>
+  <ul class="events">
+    {% for e in last_month %}<li>{{ labels.event_label(e.kind, e.data) }}</li>{% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% include "_council.html" %}
+
+{% if open_turn %}
+<section class="card">
+  <h2>Udienze private</h2>
+  <p class="hint">Parla a quattr'occhi con un consigliere. Quello che vi dite resta tra voi, ma cambia le sue proposte.</p>
+  <div class="audience-links">
+    {% for role in ["treasurer", "architect", "chancellor"] %}
+    {% set who = labels.ROLES[role] %}
+    <a href="/ui/realms/{{ realm_id }}/audience/{{ role }}">
+      <span class="avatar" style="background: {{ who.color }}" aria-hidden="true">{{ who.initial }}</span>{{ who.name }}
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if open_turn %}
+<section class="card">
+  <h2>Chiudi il mese</h2>
+  {% if council and council.rounds_held > 0 and not council.approved %}
+  <p class="hint">Il piano del consiglio non è approvato: se chiudi ora, il mese passa senza i suoi ordini.</p>
+  {% elif council and council.rounds_held == 0 %}
+  <p class="hint">Il consiglio non si è riunito: se chiudi ora, il mese passa senza nuovi ordini.</p>
+  {% endif %}
+  <form method="post" action="/ui/realms/{{ realm_id }}/resolve">
+    <button type="submit" {% if running %}disabled{% endif %}>Chiudi {{ labels.month_name(state.turn) }}</button>
+  </form>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ realm.name }} · il regno{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Partita {{ game.id }} · turno {{ state.turn }}</div>
+  <h1>Il regno di {{ realm.name }}</h1>
+  <p class="hint">Quello che si può contare. Come sta il popolo lo sai dalla piazza e dai tuoi consiglieri.</p>
+</section>
+
+<section class="card">
+  <h2>Risorse</h2>
+  <table class="numbers">
+    <tr><th>Cibo</th><td>{{ state.food }}</td></tr>
+    <tr><th>Consumo al mese</th><td>{{ food_needed }}</td></tr>
+    <tr><th>Legno</th><td>{{ state.wood }}</td></tr>
+    <tr><th>Pietra</th><td>{{ state.stone }}</td></tr>
+    <tr><th>Oro</th><td>{{ state.gold }}</td></tr>
+  </table>
+</section>
+
+<section class="card">
+  <h2>Popolo</h2>
+  <table class="numbers">
+    <tr><th>Bambini</th><td>{{ state.children }}</td></tr>
+    <tr><th>Adulti</th><td>{{ state.adults }}</td></tr>
+    <tr><th>Anziani</th><td>{{ state.elders }}</td></tr>
+    <tr><th>Alloggi</th><td>{{ state.children + state.adults + state.elders }} / {{ housing }}</td></tr>
+    <tr><th>Malcontento</th><td>{{ labels.UNREST.get(state.unrest, state.unrest) }}</td></tr>
+  </table>
+</section>
+
+<section class="card">
+  <h2>Lavoro</h2>
+  <table class="numbers">
+    <tr><th>Nei campi</th><td>{{ state.workers.food }} / {{ jobs.food }} posti</td></tr>
+    <tr><th>Nei boschi</th><td>{{ state.workers.wood }} / {{ jobs.wood }} posti</td></tr>
+    <tr><th>Nelle cave</th><td>{{ state.workers.stone }} / {{ jobs.stone }} posti</td></tr>
+    <tr><th>Senza lavoro</th><td>{{ state.adults - state.workers.food - state.workers.wood - state.workers.stone }}</td></tr>
+  </table>
+</section>
+
+<section class="card">
+  <h2>Edifici e leggi</h2>
+  <table class="numbers">
+    {% for kind, counts in buildings|dictsort %}
+    <tr><th>{{ labels.BUILDINGS.get(kind, kind)|capitalize }}</th><td>{{ counts.active }}{% if counts.building %} + {{ counts.building }} in costruzione{% endif %}</td></tr>
+    {% endfor %}
+    <tr><th>Caselle libere</th><td>{{ state.free_tiles }}</td></tr>
+    <tr><th>Tasse</th><td>{{ state.tax_rate }}%</td></tr>
+    <tr><th>Razione</th><td>{{ labels.RATIONS.get(state.ration, state.ration) }}</td></tr>
+  </table>
+</section>
+{% endblock %}

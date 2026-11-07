@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14120E">
+<title>{% block title %}AgentOfEmpire{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="/static/style.css">
+<script src="/static/htmx-2.0.11.min.js" defer></script>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <a class="brand" href="/ui">AgentOfEmpire</a>
+    {% if realm_id is defined and nav is defined %}
+    <nav class="tabs" aria-label="Sezioni del regno">
+      <a href="/ui/realms/{{ realm_id }}" {% if nav == "turn" %}aria-current="page"{% endif %}>Turno</a>
+      <a href="/ui/realms/{{ realm_id }}/kingdom" {% if nav == "kingdom" %}aria-current="page"{% endif %}>Regno</a>
+      <a href="/ui/realms/{{ realm_id }}/chronicle" {% if nav == "chronicle" %}aria-current="page"{% endif %}>Cronaca</a>
+    </nav>
+    {% endif %}
+    {% if request.app.state.admin_view %}
+    <nav class="tabs" aria-label="Amministrazione"><a href="/admin">Amministrazione</a></nav>
+    {% endif %}
+  </header>
+  {% block content %}{% endblock %}
+</main>
+</body>
+</html>

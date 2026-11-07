@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Partite · AgentOfEmpire{% endblock %}
+{% block content %}
+<section class="card">
+  <h1>Le tue partite</h1>
+  {% if games %}
+  <ul class="game-list">
+    {% for g in games %}
+    <li>
+      <a href="/ui/realms/{{ g.realm_id }}">
+        <span>
+          <strong>{{ g.realm_name }}</strong>
+          <span class="sub">· partita {{ g.id }}</span>
+        </span>
+        <span class="sub">
+          {% if g.open_turn %}turno {{ g.open_turn }}, {{ labels.month_name(g.open_turn) }}{% else %}conclusa{% endif %}
+        </span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="hint">Nessuna partita ancora.</p>
+  {% endif %}
+</section>
+
+<section class="card">
+  <h2>Nuova partita</h2>
+  <form method="post" action="/ui/games">
+    <label class="field">Nome del regno
+      <input type="text" name="realm_name" value="Nord" maxlength="40" required>
+    </label>
+    <button class="primary" type="submit">Inizia a regnare</button>
+  </form>
+</section>
+{% endblock %}

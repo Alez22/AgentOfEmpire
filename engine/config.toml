@@ -1,0 +1,124 @@
+# Initial balance values for the prototype (one city, one class: peasants).
+# All values are integers: "permille" = per thousand, "pct" = per hundred.
+# Tuning happens here, never in the code.
+
+[start]
+children = 30
+adults = 60
+elders = 10
+food = 2000
+wood = 150
+stone = 100
+gold = 100
+free_tiles = 7
+workers_food = 54
+workers_wood = 4
+workers_stone = 2
+tax_rate = 10
+ration = "normal"
+mood = 600
+farms = 4
+sawmills = 1
+quarries = 1
+houses = 6
+
+# Each building: cost, construction time, jobs, output per worker per month.
+# sector = which resource the workers produce ("" for houses).
+[buildings.farm]
+wood = 40
+stone = 10
+gold = 0
+build_turns = 2
+jobs = 15
+output_per_worker = 15
+sector = "food"
+housing = 0
+
+[buildings.sawmill]
+wood = 30
+stone = 20
+gold = 0
+build_turns = 2
+jobs = 10
+output_per_worker = 6
+sector = "wood"
+housing = 0
+
+[buildings.quarry]
+wood = 40
+stone = 10
+gold = 0
+build_turns = 2
+jobs = 10
+output_per_worker = 4
+sector = "stone"
+housing = 0
+
+[buildings.house]
+wood = 30
+stone = 30
+gold = 20
+build_turns = 3
+jobs = 0
+output_per_worker = 0
+sector = ""
+housing = 20
+
+[economy]
+food_per_child = 6
+food_per_adult = 10
+food_per_elder = 8
+ration_reduced_pct = 70
+ration_normal_pct = 100
+ration_abundant_pct = 130
+# Farm output by season; the yearly average is 100 %.
+farm_winter_pct = 50
+farm_spring_pct = 100
+farm_summer_pct = 120
+farm_autumn_pct = 130
+# Gold per month = adults * tax_rate / tax_divisor
+tax_divisor = 20
+max_tax_rate = 30
+upkeep_gold_per_building = 1
+unpaid_upkeep_output_pct = 50
+# Share of the stored food lost every month, after consumption.
+food_spoilage_pct = 2
+# Fixed rule standing in for Jev: below this reserve, idle adults go to food.
+reserve_alert_months = 2
+
+[demography]
+birth_permille_per_adult = 15
+low_mood_births_below = 300
+low_mood_births_pct = 50
+high_mood_births_above = 700
+high_mood_births_pct = 120
+death_child_permille = 3
+death_adult_permille = 2
+death_elder_permille = 15
+famine_death_permille_per_missing_pct = 2
+child_to_adult_permille = 33
+adult_to_elder_permille = 4
+
+[mood]
+base = 500
+approach_pct = 25
+ration_reduced = -150
+ration_abundant = 100
+tax_free_rate = 5
+tax_per_point = -10
+famine_per_missing_pct = -6
+famine_max = -400
+reserve_bonus_months = 3
+reserve_bonus = 50
+housing_full = -100
+per_death = -5
+feast_gold_per_point = 2
+feast_max = 100
+feast_repeat_pct = 50
+
+[unrest]
+threshold = 350
+protest_turns = 2
+strike_turns = 4
+revolt_turns = 6
+strike_output_pct = 70

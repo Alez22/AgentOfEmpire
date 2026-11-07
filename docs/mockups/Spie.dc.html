@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<title>Intercettazioni e allarmi</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&amp;family=Inter:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#D4AF5A}a:hover{color:#E8C778}
+</style>
+</helmet>
+<div style="width: 1440px; height: 900px; box-sizing: border-box; background: #14120E; color: #ECE5D6; font-family: Inter, system-ui, sans-serif; padding: 32px 40px; display: flex; gap: 28px; overflow: hidden">
+
+  <section style="flex: 1; display: flex; flex-direction: column; gap: 18px">
+    <div>
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #A8A090">Rete di spie · 2 informatori attivi</div>
+      <h1 style="margin: 6px 0 0; font-family: 'Cormorant Garamond', serif; font-size: 44px; font-weight: 700; line-height: 1.05">Dal consiglio dei Goti</h1>
+    </div>
+
+    <div style="flex: 1; box-sizing: border-box; padding: 28px 32px; border-radius: 6px; background: #E9DFC8; color: #2A241A; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 12px 32px rgba(0,0,0,0.35)">
+      <div style="display: flex; justify-content: space-between; font-size: 12px; color: #5C513E">
+        <span>Lettera intercettata al guado · Anno 3, autunno</span>
+        <span>Affidabilità dell'informatore: <strong style="color: #2A241A">alta</strong></span>
+      </div>
+      <sc-for list="{{intercepts}}" as="i" hint-placeholder-count="4">
+        <div style="display: flex; gap: 16px">
+          <span style="flex: none; width: 120px; font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 700; color: #6B2E1E">{{i.who}}</span>
+          <p style="margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 20px; line-height: 1.4; color: #2A241A">
+            {{i.before}}
+            <sc-if value="{{i.redacted}}" hint-placeholder-val="{{false}}"><span style="display: inline-block; width: {{i.redWidth}}px; height: 16px; margin: 0 4px; background: #2A241A; vertical-align: middle" aria-label="testo illeggibile" role="img"></span></sc-if>
+            {{i.after}}
+          </p>
+        </div>
+      </sc-for>
+      <div style="margin-top: auto; padding-top: 14px; border-top: 1px solid #C9BA98; display: flex; justify-content: space-between; align-items: center">
+        <span style="font-size: 13px; color: #5C513E">Ilaria: «Il Re gioca d'attesa. Se offriamo grano, forse rinvia.»</span>
+        <button style="height: 40px; padding: 0 16px; border-radius: 8px; border: none; background: #2A241A; color: #E9DFC8; font: 600 13px Inter, sans-serif">Porta al consiglio</button>
+      </div>
+    </div>
+  </section>
+
+  <aside style="width: 460px; display: flex; flex-direction: column; gap: 16px">
+    <div style="box-sizing: border-box; padding: 20px; border-radius: 12px; background: #3A1E14; border: 1px solid #7A3A26; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; justify-content: space-between; align-items: center">
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #F5B98A">Allarme</span>
+        <span style="font-size: 12px; color: #FFE1D4">contatto fra ~40 s</span>
+      </div>
+      <h2 style="margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 28px; font-weight: 700; color: #FFF1EA">Una schiera gota attraversa il fiume</h2>
+      <p style="margin: 0; font-size: 13px; line-height: 1.5; color: #FFE1D4">Jev ha valutato la minaccia «alta» con confidenza 0,52: troppo incerta per agire da solo. Bertoldo chiede istruzioni.</p>
+      <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px">
+        <button style="height: 44px; border-radius: 8px; border: none; background: #F5B98A; color: #3A1E14; font: 600 13px Inter, sans-serif">Consiglio d'urgenza (pausa)</button>
+        <button style="height: 44px; border-radius: 8px; border: 1px solid #F5B98A; background: transparent; color: #FFE1D4; font: 600 13px Inter, sans-serif">Carta bianca a Bertoldo</button>
+        <button style="height: 44px; border-radius: 8px; border: 1px solid #7A3A26; background: transparent; color: #FFE1D4; font: 500 13px Inter, sans-serif">Manda Ilaria a trattare</button>
+      </div>
+    </div>
+
+    <div style="flex: 1; box-sizing: border-box; padding: 20px; border-radius: 12px; background: #1A1813; border: 1px solid #2E2A22; display: flex; flex-direction: column; gap: 12px; overflow: hidden">
+      <h2 style="margin: 0; font-family: 'Cormorant Garamond', serif; font-size: 24px; font-weight: 700">Cronaca della stagione</h2>
+      <sc-for list="{{chronicle}}" as="c" hint-placeholder-count="5">
+        <div style="display: flex; gap: 12px">
+          <div style="flex: none; display: flex; flex-direction: column; align-items: center; width: 12px">
+            <span style="width: 10px; height: 10px; border-radius: 50%; background: {{c.color}}; margin-top: 4px"></span>
+            <span style="flex: 1; width: 2px; background: #2E2A22; margin-top: 4px"></span>
+          </div>
+          <div style="flex: 1; padding-bottom: 6px">
+            <div style="font-size: 11px; color: #8C8576">{{c.when}}</div>
+            <div style="font-size: 13px; line-height: 1.45; color: #DDD5C4">{{c.text}}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </aside>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      intercepts: [
+        { who: 'Re Theodric', before: 'Valdora è debole a nord. Attacchiamo quando il fiume', redacted: true, redWidth: 110, after: '.' },
+        { who: 'Il Tesoriere', before: 'Mio re, il nostro grano basta per', redacted: true, redWidth: 60, after: 'settimane. Una guerra lunga ci affama prima di loro.' },
+        { who: 'Il Generale', before: 'Una sola schiera al guado, per saggiare le loro difese. Le altre restano', redacted: true, redWidth: 140, after: '.' },
+        { who: 'Re Theodric', before: 'Se Morvan si allea con Valdora, rinunciamo. Fate in modo che non accada.', redacted: false, redWidth: 0, after: '' }
+      ],
+      chronicle: [
+        { when: 'Settimana 9', color: '#E07A4F', text: 'Una schiera gota attraversa il fiume.' },
+        { when: 'Settimana 8', color: '#C3A2E0', text: 'Ilaria apre trattative con Morvan per 400 grano.' },
+        { when: 'Settimana 7', color: '#7DB3E0', text: 'Gisella completa metà palizzata nord.' },
+        { when: 'Settimana 5', color: '#8FC07A', text: 'Ansaldo raziona il grano senza chiedere. Fiducia −6%.' },
+        { when: 'Settimana 2', color: '#D4AF5A', text: 'Il sovrano proclama: «Preparati all\'inverno».' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
