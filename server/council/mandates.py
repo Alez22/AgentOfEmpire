@@ -19,7 +19,6 @@ import psycopg
 from pydantic import BaseModel
 
 from server.council.meeting import (
-    DISPLAY_NAMES,
     MINISTERS,
     ROLE_ACTIONS,
     ROLE_DUTIES,
@@ -28,6 +27,7 @@ from server.council.meeting import (
     MeetingContext,
     _ask,
     load_context,
+    name_of,
     render_prompt,
 )
 from server.council import manual
@@ -93,7 +93,7 @@ def prompt_block(ctx: MeetingContext, actor) -> str:
             minister = ctx.actors.get(role)
             mandate = active_mandate(ctx.conn, minister.id) if minister else None
             if mandate:
-                lines.append(f"Mandate of {DISPLAY_NAMES[role]}: «{mandate[0]}»")
+                lines.append(f"Mandate of {name_of(ctx, role)}: «{mandate[0]}»")
     return ("\n" + "\n".join(lines) + "\n") if lines else ""
 
 
@@ -102,7 +102,7 @@ def _review_user(ctx: MeetingContext, role: str, request: str) -> str:
     current = active_mandate(ctx.conn, target.id)
     actions = ", ".join(ROLE_ACTIONS.get(role, ())) or "none of its own: it composes the ministers' plan"
     return "\n".join([
-        f"# Mandate request for {DISPLAY_NAMES[role]} ({ROLE_TITLES[role]})",
+        f"# Mandate request for {name_of(ctx, role)} ({ROLE_TITLES[role]})",
         f"- Duties of the office: {ROLE_DUTIES[role]}",
         f"- Orders it may give: {actions}.",
         "- Current mandate: " + (f"«{current[0]}»" if current else "none."),
@@ -158,8 +158,11 @@ def government(conn: psycopg.Connection, realm_id: int) -> list[dict]:
             (actor_id,),
         ).fetchone()
         current = active_mandate(conn, actor_id)
+        salary = conn.execute("SELECT (personality->>'salary')::int FROM actors WHERE id = %s",
+                              (actor_id,)).fetchone()[0]
         rows.append({
             "role": role,
+            "salary": salary,
             "duties": ROLE_DUTIES[role],
             "mandate": current[0] if current else None,
             "mandate_turn": current[1] if current else None,

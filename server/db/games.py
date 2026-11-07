@@ -15,6 +15,7 @@ from engine.config import Config, config_from_dict
 from engine.people import PeopleChoice
 from engine.snapshot import FORMAT_VERSION, state_from_dict, state_to_dict
 from engine.state import GameState, new_game
+from server.council.persons import draw_council
 from server.council.personality import generate_traits
 from server.db.access import Clearance, agent_context
 
@@ -34,6 +35,7 @@ EVENT_VISIBILITY = {
     "upkeep_unpaid": "council",
     "rule_workers_to_food": "council",
     "workers_rescaled": "council",
+    "salaries_unpaid": "council",  # the counsellors know they were not paid
 }
 
 
@@ -91,6 +93,7 @@ def create_game(
     seed: int,
     realm_names: list[str],
     council_models: dict[str, str],
+    personas: list[dict] | None = None,
 ) -> int:
     """@brief Create a game with its realms, councils, turn 1 and first snapshots.
     @param conn Connection in autocommit mode.
@@ -100,6 +103,10 @@ def create_game(
     @param realm_names One realm per name (the prototype uses one).
     @param council_models Role -> model, e.g. {"chancellor": "...", "treasurer": "..."};
            the same council is created in every realm.
+    @param personas The catalog (server/council/persons.py). If given, each
+           realm's Treasurer, Architect and Chancellor are drawn from its
+           moderates and bring their own name, gender, traits, story, model
+           and salary; other roles (Voice, people) still use council_models.
     @return The new game id.
     """
     config = config_from_dict(raw_config)  # fail before writing anything
@@ -108,17 +115,27 @@ def create_game(
             "INSERT INTO games (seed, config, engine_version) VALUES (%s, %s, %s) RETURNING id",
             (seed, Jsonb(raw_config), ENGINE_VERSION),
         ).fetchone()[0]
-        for name in realm_names:
+        taken: set[str] = set()
+        for index, name in enumerate(realm_names):
             realm_id = conn.execute(
                 "INSERT INTO realms (game_id, name) VALUES (%s, %s) RETURNING id", (game_id, name)
             ).fetchone()[0]
+            council = draw_council(personas, seed, index, taken) if personas else {}
+            state = new_game(config, seed)
             for role, model in council_models.items():
-                personality = {"traits": generate_traits(seed, realm_id, role)}
+                person = council.get(role)
+                if person is None:
+                    personality = {"traits": generate_traits(seed, realm_id, role)}
+                else:
+                    model = person["model"]
+                    personality = {key: person[key] for key in
+                                   ("traits", "name", "gender", "resume", "salary")} | {"persona": person["id"]}
+                    state.council_salary += person["salary"]
                 conn.execute(
                     "INSERT INTO actors (realm_id, role, model, personality) VALUES (%s, %s, %s, %s)",
                     (realm_id, role, model, Jsonb(personality)),
                 )
-            _insert_snapshot(conn, game_id, realm_id, new_game(config, seed))
+            _insert_snapshot(conn, game_id, realm_id, state)
         conn.execute("INSERT INTO turns (game_id, number) VALUES (%s, 1)", (game_id,))
     return game_id
 
@@ -274,6 +291,14 @@ def _insert_events(conn, game_id: int, realm_id: int, turn: int, events) -> None
             " VALUES (%s, %s, %s, %s, %s, %s)",
             (game_id, realm_id, turn, event.kind, Jsonb(event.data), visibility),
         )
+
+
+def role_names(conn: psycopg.Connection, realm_id: int) -> dict[str, str]:
+    """@brief Role -> how the game calls its holder in this realm, for pages
+    ("Gisella da Valle, l'Architetta"; the bare title for older games)."""
+    from server.council.persons import display_name  # persons is a leaf module
+    return {role: display_name(role, personality) for role, personality in conn.execute(
+        "SELECT role, personality FROM actors WHERE realm_id = %s", (realm_id,))}
 
 
 def load_people_choice(conn: psycopg.Connection, realm_id: int, turn: int) -> PeopleChoice | None:

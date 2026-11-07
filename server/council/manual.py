@@ -47,6 +47,8 @@ def prompt_text(config: Config) -> str:
     lines += [
         f"- Every building costs {economy.upkeep_gold_per_building} gold of upkeep a month; if the gold is not "
         f"enough, buildings yield {economy.unpaid_upkeep_output_pct}% that month.",
+        "- The counsellors are paid a salary in gold every month, after the upkeep; when the gold is short "
+        "they are not paid, and they know it.",
         "Workers: only adults work. Workers beyond a sector's jobs produce nothing. Workers can be moved "
         "between sectors any month, and the move counts that same month. Children grow into adults over the "
         "years; a new adult is free until assigned.",
@@ -91,6 +93,8 @@ def page_sections(config: Config) -> list[dict]:
             "Ogni edificio occupa una casella libera; un cantiere non produce nulla finché non è finito.",
             f"Ogni edificio costa {economy.upkeep_gold_per_building} oro di manutenzione al mese; se l'oro "
             f"non basta, quel mese gli edifici rendono il {economy.unpaid_upkeep_output_pct}%.",
+            "I consiglieri ricevono ogni mese un salario in oro, pagato dopo la manutenzione: se l'oro non "
+            "basta restano senza paga, e lo sanno.",
         ]},
         {"title": "Lavoratori", "entries": [], "notes": [
             "Lavorano solo gli adulti. Chi supera i posti di un settore non produce nulla.",

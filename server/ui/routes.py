@@ -23,7 +23,7 @@ from fastapi.templating import Jinja2Templates
 
 from engine.config import load_raw_config
 from engine.turn import food_needed, housing_capacity, jobs_in_sector, season_of
-from server.council import audience, debate, mandates, manual, meeting, people
+from server.council import audience, debate, mandates, manual, meeting, people, persons
 from server.council.briefing import months_until_winter
 from server.db import games
 from server.sovereign_view import sovereign_state
@@ -81,7 +81,8 @@ def create_game(request: Request, realm_name: str = Form("Nord"), conn=Depends(_
     settings = request.app.state.council_settings
     seed = secrets.randbelow(1_000_000)  # a new world each time
     name = realm_name.strip()[:40] or "Nord"
-    game_id = games.create_game(conn, load_raw_config(), seed, [name], settings.models)
+    game_id = games.create_game(conn, load_raw_config(), seed, [name], settings.models,
+                                personas=persons.load_catalog())
     realm_id = games.load_game(conn, game_id)["realms"][0]["id"]
     return _turn_page(realm_id)
 
@@ -106,6 +107,7 @@ def _council_context(request: Request, conn: psycopg.Connection, realm_id: int, 
         "rounds": [],
         "people": None,
         "debated": False,
+        "names": games.role_names(conn, realm_id),
     }
     if game["open_turn"] is None:
         return context
@@ -277,6 +279,7 @@ def _government_context(request: Request, conn: psycopg.Connection, realm_id: in
     return {
         "realm_id": realm_id,
         "offices": mandates.government(conn, realm_id),
+        "names": games.role_names(conn, realm_id),
         "open_turn": game["open_turn"],
         "running": kind.startswith("mandate:"),
         "running_role": kind.removeprefix("mandate:") if kind.startswith("mandate:") else None,
@@ -396,7 +399,7 @@ def _audience_context(request: Request, conn: psycopg.Connection, realm_id: int,
     return {
         "realm_id": realm_id,
         "role": role,
-        "who": labels.ROLES[role],
+        "who": {**labels.ROLES[role], "name": games.role_names(conn, realm_id).get(role, labels.ROLES[role]["name"])},
         "lines": lines,
         "lines_left": left,
         "open_turn": game["open_turn"],

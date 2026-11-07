@@ -25,7 +25,7 @@ from pydantic import BaseModel, Field
 from engine import check_plans
 from engine.config import load_raw_config
 from engine.orders import Order
-from server.council import audience, debate, mandates, meeting, people
+from server.council import audience, debate, mandates, meeting, people, persons
 from server.council.jobs import CouncilJobs
 from server.council.llm import FakeClient, OpenRouterClient
 from server.council.settings import CouncilSettings, load_settings
@@ -124,8 +124,11 @@ def _add_routes(app: FastAPI) -> None:
     @app.post("/games", status_code=201)
     def create_game(body: CreateGameRequest, request: Request, conn=Depends(_connection)):
         council_models = body.council_models or request.app.state.council_settings.models
+        # Explicit models (tests, experiments) keep generated traits; otherwise
+        # the council is drawn from the catalog of persons.
+        catalog = None if body.council_models else persons.load_catalog()
         game_id = games.create_game(
-            conn, load_raw_config(), body.seed, body.realm_names, council_models
+            conn, load_raw_config(), body.seed, body.realm_names, council_models, personas=catalog
         )
         return games.load_game(conn, game_id)
 

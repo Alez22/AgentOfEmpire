@@ -89,6 +89,8 @@ def event_label(kind: str, data: dict) -> str:
         return f"Hai ricevuto in privato {name}."
     if kind == "workers_rescaled":
         return "Meno adulti di prima: i lavoratori sono stati ridistribuiti."
+    if kind == "salaries_unpaid":
+        return f"L'oro non bastava: i consiglieri non hanno ricevuto il salario ({data.get('salaries')} oro)."
     return f"{kind}: {data}"
 
 

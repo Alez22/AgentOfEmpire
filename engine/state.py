@@ -60,6 +60,9 @@ class GameState:
     unrest: str
     last_feast_turn: int  # 0 = never
     feast_gold_this_turn: int = 0  # set by hold_feast, consumed by the mood step
+    # Gold a month for the counsellors, paid after the buildings' upkeep.
+    # Set when the council is formed; 0 for games saved before salaries.
+    council_salary: int = 0
     game_over: str | None = None  # reason, or None while the game runs
 
     def population(self) -> int:

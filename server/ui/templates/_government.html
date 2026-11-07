@@ -7,7 +7,8 @@
 <section class="card" style="border-top: 3px solid {{ who.color }}">
   <div class="speaker">
     <div class="avatar" style="background: {{ who.color }}" aria-hidden="true">{{ who.initial }}</div>
-    <div><div class="name">{{ who.name }}</div></div>
+    <div><div class="name">{{ names.get(office.role, who.name) }}</div>
+      {% if office.salary %}<div class="meta">salario: {{ office.salary }} oro al mese</div>{% endif %}</div>
   </div>
   <h3>Mandato in vigore</h3>
   {% if office.mandate %}

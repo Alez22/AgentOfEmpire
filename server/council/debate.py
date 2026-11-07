@@ -14,7 +14,6 @@ from pydantic import BaseModel
 
 from server.council.memory import order_text
 from server.council.meeting import (
-    DISPLAY_NAMES,
     MINISTERS,
     ROLE_DUTIES,
     ROLE_TITLES,
@@ -29,6 +28,8 @@ from server.council.meeting import (
     load_context,
     expertise_block,
     mandate_block,
+    name_of,
+    person_block,
     render_prompt,
 )
 from server.council import manual
@@ -86,7 +87,7 @@ def _user_prompt(ctx: MeetingContext, role: str, messages: list[tuple], comments
             for index, item in enumerate(payload.get("plan", [])):
                 verdict = check[index] if index < len(check) else {"accepted": True}
                 status = "feasible" if verdict.get("accepted") else f"not feasible: {verdict.get('code')}"
-                proposer = DISPLAY_NAMES.get(item["proposer"], item["proposer"])
+                proposer = name_of(ctx, item["proposer"])
                 lines.append(f"- {index + 1}) {order_text(item['order'])} ({proposer}; {status})")
             if not payload.get("plan"):
                 lines.append("- The plan is empty.")
@@ -109,7 +110,8 @@ def hold_debate(conn: psycopg.Connection, realm_id: int, client, settings) -> No
         if actor is None:
             continue
         system = render_prompt(
-            "debate_system.txt", role_title=ROLE_TITLES[role], display_name=DISPLAY_NAMES[role],
+            "debate_system.txt", role_title=ROLE_TITLES[role], display_name=name_of(ctx, role),
+            person=person_block(actor),
             realm_name=ctx.realm_name, duties=ROLE_DUTIES[role], traits=describe_traits(actor.traits),
             language=settings.language, mandate=mandate_block(ctx, actor),
             manual=manual.prompt_text(ctx.config),
@@ -124,4 +126,4 @@ def hold_debate(conn: psycopg.Connection, realm_id: int, client, settings) -> No
         if not text:
             continue
         insert_message(ctx, round_number, "comment", actor, text, {"stance": stance})
-        comments.append(f"- {DISPLAY_NAMES[role]} ({stance}): {text}")
+        comments.append(f"- {name_of(ctx, role)} ({stance}): {text}")

@@ -9,7 +9,7 @@ game's budget is exhausted.
 
 import json
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
@@ -22,7 +22,7 @@ from engine.turn import jobs_at_harvest
 from engine.config import Config
 from engine.orders import Order
 from engine.state import GameState
-from server.council import briefing, manual, memory
+from server.council import briefing, manual, memory, persons
 from server.council.llm import LLMError
 from server.council.personality import describe_traits
 from server.council.settings import CouncilSettings
@@ -53,10 +53,10 @@ MAX_PROPOSALS = 3
 # the models would otherwise call the Architetta "l'architetto".
 DISPLAY_NAMES = {"treasurer": "Il Tesoriere", "architect": "L'Architetta", "chancellor": "Il Cancelliere",
                  "square_voice": "La Voce della piazza", "people": "Il popolo"}
-ABSENT_TEXT = "{name} non si è presentato al consiglio questo mese."
+ABSENT_TEXT = "{name} non si è {presented} al consiglio questo mese."
 BUDGET_TEXT = "Il fondo per i consiglieri è esaurito: {name} tace fino alla fine della partita."
 FALLBACK_SUMMARY = (
-    "Il Cancelliere è assente. Gli scrivani hanno raccolto le proposte dei ministri: "
+    "{name} è assente. Gli scrivani hanno raccolto le proposte dei ministri: "
     "{accepted} su {total} superano il controllo dei costi e formano il piano."
 )
 
@@ -147,6 +147,7 @@ class Actor:
     role: str
     model: str
     traits: dict
+    person: dict = field(default_factory=dict)  # name, gender, resume, salary (persons.py)
 
 
 @dataclass
@@ -433,6 +434,29 @@ def expertise_block(role: str) -> str:
     return (EXPERTISE_INTRO + path.read_text()) if path.exists() else ""
 
 
+def _person(ctx: MeetingContext, role: str) -> dict:
+    return ctx.actors[role].person if role in ctx.actors else {}
+
+
+def name_of(ctx: MeetingContext, role: str) -> str:
+    """@brief How the game calls this office's holder ("Gisella da Valle,
+    l'Architetta"; the bare title for games without persons)."""
+    person = ctx.actors[role].person if role in ctx.actors else {}
+    return persons.display_name(role, person)
+
+
+def names_by_role(ctx: MeetingContext) -> dict[str, str]:
+    return {role: name_of(ctx, role) for role in (*MINISTERS, "chancellor", "square_voice", "people")}
+
+
+def names_by_actor(ctx: MeetingContext) -> dict[int, str]:
+    return {a.id: name_of(ctx, a.role) for a in ctx.actors.values()}
+
+
+def person_block(actor: Actor) -> str:
+    return persons.person_lines(actor.role, actor.person)
+
+
 def mandate_block(ctx: MeetingContext, actor: Actor) -> str:
     """@brief The approved mandate lines for this actor's prompt ("" if none)."""
     from server.council import mandates  # the mandates module builds on this one
@@ -446,7 +470,8 @@ def _minister_system(ctx: MeetingContext, actor: Actor) -> str:
         manual=manual.prompt_text(ctx.config),
         expertise=expertise_block(actor.role),
         role_title=ROLE_TITLES[actor.role],
-        display_name=DISPLAY_NAMES[actor.role],
+        display_name=name_of(ctx, actor.role),
+        person=person_block(actor),
         realm_name=ctx.realm_name,
         duties=ROLE_DUTIES[actor.role],
         traits=describe_traits(actor.traits),
@@ -464,8 +489,11 @@ def _chancellor_system(ctx: MeetingContext, actor: Actor) -> str:
         expertise=expertise_block(actor.role),
         realm_name=ctx.realm_name,
         traits=describe_traits(actor.traits),
-        treasurer_name=DISPLAY_NAMES["treasurer"],
-        architect_name=DISPLAY_NAMES["architect"],
+        treasurer_name=name_of(ctx, "treasurer"),
+        architect_name=name_of(ctx, "architect"),
+        treasurer_gender=persons.GENDER_WORDS[persons.gender_of("treasurer", _person(ctx, "treasurer"))],
+        architect_gender=persons.GENDER_WORDS[persons.gender_of("architect", _person(ctx, "architect"))],
+        person=person_block(actor),
         treasurer_actions=", ".join(ROLE_ACTIONS["treasurer"]),
         architect_actions=", ".join(ROLE_ACTIONS["architect"]),
         language=ctx.settings.language,
@@ -532,12 +560,11 @@ def _history(ctx: MeetingContext, actor: Actor, turns_back: int) -> list[str]:
     if actor.role == "chancellor":
         return memory.chancellor_consequence_lines(
             ctx.conn, ctx.game_id, ctx.realm_id, actor.id,
-            ctx.turn - turns_back, ctx.turn, DISPLAY_NAMES,
+            ctx.turn - turns_back, ctx.turn, names_by_role(ctx),
         )
-    names_by_actor = {a.id: DISPLAY_NAMES[a.role] for a in ctx.actors.values()}
     return memory.consequence_lines(
         ctx.conn, ctx.game_id, ctx.realm_id, actor.id, actor.role,
-        ctx.turn - turns_back, ctx.turn, names_by_actor,
+        ctx.turn - turns_back, ctx.turn, names_by_actor(ctx),
     )
 
 
@@ -546,8 +573,8 @@ def _audience_memory(ctx: MeetingContext, actor: Actor) -> tuple[list[str], list
     dialogue = memory.audience_dialogue(
         ctx.conn, actor.id, ctx.turn - memory.AUDIENCE_HISTORY_TURNS, ctx.turn
     )
-    names_by_actor = {a.id: DISPLAY_NAMES[a.role] for a in ctx.actors.values()}
-    facts = memory.audience_facts(ctx.conn, ctx.realm_id, ctx.turn, actor.id, names_by_actor)
+    actor_names = names_by_actor(ctx)
+    facts = memory.audience_facts(ctx.conn, ctx.realm_id, ctx.turn, actor.id, actor_names)
     return dialogue, facts
 
 
@@ -555,9 +582,9 @@ def _note_lines(ctx: MeetingContext, actor: Actor, last_turn: int | None = None)
     """@brief This actor's secret notes of recent turns; a note is read the
     month after it was written (last_turn defaults to the previous turn)."""
     from server.council import notes  # kept apart: only the two ends ever read a note
-    names_by_actor = {a.id: DISPLAY_NAMES[a.role] for a in ctx.actors.values()}
+    actor_names = names_by_actor(ctx)
     last = ctx.turn - 1 if last_turn is None else last_turn
-    return notes.note_lines(ctx.conn, actor.id, last - notes.NOTE_HISTORY_TURNS + 1, last, names_by_actor)
+    return notes.note_lines(ctx.conn, actor.id, last - notes.NOTE_HISTORY_TURNS + 1, last, actor_names)
 
 
 def _store_note(ctx: MeetingContext, actor: Actor, raw: object) -> None:
@@ -590,7 +617,8 @@ def _lessons_system(ctx: MeetingContext, actor: Actor) -> str:
         manual=manual.prompt_text(ctx.config),
         expertise=expertise_block(actor.role),
         role_title=ROLE_TITLES[actor.role],
-        display_name=DISPLAY_NAMES[actor.role],
+        display_name=name_of(ctx, actor.role),
+        person=person_block(actor),
         realm_name=ctx.realm_name,
         duties=ROLE_DUTIES[actor.role],
         traits=describe_traits(actor.traits),
@@ -649,9 +677,11 @@ def _reflect(ctx: MeetingContext, actor: Actor) -> None:
 
 # --------------------------------------------------------------- rounds
 
-def _absence_text(role: str, reason: str) -> str:
+def _absence_text(ctx: MeetingContext, role: str, reason: str) -> str:
     template = BUDGET_TEXT if reason == "budget_exhausted" else ABSENT_TEXT
-    return template.format(name=DISPLAY_NAMES[role])
+    person = ctx.actors[role].person if role in ctx.actors else {}
+    presented = "presentata" if persons.gender_of(role, person) == "f" else "presentato"
+    return template.format(name=name_of(ctx, role), presented=presented)
 
 
 def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
@@ -667,7 +697,7 @@ def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
     schema = _MinisterSchema.model_json_schema()
     reply, status = _ask(ctx, actor, _minister_system(ctx, actor), user, schema, _MinisterReply)
     if reply is None:
-        report, valid, discarded = _absence_text(actor.role, status), [], []
+        report, valid, discarded = _absence_text(ctx, actor.role, status), [], []
     else:
         valid, discarded = _validate_proposals(actor.role, reply.proposals)
         report = reply.report
@@ -694,7 +724,8 @@ def _chancellor_turn(ctx: MeetingContext, round_number: int, events: list[dict],
     if reply is None:
         # Fixed-template fallback: the plan is every proposal that passes the check.
         plan = [item for item, verdict in zip(proposals, check["verdicts"]) if verdict["accepted"]]
-        summary = FALLBACK_SUMMARY.format(accepted=len(plan), total=len(proposals))
+        office = name_of(ctx, "chancellor")
+        summary = FALLBACK_SUMMARY.format(name=office[0].upper() + office[1:], accepted=len(plan), total=len(proposals))
         discarded = []
     else:
         plan, discarded = _validate_plan(reply.plan)
@@ -735,7 +766,7 @@ def load_context(conn: psycopg.Connection, realm_id: int, client, settings) -> M
         raise NoOpenTurnError(f"realm {realm_id} has no open turn")
     game_id, realm_name, turn = row
     actors = {
-        role: Actor(actor_id, role, model, personality.get("traits", {}))
+        role: Actor(actor_id, role, model, personality.get("traits", {}), personality)
         for actor_id, role, model, personality in conn.execute(
             "SELECT id, role, model, personality FROM actors WHERE realm_id = %s", (realm_id,)
         )

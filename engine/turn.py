@@ -107,7 +107,8 @@ def _advance_construction(state: GameState, events: list[Event]) -> None:
 
 
 def _collect_taxes_and_upkeep(state: GameState, config: Config, events: list[Event]) -> bool:
-    """@brief Add tax income, then pay upkeep of active buildings.
+    """@brief Add tax income, pay upkeep of active buildings, then the
+    counsellors' salaries (buildings first: unpaid upkeep halves output).
     @return True if the upkeep was paid in full.
     """
     state.gold += monthly_tax_income(state, config)
@@ -115,8 +116,15 @@ def _collect_taxes_and_upkeep(state: GameState, config: Config, events: list[Eve
     if state.gold < upkeep:
         # Nothing is paid: keeping gold at zero would hide the problem.
         events.append(Event("upkeep_unpaid", {"upkeep": upkeep, "gold": state.gold}))
+        if state.council_salary:
+            events.append(Event("salaries_unpaid", {"salaries": state.council_salary, "gold": state.gold}))
         return False
     state.gold -= upkeep
+    if state.council_salary:
+        if state.gold >= state.council_salary:
+            state.gold -= state.council_salary
+        else:
+            events.append(Event("salaries_unpaid", {"salaries": state.council_salary, "gold": state.gold}))
     return True
 
 

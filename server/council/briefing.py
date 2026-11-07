@@ -105,7 +105,9 @@ def treasury_lines(state: GameState, config: Config, people=None) -> list[str]:
     return [
         "## Treasury and people",
         f"- Gold: {state.gold}. Tax income per month at {state.tax_rate}%: "
-        f"{monthly_tax_income(state, config)}. Building upkeep per month: {monthly_upkeep(state, config)}.",
+        f"{monthly_tax_income(state, config)}. Building upkeep per month: {monthly_upkeep(state, config)}."
+        + (f" Council salaries per month: {state.council_salary}, paid after the upkeep."
+           if state.council_salary else ""),
         f"- Food in store: {state.food}. Eaten per month at '{state.ration}' ration: "
         f"{food_needed(state, config)}. Without any harvest it would last about "
         f"{_reserve_months_text(state, config)} months. "

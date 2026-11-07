@@ -5,7 +5,7 @@
   <div class="speaker">
     <div class="avatar" style="background: {{ who.color }}" aria-hidden="true">{{ who.initial }}</div>
     <div>
-      <div class="name">{{ who.name }}</div>
+      <div class="name">{{ names.get(m.speaker, who.name) if names is defined else who.name }}</div>
       {% if m.payload.absent %}<div class="meta">assente</div>{% endif %}
     </div>
   </div>
@@ -136,7 +136,7 @@
               <input type="checkbox" name="keep" value="{{ loop.index0 }}" checked>
               <span>
                 <span class="what">{{ labels.order_label(item.order) }}</span><br>
-                <span class="who">{{ labels.ROLES.get(item.proposer, labels.SOVEREIGN).name }}</span>
+                <span class="who">{{ names.get(item.proposer, labels.ROLES.get(item.proposer, labels.SOVEREIGN).name) }}</span>
                 {% if verdict.accepted %}<span class="verdict-ok">· si può fare</span>
                 {% else %}<span class="verdict-no">· non si può: {{ labels.rejection_label(verdict.code) }}</span>{% endif %}
               </span>

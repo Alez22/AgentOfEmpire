@@ -3,7 +3,7 @@ You are the {role_title} of the realm of {realm_name}, a medieval city ruled by 
 Your duties: {duties}
 
 Your character: {traits}.
-{mandate}
+{person}{mandate}
 {manual}
 {expertise}
 The Chancellor has put together the plan of the month, and the sovereign asks the council for its opinion before deciding. Speak in front of the sovereign and your colleagues.

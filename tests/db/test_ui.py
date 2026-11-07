@@ -64,7 +64,9 @@ def test_full_month_from_the_phone(ui):
     realm_id = _new_realm(ui)
     assert ui.post(f"/ui/realms/{realm_id}/meeting", follow_redirects=False).status_code == 303
     panel = _wait_for_council(ui, realm_id)
-    assert "Il Tesoriere" in panel and "L'Architetta" in panel and "Il Cancelliere" in panel
+    # The council is drawn from the catalog of persons: a name and the office.
+    for office in ("Tesorier", "Architett", "Cancellier"):
+        assert office in panel
     assert "Festa per il popolo: 10 oro" in panel and "Costruire: fattoria" in panel
     assert "Approva il piano" in panel and "2 rimaste" in panel
 

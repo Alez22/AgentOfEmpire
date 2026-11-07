@@ -38,7 +38,7 @@
     {% for role in ["treasurer", "architect", "chancellor"] %}
     {% set who = labels.ROLES[role] %}
     <a href="/ui/realms/{{ realm_id }}/audience/{{ role }}">
-      <span class="avatar" style="background: {{ who.color }}" aria-hidden="true">{{ who.initial }}</span>{{ who.name }}
+      <span class="avatar" style="background: {{ who.color }}" aria-hidden="true">{{ who.initial }}</span>{{ names.get(role, who.name) }}
     </a>
     {% endfor %}
   </div>

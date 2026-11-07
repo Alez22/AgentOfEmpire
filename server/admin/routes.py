@@ -206,7 +206,7 @@ def _prompt_context(conn: psycopg.Connection, realm_id: int, settings) -> meetin
         "SELECT game_id, name FROM realms WHERE id = %s", (realm_id,)
     ).fetchone()
     actors = {
-        role: meeting.Actor(actor_id, role, model, personality.get("traits", {}))
+        role: meeting.Actor(actor_id, role, model, personality.get("traits", {}), personality)
         for actor_id, role, model, personality in conn.execute(
             "SELECT id, role, model, personality FROM actors WHERE realm_id = %s", (realm_id,)
         )
