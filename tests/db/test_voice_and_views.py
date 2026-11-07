@@ -301,3 +301,17 @@ def test_voice_never_hears_the_reserve_bonus(db, realm, settings):
     ctx = meeting.load_context(db, realm_id, FakeClient(), settings)
     ctx.state.tax_rate, ctx.state.food = 5, 100_000  # a huge stock: reserve bonus on
     assert "nothing in particular. What cheers them: nothing in particular." in voice.feelings_line(ctx)
+
+
+def test_voice_hears_the_direction_of_a_tax_change(db, realm, settings):
+    """Game 4: after a cut the square spoke of "a new tax nobody asked for"."""
+    game_id, realm_id = realm
+    from server.db.games import submit_order
+    submit_order(db, realm_id, {"action": "set_tax", "rate": 7}, priority=0)
+    submit_order(db, realm_id, {"action": "set_ration", "ration": "reduced"}, priority=1)
+    resolve_open_turn(db, game_id)
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)  # turn 2
+    facts = _by_role(client, "square_voice")[0]["user"]
+    assert "taxes lowered from 10% to 7% (January)" in facts
+    assert "ration cut from normal to reduced (January)" in facts

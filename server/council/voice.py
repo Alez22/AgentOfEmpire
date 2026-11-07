@@ -65,13 +65,38 @@ def _mood_series(conn: psycopg.Connection, realm_id: int, first_turn: int, last_
     return ", ".join(f"{MONTHS[(turn - 1) % 12]} {mood}" for turn, mood in rows)
 
 
+RATION_RANK = {"reduced": 0, "normal": 1, "abundant": 2}
+
+
+def _decision_words(raw: dict, before: dict | None) -> str:
+    """@brief A tax or ration order told with its direction ("taxes lowered
+    from 10% to 7%"). Game 4: given only "set_tax 7", the square twice spoke
+    of "a new tax nobody asked for" after a cut.
+    @param before State at the start of that turn (None if missing)."""
+    if before is None:
+        return order_text(raw)
+    if raw["action"] == "set_tax":
+        old, new = before["tax_rate"], raw["rate"]
+        way = "lowered" if new < old else "raised" if new > old else "kept"
+        return f"taxes {way} from {old}% to {new}%"
+    if raw["action"] == "set_ration":
+        old, new = before["ration"], raw["ration"]
+        way = "cut" if RATION_RANK[new] < RATION_RANK[old] else "increased" if new != old else "kept"
+        return f"ration {way} from {old} to {new}"
+    return order_text(raw)
+
+
 def _carried_out(conn: psycopg.Connection, realm_id: int, first_turn: int, last_turn: int) -> list[str]:
     rows = conn.execute(
         "SELECT o.turn, o.raw FROM orders o JOIN order_results r ON r.order_id = o.id"
         " WHERE o.realm_id = %s AND o.turn >= %s AND o.turn <= %s AND r.accepted ORDER BY o.id",
         (realm_id, first_turn, last_turn),
     ).fetchall()
-    return [f"{order_text(raw)} ({MONTHS[(turn - 1) % 12]})" for turn, raw in rows]
+    starts = dict(conn.execute(
+        "SELECT turn, state FROM snapshots WHERE realm_id = %s AND turn >= %s AND turn <= %s",
+        (realm_id, first_turn, last_turn),
+    ).fetchall())
+    return [f"{_decision_words(raw, starts.get(turn))} ({MONTHS[(turn - 1) % 12]})" for turn, raw in rows]
 
 
 def _told_events(ctx: MeetingContext, first_turn: int, last_turn: int) -> list[str]:

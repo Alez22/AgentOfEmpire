@@ -548,3 +548,12 @@ def test_jobs_at_harvest_count_sites_finishing_this_month(db, realm, settings):
     assert jobs_at_harvest(state, config)["food"] == 60
     state.buildings[1].turns_left = 2  # still building at harvest time
     assert jobs_at_harvest(state, config)["food"] == 45
+
+
+def test_treasurer_sees_the_coming_seasons(db, realm, settings):
+    _, realm_id = realm
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)  # January, 54 farmers: 810 at full yield
+    assert ("- Coming seasons, with today's farmers: spring 100% (about 810 a month); "
+            "summer 120% (about 972 a month); autumn 130% (about 1053 a month). "
+            "Months left in this season: 3.") in client.calls[0]["user"]

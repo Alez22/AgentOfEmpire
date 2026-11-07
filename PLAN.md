@@ -15,7 +15,7 @@ This file is the starting point of every work session: read it at the start and 
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (DeepSeek V4.1 Flash for all); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 144 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 146 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -58,6 +58,7 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [x] Famine balance: variant D applied (immediate shock −4 per missing point, −10 per death; `engine/config.toml`)
 - [x] Workers beyond the jobs: the Chancellor's cost check warns (`jobs_at_harvest` in the engine)
 - [x] Tension: start food 1600 and start mood 500 (lab above); without orders the realm now revolts in the second winter
+- [x] Game 4 fixes: the Voice hears the direction of tax and ration changes; the Treasurer sees the farm yield of the coming seasons
 - [ ] Play again to check the fixes: no mood numbers in reports, no calls over ~90 s, lesson reviews applied, the square keeps a thread, rations cut only when the harvest does not cover
 - [ ] Decide on tiles and workers (overbuilding, housing dead end, idle adults)
 - [ ] Tune engine values (food, taxes, mood)
@@ -193,6 +194,25 @@ Listened to the council, kept the normal ration, lowered taxes to 8 % then 5 % w
 4. **The Voice answered once in English** (fixed in `voice_system.txt`: "Write ONLY in {language}"). It inverted a decision once ("il sovrano ha messo la tassa" after a cut) and overstated a slight burden ("ci mangia vivi" at 8 %).
 5. **Workers beyond the jobs**: the Chancellor proposed 63 adults in the fields with 60 jobs, computing its own (wrong) yield; the engine check does not flag workers beyond the jobs.
 6. The Treasurer over-corrected once: "un banchetto non dà pane" became a reason to refuse feasts, which do lift the mood.
+
+### Game 4 "Pietrasanta" (2026-11-07, Claude as a sensible sovereign, start food 1600 and mood 500)
+
+Check of the new start values and of the fixes from games 2–3. 10 turns, $0.079 in 52 calls, no refused reply, slowest call 47 s, no mood number in 33 reports, no no-change order in the plans.
+
+| Turn | 1 | 2 | 3 | 4 | 5 | 7 | 9 | 11 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Food | 1600 | 1420 | 1243 | 807 | 811 | 791 | 1163 | 1588 |
+| Mood (hidden) | 500 | 455 | 416 | 424 | 438 | 456 | 467 | 473 |
+| Ration | normal | reduced | reduced | normal | normal | normal | normal | normal |
+
+**The first winter is now a real decision**: at turn 1 the council asked for the reduced ration and a small feast to get through to spring; the square resented the feast during the thin soup ("ci hanno fatto ballare mentre il grano spariva"); the mood fell to 416 (threshold 350), then recovered once the ration was normal again. A sensible player is never in danger but has to think. The Architect planned growth (a farm in June, the workers moved there in August as promised) and still never built for nobody.
+
+**Problems**
+
+1. **The Voice inverts tax cuts**: twice it spoke of "la tassa nuova che nessuno aveva chiesto" after the sovereign lowered taxes (10 → 7 %, 7 → 5 %). It receives "set_tax 7 (April)" without the previous rate.
+2. **The Treasurer sees only this month's harvest**: in May and June it asked to cut the ration "per accumulare per l'inverno" while summer (120 %) and autumn (130 %) were about to fill the granary. The briefing shows the season yield of this month only.
+3. The square keeps a vague rumour about grain going "per strade che noi non vediamo" (allowed as gossip, but recurring).
+4. The Architect's sums are sometimes wrong ("togliere cinque contadini per darne quattro al legno e tre alla pietra"); the Chancellor corrected it.
 
 ### Lab: famine balance (2026-11-07)
 

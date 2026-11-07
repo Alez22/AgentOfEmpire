@@ -45,10 +45,10 @@ def header_lines(state: GameState) -> list[str]:
     return [f"# Briefing, turn {state.turn}: {month}, {season_of(state.turn)}; {winter_text}"]
 
 
-def _farm_season_pct(state: GameState, config: Config) -> int:
+def _farm_season_pct(turn: int, config: Config) -> int:
     economy = config.economy
     return {"winter": economy.farm_winter_pct, "spring": economy.farm_spring_pct,
-            "summer": economy.farm_summer_pct, "autumn": economy.farm_autumn_pct}[season_of(state.turn)]
+            "summer": economy.farm_summer_pct, "autumn": economy.farm_autumn_pct}[season_of(turn)]
 
 
 def food_outlook_line(state: GameState, config: Config) -> str:
@@ -59,8 +59,25 @@ def food_outlook_line(state: GameState, config: Config) -> str:
     left -= left * config.economy.food_spoilage_pct // 100
     trend = "it grows" if left > state.food else "it shrinks" if left < state.food else "it holds"
     return (f"- Harvest expected this month if nothing changes: {harvest} food "
-            f"({season_of(state.turn)}: farms yield {_farm_season_pct(state, config)}%). "
-            f"After eating and rot the store would go from {state.food} to about {left}: {trend}.")
+            f"({season_of(state.turn)}: farms yield {_farm_season_pct(state.turn, config)}%). "
+            f"After eating and rot the store would go from {state.food} to about {left}: {trend}.\n"
+            + season_outlook_line(state, config, harvest))
+
+
+def season_outlook_line(state: GameState, config: Config, harvest: int) -> str:
+    """@brief The farm yield of the coming seasons, with today's farmers.
+    Game 4: seeing only this month, the Treasurer asked in May to cut the
+    ration "to save for winter" while summer and autumn were about to fill
+    the granary."""
+    this_pct = _farm_season_pct(state.turn, config)
+    full = harvest * 100 // this_pct if this_pct else 0
+    parts = []
+    for months_ahead in (3, 6, 9):
+        turn = state.turn + months_ahead
+        pct = _farm_season_pct(turn, config)
+        parts.append(f"{season_of(turn)} {pct}% (about {full * pct // 100} a month)")
+    return ("- Coming seasons, with today's farmers: " + "; ".join(parts)
+            + f". Months left in this season: {3 - (state.turn - 1) % 3}.")
 
 
 def treasury_lines(state: GameState, config: Config) -> list[str]:
