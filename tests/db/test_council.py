@@ -9,10 +9,11 @@ from fastapi.testclient import TestClient
 
 from engine.config import load_raw_config
 from server.app import create_app
-from server.council import meeting, memory
+from server.council import audience, meeting, memory
 from server.council.llm import FakeClient, LLMError
 from server.council.settings import load_settings
 from server.db.access import Clearance, agent_context
+from server.db import games
 from server.db.games import create_game, list_orders, resolve_open_turn
 
 COUNCIL = {"chancellor": "top-model", "treasurer": "mid-model", "architect": "mid-model"}
@@ -325,20 +326,57 @@ def test_revision_confirms_revises_drops_and_adds(db, realm, settings):
     assert "1. [new in turn 4] A (turno 1)" in client.calls[0]["user"]
 
 
-@pytest.mark.parametrize("bad_answer", [
-    _revision(actions=[{"lesson": 9, "action": "confirm"}]),                # unknown lesson
-    _revision(actions=[{"lesson": 1, "action": "drop"}]),                   # drop without reason
-    _revision(actions=[{"lesson": 1, "action": "revise", "reason": "x"}]),  # revise without text
-    _revision(new=[f"nuova {i}" for i in range(8)]),                        # 3 + 8 > 10 lessons
-    json.dumps({"new_lessons": ["manca actions"]}),                          # missing key
-])
-def test_invalid_revision_is_retried_then_changes_nothing(db, realm, settings, bad_answer):
+def test_malformed_revision_is_retried_then_changes_nothing(db, realm, settings):
     game_id, realm_id = realm
     _treasurer_with_three_lessons(db, game_id, realm_id, settings)
     calls_before = len(_call_statuses_for(db, game_id))
+    bad_answer = json.dumps({"new_lessons": ["manca actions"]})  # missing key
     meeting.hold_meeting(db, realm_id, FakeClient({"treasurer": [bad_answer, bad_answer]}), settings)
     assert _lesson_texts(db, realm_id, "treasurer") == ["A (turno 1)", "B (turno 2)", "C (turno 3)"]
     assert _call_statuses_for(db, game_id)[calls_before:calls_before + 2] == ["invalid_reply"] * 2
+
+
+@pytest.mark.parametrize("bad_action", [
+    {"lesson": 9, "action": "confirm"},                # unknown lesson
+    {"lesson": 1, "action": "drop"},                   # drop without reason
+    {"lesson": 1, "action": "revise", "reason": "x"},  # revise without text
+    "not an object",
+])
+def test_bad_action_is_discarded_and_the_others_apply(db, realm, settings, bad_action):
+    game_id, realm_id = realm
+    _treasurer_with_three_lessons(db, game_id, realm_id, settings)
+    calls_before = len(_call_statuses_for(db, game_id))
+    answer = _revision(actions=[bad_action, {"lesson": 3, "action": "drop", "reason": "smentita"}],
+                       new=["D (turno 6)"])
+    meeting.hold_meeting(db, realm_id, FakeClient({"treasurer": [answer]}), settings)  # turn 7
+    assert _lesson_texts(db, realm_id, "treasurer") == ["A (turno 1)", "B (turno 2)", "D (turno 6)"]
+    assert _call_statuses_for(db, game_id)[calls_before] == "ok"  # no retry
+    error = db.execute(
+        "SELECT c.error FROM model_calls c JOIN actors a ON a.id = c.actor_id"
+        " WHERE c.game_id = %s AND c.turn = 7 AND a.role = 'treasurer' ORDER BY c.id LIMIT 1",
+        (game_id,),
+    ).fetchone()[0]
+    assert error.startswith("discarded: ")
+
+
+def test_new_lessons_beyond_the_maximum_are_cut(db, realm, settings):
+    game_id, realm_id = realm
+    _treasurer_with_three_lessons(db, game_id, realm_id, settings)
+    answer = _revision(new=[f"nuova {i}" for i in range(8)])  # 3 + 8 > 10
+    meeting.hold_meeting(db, realm_id, FakeClient({"treasurer": [answer]}), settings)
+    texts = _lesson_texts(db, realm_id, "treasurer")
+    assert len(texts) == 10 and texts[-1] == "nuova 6"
+
+
+def test_small_format_slips_in_a_revision_are_tolerated(db, realm, settings):
+    """Game 7: the Chancellor wrote "reason " with a trailing space."""
+    game_id, realm_id = realm
+    _treasurer_with_three_lessons(db, game_id, realm_id, settings)
+    answer = _revision(actions=[
+        {"lesson": "2", "Action": "Revise", "text": "B corretta (turno 6)", "reason ": "smentita"},
+    ])
+    meeting.hold_meeting(db, realm_id, FakeClient({"treasurer": [answer]}), settings)
+    assert _lesson_texts(db, realm_id, "treasurer") == ["A (turno 1)", "C (turno 3)", "B corretta (turno 6)"]
 
 
 def _call_statuses_for(db, game_id):
@@ -425,13 +463,30 @@ def test_refused_reply_is_logged_and_the_retry_explains_why(db, realm, settings)
     assert client.calls[1]["user"].startswith(client.calls[0]["user"])
 
 
-def test_revision_rule_errors_reach_the_log(db, realm, settings):
+def test_discarded_actions_reach_the_log(db, realm, settings):
     game_id, realm_id = realm
     _treasurer_with_three_lessons(db, game_id, realm_id, settings)
     bad = _revision(actions=[{"lesson": 2, "action": "drop"}])
-    meeting.hold_meeting(db, realm_id, FakeClient({"treasurer": [bad, bad]}), settings)  # turn 7
+    meeting.hold_meeting(db, realm_id, FakeClient({"treasurer": [bad]}), settings)  # turn 7
     errors = [row[0] for row in db.execute(
-        "SELECT error FROM model_calls WHERE game_id = %s AND turn = 7 AND status = 'invalid_reply'",
+        "SELECT c.error FROM model_calls c JOIN actors a ON a.id = c.actor_id"
+        " WHERE c.game_id = %s AND c.turn = 7 AND a.role = 'treasurer' AND c.status = 'ok' ORDER BY c.id",
         (game_id,),
     )]
-    assert errors == ["drop of lesson 2 needs a reason"] * 2
+    assert errors[0] == "discarded: drop of lesson 2 needs a reason"
+
+
+def test_no_council_prompt_contains_the_mood(db, realm, settings):
+    """The council knows the people only from the square, like the sovereign."""
+    game_id, realm_id = realm
+    _play_turns_with_council(db, game_id, realm_id, settings, 3)
+    mood = str(games.load_latest_state(db, realm_id).mood)
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)  # turn 4: reflections + meeting
+    audience.speak(db, realm_id, "treasurer", "Come sta il popolo?", client, settings)
+    assert len(client.calls) == 7
+    for call in client.calls:
+        prompt = call["system"] + call["user"]
+        assert "/1000" not in prompt and "threshold" not in prompt and "Mood of" not in prompt
+        assert f"mood {mood}" not in prompt and f" {mood} " not in prompt
+    assert "- Unrest: calm" in client.calls[3]["user"]

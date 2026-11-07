@@ -15,7 +15,7 @@ This file is the starting point of every work session: read it at the start and 
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (DeepSeek V4.1 Flash for all); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 123 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 134 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -24,7 +24,7 @@ This file is the starting point of every work session: read it at the start and 
 - **Tests:** `docker compose run --rm tests`.
 - **Replay a game:** `docker compose run --rm tests python lab/replay.py <id>`.
 - **Compare balance variants:** `docker compose run --rm tests python lab/compare_variants.py`.
-- **Current cost:** about $0.01 per turn, meeting and Voice of the square included. The cap is $1 per game, in `server/council.toml`.
+- **Current cost:** about $0.02 per turn (measured on game 7), meeting and Voice of the square included. The cap is $1 per game, in `server/council.toml`.
 
 ### Known limits
 
@@ -49,9 +49,13 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [x] Voice of the square and filtered sovereign view (no mood)
 - [x] Phone UI and admin view
 
-### 2. Field test – next
+### 2. Field test – in progress
 
-- [ ] Play 12–24 turns from the phone and note what does not work
+- [x] Play 12–24 turns from the phone and note what does not work (game 7, 12 months; see "Field test notes")
+- [x] Fix the bugs found in the test: mood only to the Voice (the council hears the square), 90 s deadline on the whole call, 8000 output tokens cap, bad lesson actions discarded one by one
+- [x] Voice of the square: only evident facts (court clearance, no granaries: the people only guess them), its own words of the last two turns, month windows aligned with the story; audience fact public, births and deaths court level
+- [ ] Play again to check the fixes: no mood numbers in reports, no calls over ~90 s, lesson reviews applied, the square keeps a thread
+- [ ] Decide on tiles and workers (overbuilding, housing dead end, idle adults)
 - [ ] Tune engine values (food, taxes, mood)
 - [ ] Review the council and square prompts
 - [ ] Polish the UI after the test
@@ -68,22 +72,65 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 
 ### 4. Full game
 
-- [ ] More classes: artisans and merchants, clergy, soldiers
+- [ ] More classes: artisans and merchants, clergy, soldiers; each with its own memory horizon in the square (peasants 2–3 months, merchants and clergy a year or more)
 - [ ] Marshal and Ambassador
 - [ ] Tile map and more states, automatic ones too
 - [ ] Market, trade and diplomacy (they give gold a use)
 - [ ] Espionage, war, revolts and coups
 - [ ] Eras, variable trust and loyalty, leaks
+- [ ] Press by era: rumours only, then government communiqués (propaganda, also to other states), then independent journalism (see Progress in `docs/DESIGN.md`)
 - [ ] Jev instead of the fixed rules
+
+## Field test notes
+
+### Game 7 "Prova" (2026-11-07, 12 months resolved, $0.24, 86 calls, no order rejected)
+
+| | Jan (t1) | Apr (t4) | Jul (t7) | Oct (t10) | Jan (t13) |
+| --- | --- | --- | --- | --- | --- |
+| Food | 2000 | 1382 | 2102 | 2428 | 3139 |
+| Wood / stone | 150 / 100 | 146 / 102 | 96 / 94 | 74 / 60 | 154 / 66 |
+| Gold | 100 | 94 | 107 | 106 | 101 |
+| Mood | 600 | 446 | 404 | 447 | 460 |
+| Population | 100 | 102 | 105 | 106 | 108 |
+| Free tiles | 7 | 6 | 4 | 1 | 0 |
+
+**Bugs**
+
+1. **Mood numbers reach the sovereign through the council**: 19 of 51 reports and summaries quote the exact mood ("Il morale è 478", "446/1000", "sotto 350 è rivolta"), audiences too. The briefing gives the number and the threshold; no prompt forbids repeating them. The Voice never did, because its prompt forbids it.
+2. **The 60 s timeout is not enforced**: one Architect call took 221 s, the Chancellor up to 92 s. httpx's timeout applies to each network wait, not to the whole call, and OpenRouter keeps the connection alive while the model reasons.
+3. **Lesson reviews fail**: turn 7 Architect failed twice ("revise of lesson 2 needs a reason"), so that season taught it nothing; turn 13 the Chancellor wrote the key `"reason "` (trailing space) and needed the retry. The Architect's first refusal at turn 7 had no reason at all, the second put the reason inside the text.
+4. **Runaway generation, no output cap**: at turn 13 the Architect looped on "(turno 11)" up to 131,072 output tokens (221 s, $0.074, 31 % of the whole game). No call sets a maximum number of output tokens.
+
+**Balance**
+
+- No crisis at all: the first winter only went down to 1382 food (reduced ration, 3 new farms), then food rose every month to 3139 (5+ months). Mood never went below 404: unrest always calm. The reduced ration, kept for half the year with plenty of food, was the main cause of low mood.
+- Overbuilding: the Architect used all 7 tiles (3 farms, 2 sawmills, 2 quarries); 165 jobs for 67 adults, the new sawmills and quarries stay almost empty. Its own lessons say to staff them; it did not.
+- Gold is tight, not piling up: 19 buildings = 19 gold upkeep vs 26 tax at 8 %, plus a feast almost every month.
+- Dead end ahead: 108 people for 120 places, no free tile, so no house can be built. In about a year housing is full (no births, −100 mood) with nothing to do about it.
+
+**Council**
+
+- Works: directives followed; the Voice of the square is very good (no numbers, remembers events, credible doubts); the Chancellor learned the sovereign's preferences.
+- Wrong lessons: the Architect believes "normal ration and feasts raise food" (false) and that "the Treasurer can trim the proposals" (it was the sovereign).
+- In audience the Chancellor promised "taxes at 20 %" but can only recombine the ministers' proposals, and the Treasurer never knew.
+- Useless orders: `set_tax 8` proposed again at turns 9 and 10 with taxes already at 8 %.
+- The Voice's season stories start one month early ("A settembre" for October–December): it receives two earlier months of mood.
+
+**Cost**
+
+- About $0.02 per turn, twice the estimate (about $0.014 without the runaway call): the $1 cap stops a game around turn 50; 120 turns need about $2.40.
+- The Architect alone spends half ($0.129) and averages 27 s per call; Treasurer 11 s, Voice 2 s.
+
+**Proposed order of work**: (1) fix the four bugs; (2) decide on tiles and workers; (3) more tension (harder winters or smaller stocks, tried with `lab/compare_variants.py`); (4) small fixes: drop no-op orders, Chancellor aware in audiences that it can only recombine (Voice months: done).
 
 ## Open decisions
 
 | Decision | Needed by | Notes |
 | --- | --- | --- |
-| Models per tier and spending cap for a long game | end of phase 2 | today all roles use DeepSeek V4.1 Flash with reasoning `low` (the Voice `none`). At about $0.01 per turn, $1 lasts about 100 turns: 120 turns need about $1.50 |
+| Models per tier and spending cap for a long game | end of phase 2 | today all roles use DeepSeek V4.1 Flash with reasoning `low` (the Voice `none`). Game 7 measured about $0.02 per turn: $1 lasts about 50 turns, 120 turns need about $2.40 |
 | What the admin sees in games with others | phase 3, before the first game with friends | either the admin does not play, or in running games the view hides the other players' secrets |
 | Use of gold | phase 4 | deferred. Options considered: simple market with fixed prices and a margin (preferred), concessions during unrest, higher recurring costs, expensive goals |
-| Idle adults | phase 2 | extend the fixed rule to wood and stone, or leave them to the Architect |
+| Tiles and workers | phase 2 | game 7: overbuilding with no staff and a housing dead end once tiles run out. Options: show the Architect unstaffed jobs, allow demolition, a way to gain tiles; also idle adults (extend the fixed rule to wood and stone, or leave them to the Architect) |
 | Automatic sovereigns | phase 3 | personality, models, budget |
 | Jev | phase 4 | technical details, policy schema, waiting-list sign-up |
 | Lost vision sections | before phase 4 | rewrite the parts marked [Lost] in `docs/DESIGN.md` (map, war, victory, diplomacy, espionage, progress) |
@@ -97,7 +144,7 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - **Council:** the engine always computes the numbers. Orders always go through the council, never through audiences.
 - **Lessons:** at most 10 per council member, reasoned revision every season, no automatic forgetting. Secret from everyone, sovereign included.
 - **Private audiences:** only words count. The other council members know only that they took place; a member may stay silent or embellish, but never change the numbers.
-- **Sovereign view:** no number and no summary word for mood. The sovereign learns about the people only from the Voice of the square and the council.
+- **Mood:** a number inside the engine, read only by the Voice of the square. Neither the sovereign nor the council sees it: both know the people from the square's words and the public unrest level.
 - **Security:** no open port on the router, access via Tailscale. The OpenRouter key lives only in `.env` and reaches only the server.
 
 ## How we work

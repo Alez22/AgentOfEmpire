@@ -21,7 +21,7 @@ from server.council.meeting import (
     ask_text,
     load_context,
     render_prompt,
-    square_voice_text,
+    square_voices,
 )
 from server.council.personality import describe_traits
 from server.council.settings import CouncilSettings
@@ -87,11 +87,13 @@ def _insert_line(ctx: MeetingContext, actor, speaker: str, content: str) -> None
 
 
 def _record_fact(ctx: MeetingContext, actor) -> None:
-    """@brief First sovereign line of the turn with this member: the council
-    (and the chronicle) learns THAT the audience took place, not what was said."""
+    """@brief First sovereign line of the turn with this member: everyone
+    learns THAT the audience took place, never what was said.
+    Public on purpose (decided 2026-11-07): meeting a counsellor in private
+    is not a secret act; only the words are private."""
     ctx.conn.execute(
         "INSERT INTO events (game_id, realm_id, turn, kind, data, visibility)"
-        " VALUES (%s, %s, %s, 'audience', %s, 'council')",
+        " VALUES (%s, %s, %s, 'audience', %s, 'public')",
         (ctx.game_id, ctx.realm_id, ctx.turn, Jsonb({"role": actor.role})),
     )
 
@@ -111,7 +113,7 @@ def _briefing(ctx: MeetingContext, actor) -> str:
         ctx.conn, actor.id, ctx.turn - memory.AUDIENCE_HISTORY_TURNS, ctx.turn
     )
     lines = (briefing.header_lines(ctx.state) + briefing.lessons_lines(lessons) + sections
-             + briefing.events_lines(events) + briefing.square_lines(square_voice_text(ctx))
+             + briefing.events_lines(events) + briefing.square_lines(square_voices(ctx))
              + briefing.audience_lines(dialogue))
     lines.append("Answer the sovereign's last words above.")
     return "\n".join(lines)

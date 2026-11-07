@@ -8,17 +8,18 @@ A season has ended. Alone in your study, you look back at what you did, what was
 
 Your current lessons are numbered and tagged with how solid they are. For each lesson you may give ONE action:
 - "confirm": this season's facts support it.
-- "revise": it needs correcting; give the new "text" and the "reason".
+- "revise": it needs correcting; give the "reason" and the new "text", in two separate fields.
 - "drop": the facts contradict it or it no longer helps; give the "reason".
+An action without its "reason" is discarded.
 - no action: it stays as it is.
 You may also add new lessons.
 
 How to reflect:
 - A lesson confirmed many times deserves more evidence before you revise or drop it.
-- Mood changes slowly: an effect may show only one or two months later.
+- You know the people's mood only from what is said in the square, and the square may exaggerate. Mood changes slowly: an effect may show only one or two months later.
 - Other decisions taken in the same month may explain a change better than yours.
 - Each lesson is one short, practical sentence in {language}, ending with the turn it comes from, for example "(turno 3)". Reasons are short too.
 - At most {max_lessons} lessons after your changes: if you are full, drop or merge (revise) before adding.
 
 Answer ONLY with a JSON object, no other text:
-{{"actions": [{{"lesson": <number>, "action": "confirm" | "revise" | "drop", "text": "<new text, only for revise>", "reason": "<only for revise and drop>"}}], "new_lessons": ["<lesson>", ...]}}
+{{"actions": [{{"lesson": <number>, "action": "confirm" | "revise" | "drop", "reason": "<only for revise and drop>", "text": "<new text, only for revise>"}}], "new_lessons": ["<lesson>", ...]}}

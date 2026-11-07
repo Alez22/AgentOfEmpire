@@ -28,9 +28,15 @@ MAX_VOICE_CHARS = 1200
 MONTHLY_RULE = "Say it in two or three sentences, at most 60 words."
 SEASON_RULE = ("A season has just ended: tell how the people lived it, month after month, "
                "in at most 150 words.")
-# Engine events the people would talk about (routine bookkeeping left out).
-TOLD_EVENTS = ("famine", "unrest_changed", "building_completed", "demography", "upkeep_unpaid",
-               "game_over", "audience")
+# Engine events the people would talk about. The voice reads them with COURT
+# clearance, so council-only bookkeeping (upkeep, spoilage, rescaled
+# workers) never reaches the square even if listed here.
+TOLD_EVENTS = ("famine", "unrest_changed", "building_completed", "demography", "game_over", "audience")
+# How far back the peasants remember (mood and events). One value while the
+# peasants are the only class; later each class gets its own horizon
+# (e.g. merchants and clergy a year or more): see docs/DESIGN.md.
+PEASANT_MEMORY_MONTHS = 3
+OWN_WORDS_TURNS = 2  # the voice rereads what it said in the last turns, for continuity
 
 
 def ensure_voice_actor(ctx: MeetingContext) -> Actor | None:
@@ -70,33 +76,46 @@ def _carried_out(conn: psycopg.Connection, realm_id: int, first_turn: int, last_
 def _told_events(ctx: MeetingContext, first_turn: int, last_turn: int) -> list[str]:
     told = []
     for turn in range(max(1, first_turn), last_turn + 1):
-        for event in games.list_visible_events(ctx.conn, ctx.game_id, ctx.realm_id, turn, Clearance.COUNCIL):
+        for event in games.list_visible_events(ctx.conn, ctx.game_id, ctx.realm_id, turn, Clearance.COURT):
             if event["realm_id"] == ctx.realm_id and event["kind"] in TOLD_EVENTS:
                 told.append(f"{event['kind']} {event['data']} ({MONTHS[(turn - 1) % 12]})")
     return told
 
 
+def _own_words(ctx: MeetingContext) -> list[str]:
+    rows = ctx.conn.execute(
+        "SELECT turn, content FROM council_messages WHERE realm_id = %s AND kind = 'voice'"
+        " AND turn >= %s AND turn < %s ORDER BY id",
+        (ctx.realm_id, ctx.turn - OWN_WORDS_TURNS, ctx.turn),
+    ).fetchall()
+    return [f"- {MONTHS[(turn - 1) % 12]}: {text}" for turn, text in dict(rows).items()]
+
+
 def facts_for_the_square(ctx: MeetingContext, season: bool) -> str:
     """@brief What the people live through, with exact numbers the voice must
-    turn into words. A season covers the three months just ended."""
+    turn into words. A season covers the three months just ended; the mood
+    series starts one value earlier so the trend of those months shows."""
     state = ctx.state
-    months_back = 3 if season else 1
-    first_turn = ctx.turn - months_back
-    population = state.children + state.adults + state.elders
-    food_per_person = state.food // population if population else 0
+    months_told = 3 if season else 1
+    first_turn = ctx.turn - months_told
+    mood_from = ctx.turn - (months_told if season else PEASANT_MEMORY_MONTHS - 1)
     lines = [
         f"# The square of {ctx.realm_name}, {MONTHS[(ctx.turn - 1) % 12]}",
         "- Mood of the peasants (0-1000; NEVER say these numbers), oldest first: "
-        + _mood_series(ctx.conn, ctx.realm_id, ctx.turn - 2 - (2 if season else 0), ctx.turn) + ".",
+        + _mood_series(ctx.conn, ctx.realm_id, mood_from, ctx.turn) + ".",
         f"- Unrest: {state.unrest}; months in a row of deep discontent: {state.low_mood_turns}.",
-        f"- Food in the granaries per person: {food_per_person} (each eats about 8 to 10 a month). "
-        f"Ration: {state.ration}. Taxes: {state.tax_rate}%.",
+        # No granaries, not even in words: the people cannot know the stock,
+        # they can only guess it from the ration, hunger and feasts.
+        f"- Ration: {state.ration}. Taxes: {state.tax_rate}%.",
         f"- People: {state.children} children, {state.adults} adults, {state.elders} elders.",
     ]
     events = _told_events(ctx, first_turn, ctx.turn - 1)
     lines.append("- What happened: " + ("; ".join(events) if events else "nothing remarkable") + ".")
     orders = _carried_out(ctx.conn, ctx.realm_id, first_turn, ctx.turn - 1)
     lines.append("- Decisions of the crown carried out: " + ("; ".join(orders) if orders else "none") + ".")
+    own = _own_words(ctx)
+    if own:
+        lines += ["## What you said before (keep the thread; do not repeat the same images)"] + own
     return "\n".join(lines)
 
 

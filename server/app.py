@@ -62,6 +62,7 @@ def _make_llm_client(settings: CouncilSettings):
         os.environ.get("OPENROUTER_API_KEY", ""),
         settings.timeout_seconds,
         settings.prices,
+        settings.max_output_tokens,
     )
 
 

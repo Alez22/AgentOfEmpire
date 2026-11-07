@@ -18,10 +18,11 @@ from server.db.access import Clearance, agent_context
 MAX_LESSON_CHARS = 300  # the maximum number of lessons is in council.toml
 
 # Numbers each role follows after its decisions ("idle" = adults without work).
+# No "mood": the council knows the people only from the square's words.
 ROLE_METRICS = {
-    "treasurer": ("mood", "food", "gold"),
+    "treasurer": ("food", "gold"),
     "architect": ("food", "wood", "stone", "idle"),
-    "chancellor": ("mood", "food", "gold", "wood", "stone"),
+    "chancellor": ("food", "gold", "wood", "stone"),
 }
 # Events worth remembering; routine ones (demography, spoilage) would be noise.
 NOTABLE_EVENTS = ("famine", "unrest_changed", "upkeep_unpaid", "building_completed", "game_over")
@@ -290,41 +291,74 @@ def lesson_line(lesson: Lesson) -> str:
     return f"[{tag}] {lesson.text}"
 
 
-def check_revision(lessons: list[Lesson], actions: list[dict], new_lessons: list[str],
-                   max_lessons: int) -> str:
-    """@brief Validate a reflection answer before anything is written.
-    @param actions Items {lesson: 1-based number, action, text?, reason?}.
-    @return "" if valid, otherwise why the answer is refused.
-    """
-    seen = set()
-    for item in actions:
-        number = item.get("lesson")
-        if not isinstance(number, int) or not 1 <= number <= len(lessons):
-            return f"unknown lesson number {number!r}"
-        if number in seen:
-            return f"lesson {number} has more than one action"
-        seen.add(number)
-        action = item.get("action")
-        if action not in ("confirm", "revise", "drop"):
-            return f"unknown action {action!r}"
-        if action in ("revise", "drop") and not str(item.get("reason", "")).strip():
-            return f"{action} of lesson {number} needs a reason"
-        if action == "revise" and not str(item.get("text", "")).strip():
-            return f"revise of lesson {number} needs the new text"
-    dropped = sum(1 for item in actions if item["action"] == "drop")
-    total = len(lessons) - dropped + len([t for t in new_lessons if t.strip()])
-    if total > max_lessons:
-        return f"{total} lessons, the maximum is {max_lessons}: drop or merge some"
+def _clean_action(raw: object) -> dict | None:
+    """@brief Tolerate small format slips: key case and spaces ("reason "),
+    a lesson number written as a string. None if it is not an object."""
+    if not isinstance(raw, dict):
+        return None
+    item = {str(key).strip().lower(): value for key, value in raw.items()}
+    number = item.get("lesson")
+    if isinstance(number, str) and number.strip().isdigit():
+        item["lesson"] = int(number.strip())
+    item["action"] = str(item.get("action", "")).strip().lower()
+    item["text"] = str(item.get("text", "")).strip()
+    item["reason"] = str(item.get("reason", "")).strip()
+    return item
+
+
+def _action_error(item: dict, lesson_count: int, seen: set[int]) -> str:
+    number = item.get("lesson")
+    if not isinstance(number, int) or not 1 <= number <= lesson_count:
+        return f"unknown lesson number {number!r}"
+    if number in seen:
+        return f"lesson {number} has more than one action"
+    if item["action"] not in ("confirm", "revise", "drop"):
+        return f"unknown action {item['action']!r} for lesson {number}"
+    if item["action"] in ("revise", "drop") and not item["reason"]:
+        return f"{item['action']} of lesson {number} needs a reason"
+    if item["action"] == "revise" and not item["text"]:
+        return f"revise of lesson {number} needs the new text"
     return ""
+
+
+def split_revision(lessons: list[Lesson], actions: list, new_lessons: list[str],
+                   max_lessons: int) -> tuple[list[dict], list[str], list[str]]:
+    """@brief Keep the valid part of a reflection answer, discard the rest.
+
+    One bad action no longer throws away the whole season (game 7 lost a
+    season to a revise without a reason): it is discarded, the others apply.
+    New lessons beyond the maximum are cut, the first ones kept.
+    @param actions Items {lesson: 1-based number, action, text?, reason?}.
+    @return (valid actions, new lessons to add, why each discarded item was discarded).
+    """
+    kept, discarded, seen = [], [], set()
+    for raw in actions:
+        item = _clean_action(raw)
+        if item is None:
+            discarded.append("an action that is not an object")
+            continue
+        error = _action_error(item, len(lessons), seen)
+        if error:
+            discarded.append(error)
+            continue
+        seen.add(item["lesson"])
+        kept.append(item)
+    new = [text for text in new_lessons if text.strip()]
+    dropped = sum(1 for item in kept if item["action"] == "drop")
+    room = max(max_lessons - (len(lessons) - dropped), 0)
+    if len(new) > room:
+        discarded.append(f"{len(new) - room} new lessons beyond the maximum of {max_lessons}")
+        new = new[:room]
+    return kept, new, discarded
 
 
 def apply_revision(conn, game_id: int, realm_id: int, actor_id: int, turn: int,
                    lessons: list[Lesson], actions: list[dict], new_lessons: list[str]) -> None:
-    """@brief Write a revision already accepted by check_revision(), atomically."""
+    """@brief Write the valid part of a revision (see split_revision), atomically."""
     with conn.transaction():
         for item in actions:
             lesson = lessons[item["lesson"] - 1]
-            reason = str(item.get("reason", "")).strip()[:MAX_LESSON_CHARS]
+            reason = item["reason"][:MAX_LESSON_CHARS]
             if item["action"] == "confirm":
                 conn.execute(
                     "UPDATE lessons SET confirmations = confirmations + 1, last_confirmed_turn = %s"

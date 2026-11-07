@@ -39,13 +39,39 @@ def _estimated_cost(price: ModelPrice | None, input_tokens: int, output_tokens: 
 
 
 class OpenRouterClient:
-    def __init__(self, base_url: str, api_key: str, timeout_seconds: int, prices: dict[str, ModelPrice]):
+    def __init__(self, base_url: str, api_key: str, timeout_seconds: int, prices: dict[str, ModelPrice],
+                 max_output_tokens: int):
         if not api_key:
             raise ValueError("OPENROUTER_API_KEY is empty: set it in .env or use provider 'fake'")
         self._url = base_url.rstrip("/") + "/chat/completions"
         self._headers = {"Authorization": f"Bearer {api_key}"}
         self._timeout = timeout_seconds
         self._prices = prices
+        self._max_output_tokens = max_output_tokens
+
+    def _post(self, body: dict) -> tuple[int, bytes]:
+        """@brief POST with a deadline on the WHOLE call, not on each read.
+
+        httpx's timeout only bounds each single network wait, and OpenRouter
+        keeps the connection alive while the model reasons, so a plain post
+        once ran for 221 s with a 60 s timeout. Here the body is read in
+        chunks and the call is abandoned once the deadline has passed.
+        Limit: the deadline is checked when a chunk arrives; a silent server
+        is still cut by the per-read timeout, so the worst case is about
+        twice timeout_seconds.
+        Hidden cost: OpenRouter may still bill the tokens generated before
+        the abort, and we never learn that cost (the budget undercounts).
+        @throws LLMError("timeout") past the deadline.
+        """
+        deadline = time.monotonic() + self._timeout
+        chunks = []
+        with httpx2.stream("POST", self._url, headers=self._headers, json=body,
+                           timeout=self._timeout) as response:
+            for chunk in response.iter_bytes():
+                chunks.append(chunk)
+                if time.monotonic() > deadline:
+                    raise LLMError("timeout", f"no complete answer within {self._timeout} s")
+            return response.status_code, b"".join(chunks)
 
     def complete(self, role: str, model: str, system: str, user: str, schema: dict | None,
                  reasoning_effort: str | None = None) -> LLMReply:
@@ -61,6 +87,10 @@ class OpenRouterClient:
             "model": model,
             "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}],
             "usage": {"include": True},  # ask OpenRouter to return the cost
+            # Reasoning included. Without a cap a model once looped up to
+            # 131,072 tokens ($0.074, 31 % of a whole game). A reply cut here
+            # is incomplete JSON, refused and retried like any invalid reply.
+            "max_tokens": self._max_output_tokens,
         }
         if schema is not None:
             body["response_format"] = {
@@ -71,15 +101,19 @@ class OpenRouterClient:
             body["reasoning"] = {"effort": reasoning_effort}
         started = time.monotonic()
         try:
-            response = httpx2.post(self._url, headers=self._headers, json=body, timeout=self._timeout)
+            status_code, content = self._post(body)
         except httpx2.TimeoutException as error:
             raise LLMError("timeout", str(error)) from error
         except httpx2.HTTPError as error:
             raise LLMError("http_error", str(error)) from error
         latency_ms = int((time.monotonic() - started) * 1000)
-        if response.status_code != 200:
-            raise LLMError("http_error", f"HTTP {response.status_code}: {response.text[:300]}")
-        data = response.json()
+        text_body = content.decode("utf-8", errors="replace")
+        if status_code != 200:
+            raise LLMError("http_error", f"HTTP {status_code}: {text_body[:300]}")
+        try:
+            data = json.loads(text_body)
+        except json.JSONDecodeError as error:
+            raise LLMError("http_error", f"not JSON from the provider: {text_body[:300]}") from error
         usage = data.get("usage") or {}
         input_tokens = usage.get("prompt_tokens", 0)
         output_tokens = usage.get("completion_tokens", 0)

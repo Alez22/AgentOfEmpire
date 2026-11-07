@@ -20,7 +20,8 @@ class CouncilSettings:
     base_url: str
     language: str
     budget_usd_per_game: float
-    timeout_seconds: int
+    timeout_seconds: int  # deadline on the whole call
+    max_output_tokens: int  # reasoning included
     max_directives_per_turn: int
     history_turns: int
     max_lessons: int

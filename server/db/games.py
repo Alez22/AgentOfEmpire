@@ -26,7 +26,9 @@ EVENT_VISIBILITY = {
     "game_over": "public",
     "building_completed": "court",
     "season_end": "court",
-    "demography": "council",
+    # Births and deaths are seen by everyone in a small town: court level,
+    # so the Voice of the square (court clearance) knows them.
+    "demography": "court",
     "food_spoiled": "council",
     "upkeep_unpaid": "council",
     "rule_workers_to_food": "council",

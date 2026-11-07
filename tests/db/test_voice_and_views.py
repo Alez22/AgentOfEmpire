@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 
 from engine.config import load_raw_config
 from server.app import create_app
-from server.council import meeting
+from server.council import audience, meeting
 from server.council.llm import FakeClient, LLMError
 from server.council.settings import load_settings
 from server.db.games import create_game, resolve_open_turn
@@ -50,7 +50,8 @@ def test_voice_speaks_first_and_the_council_hears_it(db, realm, settings):
     messages = meeting.list_messages(db, realm_id, 1)
     assert (messages[0]["kind"], messages[0]["content"]) == ("voice", VOICE_TEXT)
     for role in ("treasurer", "architect", "chancellor"):
-        assert f"## What they say in the square\n{VOICE_TEXT}" in _by_role(client, role)[0]["user"]
+        square = f"## What they say in the square\n- At the start of January (turn 1): {VOICE_TEXT}"
+        assert square in _by_role(client, role)[0]["user"]
 
 
 def test_voice_is_court_level(db, realm, settings):
@@ -195,3 +196,87 @@ def test_admin_agents_page_shows_the_prompts_that_are_sent(database_url, setting
 def test_admin_agents_page_is_hidden_when_off(database_url, settings):
     with TestClient(create_app(database_url, settings, FakeClient(), admin_view=False)) as ui:
         assert ui.get("/admin/realms/1/agents").status_code == 404
+
+
+def test_council_hears_the_square_of_the_last_three_months(db, realm, settings):
+    game_id, realm_id = realm
+    for month in range(1, 5):
+        meeting.hold_meeting(db, realm_id, FakeClient({"square_voice": [f"Voce {month}"]}), settings)
+        meeting.approve_plan(db, realm_id, excluded=[])
+        resolve_open_turn(db, game_id)
+    client = FakeClient({"square_voice": ["Voce 5"]})
+    meeting.hold_meeting(db, realm_id, client, settings)  # turn 5
+    treasurer = _by_role(client, "treasurer")[-1]["user"]
+    assert "Voce 1" not in treasurer and "Voce 2" not in treasurer
+    for month, name in ((3, "March"), (4, "April"), (5, "May")):
+        assert f"- At the start of {name} (turn {month}): Voce {month}" in treasurer
+
+
+def test_season_review_rereads_the_square(db, realm, settings):
+    game_id, realm_id = realm
+    for month in range(1, 4):
+        meeting.hold_meeting(db, realm_id, FakeClient({"square_voice": [f"Voce {month}"]}), settings)
+        meeting.approve_plan(db, realm_id, excluded=[])
+        resolve_open_turn(db, game_id)
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)  # turn 4: reviews first
+    review = client.calls[0]["user"]
+    assert "## What happened this season" in review
+    assert all(f"Voce {month}" in review for month in (1, 2, 3))
+
+
+def _play_months_with_voices(db, game_id, realm_id, settings, months):
+    for month in range(1, months + 1):
+        meeting.hold_meeting(db, realm_id, FakeClient({"square_voice": [f"Voce {month}"]}), settings)
+        meeting.approve_plan(db, realm_id, excluded=[])
+        resolve_open_turn(db, game_id)
+
+
+def test_voice_keeps_the_thread_of_its_last_two_turns(db, realm, settings):
+    game_id, realm_id = realm
+    _play_months_with_voices(db, game_id, realm_id, settings, 4)
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)  # turn 5
+    facts = _by_role(client, "square_voice")[0]["user"]
+    assert "## What you said before" in facts
+    assert "- March: Voce 3" in facts and "- April: Voce 4" in facts and "Voce 2" not in facts
+
+
+def test_voice_knows_only_what_is_evident(db, realm, settings):
+    game_id, realm_id = realm
+    db.execute(  # a council-only fact the square must never hear
+        "INSERT INTO events (game_id, realm_id, turn, kind, data, visibility)"
+        " VALUES (%s, %s, 1, 'upkeep_unpaid', '{}', 'council')", (game_id, realm_id))
+    meeting.hold_meeting(db, realm_id, FakeClient(), settings)
+    audience.speak(db, realm_id, "architect", "Parliamo", FakeClient(), settings)
+    meeting.approve_plan(db, realm_id, excluded=[])
+    resolve_open_turn(db, game_id)
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)  # turn 2
+    facts = _by_role(client, "square_voice")[0]["user"]
+    assert "upkeep_unpaid" not in facts
+    assert "demography" in facts and "audience {'role': 'architect'}" in facts
+    assert "granar" not in facts.lower() and "per person" not in facts  # only guessed by the people
+    assert "Ration: normal." in facts
+    assert "Parliamo" not in facts  # never the words of an audience
+
+
+def test_audience_fact_is_public(db, realm, settings):
+    _, realm_id = realm
+    audience.speak(db, realm_id, "treasurer", "Due parole", FakeClient(), settings)
+    visibility = db.execute(
+        "SELECT visibility::text FROM events WHERE realm_id = %s AND kind = 'audience'", (realm_id,)
+    ).fetchone()[0]
+    assert visibility == "public"
+
+
+def test_season_story_covers_exactly_the_season(db, realm, settings):
+    game_id, realm_id = realm
+    _play_months_with_voices(db, game_id, realm_id, settings, 3)
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)  # turn 4: January-March told
+    facts = _by_role(client, "square_voice")[0]["user"]
+    mood_line = next(line for line in facts.splitlines() if line.startswith("- Mood"))
+    assert "January" in mood_line and "April" in mood_line and "December" not in mood_line
+    values = mood_line.split("oldest first: ")[1].split(", ")
+    assert len(values) == 4  # start of the season + its three months

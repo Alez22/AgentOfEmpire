@@ -101,8 +101,8 @@ class _ChancellorSchema(BaseModel):
 class _LessonActionSchema(BaseModel):
     lesson: int
     action: Literal["confirm", "revise", "drop"]
+    reason: str = ""  # before "text": models then tend to keep the two apart
     text: str = ""
-    reason: str = ""
 
 
 class _LessonsSchema(BaseModel):
@@ -124,7 +124,8 @@ class _ChancellorReply(BaseModel):
 
 class _LessonsReply(BaseModel):
     # No defaults: a reply missing either key is invalid, not "no change".
-    actions: list[dict]
+    # Items are checked one by one by memory.split_revision.
+    actions: list
     new_lessons: list[str]
 
 
@@ -255,11 +256,14 @@ def _refusal_reason(reply_text: str, reply_model: type[BaseModel],
 
 def _ask(ctx: MeetingContext, actor: Actor, system: str, user: str,
          schema: dict, reply_model: type[BaseModel],
-         extra_check: Callable[[BaseModel], str] | None = None) -> tuple[BaseModel | None, str]:
+         extra_check: Callable[[BaseModel], str] | None = None,
+         annotate: Callable[[BaseModel], str] | None = None) -> tuple[BaseModel | None, str]:
     """@brief Call the model with one retry on an invalid reply. The retry tells
     the model why its first answer was refused.
     @param extra_check Optional rule check on the parsed reply; a non-empty
            message makes the reply invalid (and retried) like a JSON error.
+    @param annotate Optional note on an ACCEPTED reply (e.g. parts discarded),
+           stored in the error column of its "ok" row for debugging.
     @return (parsed reply, "ok") or (None, reason) with reason in
             budget_exhausted, timeout, http_error, invalid_reply.
     """
@@ -282,7 +286,8 @@ def _ask(ctx: MeetingContext, actor: Actor, system: str, user: str,
                      prompt=(system, prompt))
             prompt = user + RETRY_REMINDER.format(error=refusal)
             continue
-        log_call(ctx, actor, "ok", reply, prompt=(system, prompt))
+        note = annotate(parsed) if annotate else ""
+        log_call(ctx, actor, "ok", reply, error=note, prompt=(system, prompt))
         return parsed, "ok"
     return None, "invalid_reply"
 
@@ -402,14 +407,23 @@ def insert_message(ctx: MeetingContext, round_number: int, kind: str,
     )
 
 
-def square_voice_text(ctx: MeetingContext) -> str:
-    """@brief What the square said this turn ("" if it did not speak)."""
-    row = ctx.conn.execute(
-        "SELECT content FROM council_messages WHERE realm_id = %s AND turn = %s AND kind = 'voice'"
-        " ORDER BY id DESC LIMIT 1",
-        (ctx.realm_id, ctx.turn),
-    ).fetchone()
-    return row[0] if row else ""
+SQUARE_MEMORY_TURNS = 3  # turns of the square's words in each council briefing
+
+
+def square_voices(ctx: MeetingContext, first_turn: int | None = None) -> list[tuple[int, str]]:
+    """@brief What the square said from first_turn to this turn, oldest first.
+    The council has no mood number: these words are all it knows of the
+    people, so several months are kept (a silent month leaves the others).
+    @param first_turn Default: the last SQUARE_MEMORY_TURNS turns.
+    """
+    if first_turn is None:
+        first_turn = ctx.turn - SQUARE_MEMORY_TURNS + 1
+    rows = ctx.conn.execute(
+        "SELECT turn, content FROM council_messages WHERE realm_id = %s AND kind = 'voice'"
+        " AND turn >= %s AND turn <= %s ORDER BY id",
+        (ctx.realm_id, first_turn, ctx.turn),
+    ).fetchall()
+    return list(dict(rows).items())  # one per turn: the latest wins
 
 
 def _history(ctx: MeetingContext, actor: Actor, turns_back: int) -> list[str]:
@@ -478,21 +492,30 @@ def _reflect(ctx: MeetingContext, actor: Actor) -> None:
         return  # nothing to reflect on: save the call
     numbered = [f"{number}. {memory.lesson_line(lesson)}" for number, lesson in enumerate(lessons, 1)]
     audiences = memory.audience_dialogue(ctx.conn, actor.id, ctx.turn - SEASON_TURNS, ctx.turn - 1)
+    # Runs before this turn's Voice speaks: the season's square is turns T-3..T-1.
+    square = briefing.square_lines(square_voices(ctx, ctx.turn - SEASON_TURNS))
     user = "\n".join(
         ["## What happened this season"] + [f"- {entry}" for entry in season or ["You did nothing."]]
+        + square
         + (["## Your private audiences with the sovereign this season"]
            + [f"- {line}" for line in audiences] if audiences else [])
         + ["## Your current lessons"] + (numbered or ["None yet."])
     )
 
-    def revision_error(reply: _LessonsReply) -> str:
-        return memory.check_revision(lessons, reply.actions, reply.new_lessons, ctx.settings.max_lessons)
+    accepted = {}
 
+    def discarded_note(reply: _LessonsReply) -> str:
+        actions, new_lessons, discarded = memory.split_revision(
+            lessons, reply.actions, reply.new_lessons, ctx.settings.max_lessons)
+        accepted.update(actions=actions, new_lessons=new_lessons)
+        return ("discarded: " + "; ".join(discarded)) if discarded else ""
+
+    # Only malformed JSON is retried; a bad action is discarded on its own.
     reply, _status = _ask(ctx, actor, _lessons_system(ctx, actor), user,
-                          _LessonsSchema.model_json_schema(), _LessonsReply, revision_error)
+                          _LessonsSchema.model_json_schema(), _LessonsReply, annotate=discarded_note)
     if reply is not None:
         memory.apply_revision(ctx.conn, ctx.game_id, ctx.realm_id, actor.id, ctx.turn,
-                              lessons, reply.actions, reply.new_lessons)
+                              lessons, accepted["actions"], accepted["new_lessons"])
 
 
 # --------------------------------------------------------------- rounds
@@ -510,7 +533,7 @@ def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
         _history(ctx, actor, ctx.settings.history_turns), directives,
         [memory.lesson_line(lesson) for lesson in memory.current_lessons(ctx.conn, actor.id)],
         *_audience_memory(ctx, actor),
-        square_voice=square_voice_text(ctx),
+        square_voices=square_voices(ctx),
     )
     schema = _MinisterSchema.model_json_schema()
     reply, status = _ask(ctx, actor, _minister_system(ctx, actor), user, schema, _MinisterReply)
@@ -534,7 +557,7 @@ def _chancellor_turn(ctx: MeetingContext, round_number: int, events: list[dict],
         user = briefing.chancellor_briefing(
             ctx.state, ctx.config, events, directives, reports, proposals,
             _check_lines(proposals, check), lessons, *_audience_memory(ctx, actor),
-            square_voice=square_voice_text(ctx),
+            square_voices=square_voices(ctx),
         )
         schema = _ChancellorSchema.model_json_schema()
         reply, status = _ask(ctx, actor, _chancellor_system(ctx, actor), user, schema, _ChancellorReply)

@@ -53,8 +53,10 @@ def treasury_lines(state: GameState, config: Config) -> list[str]:
         f"{food_needed(state, config)}. Reserve: about {_reserve_months_text(state, config)} months. "
         f"Stored food rots by {config.economy.food_spoilage_pct}% per month.",
         f"- Tax rate: {state.tax_rate}% (maximum {config.economy.max_tax_rate}%). Ration: {state.ration}.",
-        f"- Mood of the peasants: {state.mood}/1000 (unrest starts below {config.unrest.threshold}). "
-        f"Unrest: {state.unrest}; turns in a row below the threshold: {state.low_mood_turns}.",
+        # No mood number, threshold or months below it: the council, like the
+        # sovereign, knows the people only from the square (see square_lines).
+        # Protests and strikes are public facts, so the unrest level stays.
+        f"- Unrest: {state.unrest} (calm, protests, strike, revolt).",
         f"- Population: {state.children} children, {state.adults} adults, {state.elders} elders.",
     ]
 
@@ -105,11 +107,17 @@ def audience_lines(dialogue: list[str]) -> list[str]:
     return ["## Your private audiences with the sovereign"] + [f"- {line}" for line in dialogue]
 
 
-def square_lines(text: str) -> list[str]:
-    """@brief What the Voice of the square said this turn."""
-    if not text:
+def square_lines(voices: list[tuple[int, str]]) -> list[str]:
+    """@brief What the Voice of the square said in recent turns, oldest first.
+    This is the council's only window on the people's mood.
+    @param voices (turn, text) pairs; the Voice speaks at the start of a turn.
+    """
+    if not voices:
         return []
-    return ["## What they say in the square", text]
+    lines = ["## What they say in the square"]
+    for turn, text in voices:
+        lines.append(f"- At the start of {MONTHS[(turn - 1) % 12]} (turn {turn}): {text}")
+    return lines
 
 
 def audience_fact_lines(facts: list[str]) -> list[str]:
@@ -134,14 +142,14 @@ def directive_lines(directives: list[str]) -> list[str]:
 def minister_briefing(
     role: str, state: GameState, config: Config, events: list[dict],
     history: list[str], directives: list[str], lessons: list[str],
-    audiences: list[str] = (), audience_facts: list[str] = (), square_voice: str = "",
+    audiences: list[str] = (), audience_facts: list[str] = (), square_voices: list = (),
 ) -> str:
     """@brief Full briefing of a minister; each role sees only its own section.
     Lessons come first: they are the lens through which the numbers are read.
     """
     section = treasury_lines(state, config) if role == "treasurer" else works_lines(state, config)
     lines = (header_lines(state) + lessons_lines(lessons) + section + events_lines(events)
-             + square_lines(square_voice)
+             + square_lines(list(square_voices))
              + history_lines(history) + audience_lines(list(audiences))
              + audience_fact_lines(list(audience_facts)) + directive_lines(directives))
     return "\n".join(lines)
@@ -150,14 +158,14 @@ def minister_briefing(
 def chancellor_briefing(
     state: GameState, config: Config, events: list[dict], directives: list[str],
     reports: dict[str, str], proposals: list[dict], check_lines: list[str], lessons: list[str],
-    audiences: list[str] = (), audience_facts: list[str] = (), square_voice: str = "",
+    audiences: list[str] = (), audience_facts: list[str] = (), square_voices: list = (),
 ) -> str:
     """@brief The Chancellor sees both sections, the reports, the proposals
     (also as one JSON line, easy to quote back) and the scribes' cost check.
     """
     lines = (header_lines(state) + lessons_lines(lessons)
              + treasury_lines(state, config) + works_lines(state, config))
-    lines += (events_lines(events) + square_lines(square_voice) + audience_lines(list(audiences))
+    lines += (events_lines(events) + square_lines(list(square_voices)) + audience_lines(list(audiences))
               + audience_fact_lines(list(audience_facts)) + directive_lines(directives))
     lines.append("## Reports of the ministers")
     lines += [f"- {role}: {text}" for role, text in reports.items()]

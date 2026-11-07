@@ -71,7 +71,7 @@ def test_resolution_stores_verdicts_events_and_next_snapshot(db, game):
     visibility = dict(db.execute(
         "SELECT kind, visibility::text FROM events WHERE realm_id = %s AND turn = 1", (realm_id,)
     ).fetchall())
-    assert visibility["demography"] == "council"
+    assert visibility["demography"] == "court"  # births and deaths are seen by all
     state = state_from_dict(db.execute(
         "SELECT state FROM snapshots WHERE realm_id = %s AND turn = 2", (realm_id,)
     ).fetchone()[0])
