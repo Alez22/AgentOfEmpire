@@ -183,7 +183,7 @@ class FakeClient:
                            "reasoning_effort": reasoning_effort})
         scripted = self._script.get(role)
         answer = scripted.pop(0) if scripted else self._default_text(role, user, schema)
-        if isinstance(answer, LLMError):
+        if isinstance(answer, Exception):  # LLMError, or any crash a test wants
             raise answer
         tokens_in = (len(system) + len(user)) // 4  # rough, only for logs
         return LLMReply(answer, tokens_in, len(answer) // 4, 0.0, 0)

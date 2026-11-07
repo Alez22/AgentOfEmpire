@@ -576,10 +576,21 @@ def _lessons_system(ctx: MeetingContext, actor: Actor) -> str:
     )
 
 
+def _reflected_this_turn(ctx: MeetingContext, actor: Actor) -> bool:
+    """@brief A meeting held again after a crash must not review twice."""
+    return ctx.conn.execute(
+        "SELECT 1 FROM lessons WHERE actor_id = %s AND (origin_turn = %s OR status_turn = %s"
+        " OR last_confirmed_turn = %s) LIMIT 1",
+        (actor.id, ctx.turn, ctx.turn, ctx.turn),
+    ).fetchone() is not None
+
+
 def _reflect(ctx: MeetingContext, actor: Actor) -> None:
     """@brief End-of-season reflection: confirm, revise, drop or add secret lessons.
     On failure the lessons stay exactly as they were.
     """
+    if _reflected_this_turn(ctx, actor):
+        return
     season = _history(ctx, actor, SEASON_TURNS)
     lessons = memory.current_lessons(ctx.conn, actor.id)
     if not season and not lessons:
@@ -712,8 +723,12 @@ def load_context(conn: psycopg.Connection, realm_id: int, client, settings) -> M
 
 
 def _rounds_held(ctx: MeetingContext) -> int:
+    """@brief Rounds that reached the Chancellor's summary. A round that broke
+    before it (game 7: a crash after the Voice had spoken) does not count,
+    so the meeting can be held again instead of leaving the turn stuck."""
     return ctx.conn.execute(
-        "SELECT coalesce(max(round), 0) FROM council_messages WHERE realm_id = %s AND turn = %s",
+        "SELECT coalesce(max(round), 0) FROM council_messages WHERE realm_id = %s AND turn = %s"
+        " AND kind = 'summary'",
         (ctx.realm_id, ctx.turn),
     ).fetchone()[0]
 

@@ -59,10 +59,12 @@ def mood_band(state: GameState, people: PeopleConfig) -> str:
 def allowed_ranges(state: GameState, config: Config) -> dict[str, tuple[int, int]]:
     """@brief Inclusive (min, max) per behaviour for this month's mood band."""
     people = config.people
-    band = mood_band(state, people)
+    # The band's name (also shown to the model) and the config suffix differ
+    # for the discontented band: effort_discontent, birth_discontent.
+    suffix = {"content": "content", "neutral": "neutral", "discontented": "discontent"}[mood_band(state, people)]
     return {
-        "effort_pct": tuple(getattr(people, f"effort_{band}")),
-        "birth_pct": tuple(getattr(people, f"birth_{band}")),
+        "effort_pct": tuple(getattr(people, f"effort_{suffix}")),
+        "birth_pct": tuple(getattr(people, f"birth_{suffix}")),
     }
 
 

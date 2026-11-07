@@ -228,6 +228,9 @@ def speak_in_square(ctx: MeetingContext) -> str:
     actor = ensure_voice_actor(ctx)
     if actor is None:
         return ""
+    already = square_text(ctx)
+    if already:
+        return already  # a meeting held again after a crash: the square spoke once
     season = is_reflection_turn(ctx.turn)
     system = voice_system(ctx, season)
     text = ask_text(ctx, actor, system, facts_for_the_square(ctx, season), MAX_VOICE_CHARS)

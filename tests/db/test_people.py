@@ -236,3 +236,25 @@ def test_petition_granted_after_the_plan_links_the_same_order(db, realm, setting
         " WHERE d.realm_id = %s", (realm_id,),
     ).fetchone()[0]
     assert linked == orders[0]["id"]
+
+
+def test_discontented_people_get_their_own_ranges(db, realm, settings):
+    """Game 7, turn 15: the first mood below 400 crashed the meeting."""
+    _, realm_id = realm
+    from engine.people import allowed_ranges
+    state = load_latest_state(db, realm_id)
+    state.mood = 380
+    assert allowed_ranges(state, load_config()) == {"effort_pct": (-25, 0), "birth_pct": (60, 100)}
+
+
+def test_a_meeting_broken_after_the_square_can_be_held_again(db, realm, settings):
+    _, realm_id = realm
+    broken = FakeClient({"treasurer": [RuntimeError("crash")]})
+    with pytest.raises(RuntimeError):
+        meeting.hold_meeting(db, realm_id, broken, settings)
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)  # not stuck
+    roles = [call["role"] for call in client.calls]
+    assert "square_voice" not in roles and "people" not in roles  # they already spoke
+    kinds = [m["kind"] for m in meeting.list_messages(db, realm_id, 1)]
+    assert kinds.count("voice") == 1 and kinds.count("summary") == 1
