@@ -329,6 +329,23 @@ New Architect mandate at turn 21, then only approvals. $0.099 in 62 calls; the w
 1. **A milder growth trap**: with every worker already in the fields and one new adult a month, the Architect waits for 15 free adults before building a farm, so none is built. It ignores that a half-filled farm already pays (15 food per worker against 1 gold of upkeep) and that building takes two months. The duty should say so.
 2. **Little to do in a stable realm**: in ten turns the sovereign only approved; no petitions, no crisis, mood flat around 480. Mid-game needs more choices (known: more classes, a use for gold, the map).
 
+### Game 8 "Valfiorita" (2026-11-07, check of the manual; no mandates, almost no intervention)
+
+10 turns, $0.122 in 62 calls (three runaway replies at the cap, each retried without reasoning: about $0.017), replay not needed.
+
+| Turn | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Food | 1600 | 1158 | 746 | 344 | 164 | 261 | 357 | 623 | 888 | 1156 | 1524 |
+| Mood (hidden) | 500 | 502 | 504 | 500 | 517 | 505 | 496 | 478 | 486 | 470 | 477 |
+
+**The manual changed the Architect, too much**: it built a farm at turn 1 on its own ("pronta a primavera") and moved the woodcutters to the fields, as hoped; but at turn 3 it started a second farm while the first was still empty, ending with 6 farms (90 farm jobs for 65 adults) and nobody at the sawmill or the quarry for nine months (wood stuck at 70, stone at 80). From "never build without free adults" to "a half-filled farm pays, so build".
+
+**Problems**
+
+1. **Overbuilding and abandoned sectors**: the manual needs the other half of the rule: build a new building of a sector when its jobs are nearly full, and keep some workers at the sawmill and the quarry so wood and stone do not stop.
+2. **The abundant ration with an empty granary**: in April, with 344 food, the Treasurer proposed the abundant ration and the Chancellor kept it (it was approved by a mistake of mine as the test player). The next month the council itself went back to normal. The briefing gives the consumption at the current ration only; it should give it at every ration.
+3. **Runaway replies are still about one call in twenty** (three in this game), now cheap to recover; a repetition penalty could be tried.
+
 ### Lab: famine balance (2026-11-07)
 
 The exact orders of games 1 and 2 replayed under mood variants (the base replay reproduces both games exactly). Mood month by month, from turn 2.
