@@ -40,7 +40,8 @@ def _estimated_cost(price: ModelPrice | None, input_tokens: int, output_tokens: 
 
 class OpenRouterClient:
     def __init__(self, base_url: str, api_key: str, timeout_seconds: int, prices: dict[str, ModelPrice],
-                 max_output_tokens: int):
+                 max_output_tokens: int, models_without_json_schema: tuple[str, ...] = (),
+                 models_without_reasoning: tuple[str, ...] = ()):
         if not api_key:
             raise ValueError("OPENROUTER_API_KEY is empty: set it in .env or use provider 'fake'")
         self._url = base_url.rstrip("/") + "/chat/completions"
@@ -48,6 +49,8 @@ class OpenRouterClient:
         self._timeout = timeout_seconds
         self._prices = prices
         self._max_output_tokens = max_output_tokens
+        self._models_without_json_schema = set(models_without_json_schema)
+        self._models_without_reasoning = set(models_without_reasoning)
 
     def _post(self, body: dict) -> tuple[int, bytes]:
         """@brief POST with a deadline on the WHOLE call, not on each read.
@@ -91,13 +94,19 @@ class OpenRouterClient:
             # 131,072 tokens ($0.074, 31 % of a whole game). A reply cut here
             # is incomplete JSON, refused and retried like any invalid reply.
             "max_tokens": self._max_output_tokens,
+            # Route only to providers that accept every parameter we send:
+            # some providers reject response_format with HTTP 400 (Novita for
+            # Ling 3.1 Flash) while another provider of the same model takes it.
+            "provider": {"require_parameters": True},
         }
-        if schema is not None:
+        # Without the schema the prompt still asks for JSON only and every
+        # reply is validated anyway; only the provider's guarantee is lost.
+        if schema is not None and model not in self._models_without_json_schema:
             body["response_format"] = {
                 "type": "json_schema",
                 "json_schema": {"name": f"{role}_reply", "strict": False, "schema": schema},
             }
-        if reasoning_effort is not None:
+        if reasoning_effort is not None and model not in self._models_without_reasoning:
             body["reasoning"] = {"effort": reasoning_effort}
         started = time.monotonic()
         try:

@@ -364,6 +364,47 @@ Counsellors (Brunilde Masi, Bertoldo Sassi, Matteo Alberi) on `mistralai/mistral
 
 **Verdict**: usable as the `low` tier (cheap, fast, valid JSON), not as a default counsellor. A low-tier person should be a cheap hire with visibly weaker advice, which is what this model gives.
 
+### Game 10 "Collerosso" (2026-11-07, weaker-model test: gpt-oss-120b for the three counsellors)
+
+Same set-up as game 9 (Brunilde Masi, Gisella da Valle, Matteo Alberi on `openai/gpt-oss-120b`, reasoning low; Voice and people on Flash). 10 turns, **$0.0174 in 62 calls** (counsellors $0.0136, the same as Mistral), no refused reply, no runaway (longest reply 1192 tokens), slowest call 8.7 s. The kingdom ended calm, food 760, gold 65 (rising after the tax went to 8%).
+
+**Better than Mistral**
+
+1. **Right numbers**: the Treasurer gives the consumption at the current ration, the harvest, taxes in and upkeep plus salaries out, and the projection is close to what happens.
+2. **The Chancellor filters**: it postponed the Architect's quarry, refused to take farmers off the fields while food was falling, and dropped a feast after the sovereign's directive.
+3. **The directive was obeyed** in the round after it (no quarry, no move from the fields).
+
+**Still weak**
+
+1. **The Architect chases empty jobs**: almost every month "move farmers to the sawmill and the quarry" and "build a quarry" while wood and stone pile up (420 and 208 at the end) and food was the scarce good; also off its role (feast, ration, tax). The manual's half of the rule is missing here too (game 8, problem 1): fill jobs only where the product is needed.
+2. **The Treasurer flip-flops on taxes**: 8% in August, back to 6% for a petition in September, 10% in October "without burdening the people", against the manual (heavy taxes weigh on the people).
+3. **Italian slips**: "granario", "cibarie", "nei segheri", a contradictory sentence (lighten the tax burden... raise the tax to 8%).
+4. The Chancellor once read the directive as "save gold for the winter food" (gold buys no food).
+
+**Verdict**: a clear step above Mistral at the same price; a good candidate for `low`, perhaps for `medium`. To compare with Flash on the same seed before choosing.
+
+### Games 11–13 "Roccafonda" (2026-11-07, Ling 3.1 Flash: not usable)
+
+Same seed as game 10. Game 11: HTTP 400, OpenRouter routed to Novita, which rejects `response_format`. With `provider.require_parameters` (now sent on every call) there was no provider left (game 12, 404): DeepInfra, the other one, is dropped by the account's "regional surcharge" filter. Game 13, without the schema for this model (`models_without_json_schema` in council.toml): the model thinks aloud in English inside the reply, before any JSON, up to the 8000-token cap even with reasoning "none"; 6 calls out of 6 refused, 38–88 s each, $0.0055 for a turn with no council. The analysis that could be read was sound; the format and the length are the problem. Dropped.
+
+### Game 14 "Roccafonda" (2026-11-07, GLM 5.3 Flash for the three counsellors)
+
+Same seed and persons as game 10. 10 turns, **$0.033 in 62 calls** (counsellors $0.028, about twice gpt-oss: 857 output tokens a call against 569, longest 2143), no refused reply, no runaway, calls 3–18 s (mean 6.9). The kingdom ended calm, food 1208 (760 in game 10), gold 39 (taxes at 5% for a petition), one month of protests in May (reduced ration kept four months on the Treasurer's advice).
+
+**Better than gpt-oss**
+
+1. **The Treasurer plans over the seasons**: harvest by season, the winter gap of about 450 a month, "il pane tornerà con più campi, non con un decreto"; she kept a prudent line and said why. Some sums are still wrong (in September "above 1000 the normal ration holds all winter", with a gap of about 1340).
+2. **The Chancellor weighs and remembers**: it refused the abundant-looking plans when the numbers did not hold, and at turn 10 dropped the house because "the sovereign has already removed it in July, August and September" with nothing changed.
+3. **Livelier Italian**, in the voice of the time (staia, casale, gabelliere), with the Architect keeping to its office ("non posso giudicare la gabella: è parte della Tesoriera").
+4. The directive (a farm, nobody leaves the fields) was followed at once.
+
+**Still weak**
+
+1. **The Architect** still proposes moving farmers to wood and stone in winter, a sawmill instead of a farm, then moves one worker to the sawmill and back the next month; it read the manual backwards once ("un fabbricato mezzo vuoto non rende").
+2. **Slips**: "renditione", "segherio", "sesterzi d'oro"; the Chancellor once left the 20 gold out of the cost of a house and got the gold balance at 5% wrong.
+
+**Verdict**: the best of the three cheap models tried, at about a quarter of the cost of Flash with reasoning (0.67 against 2.8 thousandths of a dollar a call). Candidate for `medium`, with gpt-oss-120b for `low`. Still to compare: Flash with reasoning "none" on the same seed.
+
 ### Lab: famine balance (2026-11-07)
 
 The exact orders of games 1 and 2 replayed under mood variants (the base replay reproduces both games exactly). Mood month by month, from turn 2.

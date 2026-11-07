@@ -69,3 +69,17 @@ def test_slow_trickle_hits_the_deadline_on_the_whole_call(server):
         _client(server, timeout_seconds=1).complete("architect", "some/model", "s", "u", schema=None)
     assert error.value.status == "timeout"
     assert time.monotonic() - started < 3
+
+
+def test_listed_models_get_no_schema_and_no_reasoning(server):
+    _Handler.byte_delay = 0.0
+    url = f"http://127.0.0.1:{server.server_address[1]}"
+    client = OpenRouterClient(url, "test-key", 1, prices={}, max_output_tokens=8000,
+                              models_without_json_schema=("plain/model",),
+                              models_without_reasoning=("plain/model",))
+    client.complete("treasurer", "plain/model", "s", "u", schema={"type": "object"}, reasoning_effort="low")
+    client.complete("treasurer", "other/model", "s", "u", schema={"type": "object"}, reasoning_effort="low")
+    plain, other = _Handler.bodies
+    assert "response_format" not in plain and "reasoning" not in plain
+    assert "response_format" in other and other["reasoning"] == {"effort": "low"}
+    assert plain["provider"] == {"require_parameters": True}

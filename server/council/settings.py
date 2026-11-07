@@ -30,6 +30,10 @@ class CouncilSettings:
     model_tiers: dict[str, str]  # a person's tier (low, medium, high) -> model id
     reasoning_effort: dict[str, str]  # role -> effort; missing role = model default
     prices: dict[str, ModelPrice]  # model id -> price
+    # Models whose providers reject a parameter (with require_parameters on,
+    # sending it would leave no provider): the client leaves it out.
+    models_without_json_schema: tuple[str, ...] = ()
+    models_without_reasoning: tuple[str, ...] = ()
 
 
 def load_settings(path: Path = DEFAULT_SETTINGS_PATH) -> CouncilSettings:
@@ -45,4 +49,6 @@ def load_settings(path: Path = DEFAULT_SETTINGS_PATH) -> CouncilSettings:
         raise ValueError(f"unknown council provider '{raw['provider']}'")
     raw["prices"] = {model: ModelPrice(**price) for model, price in raw.get("prices", {}).items()}
     raw.setdefault("reasoning_effort", {})
+    raw["models_without_json_schema"] = tuple(raw.get("models_without_json_schema", ()))
+    raw["models_without_reasoning"] = tuple(raw.get("models_without_reasoning", ()))
     return CouncilSettings(**raw)
