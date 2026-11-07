@@ -238,6 +238,25 @@ Granted, refused and granted again tax petitions, imposed a reduced ration in Ju
 3. **Births stay below 100 %** in almost every month (90–96 %), even when the people were content with the crown: the model leans to caution, so growth is slower than before.
 4. Effort moves little (−3 to +4 %): visible in the numbers, subtle in play.
 
+### Game 6 "Torrealta" (2026-11-07, Claude as sovereign; focus: private audiences)
+
+8 audience lines with all three counsellors (Architect 3, Chancellor 3, Treasurer 2), the rest played sensibly. 10 turns, $0.073 in 70 calls, no refused reply, slowest call 39 s, replay exact. The people and the square as in game 5; no crisis (mood 484–510).
+
+**Audiences work as designed**
+
+- **More candid in private**: in council the Architect said of the reduced ration "non è mia competenza"; in private "il Tesoriere guarda il conto, io guardo la piazza", and it took a stand.
+- **Promises are kept**: the Architect promised to move the woodcutters to the fields and did it at the next meeting ("come promesso"); the Chancellor promised a plan without feasts and twice left them out ("niente feste, come volete").
+- **Secrecy holds**: asked what the sovereign told the Treasurer, the Chancellor knew only that the audience took place. The fact is public (the month's events).
+- **Characters differ**: the Chancellor insinuated against the Treasurer ("ama il proprio registro più del regno") and fished for more ("se ha parlato d'altro con lui, me lo dica"); the Treasurer refused to judge the Chancellor "senza fondamento".
+- **Audiences shape the lessons**: "La razione non si tocca: il sovrano non la ridurrà mai" (Treasurer, from a private word); "Il sovrano non vuole feste" (Chancellor), later revised with the reason "il sovrano ha detto di aver cambiato idea"; the Chancellor even learned "il sovrano mi saggia su ciò che si dice in privato al Tesoriere: devo farmi aprire il suo registro".
+- **Private orders can collide**: "no feasts" to the Chancellor, then "propose a feast" to the Treasurer: the Treasurer proposed it "come Vostra Maestà ha ordinato", the Chancellor removed it holding to the first word. A public directive settled it at once. A credible court dynamic.
+
+**Problems**
+
+1. **The Chancellor invents facts and numbers**: "dieci lavoratori inattivi" (there were none) leading to a plan with 68 workers for 63 adults and an empty quarry; "tre operai liberi" in an audience; it called its own suggestion a rule in force ("da allora il bilancio passa in consiglio").
+2. **The people petition on the very first turn** again (taxes 10 → 7 %), when the tax is their only, slight burden.
+3. **An odd sentence of the square became a lesson** for two counsellors ("dar da mangiare a chi lavora non sfama chi non lavora").
+
 ### Lab: famine balance (2026-11-07)
 
 The exact orders of games 1 and 2 replayed under mood variants (the base replay reproduces both games exactly). Mood month by month, from turn 2.
