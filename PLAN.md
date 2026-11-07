@@ -287,6 +287,28 @@ Three mandates, one changed at turn 6; one debate; three audiences about notes; 
 4. **The debate adds little when the plan has no conflict**: both ministers agreed.
 5. **Notes make the council consensual**: disagreements are settled in private before the meeting, so the sovereign sees fewer conflicts.
 
+### Game 7 "Montebello", turns 11–20
+
+Minimal intervention: approved the plans, granted two petitions, refused one, one audience, one directive (build a farm). $0.116 in 67 calls, replay exact.
+
+| Turn | 11 | 12 | 13 | 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Food | 1011 | 1251 | 1522 | 1310 | 1057 | 456 | 422 | 373 | 324 | 469 | 524 |
+| Mood (hidden) | 473 | 494 | 484 | 439 | 386 | 444 | 446 | 459 | 469 | 465 | 473 |
+| Ration | normal | normal | normal | reduced | reduced | normal | normal | normal | normal | normal | normal |
+| Effort / births % | +2 / 97 | +6 / 101 | +5 / 105 | −5 / 96 | **−20 / 65** | +4 / 104 | +2 / 103 | +3 / 102 | +5 / 106 | −3 / 97 | |
+
+**What worked**: the council foresaw the second winter ("terrò pronta la razione ridotta per gennaio") and cut the ration in January. The people reacted strongly when their ration petition was refused (effort −20 %, births 65 %, mood into the discontented band); granting it brought effort back at once, and the square told it ("abbiamo pianto forte e ci hanno ascoltato"). The notes became political: the Treasurer and the Chancellor negotiated the ration month by month, and in turns 19–20 the Treasurer wrote privately to the Architect that new farms were needed before winter. A public directive got the farm built.
+
+**Bug found and fixed during the game** (commit `c9a8409`): the first mood below 400 crashed the meeting (`effort_discontented` instead of `effort_discontent`), and the crash after the Voice left the turn stuck. Rounds now count only once the summary exists; a meeting held again does not repeat the square, the people or the season reviews.
+
+**Problems**
+
+1. **The growth trap**: fields full (60/60), each new adult sent to the sawmill, and the Architect's duty "build only where free adults can fill the jobs" (also in its mandate) means free adults never appear, so no farm is ever built: wood piled up to 717 while the granary fell to 324. Asked why, the Architect did not consider moving woodcutters. The duty should allow workers moved from a sector that needs them less.
+2. **Invented building facts**: "una fattoria crea due posti" (it has 15): the briefing lists building costs but not their jobs. Other wrong sums: "le scorte crescono di +360 al mese" (Architect note), "il raccolto primaverile di circa 720 copre il consumo" (Chancellor; consumption was about 950).
+3. **Runaway replies are frequent**: five calls hit the 8000-token cap in turns 13–18 (empty content after reasoning, or a looping string); all were retried, but each wastes about $0.0045. Cost of these ten turns $0.116 vs $0.085 for the first ten. A reasoning budget (OpenRouter `reasoning.max_tokens`) would cut the waste.
+4. **A refused ration petition is very costly** (effort −20 %): to watch, it may make refusing almost never worth it.
+
 ### Lab: famine balance (2026-11-07)
 
 The exact orders of games 1 and 2 replayed under mood variants (the base replay reproduces both games exactly). Mood month by month, from turn 2.
