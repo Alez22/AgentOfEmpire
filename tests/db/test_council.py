@@ -569,3 +569,33 @@ def test_counsellors_must_quote_only_their_briefing_numbers(db, realm, settings)
         assert "Quote only numbers that appear in your briefing" in call["system"]
         assert "as a rule or a decision already in force" in call["system"]
     assert "the total cannot exceed the adults" in client.calls[2]["system"]  # the Chancellor
+
+
+def test_briefing_lists_the_jobs_of_each_building(db, realm, settings):
+    """Game 7: "a farm creates two jobs" (it has 15), so no farm was built."""
+    _, realm_id = realm
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)
+    architect = client.calls[1]["user"]
+    assert "farm: wood 40, stone 10, gold 0, 2 turns, 15 jobs" in architect
+    assert "house: wood 30, stone 30, gold 20, 3 turns, houses 20 people" in architect
+    assert "or with workers moved from a sector that needs them less" in architect
+    assert "workers you move from a sector that needs them less" in client.calls[1]["system"]
+
+
+def test_a_reply_that_ran_up_to_the_cap_is_retried_without_reasoning(db, realm, settings):
+    _, realm_id = realm
+    runaway = "{" + "x" * (settings.max_output_tokens * 4)  # fake tokens = len // 4
+    client = FakeClient({"treasurer": [runaway]})
+    meeting.hold_meeting(db, realm_id, client, settings)
+    treasurer_calls = [c for c in client.calls if c["role"] == "treasurer"]
+    assert treasurer_calls[0]["reasoning_effort"] == settings.reasoning_effort["treasurer"]
+    assert treasurer_calls[1]["reasoning_effort"] == "none"
+
+
+def test_an_ordinary_refusal_keeps_the_reasoning_level(db, realm, settings):
+    _, realm_id = realm
+    client = FakeClient({"treasurer": ["not json at all"]})
+    meeting.hold_meeting(db, realm_id, client, settings)
+    treasurer_calls = [c for c in client.calls if c["role"] == "treasurer"]
+    assert treasurer_calls[1]["reasoning_effort"] == settings.reasoning_effort["treasurer"]

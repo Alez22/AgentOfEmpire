@@ -39,8 +39,9 @@ ROLE_TITLES = {"treasurer": "Treasurer", "architect": "Architect", "chancellor":
 ROLE_DUTIES = {
     "treasurer": "the treasury, taxes, food rations and feasts for the people.",
     "architect": ("construction and the assignment of adults to fields, sawmills and quarries. "
-                  "Build only where free adults can fill the new jobs: a building without workers "
-                  "produces nothing and still costs upkeep."),
+                  "A new building needs workers: build where free adults, or workers you move from a "
+                  "sector that needs them less (for example wood or stone piling up), can fill its jobs. "
+                  "A building nobody works in produces nothing and still costs upkeep."),
     "chancellor": "chairing the council: turning the ministers' proposals into one plan for the sovereign.",
 }
 LESSON_HINTS = {
@@ -280,15 +281,13 @@ def _ask(ctx: MeetingContext, actor: Actor, system: str, user: str,
             budget_exhausted, timeout, http_error, invalid_reply.
     """
     prompt = user
+    effort = ctx.settings.reasoning_effort.get(actor.role)
     for _attempt in range(2):
         if spent_usd(ctx.conn, ctx.game_id) >= ctx.settings.budget_usd_per_game:
             log_call(ctx, actor, "budget_exhausted", prompt=(system, prompt))
             return None, "budget_exhausted"
         try:
-            reply = ctx.client.complete(
-                actor.role, actor.model, system, prompt, schema,
-                ctx.settings.reasoning_effort.get(actor.role),
-            )
+            reply = ctx.client.complete(actor.role, actor.model, system, prompt, schema, effort)
         except LLMError as error:
             log_call(ctx, actor, error.status, error=str(error), prompt=(system, prompt))
             return None, error.status  # no retry: a timeout would double the wait
@@ -297,6 +296,11 @@ def _ask(ctx: MeetingContext, actor: Actor, system: str, user: str,
             log_call(ctx, actor, "invalid_reply", reply, error=refusal, keep_reply=True,
                      prompt=(system, prompt))
             prompt = user + RETRY_REMINDER.format(error=refusal)
+            if reply.output_tokens >= ctx.settings.max_output_tokens:
+                # It ran up to the output cap (reasoning that never ended, or a
+                # looping string: 5 of 6 refusals in games 5-7). The model has
+                # no reasoning budget, only levels: retry without reasoning.
+                effort = "none"
             continue
         note = annotate(parsed) if annotate else ""
         log_call(ctx, actor, "ok", reply, error=note, prompt=(system, prompt))

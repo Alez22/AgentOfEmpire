@@ -108,8 +108,11 @@ def works_lines(state: GameState, config: Config, people=None) -> list[str]:
     building = [f"{b.kind} ({b.turns_left} turns left)" for b in state.buildings if b.turns_left > 0]
     idle = state.adults - state.workers.total()
     output = expected_output(state, config, people)
+    # Jobs (or housing) per building: without them a model once said "a farm
+    # creates two jobs" (it has 15) and never built one (game 7).
     costs = [
-        f"{kind}: wood {spec.wood}, stone {spec.stone}, gold {spec.gold}, {spec.build_turns} turns"
+        f"{kind}: wood {spec.wood}, stone {spec.stone}, gold {spec.gold}, {spec.build_turns} turns, "
+        + (f"{spec.jobs} jobs" if spec.jobs else f"houses {spec.housing} people")
         for kind, spec in config.buildings.items()
     ]
     return [
@@ -124,7 +127,7 @@ def works_lines(state: GameState, config: Config, people=None) -> list[str]:
         f"Adults: {state.adults}, without work: {idle}. Workers beyond the jobs produce nothing.",
         f"- Jobs without workers: food {_vacant(state, config, 'food')}, wood {_vacant(state, config, 'wood')}, "
         f"stone {_vacant(state, config, 'stone')}. A new building adds jobs, not workers: "
-        "it produces nothing unless adults are free to fill it.",
+        "fill it with free adults or with workers moved from a sector that needs them less.",
         f"- Expected this month if nothing changes: food +{output['food']}, wood +{output['wood']}, "
         f"stone +{output['stone']}.",
         f"- Housing: {state.population()} people, {housing_capacity(state, config)} places.",
