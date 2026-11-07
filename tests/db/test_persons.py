@@ -22,7 +22,7 @@ def settings():
 
 def _game(db, settings, seed, realms=("Nord",)):
     game_id = create_game(db, load_raw_config(), seed=seed, realm_names=list(realms),
-                          council_models=settings.models, personas=CATALOG)
+                          council_models=settings.models, personas=CATALOG, model_tiers=settings.model_tiers)
     realm_ids = [r[0] for r in db.execute("SELECT id FROM realms WHERE game_id = %s ORDER BY id", (game_id,))]
     return game_id, realm_ids
 
@@ -41,7 +41,8 @@ def test_council_is_drawn_from_moderates_with_its_model_and_salary(db, settings)
     for role, model, personality in rows:
         if role in persons.COUNCIL_ROLES:
             person = by_id[personality["persona"]]
-            assert person["group"] == "moderate" and model == person["model"]
+            assert person["group"] == "moderate" and model == settings.model_tiers[person["tier"]]
+            assert personality["tier"] == person["tier"]
             assert personality["traits"] == person["traits"] and personality["name"] == person["name"]
             salary += person["salary"]
     assert load_latest_state(db, realm_id).council_salary == salary > 0
@@ -89,3 +90,8 @@ def test_engine_pays_salaries_after_upkeep_and_reports_when_it_cannot():
     poor = replace(state, gold=0, tax_rate=0)
     events = resolve_turn(poor, [], config).events
     assert any(e.kind == "salaries_unpaid" for e in events)
+
+
+def test_catalog_names_tiers_never_models():
+    for person in CATALOG:
+        assert "model" not in person and person["tier"] in ("low", "medium", "high")

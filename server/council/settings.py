@@ -26,7 +26,8 @@ class CouncilSettings:
     history_turns: int
     max_lessons: int
     max_audience_messages_per_turn: int
-    models: dict[str, str]  # role -> model id
+    models: dict[str, str]  # role -> model id (roles without a person: Voice, people)
+    model_tiers: dict[str, str]  # a person's tier (low, medium, high) -> model id
     reasoning_effort: dict[str, str]  # role -> effort; missing role = model default
     prices: dict[str, ModelPrice]  # model id -> price
 

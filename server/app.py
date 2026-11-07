@@ -128,7 +128,8 @@ def _add_routes(app: FastAPI) -> None:
         # the council is drawn from the catalog of persons.
         catalog = None if body.council_models else persons.load_catalog()
         game_id = games.create_game(
-            conn, load_raw_config(), body.seed, body.realm_names, council_models, personas=catalog
+            conn, load_raw_config(), body.seed, body.realm_names, council_models, personas=catalog,
+            model_tiers=request.app.state.council_settings.model_tiers,
         )
         return games.load_game(conn, game_id)
 

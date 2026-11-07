@@ -94,6 +94,7 @@ def create_game(
     realm_names: list[str],
     council_models: dict[str, str],
     personas: list[dict] | None = None,
+    model_tiers: dict[str, str] | None = None,
 ) -> int:
     """@brief Create a game with its realms, councils, turn 1 and first snapshots.
     @param conn Connection in autocommit mode.
@@ -107,6 +108,8 @@ def create_game(
            realm's Treasurer, Architect and Chancellor are drawn from its
            moderates and bring their own name, gender, traits, story, model
            and salary; other roles (Voice, people) still use council_models.
+    @param model_tiers Tier -> model id ([model_tiers] in council.toml);
+           required with personas. The tier is kept with the person.
     @return The new game id.
     """
     config = config_from_dict(raw_config)  # fail before writing anything
@@ -127,9 +130,9 @@ def create_game(
                 if person is None:
                     personality = {"traits": generate_traits(seed, realm_id, role)}
                 else:
-                    model = person["model"]
+                    model = model_tiers[person["tier"]]
                     personality = {key: person[key] for key in
-                                   ("traits", "name", "gender", "resume", "salary")} | {"persona": person["id"]}
+                                   ("traits", "name", "gender", "resume", "salary", "tier")} | {"persona": person["id"]}
                     state.council_salary += person["salary"]
                 conn.execute(
                     "INSERT INTO actors (realm_id, role, model, personality) VALUES (%s, %s, %s, %s)",

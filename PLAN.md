@@ -15,7 +15,7 @@ This file is the starting point of every work session: read it at the start and 
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (DeepSeek V4.1 Flash for all); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 202 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 203 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -68,7 +68,8 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [x] Play a game with mandates, notes, debate and audiences together (game 7, 20 turns)
 - [x] The manual of the realm: how every element works, written from the config, in every counsellor prompt and on the sovereign's "Manuale" page
 - [x] The craft of each role (good practice, not laws) and the Treasurer's registry and ration consumption; the Architect's duty is a duty again
-- [x] Persons: a small catalog (12), the council drawn from the moderates at game start; name, gender, traits, story, model and salary come with the person; salaries paid by the engine
+- [ ] Model tiers: test a weaker model as `low` (how much worse does a game get?), then choose the three tiers; later a settings page for them
+- [x] Persons: a small catalog (12), the council drawn from the moderates at game start; name, gender, traits, story, model and salary come with the person; salaries paid by the engine; persons carry a tier (low, medium, high), never a model
 - [ ] Play a game to check manual and craft together, then remove the prompt rules they make redundant
 - [x] Game 7 fixes: the Architect may fill a new building with workers moved from a sector that needs them less (the growth trap); jobs per building in the briefing; a reply that ran up to the token cap is retried without reasoning
 - [x] Counsellor prompts: quote only briefing numbers, never count idle adults or jobs yourself, never present a suggestion as a rule in force; the Chancellor's assignments within adults and jobs (game 6)

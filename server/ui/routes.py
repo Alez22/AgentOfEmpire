@@ -82,7 +82,7 @@ def create_game(request: Request, realm_name: str = Form("Nord"), conn=Depends(_
     seed = secrets.randbelow(1_000_000)  # a new world each time
     name = realm_name.strip()[:40] or "Nord"
     game_id = games.create_game(conn, load_raw_config(), seed, [name], settings.models,
-                                personas=persons.load_catalog())
+                                personas=persons.load_catalog(), model_tiers=settings.model_tiers)
     realm_id = games.load_game(conn, game_id)["realms"][0]["id"]
     return _turn_page(realm_id)
 
