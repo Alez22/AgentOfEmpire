@@ -6,6 +6,7 @@ import re
 import time
 from dataclasses import replace
 
+import psycopg
 import pytest
 from fastapi.testclient import TestClient
 
@@ -171,3 +172,26 @@ def test_admin_sees_everything(database_url, settings):
         assert ui.get(f"/admin/realms/{realm_id}/audiences").status_code == 200
         assert "Amministrazione" in ui.get("/ui").text
         assert ui.get("/admin/games/999999").status_code == 404
+
+
+def test_admin_agents_page_shows_the_prompts_that_are_sent(database_url, settings):
+    with TestClient(create_app(database_url, settings, FakeClient(), admin_view=True)) as ui:
+        realm_id = _play_one_month(ui)
+        page = html.unescape(ui.get(f"/admin/realms/{realm_id}/agents").text)
+        for label in ("Riunione del consiglio", "Revisione delle lezioni (fine stagione)",
+                      "Udienza privata", "Racconto del mese", "Racconto di inizio stagione"):
+            assert label in page
+        assert "prudence " in page and "deepseek/deepseek-v4.1-flash" in page
+        assert "Ultimo briefing inviato" in page and "Turno 1" in page
+    with psycopg.connect(database_url) as conn:
+        sent = conn.execute(
+            "SELECT c.prompt_system FROM model_calls c JOIN actors a ON a.id = c.actor_id"
+            " WHERE c.realm_id = %s AND a.role IN ('treasurer', 'chancellor', 'square_voice')",
+            (realm_id,),
+        ).fetchall()
+    assert len(sent) == 3 and all(system in page for (system,) in sent)
+
+
+def test_admin_agents_page_is_hidden_when_off(database_url, settings):
+    with TestClient(create_app(database_url, settings, FakeClient(), admin_view=False)) as ui:
+        assert ui.get("/admin/realms/1/agents").status_code == 404

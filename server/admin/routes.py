@@ -19,7 +19,8 @@ import psycopg
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
-from server.council import meeting
+from server.council import audience, meeting, voice
+from server.council.personality import TRAITS, trait_word
 from server.db import games
 from server.db.replay import replay_game
 from server.ui.routes import templates
@@ -170,3 +171,93 @@ def admin_audiences(request: Request, realm_id: int, conn=Depends(_admin_connect
         by_role.setdefault(role, []).append({"turn": turn, "speaker": speaker, "content": content})
     context = {"game": _game_or_404(conn, game_id), "realm_id": realm_id, "by_role": by_role}
     return templates.TemplateResponse(request, "admin_audiences.html", context)
+
+
+# ------------------------------------------------------------------ agents
+
+AGENT_ORDER = ("chancellor", "treasurer", "architect", "square_voice")
+
+
+def _prompt_context(conn: psycopg.Connection, realm_id: int, settings) -> meeting.MeetingContext:
+    """@brief Enough context to render system prompts, with or without an open turn.
+
+    meeting.load_context needs an open turn; a finished game has none, and
+    the prompts depend only on realm name, settings, config and personality.
+    No client: nothing here may call a model.
+    """
+    game_id, realm_name = conn.execute(
+        "SELECT game_id, name FROM realms WHERE id = %s", (realm_id,)
+    ).fetchone()
+    actors = {
+        role: meeting.Actor(actor_id, role, model, personality.get("traits", {}))
+        for actor_id, role, model, personality in conn.execute(
+            "SELECT id, role, model, personality FROM actors WHERE realm_id = %s", (realm_id,)
+        )
+    }
+    state = games.load_latest_state(conn, realm_id)
+    return meeting.MeetingContext(
+        conn, None, settings, game_id, realm_id, realm_name, state.turn,
+        state, games.load_game_config(conn, game_id), actors,
+    )
+
+
+def _system_prompts(ctx: meeting.MeetingContext, actor: meeting.Actor) -> list[dict]:
+    """@brief Every system prompt this agent can receive, built by the same
+    functions the council uses, so the page cannot drift from what is sent.
+    """
+    if actor.role == "square_voice":
+        return [
+            {"label": "Racconto del mese", "text": voice.voice_system(ctx, season=False)},
+            {"label": "Racconto di inizio stagione", "text": voice.voice_system(ctx, season=True)},
+        ]
+    if actor.role == "chancellor":
+        council = meeting._chancellor_system(ctx, actor)
+    else:
+        council = meeting._minister_system(ctx, actor)
+    return [
+        {"label": "Riunione del consiglio", "text": council},
+        {"label": "Revisione delle lezioni (fine stagione)", "text": meeting._lessons_system(ctx, actor)},
+        {"label": "Udienza privata", "text": audience._system(ctx, actor)},
+    ]
+
+
+def _last_call(conn: psycopg.Connection, actor_id: int) -> dict | None:
+    """@brief The newest call that stored its prompts (migration 006 onwards)."""
+    row = conn.execute(
+        "SELECT turn, prompt_user, created_at FROM model_calls"
+        " WHERE actor_id = %s AND prompt_user IS NOT NULL ORDER BY id DESC LIMIT 1",
+        (actor_id,),
+    ).fetchone()
+    return None if row is None else {"turn": row[0], "briefing": row[1], "created_at": row[2]}
+
+
+def _agent_card(conn: psycopg.Connection, ctx: meeting.MeetingContext, actor: meeting.Actor) -> dict:
+    calls, usd = conn.execute(
+        "SELECT count(*), coalesce(sum(cost_usd), 0) FROM model_calls WHERE actor_id = %s",
+        (actor.id,),
+    ).fetchone()
+    traits = [
+        {"name": trait, "value": actor.traits[trait], "words": trait_word(trait, actor.traits[trait])}
+        for trait in TRAITS if trait in actor.traits
+    ]
+    return {
+        "role": actor.role,
+        "model": actor.model,
+        "reasoning": ctx.settings.reasoning_effort.get(actor.role),
+        "calls": calls,
+        "usd": usd,
+        "traits": traits,
+        "prompts": _system_prompts(ctx, actor),
+        "last_call": _last_call(conn, actor.id),
+    }
+
+
+@router.get("/realms/{realm_id}/agents", response_class=HTMLResponse)
+def admin_agents(request: Request, realm_id: int, conn=Depends(_admin_connection)):
+    game_id = _realm_game_or_404(conn, realm_id)
+    ctx = _prompt_context(conn, realm_id, request.app.state.council_settings)
+    cards = [_agent_card(conn, ctx, ctx.actors[role]) for role in AGENT_ORDER if role in ctx.actors]
+    missing = [role for role in AGENT_ORDER if role not in ctx.actors]
+    context = {"game": _game_or_404(conn, game_id), "realm_id": realm_id,
+               "realm_name": ctx.realm_name, "cards": cards, "missing": missing}
+    return templates.TemplateResponse(request, "admin_agents.html", context)

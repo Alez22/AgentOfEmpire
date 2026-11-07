@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Agenti · amministrazione{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Amministrazione · partita {{ game.id }} · {{ realm_name }}</div>
+  <h1>Agenti</h1>
+  <p class="hint">Prompt di sistema generati adesso, con i template attuali e la personalità di ogni agente: è ciò che riceverebbero alla prossima chiamata. <a href="/admin/games/{{ game.id }}">← Partita</a></p>
+</section>
+{% for card in cards %}
+{% set who = labels.ROLES.get(card.role, {"name": card.role, "color": "#ECE5D6"}) %}
+<section class="card" style="border-top: 3px solid {{ who.color }}">
+  <h2>{{ who.name }}</h2>
+  <table class="numbers">
+    <tr><th>Modello</th><td>{{ card.model }}</td></tr>
+    <tr><th>Ragionamento</th><td>{{ card.reasoning or "predefinito del modello" }}</td></tr>
+    <tr><th>Chiamate</th><td>{{ card.calls }} · ${{ "%.4f"|format(card.usd) }}</td></tr>
+  </table>
+  <h3>Carattere</h3>
+  {% if card.traits %}
+  <table class="numbers">
+    {% for t in card.traits %}
+    <tr><th>{{ t.name }} {{ t.value }}</th><td>→ {{ t.words }}</td></tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="hint">Nessun tratto: il prompt non descrive un carattere.</p>
+  {% endif %}
+  <h3>Prompt di sistema</h3>
+  {% for p in card.prompts %}
+  <details><summary>{{ p.label }}</summary><pre class="code">{{ p.text }}</pre></details>
+  {% endfor %}
+  <h3>Ultimo briefing inviato</h3>
+  {% if card.last_call %}
+  <details><summary>Turno {{ card.last_call.turn }}</summary><pre class="code">{{ card.last_call.briefing }}</pre></details>
+  <p class="hint"><a href="/admin/realms/{{ realm_id }}/turns/{{ card.last_call.turn }}">Tutte le chiamate del turno {{ card.last_call.turn }}</a>, con il prompt realmente inviato.</p>
+  {% else %}
+  <p class="hint">Nessuna chiamata con il briefing salvato.</p>
+  {% endif %}
+</section>
+{% endfor %}
+{% for role in missing %}
+<section class="card">
+  <h2>{{ labels.ROLES.get(role, {"name": role}).name }}</h2>
+  <p class="hint">Non ancora creato in questo regno.</p>
+</section>
+{% endfor %}
+{% endblock %}

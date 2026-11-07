@@ -671,6 +671,7 @@ The admin sees everything, separate from the sovereign's view.
 | `/admin/realms/{id}/turns/{n}` | the turn seen from inside: council messages with their data, every model call with the prompt sent, reply, tokens, cost, time, error |
 | `/admin/realms/{id}/lessons` | each member's lessons with their history: confirmed, revised, dropped, with the reasons |
 | `/admin/realms/{id}/audiences` | all private audiences |
+| `/admin/realms/{id}/agents` | each agent: model, reasoning effort, calls and cost, traits with the words they become in the prompt, every system prompt it can receive (rendered now by the same functions the council uses) and its last briefing sent |
 
 - **Stored prompts**: migration `006` adds the system prompt and the briefing of every call to `model_calls`, cut to 20,000 characters each: about 10 MB for a 120-turn game. They explain why a member answered the way it did.
 - **Everything read-only**, except the replay check, which writes nothing.

@@ -28,16 +28,16 @@ def generate_traits(seed: int, realm_id: int, role: str) -> dict[str, int]:
     return {trait: rng.randint(START_MIN, START_MAX) for trait in TRAITS}
 
 
+def trait_word(trait: str, value: int) -> str:
+    """@brief The words one trait value becomes in the prompt."""
+    low, middle, high = TRAIT_WORDS[trait]
+    if value < LOW_BELOW:
+        return low
+    if value > HIGH_ABOVE:
+        return high
+    return middle
+
+
 def describe_traits(traits: dict[str, int]) -> str:
     """@brief Plain words for the prompt; a missing trait counts as average."""
-    words = []
-    for trait in TRAITS:
-        value = traits.get(trait, 500)
-        low, middle, high = TRAIT_WORDS[trait]
-        if value < LOW_BELOW:
-            words.append(low)
-        elif value > HIGH_ABOVE:
-            words.append(high)
-        else:
-            words.append(middle)
-    return ", ".join(words)
+    return ", ".join(trait_word(trait, traits.get(trait, 500)) for trait in TRAITS)

@@ -100,6 +100,16 @@ def facts_for_the_square(ctx: MeetingContext, season: bool) -> str:
     return "\n".join(lines)
 
 
+def voice_system(ctx: MeetingContext, season: bool) -> str:
+    """@brief System prompt of the Voice: monthly, or the long season story."""
+    return render_prompt(
+        "voice_system.txt",
+        realm_name=ctx.realm_name,
+        language=ctx.settings.language,
+        length_rule=SEASON_RULE if season else MONTHLY_RULE,
+    )
+
+
 def speak_in_square(ctx: MeetingContext) -> str:
     """@brief Store this turn's voice as a court-level council message.
     @return The text, or "" if the voice did not speak (the meeting goes on).
@@ -108,12 +118,7 @@ def speak_in_square(ctx: MeetingContext) -> str:
     if actor is None:
         return ""
     season = is_reflection_turn(ctx.turn)
-    system = render_prompt(
-        "voice_system.txt",
-        realm_name=ctx.realm_name,
-        language=ctx.settings.language,
-        length_rule=SEASON_RULE if season else MONTHLY_RULE,
-    )
+    system = voice_system(ctx, season)
     text = ask_text(ctx, actor, system, facts_for_the_square(ctx, season), MAX_VOICE_CHARS)
     if text:
         insert_message(ctx, 1, "voice", actor, text, {"season": season}, visibility="court")

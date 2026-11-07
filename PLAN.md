@@ -14,8 +14,8 @@ This file is the starting point of every work session: read it at the start and 
 | Database | PostgreSQL 18.6 in Docker, 6 migrations, row-level security, append-only logs, replay | `db/migrations/`, `server/db/` |
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (DeepSeek V4.1 Flash for all); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, chronicle, audiences; meetings run in the background | `server/ui/` |
-| Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 121 tests: engine, database, council with fake models, UI | `tests/` |
+| Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
+| Tests | 123 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
