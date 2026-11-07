@@ -191,7 +191,7 @@ def minister_briefing(
     role: str, state: GameState, config: Config, events: list[dict],
     history: list[str], directives: list[str], lessons: list[str],
     audiences: list[str] = (), audience_facts: list[str] = (), square_voices: list = (),
-    people=None, people_lines: list[str] = (),
+    people=None, people_lines: list[str] = (), note_lines: list[str] = (),
 ) -> str:
     """@brief Full briefing of a minister; each role sees only its own section.
     Lessons come first: they are the lens through which the numbers are read.
@@ -199,7 +199,7 @@ def minister_briefing(
     section = treasury_lines(state, config, people) if role == "treasurer" else works_lines(state, config, people)
     lines = (header_lines(state) + lessons_lines(lessons) + section + events_lines(events)
              + square_lines(list(square_voices)) + list(people_lines)
-             + history_lines(history) + audience_lines(list(audiences))
+             + history_lines(history) + audience_lines(list(audiences)) + list(note_lines)
              + audience_fact_lines(list(audience_facts)) + directive_lines(directives))
     return "\n".join(lines)
 
@@ -208,7 +208,7 @@ def chancellor_briefing(
     state: GameState, config: Config, events: list[dict], directives: list[str],
     reports: dict[str, str], proposals: list[dict], check_lines: list[str], lessons: list[str],
     audiences: list[str] = (), audience_facts: list[str] = (), square_voices: list = (),
-    people=None, people_lines: list[str] = (),
+    people=None, people_lines: list[str] = (), note_lines: list[str] = (),
 ) -> str:
     """@brief The Chancellor sees both sections, the reports, the proposals
     (also as one JSON line, easy to quote back) and the scribes' cost check.
@@ -216,7 +216,7 @@ def chancellor_briefing(
     lines = (header_lines(state) + lessons_lines(lessons)
              + treasury_lines(state, config, people) + works_lines(state, config, people))
     lines += (events_lines(events) + square_lines(list(square_voices)) + list(people_lines)
-              + audience_lines(list(audiences))
+              + audience_lines(list(audiences)) + list(note_lines)
               + audience_fact_lines(list(audience_facts)) + directive_lines(directives))
     lines.append("## Reports of the ministers")
     lines += [f"- {role}: {text}" for role, text in reports.items()]

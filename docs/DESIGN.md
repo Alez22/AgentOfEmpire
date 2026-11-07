@@ -704,6 +704,17 @@ The admin sees everything, separate from the sovereign's view.
 
 **Tests** (fake client): the sovereign's view contains no mood on any page nor in the state endpoint; the Voice speaks in the first round, not after a directive, and enters the members' briefings; long story at season start; absent Voice does not block the meeting; with `ADMIN_VIEW` off `/admin` answers 404; on, it shows full state, lessons, audiences and prompts; model text stays text on the admin pages too.
 
+## Secret notes between counsellors
+
+Approved on 2026-11-07, after game 6 (the Chancellor already suspected the Treasurer but had no way to act).
+
+- **One a month, to one colleague**: the Treasurer, the Architect and the Chancellor may each add a note to their usual council reply (`"note": {"to": role, "text": ...}`), so it costs **no extra call**. Only for a purpose: a proposal, a pact, a warning, an answer. A second round after a directive cannot add a second note.
+- **Delivered at the next meeting**: the recipient finds it in its briefing ("## Secret notes", the last three turns, received and sent), and also in its private audiences and its season review, where it can learn whom to trust.
+- **Entirely secret**: not even the fact that a note was sent is recorded anywhere else: no event, no chronicle, no square. Table `counsel_notes` (migration `009`), append-only, no grant to `agent_reader`.
+- **The sovereign can only ask**: in a private audience the counsellor sees its notes and the rule that the sovereign does not know whether any note exists; it may tell, deny or keep silent, according to its character (honesty trait).
+- **Admin**: the turn page lists the notes written that turn.
+- A bad note (to oneself, to someone outside the council, empty, not an object) is dropped; the rest of the reply stays valid.
+
 ## The people decide
 
 Approved on 2026-11-07, after game 4: the square's opinion must turn into what the people do, otherwise the sovereign governs a people that never acts. First use of the decision service planned for Jev (state + typed questions → a bounded choice).

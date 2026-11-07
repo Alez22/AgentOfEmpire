@@ -86,9 +86,15 @@ class AlreadyApprovedError(CouncilError):
 
 
 # JSON schemas sent to the models as the expected answer shape.
+class _NoteSchema(BaseModel):
+    to: Literal["treasurer", "architect", "chancellor"]
+    text: str
+
+
 class _MinisterSchema(BaseModel):
     report: str
     proposals: list[Order]
+    note: _NoteSchema | None = None  # secret note to one colleague (notes.py)
 
 
 class _PlanItemSchema(BaseModel):
@@ -99,6 +105,7 @@ class _PlanItemSchema(BaseModel):
 class _ChancellorSchema(BaseModel):
     summary: str
     plan: list[_PlanItemSchema]
+    note: _NoteSchema | None = None
 
 
 class _LessonActionSchema(BaseModel):
@@ -118,11 +125,13 @@ class _LessonsSchema(BaseModel):
 class _MinisterReply(BaseModel):
     report: str
     proposals: list = []
+    note: object = None  # checked by notes.store_note; a bad note never voids the reply
 
 
 class _ChancellorReply(BaseModel):
     summary: str
     plan: list = []
+    note: object = None
 
 
 class _LessonsReply(BaseModel):
@@ -512,6 +521,20 @@ def _audience_memory(ctx: MeetingContext, actor: Actor) -> tuple[list[str], list
     return dialogue, facts
 
 
+def _note_lines(ctx: MeetingContext, actor: Actor, last_turn: int | None = None) -> list[str]:
+    """@brief This actor's secret notes of recent turns; a note is read the
+    month after it was written (last_turn defaults to the previous turn)."""
+    from server.council import notes  # kept apart: only the two ends ever read a note
+    names_by_actor = {a.id: DISPLAY_NAMES[a.role] for a in ctx.actors.values()}
+    last = ctx.turn - 1 if last_turn is None else last_turn
+    return notes.note_lines(ctx.conn, actor.id, last - notes.NOTE_HISTORY_TURNS + 1, last, names_by_actor)
+
+
+def _store_note(ctx: MeetingContext, actor: Actor, raw: object) -> None:
+    from server.council import notes
+    notes.store_note(ctx.conn, ctx.game_id, ctx.realm_id, ctx.turn, ctx.actors, actor, raw)
+
+
 def _directives(ctx: MeetingContext) -> list[str]:
     return [row[0] for row in ctx.conn.execute(
         "SELECT content FROM council_messages WHERE realm_id = %s AND turn = %s"
@@ -558,7 +581,7 @@ def _reflect(ctx: MeetingContext, actor: Actor) -> None:
     square = briefing.square_lines(square_voices(ctx, ctx.turn - SEASON_TURNS))
     user = "\n".join(
         ["## What happened this season"] + [f"- {entry}" for entry in season or ["You did nothing."]]
-        + square
+        + square + _note_lines(ctx, actor)
         + (["## Your private audiences with the sovereign this season"]
            + [f"- {line}" for line in audiences] if audiences else [])
         + ["## Your current lessons"] + (numbered or ["None yet."])
@@ -595,7 +618,7 @@ def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
         _history(ctx, actor, ctx.settings.history_turns), directives,
         [memory.lesson_line(lesson) for lesson in memory.current_lessons(ctx.conn, actor.id)],
         *_audience_memory(ctx, actor),
-        square_voices=square_voices(ctx), **_people_kwargs(ctx),
+        square_voices=square_voices(ctx), **_people_kwargs(ctx), note_lines=_note_lines(ctx, actor),
     )
     schema = _MinisterSchema.model_json_schema()
     reply, status = _ask(ctx, actor, _minister_system(ctx, actor), user, schema, _MinisterReply)
@@ -604,6 +627,7 @@ def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
     else:
         valid, discarded = _validate_proposals(actor.role, reply.proposals)
         report = reply.report
+        _store_note(ctx, actor, reply.note)
     payload = {"proposals": valid, "discarded": discarded, "absent": reply is None, "status": status}
     insert_message(ctx, round_number, "report", actor, report, payload)
     return report, valid
@@ -619,7 +643,7 @@ def _chancellor_turn(ctx: MeetingContext, round_number: int, events: list[dict],
         user = briefing.chancellor_briefing(
             ctx.state, ctx.config, events, directives, reports, proposals,
             _check_lines(ctx, proposals, check), lessons, *_audience_memory(ctx, actor),
-            square_voices=square_voices(ctx), **_people_kwargs(ctx),
+            square_voices=square_voices(ctx), **_people_kwargs(ctx), note_lines=_note_lines(ctx, actor),
         )
         schema = _ChancellorSchema.model_json_schema()
         reply, status = _ask(ctx, actor, _chancellor_system(ctx, actor), user, schema, _ChancellorReply)
@@ -631,6 +655,7 @@ def _chancellor_turn(ctx: MeetingContext, round_number: int, events: list[dict],
     else:
         plan, discarded = _validate_plan(reply.plan)
         summary = reply.summary
+        _store_note(ctx, actor, reply.note)
     plan, no_change = _drop_no_change(ctx.state, plan)
     discarded += no_change
     payload = {"plan": plan, "discarded": discarded, "absent": reply is None,

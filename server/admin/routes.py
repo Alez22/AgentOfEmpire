@@ -19,7 +19,7 @@ import psycopg
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
-from server.council import audience, meeting, voice
+from server.council import audience, meeting, notes, voice
 from server.council.meeting import render_prompt
 from server.council.personality import TRAITS, trait_word
 from server.db import games
@@ -136,6 +136,7 @@ def admin_turn(request: Request, realm_id: int, turn: int, conn=Depends(_admin_c
         "calls": [dict(zip(keys, row)) for row in calls],
         "orders": games.list_orders(conn, realm_id, turn),
         "people": _people_decision(conn, realm_id, turn),
+        "notes": notes.notes_of_turn(conn, realm_id, turn),  # secret: admin only
     }
     return templates.TemplateResponse(request, "admin_turn.html", context)
 

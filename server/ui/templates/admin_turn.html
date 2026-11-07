@@ -35,6 +35,16 @@
 </section>
 
 <section class="card">
+  <h2>Biglietti segreti</h2>
+  <p class="hint">Scritti in questo turno, letti dal destinatario alla riunione successiva. Nessun altro sa che esistono, nemmeno il sovrano.</p>
+  {% for n in notes %}
+  <p><strong>{{ labels.ROLES.get(n.sender, {"name": n.sender}).name }} → {{ labels.ROLES.get(n.recipient, {"name": n.recipient}).name }}</strong>: «{{ n.content }}»</p>
+  {% else %}
+  <p class="hint">Nessun biglietto.</p>
+  {% endfor %}
+</section>
+
+<section class="card">
   <h2>Il popolo</h2>
   {% if people %}
   <table class="numbers">

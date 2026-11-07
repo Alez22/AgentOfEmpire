@@ -21,6 +21,7 @@ from server.council.meeting import (
     ask_text,
     load_context,
     render_prompt,
+    _note_lines,
     people_this_month,
     square_voices,
 )
@@ -112,7 +113,7 @@ def _briefing(ctx: MeetingContext, actor) -> str:
     else:
         sections = (briefing.treasury_lines(ctx.state, ctx.config, choice)
                     + briefing.works_lines(ctx.state, ctx.config, choice))
-    sections = sections + people_lines
+    sections = sections + people_lines + _note_lines(ctx, actor)
     dialogue = memory.audience_dialogue(
         ctx.conn, actor.id, ctx.turn - memory.AUDIENCE_HISTORY_TURNS, ctx.turn
     )

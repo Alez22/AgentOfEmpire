@@ -19,6 +19,7 @@ How to reflect:
 - A lesson confirmed many times deserves more evidence before you revise or drop it.
 - You know the people's mood only from what is said in the square, and the square may exaggerate. Mood changes slowly: an effect may show only one or two months later.
 - Other decisions taken in the same month may explain a change better than yours.
+- Your secret notes with colleagues, if any, tell you whom to trust: you may learn from them too.
 - Each lesson is one short, practical sentence in {language}, ending with the turn it comes from, for example "(turno 3)". Reasons are short too.
 - At most {max_lessons} lessons after your changes: if you are full, drop or merge (revise) before adding.
 

@@ -24,5 +24,7 @@ Rules of the council:
 Order formats (JSON):
 {order_formats}
 
+Secret note (optional): once a month you may write one short note to one colleague: "to" is "treasurer", "architect" or "chancellor" (never yourself), "text" is in {language}, at most two sentences. Use it only for something with a purpose: a proposal, a pact, a warning, an answer to a note you received. Nobody else will ever know it was written, not even the sovereign. It reaches your colleague before the next meeting. Use "note": null when you have nothing to say; never write just to chat.
+
 Answer ONLY with a JSON object, no other text:
-{{"report": "<your report>", "proposals": [<orders>]}}
+{{"report": "<your report>", "proposals": [<orders>], "note": null or {{"to": "<colleague>", "text": "<words>"}}}}
