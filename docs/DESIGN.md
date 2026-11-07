@@ -28,6 +28,18 @@ Multiplayer *[Lost: details]*: each player leads a **state**, formed by **a sing
 
 ## Character personalities
 
+**The layers of a counsellor** (2026-11-07):
+
+| Layer | What it holds | Changes | Where today |
+| --- | --- | --- | --- |
+| Manual (shared) | how the realm works | only with the config | `server/council/manual.py` |
+| Role | duties, obligations, allowed orders | never | `ROLE_DUTIES`, `ROLE_ACTIONS`, the role's prompt template |
+| Craft | what the office's training teaches: good practice, not laws | per role; later per person (résumé) | `prompts/expertise_<role>.txt` |
+| Person | traits (how well and how boldly the craft is applied), later gender, name, résumé | with the person | `actors.personality` |
+| Mandate | the sovereign's standing lines, rewritten by the chancellery | when changed | `mandates` |
+
+Each role also sees different information: the Treasurer the consumption at every ration and the registry (children coming of age, free places in the houses), which the Architect needs and has to ask for, in council or in a note.
+
 **Role and person** (principle, 2026-11-07): a role is the office (title, duties, obligations such as the Chancellor's impartiality, allowed orders) and never changes during a game; a person fills it and has its own traits, résumé and, later, name. Today the role lives in the code (`ROLE_TITLES`, `ROLE_DUTIES`, `ROLE_ACTIONS` in `server/council/meeting.py`) and in the role's prompt templates; the person in the `actors` row of the game (traits). When counsellors can be hired and dismissed, the role data moves to one file (e.g. `server/council/roles.toml`) and persons stay in the database.
 
 

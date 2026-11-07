@@ -38,10 +38,9 @@ ROLE_ACTIONS = {
 ROLE_TITLES = {"treasurer": "Treasurer", "architect": "Architect", "chancellor": "Chancellor"}
 ROLE_DUTIES = {
     "treasurer": "the treasury, taxes, food rations and feasts for the people.",
-    "architect": ("construction and the assignment of adults to fields, sawmills and quarries. "
-                  "A new building needs workers: build where free adults, or workers you move from a "
-                  "sector that needs them less (for example wood or stone piling up), can fill its jobs. "
-                  "A building nobody works in produces nothing and still costs upkeep."),
+    # How to do the job well is the craft (prompts/expertise_<role>.txt),
+    # not the duty: the duty only says what the office is for.
+    "architect": "construction and the assignment of adults to fields, sawmills and quarries.",
     "chancellor": "chairing the council: turning the ministers' proposals into one plan for the sovereign.",
 }
 LESSON_HINTS = {
@@ -419,6 +418,21 @@ def _order_formats(ctx: MeetingContext) -> str:
     return render_prompt("order_formats.txt", max_tax_rate=ctx.config.economy.max_tax_rate)
 
 
+EXPERTISE_INTRO = (
+    "These are the habits of your craft, learned before you entered the council: good practice, not laws. "
+    "Weigh them against the facts of the month and follow them as your own outlook leads you: a bold person "
+    "may build or spend sooner, a cautious one later, an ambitious one may favour other aims. How well you "
+    "apply them depends on your competence.\n"
+)
+
+
+def expertise_block(role: str) -> str:
+    """@brief What the office's training teaches (a role's craft, the same
+    for every holder today; later it can differ by person, in a résumé)."""
+    path = PROMPTS_DIR / f"expertise_{role}.txt"
+    return (EXPERTISE_INTRO + path.read_text()) if path.exists() else ""
+
+
 def mandate_block(ctx: MeetingContext, actor: Actor) -> str:
     """@brief The approved mandate lines for this actor's prompt ("" if none)."""
     from server.council import mandates  # the mandates module builds on this one
@@ -430,6 +444,7 @@ def _minister_system(ctx: MeetingContext, actor: Actor) -> str:
         "minister_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
+        expertise=expertise_block(actor.role),
         role_title=ROLE_TITLES[actor.role],
         display_name=DISPLAY_NAMES[actor.role],
         realm_name=ctx.realm_name,
@@ -446,6 +461,7 @@ def _chancellor_system(ctx: MeetingContext, actor: Actor) -> str:
         "chancellor_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
+        expertise=expertise_block(actor.role),
         realm_name=ctx.realm_name,
         traits=describe_traits(actor.traits),
         treasurer_name=DISPLAY_NAMES["treasurer"],
@@ -572,6 +588,7 @@ def _lessons_system(ctx: MeetingContext, actor: Actor) -> str:
         "lessons_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
+        expertise=expertise_block(actor.role),
         role_title=ROLE_TITLES[actor.role],
         display_name=DISPLAY_NAMES[actor.role],
         realm_name=ctx.realm_name,

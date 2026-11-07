@@ -4,6 +4,7 @@ The models read words and numbers here; they never compute anything.
 Pure functions: no database access (the meeting module passes the data in).
 """
 
+import copy
 import json
 from collections import Counter
 
@@ -80,6 +81,26 @@ def season_outlook_line(state: GameState, config: Config, harvest: int) -> str:
             + f". Months left in this season: {3 - (state.turn - 1) % 3}.")
 
 
+def ration_lines(state: GameState, config: Config) -> list[str]:
+    """@brief The Treasurer's craft needs the consumption at every ration
+    (game 8: the abundant ration was proposed with 344 food in store)."""
+    needed = {}
+    for ration in ("reduced", "normal", "abundant"):
+        trial = copy.copy(state)
+        trial.ration = ration
+        needed[ration] = food_needed(trial, config)
+    return [f"- Eaten per month at each ration: reduced {needed['reduced']}, "
+            f"normal {needed['normal']}, abundant {needed['abundant']}."]
+
+
+def registry_lines(state: GameState, config: Config) -> list[str]:
+    """@brief The registry the Treasurer reads: hands and mouths to come."""
+    coming = (state.aging_acc[0] + 3 * state.children * config.demography.child_to_adult_permille) // 1000
+    places = housing_capacity(state, config)
+    return [f"- Registry: about {coming} children will come of age in the next three months. "
+            f"Housing: {state.population()} people, {places} places, {max(0, places - state.population())} free."]
+
+
 def treasury_lines(state: GameState, config: Config, people=None) -> list[str]:
     return [
         "## Treasury and people",
@@ -90,12 +111,14 @@ def treasury_lines(state: GameState, config: Config, people=None) -> list[str]:
         f"{_reserve_months_text(state, config)} months. "
         f"Stored food rots by {config.economy.food_spoilage_pct}% per month.",
         food_outlook_line(state, config, people),
+        *ration_lines(state, config),
         f"- Tax rate: {state.tax_rate}% (maximum {config.economy.max_tax_rate}%). Ration: {state.ration}.",
         # No mood number, threshold or months below it: the council, like the
         # sovereign, knows the people only from the square (see square_lines).
         # Protests and strikes are public facts, so the unrest level stays.
         f"- Unrest: {state.unrest} (calm, protests, strike, revolt).",
         f"- Population: {state.children} children, {state.adults} adults, {state.elders} elders.",
+        *registry_lines(state, config),
     ]
 
 
@@ -126,8 +149,7 @@ def works_lines(state: GameState, config: Config, people=None) -> list[str]:
         f"stone {state.workers.stone}/{jobs_in_sector(state, config, 'stone')}. "
         f"Adults: {state.adults}, without work: {idle}. Workers beyond the jobs produce nothing.",
         f"- Jobs without workers: food {_vacant(state, config, 'food')}, wood {_vacant(state, config, 'wood')}, "
-        f"stone {_vacant(state, config, 'stone')}. A new building adds jobs, not workers: "
-        "fill it with free adults or with workers moved from a sector that needs them less.",
+        f"stone {_vacant(state, config, 'stone')}.",
         f"- Expected this month if nothing changes: food +{output['food']}, wood +{output['wood']}, "
         f"stone +{output['stone']}.",
         f"- Housing: {state.population()} people, {housing_capacity(state, config)} places.",

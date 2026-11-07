@@ -27,6 +27,7 @@ from server.council.meeting import (
     _rounds_held,
     insert_message,
     load_context,
+    expertise_block,
     mandate_block,
     render_prompt,
 )
@@ -112,6 +113,7 @@ def hold_debate(conn: psycopg.Connection, realm_id: int, client, settings) -> No
             realm_name=ctx.realm_name, duties=ROLE_DUTIES[role], traits=describe_traits(actor.traits),
             language=settings.language, mandate=mandate_block(ctx, actor),
             manual=manual.prompt_text(ctx.config),
+            expertise=expertise_block(role),
         )
         reply, _status = _ask(ctx, actor, system, _user_prompt(ctx, role, messages, comments),
                               _CommentSchema.model_json_schema(), _CommentReply)

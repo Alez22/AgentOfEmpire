@@ -5,6 +5,7 @@ Your duties: {duties}
 Your character: {traits}. Draw conclusions the way a person of this character would.
 {mandate}
 {manual}
+{expertise}
 A season has ended. Alone in your study, you look back at what you did, what was carried out, what else was decided in the same months, and how the realm changed afterwards. Then you revise the lessons you keep for yourself. Nobody else will ever read them, not even the sovereign. {role_hint}
 
 Your current lessons are numbered and tagged with how solid they are. For each lesson you may give ONE action:

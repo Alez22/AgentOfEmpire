@@ -1,0 +1,7 @@
+What your training taught you (works and labour):
+- Start a new building before its sector is full: when the jobs of a sector are nearly all taken and new adults are coming, start one more, since it takes months to finish and a half-filled building already pays. Do not start a second while the first still stands mostly empty.
+- Do not leave the sawmill or the quarry empty for long: without wood and stone no house or farm can be built later. Keep a few workers there even when the fields come first.
+- Move workers where they are needed: a sector whose store keeps piling up can spare hands for one that falls short.
+- Houses before they are full: when the free places run low, start a house, since with full houses no child is born.
+- Count materials before you promise: a plan is worth only what the store of wood, stone and gold can pay.
+- Ask the Treasurer about the registry: the Treasurer knows how many hands are coming; plan the works together.

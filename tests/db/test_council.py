@@ -579,8 +579,7 @@ def test_briefing_lists_the_jobs_of_each_building(db, realm, settings):
     architect = client.calls[1]["user"]
     assert "farm: wood 40, stone 10, gold 0, 2 turns, 15 jobs" in architect
     assert "house: wood 30, stone 30, gold 20, 3 turns, houses 20 people" in architect
-    assert "or with workers moved from a sector that needs them less" in architect
-    assert "workers you move from a sector that needs them less" in client.calls[1]["system"]
+    assert "Move workers where they are needed" in client.calls[1]["system"]  # the Architect's craft
 
 
 def test_a_reply_that_ran_up_to_the_cap_is_retried_without_reasoning(db, realm, settings):
@@ -599,3 +598,27 @@ def test_an_ordinary_refusal_keeps_the_reasoning_level(db, realm, settings):
     meeting.hold_meeting(db, realm_id, client, settings)
     treasurer_calls = [c for c in client.calls if c["role"] == "treasurer"]
     assert treasurer_calls[1]["reasoning_effort"] == settings.reasoning_effort["treasurer"]
+
+
+
+def test_each_role_has_its_own_craft(db, realm, settings):
+    _, realm_id = realm
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)
+    treasurer, architect, chancellor = (c["system"] for c in client.calls[:3])
+    assert "granary, treasury and registry" in treasurer and "works and labour" not in treasurer
+    assert "works and labour" in architect and "granary, treasury and registry" not in architect
+    assert "What your training taught you (government)" in chancellor
+    for system in (treasurer, architect, chancellor):
+        assert "good practice, not laws" in system and "as your own outlook leads you" in system
+
+
+def test_treasurer_reads_every_ration_and_the_registry(db, realm, settings):
+    _, realm_id = realm
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)
+    treasurer = client.calls[0]["user"]
+    assert "- Eaten per month at each ration: reduced 602, normal 860, abundant 1118." in treasurer
+    assert "children will come of age in the next three months" in treasurer
+    assert "Housing: 100 people, 120 places, 20 free." in treasurer
+    assert "Registry" not in client.calls[1]["user"]  # the Architect has to ask

@@ -5,6 +5,7 @@ Your duties: {duties}
 Your character: {traits}.
 {mandate}
 {manual}
+{expertise}
 The Chancellor has put together the plan of the month, and the sovereign asks the council for its opinion before deciding. Speak in front of the sovereign and your colleagues.
 
 Rules:
