@@ -463,6 +463,29 @@ Same seed and persons as games 10 and 14–16. 10 turns, **$0.027 in 62 calls** 
 
 **What this says about the tests so far**: one game per setting is a small sample; the spread between games 14, 16 and 17 is as large as the spread between models. Before fixing the tiers: two or three games per candidate, or a shorter fixed test (the same few briefings sent to every model and scored).
 
+### Lab: bench of the council models (2026-11-07, `lab/bench.py`)
+
+8 stored briefings with a known trap (`lab/bench_scenarios.toml`: 3 Treasurer, 3 Architect, 2 Chancellor), each sent 3 times to each candidate; the ministers' memory section is rebuilt with the current code (with the new "Not approved by the sovereign" line). Nothing is written to the database. About $0.20 for the whole run (120 + 30 calls).
+
+| Candidate | Clean / 24 | Fell in the trap | Invalid | Output tokens | Seconds |
+| --- | --- | --- | --- | --- | --- |
+| Flash, none | 16 | 8 | 0 | 263 | 2.5 |
+| GLM 5.3 Flash, high | 15 | 9 | 0 | 1282 | 9.2 |
+| Flash, low | 15 | 5 | 4 (8000-token cap) | 4879 | 24.2 |
+| GLM 5.3 Flash, low | 14 | 10 | 0 | 864 | 6.3 |
+| gpt-oss-120b, low | 11 | 13 | 0 | 582 | 3.8 |
+
+**What it says**
+
+1. **The candidates are close**: with 3 repeats a difference of two or three runs is noise. Only gpt-oss is clearly behind, and Flash "low" falls least in the traps but runs away to the cap one call in six (without the meeting's retry) at 20 times the tokens.
+2. **The Architect fails with every model**: in winter (scenario 5) 13 runs out of 15 took farmers from the fields, often for a quarry or a sawmill; with the granary falling (scenario 6) a farm came 3 times out of 15 (Flash "low" twice, GLM "high" once), a house or a second quarry/sawmill instead. With an empty sawmill (scenario 4), 8 out of 15 asked for another one. This is the prompt (craft and manual: "a half-filled building already pays" is read as "build", the other half of the rule is missing; game 8, problem 1), not the model.
+3. **The Treasurer passes**: 43 runs out of 45 clean on winter, low granary and repeated feast (gpt-oss proposed the feast again twice).
+4. **The Chancellor** let the abundant ration through 5 times out of 15 and proposed the refused house again 3 times out of 15.
+
+Mistake of the first run: scenarios 7 and 8 pointed at the Chancellor's end-of-season reflection (lessons), the first call of those turns; corrected to the meeting calls and run again.
+
+**Next**: fix the Architect's craft and the manual (when to build: a sector's jobs nearly full and its product needed; keep the farmers in winter), then run the bench again on the same scenarios; the tiers after that.
+
 ### Lab: famine balance (2026-11-07)
 
 The exact orders of games 1 and 2 replayed under mood variants (the base replay reproduces both games exactly). Mood month by month, from turn 2.

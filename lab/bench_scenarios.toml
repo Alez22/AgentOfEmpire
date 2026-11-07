@@ -1,0 +1,64 @@
+# Bench scenarios: stored council calls (model_calls.id) with a known trap.
+# lab/bench.py sends each one, unchanged except for a regenerated memory
+# section (ministers), to every candidate model.
+#
+# forbidden / expected: orders matched by their keys (a missing key matches
+# anything). Extra key "food_below": an assign_workers with fewer farmers.
+# Proposals are read for ministers, the plan for the Chancellor.
+# Chosen 2026-11-07 from games 9, 10, 14 and 17.
+
+[[scenario]]
+id = "1-treasurer-winter"
+call_id = 746
+note = "January, food 1600, winter yield 392 against 860 eaten; petition on taxes"
+forbidden = [{ action = "set_ration", ration = "abundant" }]
+expected = []
+
+[[scenario]]
+id = "2-treasurer-low-granary"
+call_id = 957
+note = "June, granary 352 and falling"
+forbidden = [{ action = "set_ration", ration = "abundant" }]
+expected = []
+
+[[scenario]]
+id = "3-treasurer-feast-again"
+call_id = 648
+note = "August, gold 46 and falling, a feast in July"
+forbidden = [{ action = "hold_feast" }]
+expected = []
+
+[[scenario]]
+id = "4-architect-empty-sawmill"
+call_id = 958
+note = "June, sawmill with 8 empty jobs, granary 352"
+forbidden = [{ action = "build", building = "sawmill" }, { action = "build", building = "quarry" }]
+expected = []
+
+[[scenario]]
+id = "5-architect-winter"
+call_id = 672
+note = "February, winter, 54 of 60 farm jobs filled"
+forbidden = [{ action = "assign_workers", food_below = 54 }, { action = "build", building = "quarry" }]
+expected = []
+
+[[scenario]]
+id = "6-architect-falling-granary"
+call_id = 950
+note = "May, granary 376 and falling, no farm under construction"
+forbidden = [{ action = "build", building = "house" }, { action = "assign_workers", food_below = 60 }]
+expected = [{ action = "build", building = "farm" }]
+
+[[scenario]]
+id = "7-chancellor-abundant"
+call_id = 967
+note = "July, food 347; the Treasurer proposes the abundant ration"
+forbidden = [{ action = "set_ration", ration = "abundant" }]
+expected = []
+
+[[scenario]]
+id = "8-chancellor-refused-house"
+call_id = 663
+note = "October; the house was removed by the sovereign in July, August and September"
+forbidden = [{ action = "build", building = "house" }]
+expected = []

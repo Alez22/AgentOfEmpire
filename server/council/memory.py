@@ -91,7 +91,14 @@ def _notable_events(conn, game_id: int, realm_id: int, first_turn: int, last_tur
     return events
 
 
-def _outcome_text(own_orders: list[dict]) -> str:
+def _outcome_text(own_orders: list[dict], proposals: list[dict]) -> str:
+    """@brief What became of the minister's proposals of one turn.
+
+    Proposals left out are named ("Not approved..."): with only the approved
+    ones listed, weaker models took the missing ones as built (game 17: "il
+    segherio rende" for a sawmill the sovereign had refused). Matched by
+    wording, so a proposal the Chancellor changed counts as not approved.
+    """
     if not own_orders:
         return "None approved by the sovereign."
     parts = []
@@ -100,7 +107,12 @@ def _outcome_text(own_orders: list[dict]) -> str:
             parts.append(f"{order_text(order['raw'])} carried out")
         else:
             parts.append(f"{order_text(order['raw'])} failed ({order['code']})")
-    return "Approved: " + "; ".join(parts) + "."
+    text = "Approved: " + "; ".join(parts) + "."
+    approved = {order_text(order["raw"]) for order in own_orders}
+    left_out = [order_text(p) for p in proposals if order_text(p) not in approved]
+    if left_out:
+        text += " Not approved by the sovereign: " + ", ".join(left_out) + "."
+    return text
 
 
 def _afterwards_text(role: str, turn: int, snapshots: dict[int, dict]) -> str:
@@ -135,7 +147,7 @@ def consequence_lines(
         others = [o for o in turn_orders if o["issued_by"] != actor_id]
         month = MONTHS[(turn - 1) % 12]
         proposals = ", ".join(order_text(p) for p in proposed[turn]) or "nothing"
-        lines = [f"turn {turn} ({month}): you proposed {proposals}. {_outcome_text(own)}"]
+        lines = [f"turn {turn} ({month}): you proposed {proposals}. {_outcome_text(own, proposed[turn])}"]
         if others:
             decided = ", ".join(
                 f"{order_text(o['raw'])} ({names_by_actor.get(o['issued_by'], 'the sovereign')})"
