@@ -171,6 +171,27 @@ Normal ration kept, half the farmers moved to wood and stone in winter, every ra
 7. **Refusals become taboos**: once the sovereign refused the reduced ration, nobody proposed it again, not even with the granary empty and people dying ("non è una via praticabile").
 8. Sometimes a report is vague, with no numbers at all (Architect turn 2, Treasurer turn 9).
 
+### Game 3 "Altavalle" (2026-11-07, played by Claude as an attentive but ordinary sovereign)
+
+Listened to the council, kept the normal ration, lowered taxes to 8 % then 5 % when the square blamed them, two sober feasts, one farm for growth. 10 turns, $0.082 in 55 calls, no refused reply, slowest call 40 s, no mood number in 36 reports, no digit in the square's 10 stories.
+
+| Turn | 1 | 2 | 4 | 5 | 7 | 8 | 9 | 10 | 11 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Food | 2000 | 1559 | 693 | 699 | 684 | 839 | 989 | 1144 | 1369 |
+| Mood (hidden) | 600 | 567 | 535 | 526 | 514 | 499 | 511 | 497 | 507 |
+| Unrest | calm | calm | calm | calm | calm | calm | calm | calm | calm |
+
+**Fixes confirmed**: the council reasons with the expected harvest ("per la prima volta il grano cresce invece di calare") and cut the ration only once, with a reason, after it had been refused ("già rifiutata a gennaio, ma oggi il granaio è più magro"); the Chancellor weighed it against the April harvest. Nobody believes gold buys food any more. The Architect stopped building empty farms ("aggiungerebbe soltanto posti che nessuno può riempire") and warned honestly when the sovereign ordered one anyway. It also keeps to its role ("materia del Tesoriere, non mia"). The square explained the people's mood: taxes, then relief, then the feast ("il fabbro ha ripreso a battere il ferro cantando").
+
+**Problems**
+
+1. **No tension for a sensible player**: the unrest stayed calm all year, the lowest food was 684 and the mood only drifted from 600 towards the base 500. The first winter is not a crisis unless the sovereign makes mistakes (games 1 and 2). Balance question for later: smaller starting stock, harsher winter, or start mood at the base.
+2. **The square invents a cause when nothing weighs**: the mood drifts down from 600 to the base 500 by itself, and with no burden in its facts the square spoke of "un lutto che non ha nome" and "una stanchezza". Partly a consequence of the start mood being above the base.
+3. **Nothing to do after a few months**: all adults employed, 6 free tiles unused, wood (200) and gold piling up. Growth depends only on births; one class and no use for gold leave the sovereign with few choices (known: gold use, more classes).
+4. **The Voice answered once in English** (fixed in `voice_system.txt`: "Write ONLY in {language}"). It inverted a decision once ("il sovrano ha messo la tassa" after a cut) and overstated a slight burden ("ci mangia vivi" at 8 %).
+5. **Workers beyond the jobs**: the Chancellor proposed 63 adults in the fields with 60 jobs, computing its own (wrong) yield; the engine check does not flag workers beyond the jobs.
+6. The Treasurer over-corrected once: "un banchetto non dà pane" became a reason to refuse feasts, which do lift the mood.
+
 ### Lab: famine balance (2026-11-07)
 
 The exact orders of games 1 and 2 replayed under mood variants (the base replay reproduces both games exactly). Mood month by month, from turn 2.

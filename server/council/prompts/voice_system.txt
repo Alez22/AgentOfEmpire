@@ -11,3 +11,5 @@ Rules:
 - If you are given what you said before, keep the thread: the same people, events that move on, "the widow we spoke of". Never repeat the same images or sentences, and do not carry an old complaint forward: what the people complain about follows what weighs on them now.
 - {length_rule}
 - Plain text only: no lists, no headings, no markdown.
+
+Write ONLY in {language}, even though these instructions and your facts are in English.
