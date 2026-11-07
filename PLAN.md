@@ -68,7 +68,7 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [x] Play a game with mandates, notes, debate and audiences together (game 7, 20 turns)
 - [x] The manual of the realm: how every element works, written from the config, in every counsellor prompt and on the sovereign's "Manuale" page
 - [x] The craft of each role (good practice, not laws) and the Treasurer's registry and ration consumption; the Architect's duty is a duty again
-- [ ] Model tiers: weaker model tested (game 9: Mistral Small 3.2 fits `low`); choose `medium` and `high`; later a settings page for them
+- [ ] Model tiers: cheap models compared (games 9–15); proposal `low` gpt-oss-120b, `medium` GLM 5.3 Flash, `high` Flash with reasoning; to decide, and whether a tier also sets the reasoning effort; later a settings page for them
 - [x] Persons: a small catalog (12), the council drawn from the moderates at game start; name, gender, traits, story, model and salary come with the person; salaries paid by the engine; persons carry a tier (low, medium, high), never a model
 - [ ] Play a game to check manual and craft together, then remove the prompt rules they make redundant
 - [x] Game 7 fixes: the Architect may fill a new building with workers moved from a sector that needs them less (the growth trap); jobs per building in the briefing; a reply that ran up to the token cap is retried without reasoning
@@ -404,6 +404,64 @@ Same seed and persons as game 10. 10 turns, **$0.033 in 62 calls** (counsellors 
 2. **Slips**: "renditione", "segherio", "sesterzi d'oro"; the Chancellor once left the 20 gold out of the cost of a house and got the gold balance at 5% wrong.
 
 **Verdict**: the best of the three cheap models tried, at about a quarter of the cost of Flash with reasoning (0.67 against 2.8 thousandths of a dollar a call). Candidate for `medium`, with gpt-oss-120b for `low`. Still to compare: Flash with reasoning "none" on the same seed.
+
+### Game 15 "Roccafonda" (2026-11-07, DeepSeek Flash with reasoning "none" for the three counsellors)
+
+Same seed and persons as games 10 and 14; reasoning set to "none" for the counsellors for this game only. 10 turns, **$0.030 in 59 calls** (counsellors $0.026, 0.66 thousandths a call: the same as GLM 5.3 Flash, a quarter of Flash with reasoning "low"), 371 output tokens a call on average but one reply of 3509 (the Architect wrote on and on even without reasoning), calls 2.5 s on average. The kingdom ended calm all game, food 1372, gold 47.
+
+| Counsellors, per call | Flash, low (game 8) | gpt-oss-120b (10) | GLM 5.3 Flash (14) | Flash, none (15) |
+| --- | --- | --- | --- | --- |
+| Output tokens (max) | 3200 (8000) | 569 (1192) | 857 (2143) | 371 (3509) |
+| Thousandths of $ | 2.81 | 0.32 | 0.67 | 0.66 |
+| Seconds | 17.8 | 3.8 | 6.9 | 2.5 |
+
+**Good**: the numbers of the briefing are read right (harvest, consumption, gold in and out); the Architect proposed a farm on its own in May; the Chancellor put food first ("nessuna casa ora, tutti gli uomini liberi nei campi").
+
+**Weak**
+
+1. **Plans that empty a sector**: three times the worker plan put 0 at the sawmill or the quarry (once the Chancellor's own).
+2. **The Treasurer flip-flops**: reduced ration in January, normal in February with the same numbers ("il granaio tiene" with spring below consumption); taxes 8% in April, 6% in June.
+3. **The Architect** asks for a second sawmill ("mulino") month after month while the first has 8–9 empty jobs.
+4. **Contradictions**: "19 in, 23 out... l'oro cresce piano ma sicuro"; the Chancellor once recommended a sawmill the Architect had not proposed in its report.
+5. **The counsellors repeat the Voice**: "le braccia ci sono, la terra no" came from the square and went into both ministers' reports.
+
+**Verdict**: at the same price GLM 5.3 Flash reasons better (seasonal planning, the Chancellor's memory of refused proposals, fewer impossible plans); Flash without reasoning is the fastest. Proposed tiers: `low` gpt-oss-120b, `medium` GLM 5.3 Flash, `high` Flash with reasoning (or Pro, still to test). A tier is a model only today; Flash "low" vs "none" shows that a tier may need its reasoning effort too.
+
+### Game 16 "Roccafonda" (2026-11-07, GLM 5.3 Flash with reasoning "high")
+
+Same seed and persons as games 10, 14 and 15; the counsellors' reasoning set to "high" for this game only. 10 turns, **$0.042 in 59 calls** (counsellors $0.038: 0.97 thousandths a call against 0.67 with "low" in game 14, +45%), 1424 output tokens a call on average (857 with "low"), longest 2810, no runaway, no refused reply, calls 9.3 s on average (19 s at most). The kingdom stayed calm all game (game 14 had a month of protests), food 1353, gold 29 (taxes down to 5% for two petitions).
+
+**Better than "low"**
+
+1. **The Architect stopped asking for sawmills and quarries**: in April it proposed the fifth farm on its own (the Treasurer too), then for six months "nessun cantiere nuovo col podere mezzo vuoto", sending each new adult to the fields first, then to the quarry. No farmer moved to wood or stone in winter. The other half of the manual's rule (game 8) was found by reasoning.
+2. **The Treasurer uses the manual**: a feast repeated the month after "raccoglierà metà dell'effetto"; "l'oro non compra grano"; the gold lost at each tax cut is given in numbers; the winter is reckoned over its three months.
+
+**Worse than "low"**
+
+1. **The Italian breaks more often**: "dioro", an Arabic letter inside a word ("quest'مese"), "store", "manodopore", "Conflietti", "Maestra sono prudente", "Il Tesoriere Brunilde Masi"; once the Treasurer named an invented courtier ("Colza Colmaro consigliere di corte").
+2. **The Chancellor overbuilt once**: in July it added a sixth farm that the Architect had just declined (dropped by the sovereign).
+3. Still one plan with 0 at the sawmill and the quarry (February, all hands to the fields).
+
+**Verdict**: more reasoning buys better judgement for about half again the cost, and costs Italian; still a third of Flash with reasoning "low". A candidate for `high` (GLM "high"), with `medium` GLM "low": the tier would then set the reasoning effort as well as the model.
+
+### Game 17 "Roccafonda" (2026-11-07, GLM 5.3 Flash with reasoning "medium")
+
+Same seed and persons as games 10 and 14–16. 10 turns, **$0.027 in 62 calls** (counsellors $0.024, 0.58 thousandths a call), 608 output tokens a call on average: **fewer than with "low"** (857), so the effort levels of this model are not a ladder (or the provider changed between games). Longest call 31 s. The kingdom stayed calm, food 1008, gold 59; the sovereign had to order the farm (game 16 found it on its own).
+
+| GLM 5.3 Flash, counsellors | low (game 14) | medium (17) | high (16) |
+| --- | --- | --- | --- |
+| Output tokens a call (max) | 857 (2143) | 608 (1866) | 1424 (2810) |
+| Thousandths of $ a call | 0.67 | 0.58 | 0.97 |
+| Farm proposed unasked | no | no | yes |
+
+**The weakest of the three GLM games**
+
+1. **The Treasurer lost her voice in four months out of ten**: generic reports with no numbers ("la situazione sociale è critica", "prioritizzo l'ottimizzazione della produzione agricola"), English words ("ration normal", "petition"), twice the abundant ration with 350 food, once a sawmill (not her office).
+2. **Counsellors believe refused proposals were carried out**: in September the Architect said "il segherio rende" and the Chancellor "il segherio del turno 8 ha già aperto la via" (the sovereign had refused it); in October "la cava avviata a settembre sarà pronta" (refused too). The briefing's history says what followed each proposal, but it was not read.
+3. **The Architect** asked for a second sawmill or a quarry four times while the first ones had 8–9 empty jobs.
+4. **The Chancellor** let the abundant ration through twice (in October with harvest 1187 against consumption 1193, "il granaio resta crescente").
+
+**What this says about the tests so far**: one game per setting is a small sample; the spread between games 14, 16 and 17 is as large as the spread between models. Before fixing the tiers: two or three games per candidate, or a shorter fixed test (the same few briefings sent to every model and scored).
 
 ### Lab: famine balance (2026-11-07)
 
