@@ -707,6 +707,16 @@ The admin sees everything, separate from the sovereign's view.
 
 **Tests** (fake client): the sovereign's view contains no mood on any page nor in the state endpoint; the Voice speaks in the first round, not after a directive, and enters the members' briefings; long story at season start; absent Voice does not block the meeting; with `ADMIN_VIEW` off `/admin` answers 404; on, it shows full state, lessons, audiences and prompts; model text stays text on the admin pages too.
 
+## The manual of the realm
+
+Approved on 2026-11-07, after game 7. In the playtests counsellors kept guessing how the realm works ("a farm creates two jobs", "a half-filled farm stays empty", "gold buys grain", "a feast brings food"), and each guess had been patched with a prompt rule. A single manual replaces the guessing.
+
+- **Written from the game's config** (`server/council/manual.py`), never by hand: buildings with cost, build time, jobs, output per worker (farms by season) and the fact that **a building yields for every worker, even half-filled**; upkeep and unpaid upkeep; workers (only adults, beyond the jobs nothing, movable every month); rations and consumption, spoilage, hunger; births; tax formula, **no market**, what gold pays for; feasts; what weighs on the people and cheers them; the unrest ladder with its months and the strike's cost. Changing `config.toml` changes the manual of new games; each game uses its own config.
+- **No mood formulas**: it says what weighs on the people, never how much, so the council still knows them only from the square.
+- **Who reads it**: the Treasurer, the Architect and the Chancellor in every prompt (meeting, audience, debate, season review) and the chancellery when it reviews a mandate; not the Voice nor the people. About 600 tokens in the fixed part of the prompt.
+- **The sovereign's page**: "Manuale" (tab), the same facts in Italian.
+- The rules added during the playtests (no market, the Architect's duty on workers) stay for now; they can be removed after a game confirms the manual is enough.
+
 ## Mandates: the sovereign's standing guidelines
 
 Approved on 2026-11-07. Directives last a month and go to the whole council; audiences are private words. A mandate is the lasting line the sovereign gives one office ("build only where there are free hands; houses before farms"), valid until changed.

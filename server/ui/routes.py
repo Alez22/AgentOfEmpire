@@ -23,7 +23,7 @@ from fastapi.templating import Jinja2Templates
 
 from engine.config import load_raw_config
 from engine.turn import food_needed, housing_capacity, jobs_in_sector, season_of
-from server.council import audience, debate, mandates, meeting, people
+from server.council import audience, debate, mandates, manual, meeting, people
 from server.council.briefing import months_until_winter
 from server.db import games
 from server.sovereign_view import sovereign_state
@@ -312,6 +312,18 @@ def request_mandate(request: Request, realm_id: int, role: str, text: str = Form
         lambda conn, client: mandates.review(conn, realm_id, role, text, client, settings),
         back=lambda error="": _government_page(realm_id, error),
     )
+
+
+@router.get("/ui/realms/{realm_id}/manual", response_class=HTMLResponse)
+def manual_page(request: Request, realm_id: int, conn=Depends(_connection)):
+    """@brief How the realm works, from this game's own config (the same
+    facts the counsellors read, in Italian)."""
+    game_id = games.realm_game_id(conn, realm_id)
+    if game_id is None:
+        return _not_found(request, f"il regno {realm_id}")
+    sections = manual.page_sections(games.load_game_config(conn, game_id))
+    return templates.TemplateResponse(request, "manual.html",
+                                      {"realm_id": realm_id, "sections": sections, "nav": "manual"})
 
 
 # ------------------------------------------------- kingdom and chronicle

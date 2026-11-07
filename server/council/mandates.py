@@ -30,6 +30,7 @@ from server.council.meeting import (
     load_context,
     render_prompt,
 )
+from server.council import manual
 from server.council.personality import describe_traits
 
 MANDATE_ROLES = ("treasurer", "architect", "chancellor")
@@ -119,7 +120,8 @@ def review(conn: psycopg.Connection, realm_id: int, role: str, request: str, cli
     ctx = load_context(conn, realm_id, client, settings)
     chancellor = ctx.actors["chancellor"]
     system = render_prompt("mandate_review_system.txt", realm_name=ctx.realm_name,
-                           traits=describe_traits(chancellor.traits), language=settings.language)
+                           traits=describe_traits(chancellor.traits), language=settings.language,
+                           manual=manual.prompt_text(ctx.config))
     reply, _status = _ask(ctx, chancellor, system, _review_user(ctx, role, request),
                           _ReviewSchema.model_json_schema(), _ReviewReply)
     decision, mandate, words = "rejected", None, NO_ANSWER

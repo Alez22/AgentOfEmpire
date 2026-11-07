@@ -22,7 +22,7 @@ from engine.turn import jobs_at_harvest
 from engine.config import Config
 from engine.orders import Order
 from engine.state import GameState
-from server.council import briefing, memory
+from server.council import briefing, manual, memory
 from server.council.llm import LLMError
 from server.council.personality import describe_traits
 from server.council.settings import CouncilSettings
@@ -429,6 +429,7 @@ def _minister_system(ctx: MeetingContext, actor: Actor) -> str:
     return render_prompt(
         "minister_system.txt",
         mandate=mandate_block(ctx, actor),
+        manual=manual.prompt_text(ctx.config),
         role_title=ROLE_TITLES[actor.role],
         display_name=DISPLAY_NAMES[actor.role],
         realm_name=ctx.realm_name,
@@ -444,6 +445,7 @@ def _chancellor_system(ctx: MeetingContext, actor: Actor) -> str:
     return render_prompt(
         "chancellor_system.txt",
         mandate=mandate_block(ctx, actor),
+        manual=manual.prompt_text(ctx.config),
         realm_name=ctx.realm_name,
         traits=describe_traits(actor.traits),
         treasurer_name=DISPLAY_NAMES["treasurer"],
@@ -569,6 +571,7 @@ def _lessons_system(ctx: MeetingContext, actor: Actor) -> str:
     return render_prompt(
         "lessons_system.txt",
         mandate=mandate_block(ctx, actor),
+        manual=manual.prompt_text(ctx.config),
         role_title=ROLE_TITLES[actor.role],
         display_name=DISPLAY_NAMES[actor.role],
         realm_name=ctx.realm_name,

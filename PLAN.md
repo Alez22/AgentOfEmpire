@@ -15,7 +15,7 @@ This file is the starting point of every work session: read it at the start and 
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (DeepSeek V4.1 Flash for all); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 190 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 194 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -66,6 +66,8 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [x] Debate on request: the ministers comment on the plan before approval (see `docs/DESIGN.md`)
 - [x] The Chancellor's role stands above the parties (role duty in its prompt)
 - [x] Play a game with mandates, notes, debate and audiences together (game 7, 20 turns)
+- [x] The manual of the realm: how every element works, written from the config, in every counsellor prompt and on the sovereign's "Manuale" page
+- [ ] Play a game to check the manual (half-filled farms built in time?), then remove the prompt rules it makes redundant
 - [x] Game 7 fixes: the Architect may fill a new building with workers moved from a sector that needs them less (the growth trap); jobs per building in the briefing; a reply that ran up to the token cap is retried without reasoning
 - [x] Counsellor prompts: quote only briefing numbers, never count idle adults or jobs yourself, never present a suggestion as a rule in force; the Chancellor's assignments within adults and jobs (game 6)
 - [x] Petitions weighted by the relief they bring (10–30), wider ranges for effort and births (after game 5)

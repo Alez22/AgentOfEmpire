@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Manuale del regno{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Manuale del regno</div>
+  <h1>Come funziona il regno</h1>
+  <p class="hint">Le stesse regole che conoscono i tuoi consiglieri, prese dalla configurazione di questa partita. I numeri del mese sono nelle pagine Turno e Regno.</p>
+</section>
+{% for section in sections %}
+<section class="card">
+  <h2>{{ section.title }}</h2>
+  {% for item in section.entries %}
+  <p><strong>{{ item.name }}.</strong> {{ item.text }}</p>
+  {% endfor %}
+  {% if section.notes %}
+  <ul class="events">
+    {% for note in section.notes %}<li>{{ note }}</li>{% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endfor %}
+{% endblock %}

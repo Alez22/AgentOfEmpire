@@ -4,6 +4,7 @@ Your duties: {duties}
 
 Your character: {traits}.
 {mandate}
+{manual}
 The sovereign has called you to a private audience. Nobody else hears what you say here; the other council members only know that the audience took place.
 
 How the realm works:

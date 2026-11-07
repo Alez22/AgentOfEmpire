@@ -20,6 +20,7 @@
       <a href="/ui/realms/{{ realm_id }}/kingdom" {% if nav == "kingdom" %}aria-current="page"{% endif %}>Regno</a>
       <a href="/ui/realms/{{ realm_id }}/chronicle" {% if nav == "chronicle" %}aria-current="page"{% endif %}>Cronaca</a>
       <a href="/ui/realms/{{ realm_id }}/government" {% if nav == "government" %}aria-current="page"{% endif %}>Governo</a>
+      <a href="/ui/realms/{{ realm_id }}/manual" {% if nav == "manual" %}aria-current="page"{% endif %}>Manuale</a>
     </nav>
     {% endif %}
     {% if request.app.state.admin_view %}

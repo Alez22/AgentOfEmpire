@@ -26,6 +26,7 @@ from server.council.meeting import (
     people_this_month,
     square_voices,
 )
+from server.council import manual
 from server.council.personality import describe_traits
 from server.council.settings import CouncilSettings
 from server.db import games
@@ -129,6 +130,7 @@ def _system(ctx: MeetingContext, actor) -> str:
     return render_prompt(
         "audience_system.txt",
         mandate=mandate_block(ctx, actor),
+        manual=manual.prompt_text(ctx.config),
         role_title=ROLE_TITLES[actor.role],
         display_name=DISPLAY_NAMES[actor.role],
         realm_name=ctx.realm_name,

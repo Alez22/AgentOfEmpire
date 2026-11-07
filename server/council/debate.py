@@ -30,6 +30,7 @@ from server.council.meeting import (
     mandate_block,
     render_prompt,
 )
+from server.council import manual
 from server.council.personality import describe_traits
 
 MAX_COMMENT_CHARS = 600
@@ -110,6 +111,7 @@ def hold_debate(conn: psycopg.Connection, realm_id: int, client, settings) -> No
             "debate_system.txt", role_title=ROLE_TITLES[role], display_name=DISPLAY_NAMES[role],
             realm_name=ctx.realm_name, duties=ROLE_DUTIES[role], traits=describe_traits(actor.traits),
             language=settings.language, mandate=mandate_block(ctx, actor),
+            manual=manual.prompt_text(ctx.config),
         )
         reply, _status = _ask(ctx, actor, system, _user_prompt(ctx, role, messages, comments),
                               _CommentSchema.model_json_schema(), _CommentReply)
