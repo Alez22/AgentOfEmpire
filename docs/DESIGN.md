@@ -123,6 +123,24 @@ Five resources: **food, wood, stone, gold** and a **rare resource** (e.g. iron o
 - **Bilateral agreements**: negotiated by the Ambassador (e.g. grain in exchange for passage on the river) and recorded in the game as treaties.
 - **Consequences**: merchants are a class and get angry if trade stops; depending on a neighbour for food is comfortable in peace and dangerous in war; Treasurer and Ambassador can hold opposite views of the same agreement.
 
+### The market, first step (being designed, 2026-11-08)
+
+From the labs `lab/market_sim.py` and `lab/market_closed.py` (numbers in `PLAN.md`). Not yet in the engine.
+
+- **Closed market**: no goods and no gold from outside. A warehouse on consignment: the seller hands over the goods and is paid when a buyer takes them, first in first out. The warehouse owns nothing, except a **small start stock** (the only goods from outside, once, so the first winter has something to buy). Stored food spoils like the granaries.
+- **Price**: one per good, gold per lot. Buyers pay price + margin, sellers get price − margin; the margin leaves the game (a gold sink). Every month the price rises if more was asked than there was, and falls only if the warehouse holds more than about 3 months of the recent demand.
+- **Steady needs for wood and stone** (approved 2026-11-08): firewood in winter (1 wood per 2 people a month, January to March; missing firewood hits the mood at once) and stone upkeep (1 stone per 2 active buildings a month; missing stone lowers the month's output). Without them nobody buys wood or stone.
+- **No Ambassador yet**: no bilateral deals in this step, only the common market.
+- **What is public** (decided 2026-11-08): prices, stock and the month's totals; never who sold or bought what. Knowing other realms' needs is worth something (the expert of the land, spies).
+
+### Land levels: poor, fair, rich (idea approved 2026-11-08)
+
+- Every site of the world has a level for each resource: **poor** (yields less than the realm needs), **fair** (about what it needs) or **rich** (more, to sell). It belongs to the map design, not to a hidden number per player.
+- A fair spread among the 8 sites: no realm poor or rich in everything ("zero sum": one rich, one fair, one poor resource in any order, or everything fair). Food has narrower levels than wood and stone: a realm poor in food fell even with the market.
+- **Unknown at the start**: nobody is told the levels. The council finds them out from production (more than needed: sell it; less: buy it). The manual gives only the general rule, and the briefings give the output, never the word "poor" or "rich".
+- **The expert of the land** (a later era): a person to hire who maps the levels of the own territory and of the neighbours. The information is tactical: knowing that a neighbour lives on selling stone and is short of wood tells which treaty to break to put it in trouble (with the Ambassador and diplomacy).
+- The levels are those of the starting land; claimed land may later have its own.
+
 ## Diplomacy
 
 Each state has a **reputation** *[Lost]*, similar to *[Lost]*.
@@ -147,6 +165,7 @@ The spy does not *[Lost]*; **the engine** *[Lost]*. No *[Lost]*.
   - **Second era, the press is born**: the government can issue **communiqués** that the people read, also as propaganda, and send communiqués to other states. A communiqué may lie: when the facts contradict it, the square notices and trust in the sovereign falls. Foreign press brings other states' communiqués.
   - **Third era, journalism**: besides the government's press an **independent channel** appears, which publishes what it finds out (leaks, spies, unhappy ministers), including what the sovereign would rather hide.
   - Fits the existing pieces: visibility levels (a communiqué moves a fact to public or foreign), leaks, reputation and diplomacy. Open: cost of a journalist agent (one more call per turn, cheap tier), how credibility is measured, how much the sovereign has to read.
+- **The expert of the land** (idea, 2026-11-08): hired in a later era, maps the hidden land levels of the own realm and of the neighbours (see "Land levels" in "Economy and trade").
 - *[Lost: four items.]*
 
 ## Revolt and coup
@@ -876,6 +895,58 @@ The first lab run also moved the world's forests and hills from straight below t
 3. Council: orders, briefings, manual, prompts; the Architect probe again on the real map.
 4. The map page on the phone.
 5. A 12-month test game.
+
+## Market, needs and land levels (phase 4, spec approved 2026-11-08)
+
+The vision is in Part 1, "Economy and trade" (closed market, land levels unknown at the start, the expert of the land later). The values come from `lab/market_closed.py` (numbers in `PLAN.md`, "Lab: eight realms, third tuning"). Every new rule lives in its own config section: a game saved before has none of them and replays unchanged, as with `[people]`.
+
+**Needs (engine, `[needs]`)**
+
+- **Firewood**: in the months of `firewood_months` (November to March) the realm burns 1 wood per `firewood_people` (2) people. Missing wood costs `cold_shock_per_pct` (2) mood per missing percent, at once (like the famine shock). Event `firewood_short`.
+- **Stone upkeep**: every month 1 stone per active building (`stone_per_buildings` = 1). Missing stone lowers this month's output by half the missing share. Event `stone_upkeep_short`.
+- Order inside the turn: after taxes and gold upkeep, before production (the wear acts on this month's output, the cold on this month's mood).
+- Start: 3 workers on stone, 53 on the fields (were 2 and 54), so a fair quarry covers the upkeep.
+
+**Land levels (engine and world map, `[levels]`)**
+
+- Every site of `[map] sites` carries a level per resource: poor, fair or rich. The levels belong to the world (`engine/maps/`), in a zero-sum spread: one rich, one fair, one poor resource in any order, and two sites all fair.
+- Output per worker by level: food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6. They replace the building's `output_per_worker` for realms on a map with levels.
+- The realm keeps its levels in the state (`land_levels`), so a replay needs nothing else. **Each realm of a game gets its own site** (by realm order, not by the seed: today every realm of a game would start on the same site).
+- **Hidden**: no page, briefing or manual names a level. The manual says that yields depend on the land and gives no number per worker; the briefings keep the realm's own output and expected output (that is how a council finds out).
+
+**The market (engine `engine/market.py`, `[market]`)**
+
+- One warehouse per game. A sale hands the goods over at once and is paid when a buyer takes them, oldest sale first; goods on sale cannot be taken back. The warehouse owns nothing but a start stock (100 food, 50 wood, 30 stone per realm, nobody's goods, its gold leaves the game). Food in the warehouse spoils at `food_spoilage_pct`.
+- Lots of 50. One price per good (start 10 food, 15 wood, 20 stone): buyers pay price + 10 %, sellers get price − 10 %, both rounded so the margin is never zero. The margin leaves the game.
+- Every month all realms' trades are filled together at the published price: sales first, then purchases from the warehouse, split pro rata when short. Then the price moves 10 %: up if more lots were asked than there were, down if the realms' goods on sale exceed the last 3 months of asked lots (the start stock does not count), within 50–300 % of the start price.
+- **When**: at the start of the month, before the realms' orders. Gold and goods from the market are there for this month's orders. A purchase needs the gold at the start of the month; a sale needs the goods.
+- New order **`trade`** `{good: food|wood|stone, side: buy|sell, lots: 1..}` issued by the **Treasurer** (role permission): the Treasurer becomes the realm's market expert and gathers its lessons on trading season after season. The validator checks gold and goods against the published price; the warehouse may still give fewer lots than asked (pro rata), and the result says how many.
+- `engine/market.py` is pure, like `resolve_turn`: (market state, every realm's trades) → (fills per realm, gold paid to each seller, new market state, events). `resolve_turn` gets the fills of its realm as an input (like the people's choice), so a realm's turn stays a pure function.
+- **Public**: prices, stock and the month's totals bought and sold per good. Never who sold or bought. Each realm knows its own trades and its goods still on sale.
+
+**Database and server**
+
+- Migration: table `market_states` (game, turn, state jsonb), the warehouse at the start of each turn, like a realm snapshot.
+- `resolve_open_turn` runs the market first, then each realm with its fills, in the same transaction. The replay becomes per game: market and realms turn by turn, compared with both stored states.
+- Event visibility: own fills and goods on sale at court; the totals public; `firewood_short` and `stone_upkeep_short` public (the people feel cold and the falling walls).
+
+**Council and phone**
+
+- Treasurer's briefing: "## Il mercato": prices (buy and sell), warehouse stock, last month's totals, own goods on sale, what own last trades got. The firewood needed until March and the stone upkeep in the stock lines. The Chancellor gets the same summary line for the cost check.
+- Manual: the market, firewood, stone upkeep. The rule "no market" leaves every prompt of a game with a market (it stays in games without one).
+- The Voice hears cold and wear like hunger (evident facts).
+- Page **"Mercato"** on the phone: prices, stock, totals, own goods on sale. Mockup first.
+- Admin: the warehouse with who sold what, and the levels of every realm.
+
+**First game with three realms**: Claude plays the three sovereigns (one realm after the other, then one resolution), and writes down the rules it follows: they are the first, basic rules of the automatic sovereign, so that later games can run some realms without a player. No automatic sovereign yet, no other people on Tailscale (phase 3). Three sites with different profiles, e.g. F+ W= S-, F= W+ S-, F- W= S+. Cost: about three times a one-realm turn.
+
+**Order of work** (one commit each, with tests)
+
+1. Engine: needs A and B, land levels, a site per realm.
+2. Engine: the market and the `trade` order.
+3. Database: market states, game-level resolution and replay.
+4. Council: briefing, manual, prompts, the Voice; the market page on the phone.
+5. A 12-month test game with three realms.
 
 ## Web UI
 

@@ -2,7 +2,7 @@
 
 Updated 2026-11-08.
 
-The prototype is complete and playable from a phone, and the field test is closed. Phase 3 (accounts) is set aside: the game first needs richer dynamics. **Now: phase 4, step 1, the territory** (tile map, town plan by the Architect, expansion; spec in `docs/DESIGN.md`, "Territory").
+The prototype is complete and playable from a phone, and the field test is closed. Phase 3 (accounts) is set aside: the game first needs richer dynamics. **Now: phase 4, the market**: the labs are done (`lab/market_sim.py`, `lab/market_closed.py`) and the spec "Market, needs and land levels" is approved (`docs/DESIGN.md`); next, the engine (step 1: needs, land levels, a site per realm), then a game with three realms. The territory step 1 is done (spec in `docs/DESIGN.md`, "Territory").
 
 This file is the starting point of every work session: read it at the start and update it at the end. The full design lives in [`docs/DESIGN.md`](docs/DESIGN.md), the UI mockups in [`docs/mockups/`](docs/mockups/).
 
@@ -113,6 +113,24 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] A 12-month test game (game 20): the Architect plans the land unprompted; gold stops the growth; 3 runaway replies
   - Step 2: automatic states and contested borders; then trade, diplomacy, war
 - [ ] Market, trade and diplomacy (they give gold a use)
+  - [x] Lab of the market: 3 scripted realms and one outside merchant, price from its stock, margin, restock (`lab/market_sim.py`; see "Lab: the market")
+  - [x] Closed market (decided 2026-11-08: nothing from outside, no restock): warehouse on consignment, price moved by unmet demand or unsold goods, realms with different yields (`lab/market_closed.py`; see "Lab: the closed market")
+  - [x] A steady demand for wood and stone, in the lab: A firewood in winter, B upkeep in stone (see "Lab: firewood and stone upkeep")
+  - [x] Decided 2026-11-08: A and B go into the game (firewood 1 per 2 people in winter, stone upkeep; values tuned below), a small start stock in the warehouse (the only goods from outside, once)
+  - [x] Price rule "cover": down only when the stock is more than 3 months of the recent demand (see "Lab: price rule and start stock")
+  - [x] Three levels per resource and site (poor, fair, rich), in the world map, unknown at the start; the expert of the land in a later era (`docs/DESIGN.md`, "Land levels")
+  - [x] Lab with 8 realms and zero-sum profiles (see "Lab: eight realms")
+  - [x] First tuning from the 8-realm lab: start stock out of the price rule, poorer levels, firewood November to March (see "Lab: eight realms, tuning")
+  - [x] Decided 2026-11-08: the market shows only prices, stock and totals, never who sold or bought
+  - [x] Second tuning: stone upkeep 1 per building, food levels 14 / 15 / 16 (see "Lab: eight realms, second tuning")
+  - [x] Third tuning: stone upkeep 2 per 3 buildings, or 1 per building with 3 hands on stone at the start (see "Lab: eight realms, third tuning")
+  - [x] Stone upkeep chosen 2026-11-08: 1 per building, 3 workers on stone at the start; food levels 14 / 15 / 16
+  - [x] Spec approved 2026-11-08: "Market, needs and land levels" in `docs/DESIGN.md` (Part 2); yields hidden from the manual, trades by the Treasurer
+  - [ ] 1. Engine: needs A and B, land levels, a site per realm
+  - [ ] 2. Engine: the market and the `trade` order
+  - [ ] 3. Database: market states, game-level resolution and replay
+  - [ ] 4. Council: briefing, manual, prompts, the Voice; the market page on the phone
+  - [ ] 5. A 12-month test game with three realms, Claude playing all three sovereigns and writing down the basic rules of the automatic sovereign
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
 - [ ] Eras, variable trust and loyalty, leaks
 - [ ] Press by era: rumours only, then government communiqués (propaganda, also to other states), then independent journalism (see Progress in `docs/DESIGN.md`)
@@ -605,13 +623,161 @@ The accepted orders of games 1 (greedy), 2 (famine) and 3 (sensible) replayed un
 
 **Applied (2026-11-07): food 1600 and start mood 500.** The sensible player reaches the spring with about a third of a month of food: the first winter becomes a real decision (cut the ration or not) without forcing a famine. A start mood equal to the base removes the slow drift the square misread as "un lutto che non ha nome". To be confirmed by a played game, since the council adapts.
 
+### Lab: the market (2026-11-08)
+
+`lab/market_sim.py`: three realms of the same core, 24 months, fixed policies (farmer sells food above 2 months; builder buys wood, stone and food instead of cutting the ration; prudent, tax 12, buys food below 1.5 months and sells wood and stone). One merchant: lots of 50, start price food 10, wood 15, stone 20 gold, price = base × base stock / stock (50–300 %), restock 20 % a month. The market is applied by the script before each turn, not by the engine.
+
+| Variant | Farmer gold (alone 422) | Builder gold / reduced months (alone 395 / 9) | Prudent gold / reduced months (alone 625 / 9) | Food price range |
+| --- | --- | --- | --- | --- |
+| Margin 10, food stock 600 | 937 | 26 / 0 | 86 / 0 | 9–33 |
+| Margin 25 | 816 | 17 / 0 | 72 / 0 | 10–38 |
+| Restock 5 % | 1192 | 24 / 0, **famine** | 56 / 0 | 33 (the cap) for most months |
+| Small stocks (food 200) | 872 | 322 / 0, **famine**, 8 deaths | 168 / 0 | 19–33 |
+| Large food stock (2000) | 730 | 36 / 0 | 180 / 0 | 10–18 |
+| Cheap food (5 a lot) | 719 | 45 / 0 | 304 / 0 | 5–17 |
+
+1. **Gold gets a use**: the buyers end with almost no gold (from 400–600 to 20–90). The market is a gold sink, and the winter becomes a choice between gold and the ration.
+2. **Food is the only real trade**: nobody needs wood or stone (the cores are the same and cover their needs). The prudent sells 600 wood, and the wood price falls below the base. Trade in wood and stone needs realms that differ (terrain, rare resource).
+3. **The merchant is a source of food**: about 2850 bought against 1500 sold, so about 1350 came from outside. With a large stock the winter tension we tuned disappears (prudent, lowest food 821, no month on the reduced ration).
+4. **Depending on the market is a risk**: with small stocks or a slow restock the buyers split the short stock pro rata and the builder, which never cuts the ration, has a famine.
+5. **The naive seller gets hungry**: the farmer sells in autumn above 2 months and spends 9 months on the reduced ration instead of 5. The Treasurer will need the seasonal outlook before selling.
+6. **Seasonal swing, possible speculation**: the food price runs 9–33 in a year, low in autumn, high in late spring. Buying in autumn and selling in spring would pay far more than the margin and the 2 % spoilage. Not tested: a policy that only speculates.
+
+### Lab: the closed market (2026-11-08)
+
+`lab/market_closed.py`. The sovereign chose a market with nothing from outside (no Ambassador, no bilateral deals in this step), and realms that differ. A warehouse on consignment: the seller hands over the goods and is paid when a buyer takes them, first in first out. The warehouse owns no gold and no goods; stored food spoils 2 %. Price per lot of 50 (start 10, 15, 20): +10 % when the month asked more than there was, −10 % when goods stayed unsold, within 50–300 %. One policy for every realm; only the yields per worker differ (same map): granary food 18, wood 4, stone 3; forest food 14, wood 9, stone 3; quarry food 14, wood 4, stone 6 (base 15, 6, 4). A realm puts twice the hands on a sector its land is good at.
+
+| Variant | Granary | Forest | Quarry |
+| --- | --- | --- | --- |
+| Alone, no market | gold 350, 3 reduced months | **revolt at month 20**, 14 reduced | **revolt at month 21**, 14 reduced |
+| Same land for all | gold 332, sells 500 food | the same | the same |
+| Mild lands, margin 10 | **gold 720**, sells 2950 food | gold 69, buys 1100 food, calm, 12 reduced | gold 145, buys 900 food, calm, 10 reduced |
+| Margin 25 / price step 20 | about the same flows | about the same | about the same |
+| Strong lands (farms 12) | sells 3350, 1758 food left unsold | **revolt at month 12** | **revolt at month 12** |
+
+1. **Food works**: it flows from the granary to the others, the gold flows back, and the market saves the forest and the quarry from the revolt they reach alone.
+2. **Nobody buys wood or stone**: the forest sells 1450 wood and earns 0. The stock piles up (1800 wood, 500 stone) and the price sits at the floor. Every realm builds only a few buildings in its core (6 farms, 9 houses) and has enough wood and stone of its own. The forest and the quarry pay for food only with taxes.
+3. **Food arrives late**: in the first year the granary has a surplus only from the autumn. With strong lands the forest and the quarry revolt at month 12, while 1758 food later sits unsold.
+4. **Margin and price step change little**: they move only the gold.
+5. "Mild" is not mild: with 14 per farm worker and fewer hands on the fields, the forest and the quarry fall alone. The base game alone already spends 9 months on the reduced ration.
+
+### Lab: firewood and stone upkeep (2026-11-08)
+
+Same lab (`lab/market_closed.py`), with two needs applied by the script. **A, firewood**: 1 wood per 2 people per winter month (January to March); what is missing costs 2 mood per missing percent, at once. **B, stone upkeep**: 1 stone per 2 active buildings a month; what is missing lowers the month's output by half the missing share. The policy keeps 4 months of needs plus the next building, buys below that and sells above it. Light lands: granary food 17, wood 4, stone 3; forest food 15, wood 9, stone 3; quarry food 15, wood 4, stone 6.
+
+| Variant | Granary | Forest | Quarry | Wood / stone at the end |
+| --- | --- | --- | --- | --- |
+| A+B, alone | gold 377, 2 cold months, 3 worn | **strike**, 13 reduced | **revolt at month 20** | – |
+| No needs, market | sells 1850 food | sells 1500 wood, earns 17 | sells 400 stone, earns 31 | 1800 / 500 unsold, both at the floor |
+| A+B, market | buys 150 wood, 100 stone | sells 1100 wood, earns 96 | sells 250 stone, earns 48 | 850 / 50 |
+| A+B, market, margin 25 | the same flows | the same | the same | the same |
+| A+B, market, **realms react to prices** | gold 430 | **6 reduced months** instead of 10, mood 426 | 5 reduced instead of 10, mood 426 | 400 / 0, stone price back up to 16 |
+| Firewood 1 per person | **revolt at month 8** | revolt at month 21 | **revolt at month 8** | the warehouse is empty in winter |
+| A+B, strong lands (farms 12) | sells 3350 food, 1722 unsold | revolt at month 12 | revolt at month 11 | – |
+
+1. **A and B create trade in wood and stone**: the granary and the quarry buy wood, the granary and the forest buy stone. The wood price first rises (22 in June against a start of 15), then falls as the forest keeps selling.
+2. **Supply must react to the price**: with fixed hands the forest makes far more wood than anyone burns. A realm that moves its extra hands to the fields when the price is below the start trades less wood but eats better (forest reduced months 10 → 6). A council will have to see prices and stocks.
+3. **The price falls as long as anything stays unsold**: a few old lots kept the wood at the floor all the second year, even with buyers around. To decide: compare the stock with the recent demand instead of "any lot unsold", or let a seller take back its goods.
+4. **The first winter has no market**: the warehouse starts empty, so in January every realm short of firewood is cold for a month.
+5. **Firewood 1 per person is too much**: nobody sells wood in winter, and two realms revolt at month 8. 1 per 2 people works.
+6. **Trade does not replace a self-sufficient land**: with farms 12 the forest and the quarry fall even with food in the warehouse (it arrives in the autumn). The asymmetry has to stay light for food.
+
+### Lab: price rule and start stock (2026-11-08)
+
+Same lab, with A+B and light lands. **New price rule**: the price falls only when the warehouse holds more than 3 months of the lots asked lately (with no demand, any stock is too much); before, it fell whenever a lot stayed unsold. **Start stock**: 300 food, 150 wood, 100 stone, nobody's goods (their gold leaves the game).
+
+| Variant | Granary | Forest | Quarry | Price at month 24: food / wood / stone (start 10 / 15 / 20, mid price) |
+| --- | --- | --- | --- | --- |
+| Old rule, realms react | gold 430, 1 cold month | 6 reduced | 5 reduced, 1 cold | 10 / 7 / 14 |
+| New rule, realms react | gold 476, 1 cold month | 6 reduced | 5 reduced, 1 cold | 16 / 7 / 14 |
+| **New rule, start stock, react** | gold 371, **no cold month** | lowest food 410 (was 362) | lowest food 497 (was 406), **no cold month** | 11 / 7 / 14 |
+| New rule, start stock, no reaction | gold 415 | 9 reduced, 950 wood unsold | 7 reduced | 12 / 7 / 10 |
+| Margin 25 | about the same flows | the same | the same | – |
+
+1. **The new rule keeps prices where demand is**: food and stone recover in the second year. Wood still falls to the floor, but now for a real reason: the forest makes more than anyone burns (300–450 unsold for about 1 lot asked a month).
+2. **The start stock removes the cold first January** and raises the lowest food of the poorer realms.
+3. Policy artefact, not a market rule: in January the granary sells about 2000 food at once, because its reserve rule drops from 3 to 2 months.
+
+### Lab: eight realms (2026-11-08)
+
+`lab/market_closed.py eight`: 8 realms with A+B, the new price rule and a start stock of 800 food, 400 wood, 250 stone. Levels: food 14 / 15 / 17, wood 4 / 6 / 9, stone 3 / 4 / 6 (poor / fair / rich); profiles one rich, one fair, one poor in every order, plus 2 realms all fair. The policy doubles the hands on a rich resource while its price is not below the start.
+
+| Realm | Alone | Market | Gold at the end, market |
+| --- | --- | --- | --- |
+| 1 F+ W= S- | calm, 4 worn months | calm | 449 |
+| 2 F+ W- S= | calm, 2 cold months | calm | 439 |
+| 3 F= W+ S- | **strike**, 13 reduced | calm, 6 reduced | 268 |
+| 4 F- W+ S= | **revolt at month 20** | calm, 9 reduced | 162 |
+| 5 F= W- S+ | **revolt at month 20** | calm, 5 reduced | 236 |
+| 6 F- W= S+ | **revolt at month 21** | calm, 9 reduced | 176 |
+| 7, 8 F= W= S= | calm, 8 reduced | calm, 5 reduced | 244 |
+
+1. **Nobody falls with the market**; alone, 4 of 8 do.
+2. **Food is worth the most**: 6100 food bought against 800 wood and 100 stone. The realms rich in food end with about 440 gold, those rich in wood with 160–270.
+3. **Wood is oversupplied**: two rich forests flood a small demand (firewood 3 months a year). The stock grows to 1300 and the price sits at the floor from month 15.
+4. **Stone is barely traded**: a poor quarry (3 per worker, 2 hands) almost covers the upkeep. The start stock of 250 stayed unsold for 15 months.
+5. **The start stock lowers the prices**: nobody asks for it at first, so the rule reads it as too much and the stone price falls from 20 to 10 without one sale. To decide: leave the start stock out of the price rule, or make it smaller.
+6. Without the reaction to prices the flows are the same, with more unsold wood (2500) and more reduced months.
+7. Policy artefacts: doubling the hands on a rich resource takes them from the fields (that is why realms 3 and 5, fair in food, fall alone); the realms all fair sell food in January and buy it back later (the reserve rule).
+
+### Lab: eight realms, tuning (2026-11-08)
+
+Same lab (`lab/market_closed.py eight`), every realm reacting to prices. Poorer levels: wood 3 / 6 / 9, stone 2 / 4 / 6 (were 4 / 6 / 9 and 3 / 4 / 6).
+
+| Variant | Wood / stone bought | Wood in stock, months 12–24 | Stone price (mid, start 20) | Cold months | Gold sink |
+| --- | --- | --- | --- | --- | --- |
+| Before (start stock in the price rule) | 800 / 100 | 900–1300 | 10 before any sale | 0 | 584 |
+| Start stock out of the price rule | 800 / 400 | 900–1300 | 20 until month 3, then falls with the realms' sales | 0 | 647 |
+| + poorer levels | 1000 / 400 | 800–1200 | the same | 1 each for realms 2 and 5 (poor wood) | 676 |
+| + rich wood 8 | 1000 / 400 | 700–1000 | the same | the same | 676 |
+| **+ poorer levels, firewood November to March** | **1200** / 400 | **0–100** | the same | 1 each for realms 2 and 5 | 701 |
+
+Nobody falls in any variant (alone, with the poorer levels, 4 of 8 still fall).
+
+1. **Firewood from November to March balances wood**: the stock stays at 0–100 from month 12 and the price moves around 8–12 instead of sitting at the floor. Rich wood 8 helps much less.
+2. **Leaving the start stock out of the price rule works**: stone keeps its price until the realms start selling, and 4 times more stone is bought.
+3. **Stone demand is still weak**: about 400 bought in two years by 8 realms; the stock goes up to 450 when the rich quarries sell, and the price falls to about 10. The realms rich in stone end with 140–165 gold.
+4. **Food sets the wealth**: the realms rich in food end with 415–496 gold, those poor in food with 138–149. Food is about 80 % of all trade.
+5. The gold sink (margin and start stock) is about 700 in two years for 8 realms, about 3.6 gold a realm a month.
+
+### Lab: eight realms, second tuning (2026-11-08)
+
+Base: the best run before (wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, start stock out of the price rule), every realm reacting to prices.
+
+| Variant | Fallen | Gold, realms rich in food / poor in food | Food bought | Stone price (mid) at month 24 | Gold sink |
+| --- | --- | --- | --- | --- | --- |
+| Best before (stone upkeep 1 per 2, food 14 / 15 / 17) | none | 415–485 / 142–149 | 6150 | 12 | 701 |
+| Stone upkeep 1 per building | **2 revolts** (realms 3 and 4, month 23) | 425–443 / 86–120 | 6600 | **60, the cap** | 853 |
+| Food 14 / 15 / 16 | none | 330–383 / 163–188 | 4350 | 12 | 742 |
+| Both | none, 2 realms in protests | 400–423 / 147–230 | 4950 | 60, the cap | 939 |
+
+1. **Stone upkeep 1 per building is too much**: the world makes less stone than it needs. Alone, all 8 realms revolt (output lost to wear, then famine). With the market the price runs to the cap, and two realms revolt. It shows that the price rule reacts to a real shortage.
+2. **Food 14 / 15 / 16 narrows the gap**: realms rich in food against poor in food from about 3.3 : 1 to about 2 : 1 in gold. Less food changes hands (4350), the rich realms spend more months on the reduced ration (9 instead of 5), and food piles up at the end (about 1800, price 8).
+3. The right stone upkeep lies between 1 per 2 and 1 per building, or the start needs more hands on stone (2 today). "Fair" must mean the start hands cover the upkeep.
+
+### Lab: eight realms, third tuning (2026-11-08)
+
+Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, start stock out of the price rule, every realm reacting to prices. Only the stone upkeep and the start hands on stone change.
+
+| Variant | Alone: fallen of 8 | Market: fallen | Stone bought | Stone price (mid) months 15–24 | Worn months, realms poor in stone | Gold: richest / poorest |
+| --- | --- | --- | --- | --- | --- | --- |
+| Upkeep 1 per 2 buildings, 2 hands | not measured | none | 400 | 10–12, stock up to 450 | 0 | 383 / 163 |
+| Upkeep 2 per 3 buildings, 2 hands | 6 (only the all-fair realms hold) | none | 200 | 10–15, stock 150–250 | 1 | 404 / 151 |
+| **Upkeep 1 per building, 3 hands** | 6 | none | 400 | 10–16, stock 50–200, rising at the end | **6** | 443 / 137 |
+
+1. **1 per building with 3 hands makes stone a real need**: the poor quarries are short (6 worn months), the stock runs low and the price rises again in the second year. Nobody falls, but the realms poor in stone are less content (mood about 365 against 400).
+2. **2 per 3 buildings is gentler**: stone keeps a fair price, but little changes hands (200).
+3. **Alone, both are harsh**: 6 of 8 realms fall. The market becomes what keeps most realms standing.
+4. **Gold follows food**, not stone: the realms rich in stone are also fair or poor in food, and end with 137–199 gold.
+5. A third hand on stone comes from the fields: food is a little scarcer (food bought 3850, price 20 at the end).
+
 ## Open decisions
 
 | Decision | Needed by | Notes |
 | --- | --- | --- |
 | Models per tier and spending cap for a long game | before a long game | since 2026-11-08 every counsellor and the people use GLM 5.3 Flash "high", the Voice DeepSeek V4.1 Flash "none". Game 18 measured about $0.0032 per turn: 120 turns about $0.40 per realm, about $3 with 8 realms |
 | What the admin sees in games with others | phase 3, before the first game with friends | either the admin does not play, or in running games the view hides the other players' secrets |
-| Use of gold | phase 4 | deferred. Options considered: simple market with fixed prices and a margin (preferred), concessions during unrest, higher recurring costs, expensive goals |
+| Use of gold | phase 4 | the market lab (2026-11-08) shows a merchant with a stock and a dynamic price absorbs the gold; rules still to decide (stock size, margin, seasons, speculation). Other options considered: concessions during unrest, higher recurring costs, expensive goals |
 | Tiles and workers | decided 2026-11-08 | answered by the territory (claiming, clearing, demolition; see `docs/DESIGN.md`); idle adults still open. Was: game 7: overbuilding with no staff and a housing dead end once tiles run out. Options: show the Architect unstaffed jobs, allow demolition, a way to gain tiles; also idle adults (extend the fixed rule to wood and stone, or leave them to the Architect) |
 | Automatic sovereigns | phase 3 | personality, models, budget |
 | Jev | phase 4 | technical details, policy schema, waiting-list sign-up |
