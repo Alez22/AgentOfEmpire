@@ -96,6 +96,8 @@ The automatic sovereign comes in two versions, technically identical (same counc
 
 War is about **preparation** *[Lost: rest of the paragraph, beginning "the sovereign…"]*.
 
+**Decided 2026-11-08**: no war in the village (a peasant militia against bandits only); war begins in the town (sacks, land, tributes, sieges); annexing a whole realm only for a kingdom. See "War by era" in "Progress".
+
 - *[Lost: four items.]*
 - **Information**: the army sits in reserved tiles. The enemy estimates it through spies and border observation, with estimates that may be old or wrong; the Marshal can inflate them to get resources. Deceptions are possible, such as proclaiming in the square a mobilisation that does not exist.
 - *[Lost: one item.]*
@@ -127,7 +129,7 @@ The modes *[Lost]*. **No victory** *[Lost]* at the end *[Lost]*.
 
 ## Economy and trade
 
-Five resources: **food, wood, stone, gold** and a **rare resource** (e.g. iron or salt) unevenly spread across the map, which pushes towards trade or war.
+Five resources: **food, wood, stone, gold** and a **rare resource** (e.g. iron or salt) unevenly spread across the map, which pushes towards trade or war. **Decided 2026-11-08**: four kinds of rare resource, one per site, needed in the recipes of the era passages; the market is a building to unlock in the village, and the realm starts without it (see "The eras" in "Progress").
 
 - **Market square**: dynamic prices from supply and demand. It is public: other states see what you buy and sell and can guess your weaknesses.
 - **Trade routes**: with open or controlled borders they pay every turn; they can be cut, raided or blocked by an embargo.
@@ -174,13 +176,80 @@ The spy does not *[Lost]*; **the engine** *[Lost]*. No *[Lost]*.
 ## Progress
 
 - **Three eras**, named **village, town, kingdom** (names decided 2026-11-08 with the presentation page): moving up needs resources and key buildings, unlocks buildings and units and changes the look of the city. It is public: everyone sees who has advanced.
+
+### The eras (decided 2026-11-08)
+
+Replaces the lost items of this section. Values in brackets are starting points to tune in the lab.
+
+**Pace**
+
+- **No fixed dates**: each realm moves up when it can. The gap between realms is public and is a tension of its own.
+- **Village: short, the real tutorial**. Surviving the winters, building the market, the first trade, the town hall. Target: the fastest realm leaves it around year 2½, the average around year 3–4.
+- **Town: the long era**, the heart of the game. The average realm stays until year 7–8; some never leave it.
+- **Kingdom: the final stretch** (the last 2–4 years). More power, and dynamics that turn against a sovereign who does not manage them (coups, independent journalism, a standing army).
+- **Staying behind is a legitimate strategy**: a solid, cheap, hardly visible realm can win by endurance or prestige; but more advanced neighbours knock sooner or later.
+- Later eras add agents (merchants, the Prior, the Ambassador, the journalist), so a game costs little at the start and more only for those who advance.
+
+**Moving up: the era's building site**
+
+- The passage is the **building site of the era's palace** (village hall → town hall → castle), the same for every realm, [6–8 months], public. During it the realm is weaker (hands off the fields, an emptied treasury), the neighbours see it (a chance to raid, or to hurry their own site), the square splits between pride and fatigue, the council argues.
+- **Requirements to open it** (village → town): a minimum population [about 200], a winter without hunger, the market built, no revolt in course, and the rare resources of the recipe (below). Town → kingdom: more of everything, the walls, perhaps a year of stability.
+- **An era is never lost.** If a siege or a revolt damages the palace, its functions stop until it is repaired (e.g. no communiqués): a suspension, not a downgrade.
+
+**Rare resources in the recipes**
+
+- **Four rare resources** [names to pick; iron and salt are examples]. Each site has one, so each kind sits in at most 2 of the 8 sites.
+- **Recipes count kinds, not names**: "N different rare resources among those present in the game". **Village → town: 2 kinds** (the own one and one more), small quantities. **Town → kingdom: 3 kinds**, larger quantities, and more of the common resources too.
+- **Games with fewer than 8 realms are allowed, with no minimum.** When a game holds fewer kinds than a recipe asks, the recipe drops to the kinds present.
+- **A kind no realm owns** reaches the market in a trickle (a few lots a year from a foreign caravan): expensive and contested. A deliberate exception to the closed market, like the start stock.
+- **Extraction exists from the village** (a small, slow mine or salt pan), better in the town: without it nobody would have anything to sell for the first passage.
+- Effect: the first trade of a rare resource is a step of the tutorial; for the kingdom trade alone is not enough, it takes treaties or war.
+
+**Every class is born from a building**
+
+| Building | Class it brings | Unlocked in |
+| --- | --- | --- |
+| Market | merchants | village |
+| Workshop | artisans | town |
+| Barracks | soldiers | town |
+| Temple | clergy (and the Prior) | town, expensive |
+
+- **An era opens possibilities, it never imposes them.** The sovereign picks the order, so realms grow different characters (a warrior town, a merchant town, a devout town), and the square gains one voice at a time.
+- **At the start: peasants only, and no market**: the realm cannot buy or sell. The market is the first goal of the village: cheap (wood and stone, no rare resource), [2–3 months], reachable before the second winter (the game opens in January and the start stock covers the first). The warehouse stays one for the whole world: the building is the realm's door to it. Without it the realm knows prices only as travellers' rumours. The first to open sells high to those still without.
+- **Merchants**: some families leave the fields to work at the market (jobs, like the sawmill). They set how much can be traded in a month (more merchants, more lots), pay a tax on trade (the first income that does not come from the fields), and get angry when trade stops (treaties, embargoes). In the town they are a full class with a long memory.
+- **Artisans** (the workshops zone of the town plan): turn wood, stone and rare resources into goods: **tools** (higher yields of fields, sawmills, quarries), **weapons** (soldiers without them are peasants with pitchforks), later fine goods for the market or the mood. They want steady raw materials and cheap bread: they buy their food, so a famine hits them first. Memory about a year. Angry, they slow the workshops; in the kingdom they form guilds that strike together.
+- **Soldiers**: see "Military dynamics".
+- **Clergy**: the temple is unlocked in the town but **expensive** (much stone and gold, some rare resource, [6–8 months]), so it comes in the middle of the town era, not right after the passage. Ongoing cost: the **tithe** on every harvest (a conflict with the Treasurer). It gives **comfort** (famine and death shocks hit the mood less), **charity** (in a famine it feeds part of the poor from its reserves), **legitimacy** (the dynasty, the endurance victory, protection against coups) and the longest memory in the square (years: the voice that remembers "that time", true or not). Angry, it preaches against the sovereign: revolt becomes more likely and fiercer. Natural conflicts with the merchants (usury, luxury) and the Marshal (unjust wars).
+- **The Prior** (the Bishop in the kingdom): a character born with the temple, an LLM of the cheap tier. **Not a minister**: the sovereign neither appoints nor dismisses it, it does not sit in the council and has no salary. The sovereign meets it in audience, and it can ask for one. Every month it speaks in the square (the sermon), a second voice with authority next to the Voice of the square, which can calm the people or stir them. It has its own demands (the tithe, temples, no unjust wars, no usury). **Once the temple exists there is no going back**: a hostile clergy can be ignored, bought or repressed (the Marshal, with a long resentment), never dismissed. Cost: one cheap call a month, plus audiences.
+- **The temple is not required for the kingdom**, so more paths stay open. With it: more legitimacy and stability, but the tithe and a power beside the throne. Without it: freer, but lower legitimacy (a coup more likely, the endurance victory harder).
+
+**War by era**
+
+- **Village**: no war (tutorial); only a peasant militia against bandits.
+- **Town**: **war begins**. The barracks bring the soldiers, the Marshal recruits, walls and weapons (from the artisans) are needed. A realm can sack other towns, take land, impose tributes, lay sieges.
+- **Kingdom**: a standing army, and **annexing a whole realm**, possible only for a kingdom: to conquer a realm you must be one (the path to the Dominion victory). The Marshal's ambition grows with the army.
+
+**Council by era** (agreed in outline)
+
+- **Village**: Chancellor, Treasurer, Architect, moderates.
+- **Town**: the Marshal (war begins) and the Ambassador (before, contacts with other realms are informal and go through the Chancellor); hiring and dismissal open, with the extreme profiles and the expert of the land.
+- **Kingdom**: the full council, with more ambition at stake.
+
+**After moving up: a growth crisis** (agreed in outline)
+
+- **New classes, offended classes**: when the merchants rise, the peasants feel passed over; the first year of a new era is socially unstable.
+- **Ministers out of their time**: a Treasurer good at counting grain may understand nothing of routes and treaties. A natural reason to dismiss and hire, with its cost (the secrets leave with the person).
+- **Lessons that no longer hold**: the secret lessons were learned in another world; at the first season review after the passage some cling to them and some adapt, which shows their character.
+- **News change nature**: from the day the press is born, the people compare what the sovereign says with what they see.
+
+**Press and experts**
+
 - **Press by era** (idea, 2026-11-07): how information spreads depends on the era.
   - **First era, no press**: nothing is announced. The people, and the other states, know only rumours (the Voice of the square, travellers, spies).
   - **Second era, the press is born**: the government can issue **communiqués** that the people read, also as propaganda, and send communiqués to other states. A communiqué may lie: when the facts contradict it, the square notices and trust in the sovereign falls. Foreign press brings other states' communiqués.
   - **Third era, journalism**: besides the government's press an **independent channel** appears, which publishes what it finds out (leaks, spies, unhappy ministers), including what the sovereign would rather hide.
   - Fits the existing pieces: visibility levels (a communiqué moves a fact to public or foreign), leaks, reputation and diplomacy. Open: cost of a journalist agent (one more call per turn, cheap tier), how credibility is measured, how much the sovereign has to read.
 - **The expert of the land** (idea, 2026-11-08): hired in a later era, maps the hidden land levels of the own realm and of the neighbours (see "Land levels" in "Economy and trade").
-- *[Lost: four items.]*
 
 ## Revolt and coup
 
@@ -212,7 +281,7 @@ The step from *[Lost]* to **approved plan**: an order *[Lost]* during the *[Lost
 
 ## People and demography
 
-- **Classes**: peasants, artisans/merchants, clergy, soldiers. Each with its own needs, mood and trust.
+- **Classes**: peasants, artisans/merchants, clergy, soldiers. Each with its own needs, mood and trust. **Decided 2026-11-08**: every class but the peasants is born from a building (market → merchants in the village; workshop → artisans, barracks → soldiers, temple → clergy in the town); see "The eras" in "Progress".
 - **Chosen level of detail**: aggregated classes plus a few recurring **named citizens**, who are born, age and die under the same rules.
 - **Demography entirely in the engine**, deterministic, updated every season. Three age groups per class (children, adults, elders), so 12 numbers.
 - Births depend on adults, food, mood and housing. Deaths per group from base mortality plus hunger, disease and cold. War deaths come from the combat engine.

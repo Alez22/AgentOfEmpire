@@ -139,7 +139,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] R5b: the sovereign sells a surplus also when gold is not short (decided and built 2026-11-08)
   - [x] A game with R5b (game 26): **no**, R5b never fired: it kept 4 months of gross eating (~3,600 food), Aurelia peaked at 2,626. **Now 2 months** (checked on game 26's states: Aurelia would sell 2 lots in November and 4 in December, the poor realms never; 1 month sold in January in the poor realms too)
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
-- [ ] Eras, variable trust and loyalty, leaks
+- [ ] Eras, variable trust and loyalty, leaks. **Eras designed 2026-11-08** (`docs/DESIGN.md`, "Progress" → "The eras"): village short (tutorial), town the long era, kingdom the risky finale; passage = the palace's building site, public, an era never lost; four rare resources, one per site, recipes by kinds present (2 kinds village → town, 3 town → kingdom), games with fewer than 8 realms allowed; every class born from a building (market → merchants in the village, the realm starts without a market; workshop, barracks, temple in the town); the temple brings the Prior, not a minister, not required for the kingdom; war from the town, annexation only as a kingdom. Still to decide: names of the rare resources, values (costs, months, population thresholds), the militia in the village
 - [ ] Press by era: rumours only, then government communiqués (propaganda, also to other states), then independent journalism (see Progress in `docs/DESIGN.md`)
 - [ ] Jev instead of the fixed rules
 
@@ -840,7 +840,7 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
 | Tiles and workers | decided 2026-11-08 | answered by the territory (claiming, clearing, demolition; see `docs/DESIGN.md`); idle adults still open. Was: game 7: overbuilding with no staff and a housing dead end once tiles run out. Options: show the Architect unstaffed jobs, allow demolition, a way to gain tiles; also idle adults (extend the fixed rule to wood and stone, or leave them to the Architect) |
 | Automatic sovereigns | phase 3 | personality, models, budget |
 | Jev | phase 4 | technical details, policy schema, waiting-list sign-up |
-| Lost vision sections | before phase 4 | rewrite the parts marked [Lost] in `docs/DESIGN.md` (map, war, victory, diplomacy, espionage, progress) |
+| Lost vision sections | before phase 4 | rewrite the parts marked [Lost] in `docs/DESIGN.md` (map, war, victory, diplomacy, espionage); progress rewritten 2026-11-08 ("The eras"), war by era decided |
 | Palace in the engine | phase 4, after the hex grid | fixed building east of the square (approved in direction); a 4-hex rhombus, its place left free in the hex core |
 
 ## Decisions made (the main ones)
