@@ -1,8 +1,8 @@
 # AgentOfEmpire – Work plan
 
-Updated 2026-11-07.
+Updated 2026-11-08.
 
-The prototype is complete and playable from a phone. The next phase is **playing it for real for 12–24 turns** and tuning values, prompts and UI.
+The prototype is complete and playable from a phone, and the field test is closed. Phase 3 (accounts) is set aside: the game first needs richer dynamics. **Now: phase 4, step 1, the territory** (tile map, town plan by the Architect, expansion; spec in `docs/DESIGN.md`, "Territory").
 
 This file is the starting point of every work session: read it at the start and update it at the end. The full design lives in [`docs/DESIGN.md`](docs/DESIGN.md), the UI mockups in [`docs/mockups/`](docs/mockups/).
 
@@ -12,10 +12,10 @@ This file is the starting point of every work session: read it at the start and 
 | --- | --- | --- |
 | Engine | deterministic monthly simulation: economy, seasons, food spoilage, demography, mood, unrest | `engine/`, values in `engine/config.toml` |
 | Database | PostgreSQL 18.6 in Docker, 11 migrations, row-level security, append-only logs, replay | `db/migrations/`, `server/db/` |
-| LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (DeepSeek V4.1 Flash for all); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
+| LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (GLM 5.3 Flash "high"; the Voice on DeepSeek V4.1 Flash); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 203 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 208 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -49,7 +49,9 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [x] Voice of the square and filtered sovereign view (no mood)
 - [x] Phone UI and admin view
 
-### 2. Field test – in progress
+### 2. Field test – closed (2026-11-08)
+
+The open items below carry over: they are checked and tuned while playing the next steps.
 
 - [x] Play 12–24 turns from the phone and note what does not work (game 7, 12 months; see "Field test notes")
 - [x] Fix the bugs found in the test: mood only to the Voice (the council hears the square), 90 s deadline on the whole call, 8000 output tokens cap, bad lesson actions discarded one by one
@@ -82,7 +84,9 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [ ] Polish the UI after the test
 - [ ] Choose models and spending cap for a 120-turn game
 
-### 3. Before friends
+### 3. Before friends – set aside (2026-11-08)
+
+Still mandatory before any game with other players: until then, nobody else on Tailscale.
 
 - [ ] Invite-only accounts, login, admin role reserved
 - [ ] Decide what the admin sees in games with other players
@@ -91,13 +95,21 @@ Move to the next phase when the previous one is closed. Phase 3 is mandatory bef
 - [ ] Automatic database backups; database role without superuser privileges
 - [ ] Meeting lock in the database, so the server can run as several processes
 
-### 4. Full game
+### 4. Full game – in progress
 
 - [ ] More classes: artisans and merchants, clergy, soldiers; each with its own memory horizon in the square (peasants 2–3 months, merchants and clergy a year or more)
 - [ ] Marshal and Ambassador
 - [ ] Roles as data (`roles.toml`: title, duties, obligations, orders) separate from persons (traits, résumé, name), before hiring and dismissing counsellors
 - [ ] Hiring and dismissal: extreme persons for hire, persons moving between realms with their lessons and memories (person separate from post), unpaid salaries hurting loyalty, the full catalog (12 + 8 + 8 per role)
-- [ ] Tile map and more states, automatic ones too
+- [ ] Tile map and more states, automatic ones too. **Step 1, the territory** (one realm; spec approved 2026-11-08):
+  - [x] Feasibility: the Architect plans zones on a text map (`lab/urban_probe.py`: 7 of 11 fully valid, plans sensible)
+  - [ ] Draw the 40 × 40 world with 8 sites and the 12 × 12 core, for review
+  - [ ] Engine: map, footprints, zones, placement, demolition, migration
+  - [ ] Claiming (gold, land fund split in December) and clearing (labour, felling the forest), with the balance lab
+  - [ ] Council: orders, briefings, manual, prompts; the probe again on the real map
+  - [ ] The map page on the phone (mockup first)
+  - [ ] A 12-month test game
+  - Step 2: automatic states and contested borders; then trade, diplomacy, war
 - [ ] Market, trade and diplomacy (they give gold a use)
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
 - [ ] Eras, variable trust and loyalty, leaks
@@ -548,10 +560,10 @@ The accepted orders of games 1 (greedy), 2 (famine) and 3 (sensible) replayed un
 
 | Decision | Needed by | Notes |
 | --- | --- | --- |
-| Models per tier and spending cap for a long game | end of phase 2 | today all roles use DeepSeek V4.1 Flash with reasoning `low` (the Voice `none`). Game 7 measured about $0.02 per turn: $1 lasts about 50 turns, 120 turns need about $2.40 |
+| Models per tier and spending cap for a long game | before a long game | since 2026-11-08 every counsellor and the people use GLM 5.3 Flash "high", the Voice DeepSeek V4.1 Flash "none". Game 18 measured about $0.0032 per turn: 120 turns about $0.40 per realm, about $3 with 8 realms |
 | What the admin sees in games with others | phase 3, before the first game with friends | either the admin does not play, or in running games the view hides the other players' secrets |
 | Use of gold | phase 4 | deferred. Options considered: simple market with fixed prices and a margin (preferred), concessions during unrest, higher recurring costs, expensive goals |
-| Tiles and workers | phase 2 | game 7: overbuilding with no staff and a housing dead end once tiles run out. Options: show the Architect unstaffed jobs, allow demolition, a way to gain tiles; also idle adults (extend the fixed rule to wood and stone, or leave them to the Architect) |
+| Tiles and workers | decided 2026-11-08 | answered by the territory (claiming, clearing, demolition; see `docs/DESIGN.md`); idle adults still open. Was: game 7: overbuilding with no staff and a housing dead end once tiles run out. Options: show the Architect unstaffed jobs, allow demolition, a way to gain tiles; also idle adults (extend the fixed rule to wood and stone, or leave them to the Architect) |
 | Automatic sovereigns | phase 3 | personality, models, budget |
 | Jev | phase 4 | technical details, policy schema, waiting-list sign-up |
 | Lost vision sections | before phase 4 | rewrite the parts marked [Lost] in `docs/DESIGN.md` (map, war, victory, diplomacy, espionage, progress) |

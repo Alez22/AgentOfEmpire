@@ -78,6 +78,7 @@ A game has **8 states**, some *[Lost]*, on a **200 × 200** *[grid]* with seas, 
 - **Sizing**: each state starts from a core of about 16 × 16 tiles and can grow to about 40 × 40. Symmetric starts: similar resources and at least one reachable neighbour. The size adapts to the number of players.
 - **Main screen**: your own state in tiles, with fortifications, town hall, public square, production (sawmill, mill…) and a military area, with resources that change over time. Zooming out or a button opens the world map with the other states.
 - *[Lost: four more items.]*
+- **First step, approved 2026-11-08**: see "Territory: map, town plan, expansion" in Part 2.
 
 ### Automatic states
 
@@ -792,6 +793,69 @@ Approved on 2026-11-07, after game 4: the square's opinion must turn into what t
 **Games saved before** have no `[people]` section in their config: the people decide nothing and their results do not change.
 
 **Next behaviours** (after a played test): tax evasion (part of the taxes not collected), emigration (families leave after long, deep discontent), voluntary work (a site finishes a month early when the mood is high). The strike stays as the fixed extreme of the unrest ladder.
+
+## Territory: map, town plan, expansion (phase 4, step 1)
+
+Approved on 2026-11-08. The first step of the map, with a single realm: the city lives on tiles, buildings take several tiles, the Architect plans the town and the realm grows onto the tiles around it, paying gold and labour. Other states, trade and war come in the next steps. Phase 3 (accounts) is set aside until the game dynamics are richer.
+
+**Feasibility** (`lab/urban_probe.py`, 2026-11-08): GLM 5.3 Flash "high" drew zones and placed three buildings on a 16 × 16 text map. 7 of 11 replies fully valid, 2 more failed only on a rule too strict (houses around the square in the "center" zone), 1 off by one on a 3-wide farm, 2 confused (overlapping zones, buildings on buildings). The plans made sense: square in the middle, fields next to the fields, sawmills along the forest, reserves for later. Hence: the engine checks every placement, one retry, and the model never counts tiles itself.
+
+**Map**
+
+- **World**: 40 × 40 tiles (in `config.toml`), drawn by hand in a text file in the repo, the same for every game. Terrains: plain, river, forest, hill. Later it may be generated from the seed.
+- **8 starting sites**, ready for the automatic states. Every site has the **same 12 × 12 core**, rotated or mirrored (symmetric starts). The seed picks the site of the realm.
+- **The core** is owned and cleared at the start: river, forest, hill, the square and the 12 starting buildings already placed, and a starting zone plan. The starting buildings take about 60 tiles, so the need to grow comes within the first year or two (12 × 12 to be confirmed by the lab).
+- **Footprints**: house 1 × 1, sawmill 2 × 1 (must touch a forest tile), quarry 2 × 2 (on hill), farm 3 × 3 (on plain), square 2 × 2 (fixed). No roads: buildings stand side by side.
+- **In the engine**: the tiles are part of the realm state (terrain, owned, cleared, building), every building has a position and an id; `free_tiles` goes away, free space comes from the map. The snapshot holds the map, so replay stays exact. `ENGINE_VERSION` goes up: older games stay readable but are no longer resolved (the existing rule).
+
+**Town plan (the Architect)**
+
+- **`set_zones`**: the full list of zones, each a rectangle with a name and a purpose (`fields`, `center`, `houses`, `workshops`, `reserve`), at most 12. It replaces the plan in force.
+- **Checks**: inside the territory, no overlaps, every existing building in a zone of its purpose; houses are allowed in the center too. An invalid plan is refused with the reason and the Architect retries once in the same meeting; then the plan in force stays.
+- **When**: the prompt asks for a new plan only when the territory grew or the plan has no room for what is needed, not every month. It goes through the Chancellor's plan and the sovereign's approval like any order.
+
+**Building inside the zones**
+
+- **`build`** becomes `{building, zone}`, with optional `x`, `y`. Without coordinates the engine takes the first valid place in the zone nearest the square (fixed tie-break, deterministic). With coordinates it checks footprint, terrain, overlap and zone; a building sticking out by one tile is moved by one tile, otherwise the order is refused.
+- **The Architect's briefing**: the map of the territory plus a ring of two tiles as a text grid (as in the probe), the zones with **how many buildings of each kind still fit** ("campi sud: posto per 1 fattoria"), the buildings with their id and position.
+
+**Demolition**
+
+- **`demolish`** `{building_id}`: costs gold (about half the building's cost) and gives back a quarter of its wood and stone (values in `config.toml`); takes one month. The workers lose their jobs and are rescaled as today; upkeep stops; the tiles are free again in their zone.
+- Demolishing a house evicts nobody, but without housing births stop, as today when houses are full.
+- **Why**: a sawmill whose forest is gone produces nothing; the briefing says so ("segheria 1: non tocca più il bosco, non produce") and the Architect may pull it down and build one elsewhere.
+
+**Expansion: claiming tiles (gold)**
+
+- **`claim_tiles`** `{direction: north/south/east/west, terrain, count}`, at most 4 tiles an order: the engine picks bordering tiles of that terrain in that direction, nearest the centre (deterministic).
+- **Price** per tile grows with the territory, e.g. `10 + 1 gold every 8 tiles owned beyond the core` (to tune in the lab).
+- **The land fund**: the gold paid goes into a fund at game level, the first data shared by all realms. In December the fund is split **equally among the other states** (the payer gets no share of its own payments); the remainder stays in the fund. It is public: everyone sees what they received, so they can guess how much the others grew. With a single realm the fund only grows, shown in the briefing and in the admin. The fund is summed after every realm of the turn is resolved, so replay stays exact.
+- **Who**: the Architect proposes; the Treasurer sees price and fund in its briefing; the Chancellor's cost check adds the gold.
+
+**Expansion: clearing tiles (labour)**
+
+- A claimed tile arrives **wild**: nothing is built on it until it is cleared.
+- **`assign_workers`** gets a `clearing` sector. Work needed in worker-months (in `config.toml`): plain 6, hill 10, forest 12. The tiles are cleared in the order they were claimed.
+- **Felling the forest**: a cleared forest tile becomes plain and gives wood while it is cut. A standing forest is wood for ever (a sawmill touching it works), a felled one is wood once. The engine does not forbid felling the last forest tile next to a sawmill, but the briefing warns ("ultimo bosco della segheria 1"), like the idle-adults warning. No regrowth for now; a replanting order later if games show the need. The lab measures how many years a greedy realm takes to run out of nearby forest, to tune the wood of felling and the months of work.
+- Clearing takes hands from the fields: in winter it is a real decision.
+
+**Council, manual, prompts**
+
+- Manual: new lines from the config (footprints, terrains, price, fund, clearing, demolition).
+- The Architect's craft gets town planning (keep the quarters in order, leave reserves, grow towards the terrain that is needed). The Treasurer and the Chancellor get one summary line on the territory (tiles, price, fund), not the map. Cost: about 600–1000 more input tokens per Architect call, under $0.0002.
+
+**Phone and admin**
+
+- New page **"Mappa"**: the territory and its ring in SVG, colours by terrain, buildings as shapes with a letter or a simple icon, zones as coloured outlines, tiles being cleared hatched; tapping a building or a zone shows its details. A mockup comes before the code.
+- Admin: the whole world and the fund.
+
+**Order of work** (one commit each, with tests)
+
+1. Engine: map, footprints, zones, placement, demolition, migration (no models).
+2. Claiming, clearing and the fund, with the balance lab for prices, work and forest.
+3. Council: orders, briefings, manual, prompts; the Architect probe again on the real map.
+4. The map page on the phone.
+5. A 12-month test game.
 
 ## Web UI
 
