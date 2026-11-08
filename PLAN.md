@@ -548,6 +548,20 @@ Claude as a sensible sovereign: approved most plans, removed 5 orders (two claim
 
 5. Sawmill and quarry without hands from July on (stores were large); garbled words again ("tarned", "sta Thanks", "Ora di goodwill"); the Treasurer's report once only "Petition check"; the Architect's report twice generic and off its duty (January, May).
 
+### Game 21 "Altopiano" (2026-11-08, 12 months on the map; the sovereign kept the taxes covering the costs)
+
+Same models; after the game 20 fixes (memory, Chancellor rules, ring 1, cap 6,000). Claude as sovereign kept the tax at 8% (income 24-26 against 23-24 of upkeep and salaries): granted the petition from 10 to 8%, refused the one to 7%, removed two feasts, a claim and a farm with no room. **$0.053 in 72 calls, no failed call** (no runaway this time), longest call 70 s. The realm ended calm with food 1,928 and gold 34; 6 farms, 148 tiles (4 claimed, 80 gold into the fund, all cleared by September).
+
+**Good**: the Architect claimed in March "before the Campi zone runs out", cleared with 1 to 3 hands outside winter, stretched the fields zone over the new land, kept no claims while gold was short ("la cassa è corta"); the new memory works ("riproporre il campo o la terra negati il mese scorso non è saggio"); the Chancellor's summaries matched the plans and no note leaked.
+
+**The economy of land (point E)**: with the tax covering the costs the treasury grows by 1-3 gold a month, so a 20-gold tile takes about ten months of surplus; a farm needs a 3 × 3 block, 9 tiles, about 180 gold and 27 worker-months. In a year the realm claimed 4 tiles and built **no farm on new land** (the sixth farm took the core's last place). Growth by land is out of reach at these prices, with or without petitions.
+
+**Weak**
+
+1. **Texts with no length check**: in April the Treasurer's report ran on for over a thousand words, repeated signatures and capitals ("FINE, GIURO"); in October the Chancellor answered "..." with an empty plan (13 output tokens). Both valid JSON, both accepted. A directive brought a second round, weaker than the first (the Architect's house was lost, a farm with no room and a pointless claim proposed).
+2. **"Room for 1 farm" does not say where**: the Architect believed the sixth farm would stand on the cleared land; it went to the core's last place.
+3. The Architect's report was generic and off its duty twice (round 2 of October; earlier games too); the Treasurer once proposed a house (not its order); "cinquantacinque" for 60 adults in a summary.
+
 ### Lab: famine balance (2026-11-07)
 
 The exact orders of games 1 and 2 replayed under mood variants (the base replay reproduces both games exactly). Mood month by month, from turn 2.
