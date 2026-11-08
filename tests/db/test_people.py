@@ -135,8 +135,9 @@ def test_council_hears_the_people_and_the_petition(db, realm, settings):
     assert "the peasants work reluctantly" in treasurer
     assert '"Maestà, la gabella ci strangola." (not answered yet)' in treasurer
     assert "this order runs first: set_tax 5" in treasurer
-    # The harvest estimate counts the people's effort: 405 x 97 % = 392.
-    assert "Harvest expected this month if nothing changes: 392 food" in treasurer
+    # The harvest estimate counts the people's effort. Seed 8: a site rich in
+    # food (16 per farmer): 53 x 16 x 50 % = 424, x 97 % = 411.
+    assert "Harvest expected this month if nothing changes: 411 food" in treasurer
     assert "perché sì" not in treasurer  # the model's reason is for the admin only
 
 

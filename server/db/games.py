@@ -37,6 +37,9 @@ EVENT_VISIBILITY = {
     "workers_rescaled": "council",
     "salaries_unpaid": "council",  # the counsellors know they were not paid
     "tile_cleared": "court",  # the people clear the land: everyone sees the town grow
+    # The people feel the cold and see the walls crumble ([needs]).
+    "firewood_short": "public",
+    "stone_upkeep_short": "public",
 }
 
 
@@ -125,7 +128,9 @@ def create_game(
                 "INSERT INTO realms (game_id, name) VALUES (%s, %s) RETURNING id", (game_id, name)
             ).fetchone()[0]
             council = draw_council(personas, seed, index, taken) if personas else {}
-            state = new_game(config, seed)
+            # Each realm its own site, in a row from the one the seed picks
+            # (a one-realm game keeps the site it had before).
+            state = new_game(config, seed, site_index=seed + index)
             for role, model in council_models.items():
                 person = council.get(role)
                 if person is None:

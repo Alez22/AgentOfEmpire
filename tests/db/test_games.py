@@ -172,3 +172,15 @@ def test_replay_detects_an_altered_snapshot(db, game):
     mismatch = replay_game(db, game_id)
     assert mismatch is not None
     assert mismatch.turn == 8
+
+
+def test_each_realm_of_a_game_starts_on_its_own_site(db):
+    """Before the market every realm of a game started on the seed's site."""
+    game_id = create_game(db, load_raw_config(), seed=6, realm_names=["Nord", "Est", "Sud"], council_models=COUNCIL)
+    states = [state_from_dict(row[0]) for row in db.execute(
+        "SELECT s.state FROM snapshots s JOIN realms r ON r.id = s.realm_id"
+        " WHERE r.game_id = %s ORDER BY r.id", (game_id,))]
+    config = load_config()
+    assert [s.square for s in states] == [new_game(config, 6, site_index=i).square for i in (6, 7, 8)]
+    assert len({tuple(s.land_levels.values()) for s in states}) == 3
+    assert states[0].square == new_game(config, 6).square  # the first realm keeps the seed's site

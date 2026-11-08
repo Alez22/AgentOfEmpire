@@ -3,8 +3,9 @@
 The step sequence is part of the specification: changing it changes the
 results, so any change must be versioned. Integer arithmetic only.
 Step order: orders -> fixed rules -> construction -> taxes and upkeep ->
-production -> clearing (territory) -> food consumption -> spoilage -> demography
--> worker rescale -> mood -> unrest -> closing.
+firewood and stone upkeep ([needs]) -> production -> clearing (territory) ->
+food consumption -> spoilage -> demography -> worker rescale -> mood -> unrest
+-> closing.
 
 Taxes and upkeep run BEFORE production (the design doc listed them
 after): unpaid upkeep halves the output of the same month, so it must be
@@ -131,13 +132,66 @@ def _collect_taxes_and_upkeep(state: GameState, config: Config, events: list[Eve
     return True
 
 
+def _missing_pct(needed: int, paid: int) -> int:
+    return (needed - paid) * 100 // needed if needed else 0
+
+
+def firewood_needed(state: GameState, config: Config) -> int:
+    """@brief Wood the realm burns this month (0 outside the firewood months
+    or without [needs])."""
+    needs = config.needs
+    if needs is None or (state.turn - 1) % 12 + 1 not in needs.firewood_months:
+        return 0
+    return state.population() // needs.firewood_people
+
+
+def stone_upkeep(state: GameState, config: Config) -> int:
+    """@brief Stone the active buildings need this month (0 without [needs])."""
+    if config.needs is None:
+        return 0
+    active_buildings = sum(1 for b in state.buildings if b.turns_left == 0)
+    return active_buildings // config.needs.stone_upkeep_buildings
+
+
+def _burn_firewood(state: GameState, config: Config, events: list[Event]) -> int:
+    """@brief Burn this month's firewood from the stock.
+    @return Missing firewood in percent (0..100); it hits the mood at once."""
+    needed = firewood_needed(state, config)
+    burnt = min(needed, state.wood)
+    state.wood -= burnt
+    missing_pct = _missing_pct(needed, burnt)
+    if missing_pct:
+        events.append(Event("firewood_short", {"needed": needed, "missing": needed - burnt}))
+    return missing_pct
+
+
+def _pay_stone_upkeep(state: GameState, config: Config, events: list[Event]) -> int:
+    """@brief Pay the buildings' stone upkeep from the stock.
+    @return Missing stone in percent (0..100); it lowers this month's output."""
+    needed = stone_upkeep(state, config)
+    paid = min(needed, state.stone)
+    state.stone -= paid
+    missing_pct = _missing_pct(needed, paid)
+    if missing_pct:
+        events.append(Event("stone_upkeep_short", {"needed": needed, "missing": needed - paid}))
+    return missing_pct
+
+
+def _output_per_worker(state: GameState, config: Config, sector: str, building_kind: str) -> int:
+    """@brief The building's yield, or the yield of the realm's land level."""
+    level = state.land_levels.get(sector)
+    if level is None or config.levels is None:
+        return config.buildings[building_kind].output_per_worker
+    return getattr(config.levels, sector)[level]
+
+
 def _sector_output(
     state: GameState, config: Config, sector: str, building_kind: str, upkeep_paid: bool,
-    effort_pct: int = 0,
+    effort_pct: int = 0, worn_pct: int = 0,
 ) -> int:
     economy = config.economy
     employed = min(getattr(state.workers, sector), jobs_in_sector(state, config, sector))
-    output = employed * config.buildings[building_kind].output_per_worker
+    output = employed * _output_per_worker(state, config, sector, building_kind)
     if sector == "food":
         season_pct = {
             "winter": economy.farm_winter_pct,
@@ -152,13 +206,16 @@ def _sector_output(
         output = output * economy.unpaid_upkeep_output_pct // 100
     # The people's effort this month (engine/people.py); 0 changes nothing.
     output = output * (100 + effort_pct) // 100
+    if worn_pct:  # stone upkeep not paid in full: worn buildings yield less
+        output = output * (100 - worn_pct * config.needs.worn_output_loss_pct // 100) // 100
     return output
 
 
-def _produce(state: GameState, config: Config, upkeep_paid: bool, effort_pct: int = 0) -> None:
-    state.food += _sector_output(state, config, "food", "farm", upkeep_paid, effort_pct)
-    state.wood += _sector_output(state, config, "wood", "sawmill", upkeep_paid, effort_pct)
-    state.stone += _sector_output(state, config, "stone", "quarry", upkeep_paid, effort_pct)
+def _produce(state: GameState, config: Config, upkeep_paid: bool, effort_pct: int = 0,
+             worn_pct: int = 0) -> None:
+    state.food += _sector_output(state, config, "food", "farm", upkeep_paid, effort_pct, worn_pct)
+    state.wood += _sector_output(state, config, "wood", "sawmill", upkeep_paid, effort_pct, worn_pct)
+    state.stone += _sector_output(state, config, "stone", "quarry", upkeep_paid, effort_pct, worn_pct)
 
 
 def _consume_food(state: GameState, config: Config, events: list[Event]) -> tuple[int, int]:
@@ -339,17 +396,19 @@ def _feast_bonus(state: GameState, config: Config) -> int:
 
 def _update_mood(
     state: GameState, config: Config, needed: int, missing_pct: int, deaths: int,
-    petition_mood: int = 0,
+    petition_mood: int = 0, cold_pct: int = 0,
 ) -> None:
     """@brief Move mood toward its target (inertia), then add the feast bonus,
-    subtract the shock of a famine and its deaths, and add the effect of
-    the sovereign's answer to a petition: all immediate."""
+    subtract the shock of a famine and its deaths and of missing firewood,
+    and add the effect of the sovereign's answer to a petition: all immediate."""
     target = _target_mood(state, config, needed, missing_pct, deaths)
     # Python's // floors negative numbers too, which is still deterministic.
     state.mood += (target - state.mood) * config.mood.approach_pct // 100
     state.mood += _feast_bonus(state, config)
     state.mood -= missing_pct * config.mood.famine_shock_per_missing_pct + deaths * config.mood.death_shock
     state.mood += petition_mood
+    if cold_pct:
+        state.mood -= cold_pct * config.needs.cold_shock_per_pct
     state.mood = max(0, min(1000, state.mood))
 
 
@@ -414,8 +473,10 @@ def expected_output(state: GameState, config: Config, people: PeopleChoice | Non
     _apply_fixed_rules(trial, config, events)
     _advance_construction(trial, events)
     upkeep_paid = _collect_taxes_and_upkeep(trial, config, events)
+    _burn_firewood(trial, config, events)
+    worn_pct = _pay_stone_upkeep(trial, config, events)
     before = {"food": trial.food, "wood": trial.wood, "stone": trial.stone}
-    _produce(trial, config, upkeep_paid, _people_effects(config, people)[0])
+    _produce(trial, config, upkeep_paid, _people_effects(config, people)[0], worn_pct)
     return {"food": trial.food - before["food"], "wood": trial.wood - before["wood"],
             "stone": trial.stone - before["stone"]}
 
@@ -450,14 +511,16 @@ def resolve_turn(state: GameState, orders: list[Order], config: Config,
     _apply_fixed_rules(new_state, config, events)
     _advance_construction(new_state, events)
     upkeep_paid = _collect_taxes_and_upkeep(new_state, config, events)
+    cold_pct = _burn_firewood(new_state, config, events)
+    worn_pct = _pay_stone_upkeep(new_state, config, events)
     effort_pct, birth_pct, petition_mood = _people_effects(config, people)
-    _produce(new_state, config, upkeep_paid, effort_pct)
+    _produce(new_state, config, upkeep_paid, effort_pct, worn_pct)
     territory.clear_land(new_state, config, events)
     needed, missing_pct = _consume_food(new_state, config, events)
     _spoil_food(new_state, config, events)
     deaths = _update_demography(new_state, config, missing_pct, events, birth_pct)
     _rescale_workers(new_state, events)
-    _update_mood(new_state, config, needed, missing_pct, deaths, petition_mood)
+    _update_mood(new_state, config, needed, missing_pct, deaths, petition_mood, cold_pct)
     _update_unrest(new_state, config, events)
     _check_game_over(new_state, events)
 

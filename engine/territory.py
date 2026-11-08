@@ -43,11 +43,14 @@ def _load_world(config: Config) -> list[str]:
     return [row for row in rows if row]
 
 
-def start_territory(state: GameState, config: Config, seed: int) -> None:
-    """@brief Put a new realm on the map: copy the world, pick the site from
-    the seed, own the core and place the core's square, buildings and zones.
+def start_territory(state: GameState, config: Config, seed: int, site_index: int | None = None) -> None:
+    """@brief Put a new realm on the map: copy the world, pick the site,
+    own the core and place the core's square, buildings and zones, and
+    give the realm the site's land levels when the game has them.
     The core's buildings replace the counted ones of [start]; they are the
     same 4 farms, 1 sawmill, 1 quarry and 6 houses.
+    @param site_index Index into [map] sites; None = picked by the seed
+           (games with one realm, as before).
     @throws ValueError if the world or the core file is malformed.
     """
     world = _load_world(config)
@@ -55,7 +58,8 @@ def start_territory(state: GameState, config: Config, seed: int) -> None:
     size, core_size = len(world), config.map.core_size
     if any(len(row) != size for row in world) or len(core["rows"]) != core_size:
         raise ValueError("world must be square and the core core_size x core_size")
-    site_x, site_y = config.map.sites[seed % len(config.map.sites)]
+    site = (seed if site_index is None else site_index) % len(config.map.sites)
+    site_x, site_y = config.map.sites[site]
     if [row[site_x:site_x + core_size] for row in world[site_y:site_y + core_size]] != core["rows"]:
         raise ValueError(f"the world at site ({site_x},{site_y}) does not match the core")
     state.terrain = world
@@ -73,6 +77,8 @@ def start_territory(state: GameState, config: Config, seed: int) -> None:
     state.zones = [Zone(z["name"], z["purpose"], site_x + z["x1"], site_y + z["y1"],
                         site_x + z["x2"], site_y + z["y2"]) for z in core["zones"]]
     state.free_tiles = 0  # free space comes from the map
+    if config.levels is not None and config.map.site_levels is not None:
+        state.land_levels = dict(zip(("food", "wood", "stone"), config.map.site_levels[site]))
 
 
 def footprint(config: Config, kind: str, x: int, y: int) -> list[tuple[int, int]]:

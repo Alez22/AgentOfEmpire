@@ -158,7 +158,7 @@ def test_a_snapshot_saved_before_the_map_still_loads(start_state):
 
 from engine import resolve_turn  # noqa: E402
 from engine.territory import WILD, claim_price, next_claim, owned_count  # noqa: E402
-from engine.turn import jobs_in_sector  # noqa: E402
+from engine.turn import firewood_needed, jobs_in_sector  # noqa: E402
 
 
 def _claim(state, config, **order):
@@ -233,10 +233,10 @@ def test_felling_gives_wood_and_leaves_a_plain(start_state, config):
     assert work == config.map.clear_work_forest
     start_state.workers.food -= work
     start_state.workers.clearing = work
-    before = start_state.wood
+    before = start_state.wood - firewood_needed(start_state, config)  # January: firewood burns first
     state = resolve_turn(start_state, [], config).state
     assert state.terrain[y][x] == "." and state.owned[y][x] == OWNED
-    produced_by_sawmill = state.workers.wood * config.buildings["sawmill"].output_per_worker
+    produced_by_sawmill = state.workers.wood * config.levels.wood[start_state.land_levels["wood"]]
     assert state.wood >= before + work * config.map.fell_wood_per_work + produced_by_sawmill - 1
 
 

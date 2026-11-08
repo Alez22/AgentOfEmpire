@@ -11,7 +11,8 @@ from engine.state import Building, GameState, Workers, Zone
 
 # 2: the territory (map rows, zones, square, building ids and places). Format 1
 # snapshots still load: the new fields have defaults (no map).
-FORMAT_VERSION = 2
+# 3: land_levels (hidden levels of the site). Older snapshots load with none.
+FORMAT_VERSION = 3
 
 
 def state_to_dict(state: GameState) -> dict:

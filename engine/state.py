@@ -95,6 +95,10 @@ class GameState:
     # [x, y, worker-months left].
     clearing_queue: list[list[int]] = field(default_factory=list)
     land_paid_total: int = 0  # gold paid for claimed tiles, into the land fund
+    # Hidden land levels of the realm's site: {"food": "rich", "wood": "fair",
+    # "stone": "poor"}. Empty for games without levels: buildings yield their
+    # config value. Never shown to players (docs/DESIGN.md, "Land levels").
+    land_levels: dict[str, str] = field(default_factory=dict)
 
     def has_map(self) -> bool:
         return bool(self.terrain)
@@ -103,10 +107,12 @@ class GameState:
         return self.children + self.adults + self.elders
 
 
-def new_game(config: Config, seed: int) -> GameState:
+def new_game(config: Config, seed: int, site_index: int | None = None) -> GameState:
     """@brief Build the starting state from the [start] section.
     @param config Loaded balance values.
     @param seed Seed saved in the state for future random rules.
+    @param site_index Which starting site of the map, for games with several
+           realms (each its own site); None = the site the seed picks.
     @return Fresh state at turn 1 (January). With a [map] section the realm
             starts on the map (engine/territory.py) and its buildings come
             from the core file instead of the [start] counts.
@@ -144,5 +150,5 @@ def new_game(config: Config, seed: int) -> GameState:
     if config.map is not None:
         # Imported here: territory imports this module for Building and Zone.
         from engine.territory import start_territory
-        start_territory(state, config, seed)
+        start_territory(state, config, seed, site_index)
     return state

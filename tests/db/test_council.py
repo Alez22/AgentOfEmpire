@@ -497,12 +497,13 @@ def test_briefings_show_the_harvest_and_the_empty_jobs(db, realm, settings):
     client = FakeClient()
     meeting.hold_meeting(db, realm_id, client, settings)  # January: farms at 50 %
     treasurer, architect = client.calls[0]["user"], client.calls[1]["user"]
-    # 54 farmers x 15 x 50 % = 405; 1600 + 405 - 860 eaten = 1145, minus 2 % rot = 1123.
-    assert ("Harvest expected this month if nothing changes: 405 food (winter: farms yield 50%). "
-            "After eating and rot the store would go from 1600 to about 1123: it shrinks.") in treasurer
+    # 53 farmers x 15 x 50 % = 397; 1600 + 397 - 860 eaten = 1137, minus 2 % rot = 1115.
+    # (Seed 3: a site with every land level fair, so the yields are the buildings' own.)
+    assert ("Harvest expected this month if nothing changes: 397 food (winter: farms yield 50%). "
+            "After eating and rot the store would go from 1600 to about 1115: it shrinks.") in treasurer
     assert "Without any harvest it would last about 1.8 months." in treasurer
-    assert "Jobs without workers: food 6, wood 6, stone 8." in architect
-    assert "Expected this month if nothing changes: food +405, wood +24, stone +8." in architect
+    assert "Jobs without workers: food 7, wood 6, stone 7." in architect
+    assert "Expected this month if nothing changes: food +397, wood +24, stone +12." in architect
 
 
 def test_orders_that_change_nothing_leave_the_plan(db, realm, settings):
@@ -510,7 +511,7 @@ def test_orders_that_change_nothing_leave_the_plan(db, realm, settings):
     plan = [
         {"proposer": "treasurer", "order": {"action": "set_tax", "rate": 10}},        # taxes already 10
         {"proposer": "treasurer", "order": {"action": "set_ration", "ration": "normal"}},
-        {"proposer": "architect", "order": {"action": "assign_workers", "food": 54, "wood": 4, "stone": 2}},
+        {"proposer": "architect", "order": {"action": "assign_workers", "food": 53, "wood": 4, "stone": 3}},
         {"proposer": "architect", "order": {"action": "build", "building": "farm"}},
     ]
     chancellor = json.dumps({"summary": "Maestà, ecco il piano.", "plan": plan})
@@ -563,9 +564,11 @@ def test_jobs_at_harvest_count_sites_finishing_this_month(db, realm, settings):
 def test_treasurer_sees_the_coming_seasons(db, realm, settings):
     _, realm_id = realm
     client = FakeClient()
-    meeting.hold_meeting(db, realm_id, client, settings)  # January, 54 farmers: 810 at full yield
-    assert ("- Coming seasons, with today's farmers: spring 100% (about 810 a month); "
-            "summer 120% (about 972 a month); autumn 130% (about 1053 a month). "
+    # January, 53 farmers: 397 this month, so about 794 at full yield (the line
+    # scales this month's rounded harvest).
+    meeting.hold_meeting(db, realm_id, client, settings)
+    assert ("- Coming seasons, with today's farmers: spring 100% (about 794 a month); "
+            "summer 120% (about 952 a month); autumn 130% (about 1032 a month). "
             "Months left in this season: 3.") in client.calls[0]["user"]
 
 

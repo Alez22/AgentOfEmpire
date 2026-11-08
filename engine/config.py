@@ -159,6 +159,28 @@ class MapConfig:
     clear_work_hill: int
     clear_work_forest: int
     fell_wood_per_work: int  # wood for each worker-month spent felling
+    # Land levels of each site, same order as sites: [food, wood, stone],
+    # each "poor", "fair" or "rich" (docs/DESIGN.md, "Market, needs and land
+    # levels"). None for games saved before: every realm yields the same.
+    site_levels: list[list[str]] | None = None
+
+
+@dataclass(frozen=True)
+class NeedsConfig:
+    """Steady needs for wood and stone (lab/market_closed.py, 2026-11-08)."""
+    firewood_months: list[int]  # month numbers, 1 = January
+    firewood_people: int  # 1 wood per this many people, each firewood month
+    cold_shock_per_pct: int  # mood lost at once per missing percent of firewood
+    stone_upkeep_buildings: int  # 1 stone per this many active buildings, each month
+    worn_output_loss_pct: int  # share of the missing stone percent lost from the month's output
+
+
+@dataclass(frozen=True)
+class LevelsConfig:
+    """Output per worker by land level: {"poor": 14, "fair": 15, "rich": 16}."""
+    food: dict[str, int]
+    wood: dict[str, int]
+    stone: dict[str, int]
 
 
 @dataclass(frozen=True)
@@ -174,6 +196,9 @@ class Config:
     people: PeopleConfig | None = None
     # None for games saved before the territory: no map, free_tiles instead.
     map: MapConfig | None = None
+    # None for games saved before the market's needs and land levels.
+    needs: NeedsConfig | None = None
+    levels: LevelsConfig | None = None
 
 
 def load_raw_config(path: Path = DEFAULT_CONFIG_PATH) -> dict:
@@ -209,4 +234,6 @@ def config_from_dict(raw: dict) -> Config:
         unrest=UnrestConfig(**raw["unrest"]),
         people=PeopleConfig(**raw["people"]) if "people" in raw else None,
         map=MapConfig(**raw["map"]) if "map" in raw else None,
+        needs=NeedsConfig(**raw["needs"]) if "needs" in raw else None,
+        levels=LevelsConfig(**raw["levels"]) if "levels" in raw else None,
     )

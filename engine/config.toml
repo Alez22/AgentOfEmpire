@@ -11,9 +11,9 @@ wood = 150
 stone = 100
 gold = 100
 free_tiles = 7  # only for games without a map (saved before the territory)
-workers_food = 54
+workers_food = 53  # was 54: the third stone worker covers the stone upkeep ([needs])
 workers_wood = 4
-workers_stone = 2
+workers_stone = 3  # was 2
 tax_rate = 10
 ration = "normal"
 mood = 500  # was 600: equal to the base, so the mood no longer drifts down by itself
@@ -86,6 +86,14 @@ world_file = "world.txt"  # in engine/maps/; copied into the state at game start
 core_file = "core.toml"
 # Top-left tile of the 8 starting sites; the seed picks one.
 sites = [[4, 4], [26, 4], [48, 4], [4, 26], [48, 26], [4, 48], [26, 48], [48, 48]]
+# Land levels of each site, same order: [food, wood, stone]. Zero sum: one
+# rich, one fair and one poor resource, or all fair. Ordered so that any
+# three sites in a row differ in every resource as far as possible (a game
+# of N realms takes N sites in a row). Unknown to the players.
+site_levels = [
+  ["rich", "fair", "poor"], ["poor", "rich", "fair"], ["fair", "poor", "rich"], ["fair", "fair", "fair"],
+  ["rich", "poor", "fair"], ["fair", "rich", "poor"], ["poor", "fair", "rich"], ["fair", "fair", "fair"],
+]
 core_size = 12
 square_size = 2
 max_zones = 12
@@ -103,6 +111,23 @@ clear_work_plain = 3  # lab: at 6 no farm on new land in two years
 clear_work_hill = 10
 clear_work_forest = 12
 fell_wood_per_work = 10  # lab: at 5 felling paid less than a sawmill worker (6)
+
+# Steady needs for wood and stone, so they are worth trading (lab/market_closed.py,
+# docs/DESIGN.md "Market, needs and land levels"). Without this section (games
+# saved before) nothing is burnt and buildings need no stone.
+[needs]
+firewood_months = [11, 12, 1, 2, 3]  # lab: January to March only left wood unsold
+firewood_people = 2  # lab: 1 per person was too much (revolts at month 8)
+cold_shock_per_pct = 2
+stone_upkeep_buildings = 1  # lab: 1 per 2 left stone barely traded
+worn_output_loss_pct = 50  # half the missing share, as unpaid gold upkeep halves the output
+
+# Output per worker by land level; it replaces output_per_worker for realms
+# on a site with levels. Fair equals the buildings' values above.
+[levels]
+food = { poor = 14, fair = 15, rich = 16 }  # narrow: a realm poor in food fell even with the market
+wood = { poor = 3, fair = 6, rich = 9 }
+stone = { poor = 2, fair = 4, rich = 6 }
 
 [economy]
 food_per_child = 6

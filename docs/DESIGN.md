@@ -439,7 +439,7 @@ Target mood = 500 ‰ + sum of modifiers; the real mood moves 25 % of the distan
 
 With no orders from the sovereign, the first year should go like this (`tests/test_first_year.py`):
 
-- **Food**: at full output 54 × 15 = 810 units are produced per month and 860 eaten; then 2 % of the stock spoils. Winter takes the reserve from 1600 to about 195, spring holds it near 100, and the year closes at about 1150, helped by the fixed rule that sends new adults to the 6 free farm jobs. Without orders the second winter is a famine and the people revolt at turn 20: a passive sovereign loses in the second year.
+- **Food** (before the stone upkeep, 2026-11-08: now 53 farmers and 3 on stone): at full output 54 × 15 = 810 units are produced per month and 860 eaten; then 2 % of the stock spoils. Winter takes the reserve from 1600 to about 195, spring holds it near 100, and the year closes at about 1150, helped by the fixed rule that sends new adults to the 6 free farm jobs. Without orders the second winter is a famine and the people revolt at turn 20: a passive sovereign loses in the second year.
 - **Population**: +8 people in the first year (108); the houses (120 places) last about 2 years.
 - **Mood**: from 500 to about 430 ‰ at year end with taxes at 10 %, always above the threshold.
 - **Gold**: +30 from taxes, −12 upkeep, so +18 per month.
@@ -909,7 +909,7 @@ The vision is in Part 1, "Economy and trade" (closed market, land levels unknown
 
 **Land levels (engine and world map, `[levels]`)**
 
-- Every site of `[map] sites` carries a level per resource: poor, fair or rich. The levels belong to the world (`engine/maps/`), in a zero-sum spread: one rich, one fair, one poor resource in any order, and two sites all fair.
+- Every site of `[map] sites` carries a level per resource: poor, fair or rich (`[map] site_levels`, next to the sites: the world's description, stored with each game's config). A zero-sum spread: one rich, one fair, one poor resource in any order, and two sites all fair. The order puts different profiles side by side, because a game of N realms takes N sites in a row from the one the seed picks.
 - Output per worker by level: food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6. They replace the building's `output_per_worker` for realms on a map with levels.
 - The realm keeps its levels in the state (`land_levels`), so a replay needs nothing else. **Each realm of a game gets its own site** (by realm order, not by the seed: today every realm of a game would start on the same site).
 - **Hidden**: no page, briefing or manual names a level. The manual says that yields depend on the land and gives no number per worker; the briefings keep the realm's own output and expected output (that is how a council finds out).
@@ -942,7 +942,7 @@ The vision is in Part 1, "Economy and trade" (closed market, land levels unknown
 
 **Order of work** (one commit each, with tests)
 
-1. Engine: needs A and B, land levels, a site per realm.
+1. Engine: needs A and B, land levels, a site per realm. **Built 2026-11-08** (`[needs]`, `[levels]`, `[map] site_levels` in `engine/config.toml`; `engine/turn.py`; snapshot format 3; `tests/test_needs.py`). The manual still gives the buildings' yields until step 4.
 2. Engine: the market and the `trade` order.
 3. Database: market states, game-level resolution and replay.
 4. Council: briefing, manual, prompts, the Voice; the market page on the phone.

@@ -1,7 +1,9 @@
+from dataclasses import replace
+
 import pytest
 
 from engine import new_game, parse_order, resolve_turn
-from engine.turn import food_needed
+from engine.turn import firewood_needed, food_needed, stone_upkeep
 from engine.state import Workers
 
 
@@ -9,6 +11,12 @@ def _order(raw):
     order, code, _ = parse_order(raw)
     assert code is None
     return order
+
+
+def _without_needs(config):
+    """@brief The rules before firewood, stone upkeep and land levels, for the
+    hand checks written against them (the sections are optional)."""
+    return replace(config, needs=None, levels=None)
 
 
 def test_input_state_is_not_modified(start_state, config):
@@ -52,6 +60,7 @@ def test_empty_granary_causes_famine(start_state, config):
 
 
 def test_unpaid_upkeep_halves_production(start_state, config):
+    config = _without_needs(config)
     start_state.gold = 0
     start_state.tax_rate = 0
     result = resolve_turn(start_state, [], config)
@@ -75,12 +84,13 @@ def test_finished_game_cannot_be_resolved(start_state, config):
 
 
 def test_stored_food_spoils_after_consumption(start_state, config):
+    config = _without_needs(config)
     start_state.food = 10_000
     result = resolve_turn(start_state, [], config)
     spoiled = [e for e in result.events if e.kind == "food_spoiled"]
     assert spoiled
-    # Winter: 54 * 15 / 2 = 405 produced, 860 eaten, then the spoilage share of the rest rots.
-    stock_after_eating = 10_000 + 405 - 860
+    # Winter: 53 * 15 / 2 = 397 produced, 860 eaten, then the spoilage share of the rest rots.
+    stock_after_eating = 10_000 + 397 - 860
     assert spoiled[0].data["amount"] == stock_after_eating * config.economy.food_spoilage_pct // 100
     assert result.state.food == stock_after_eating - spoiled[0].data["amount"]
 
@@ -99,7 +109,11 @@ def test_expected_output_matches_a_month_without_orders(config):
         if not any(e.kind == "famine" for e in result.events):
             needed = food_needed(state, config)
             assert result.state.food == state.food + estimate["food"] - needed - spoiled
-        assert result.state.wood == state.wood + estimate["wood"]
+        assert result.state.wood == state.wood + estimate["wood"] - firewood_needed(state, config)
+        # The upkeep counts the buildings active at production (sites finishing
+        # this month included): the same as at the end of a month without orders.
+        stone_paid = min(state.stone, stone_upkeep(result.state, config))  # a short stock pays what it has
+        assert result.state.stone == state.stone + estimate["stone"] - stone_paid
         state = result.state
 
 
