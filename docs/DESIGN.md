@@ -1213,6 +1213,57 @@ The rules Claude followed as the three sovereigns of game 24 (`docs/game24_notes
 
 **Not in this version**: taking over an absent player (phase 3), personality, audiences, mandates, debate.
 
+## The market as a building, merchants and their mood (village block A, spec approved 2026-11-08)
+
+The vision is in Part 1 ("The eras": every class is born from a building; "Travellers, bandits and migration"). The village is built in two blocks: **A** (this one) the market as a building and the merchants as a class with their own mood; **B+C** together, later, the bandits, the watchtower, the Gastaldo and the militia. Values in brackets come from a lab before the engine (decided 2026-11-08). As always, every new rule hangs on a config field: a game saved before replays unchanged.
+
+**The market building** (`[buildings.market]`, flag `[market] needs_building = true`)
+
+- The realm starts **without** a market. The building costs wood and stone, no gold and no rare resource, [2–3 months] of works, [~2 hexes] in a `center` zone. **One per realm** (refusal `ONE_PER_REALM`).
+- Until it is active, `trade` is refused (`NO_MARKET_BUILDING`). A site under construction does not count.
+- **No prices without the market** (decided 2026-11-08): the realm sees no price, stock or total of the warehouse, neither in the briefings nor on the market page. The manual explains how to build it. Prices of the outside world come only with the travellers (later).
+- The warehouse is still one for the whole world, with its start stock: the first realm to open finds it full and the start price.
+- Games without the flag (24–26) keep the market open from the first month.
+
+**Merchants: jobs at the market**
+
+- The market offers [~6] jobs in a new sector `trade` (`Workers.trade`; `assign_workers` gets a `trade` field, the Architect assigns them).
+- **Trade capacity**: at most `merchants × [lots_per_merchant]` lots a month, buys and sells together. A trade order that goes beyond what is left is refused (`TRADE_CAPACITY`, with the lots still available); orders are checked in priority order, as today.
+- **Tax on trade** (decided 2026-11-08): today a buyer pays price + 10 % and a seller gets price − 10 %; the 10 % on each side leaves the game. The realm's own merchants handle its trades, so [a share] of the margin on the realm's side of its own trades, summed over the month, goes back to its treasury (the crown taxes what the merchants earned); the rest still leaves the game. It mints no gold (the closed market stays zero sum) and makes a market with merchants worth more than an empty one. The share stays well below 100 %, or the gold sink is gone; the lab sets it.
+
+**Merchants: a class with its own mood** (decided 2026-11-08: needed because every class flees by its own discontent)
+
+- The class: the adults working at the market (`Workers.trade`). Its children are not counted apart in block A (they matter for flight, block B+C).
+- State: `mood`, `low_mood_turns` and `unrest` stay the peasants' (games saved before unchanged, and the ~20 places that read them stay as they are); a new `classes: {"merchants": {mood, low_mood_turns, unrest}}`, empty until the market is active. One entry per class born from a building: artisans, soldiers and clergy are added later as data (config), not code.
+- **One mood and unrest engine for every class** (decided 2026-11-08, so the town adds classes without changing the engine): the same functions compute target mood, inertia, shocks and the unrest ladder for each class, peasants included; what differs is in `[classes.<name>]` of the config (own factors, approach, threshold, effects of each step).
+- **Factors**: the shared ones (hunger, ration, taxes, deaths, housing) plus their own: **trade** (a bonus when the market is busy, a malus after months with little or no trade). Not the reserve of the granaries: they care about the market, not the fields. The same inertia as the peasants' mood.
+- **Memory horizon**: longer than the peasants' (Part 1: "merchants a year or more"): [a slower approach, e.g. 10 % a month instead of 25 %]. Content merchants stay content through a bad month, angry ones stay angry.
+- **What their mood does in block A**: below the threshold their **effort** drops (fewer lots of capacity, like the peasants' effort on the yields). Flight comes with block B+C.
+- **Unrest ladder per class** (decided 2026-11-08): each class has its own ladder calm → protests → strike → revolt, moved by its own mood. Effects per class from the config: merchants' strike = the market stops (no trade that month), peasants' as today (output 70 %). A class's ladder may stop below revolt (`max_unrest`): in the village the merchants stop at the strike, because a handful of merchants cannot topple the crown; only the peasants' revolt ends the game, as today, until "revolt as odds" (Part 1) arrives. Unrest is public per class ("i mercanti scioperano"), the moods never.
+- **The square**: the Voice of the square tells the merchants too, in its usual call (no extra call): one more paragraph, "at the market they say…", from their mood band and factors. The square gains one voice at a time. The numbers stay hidden from sovereign and council.
+- **The people decide**: the people's model keeps playing the peasants only. The merchants decide nothing in block A.
+
+**Council and sovereign**
+
+- The Architect's craft: the market is the first goal of the village, to build before the second winter; merchants to assign once it opens.
+- The Treasurer: without a market, its briefing says so and the `trade` order is not in its formats (the "no market" rule, today per game, becomes per realm).
+- Automatic sovereign: a new rule **R10 build the market** (a directive to the Architect when there is none and wood and stone allow it, [from spring]), otherwise automatic realms never trade.
+
+**UI**: the kingdom page shows the merchants and the market; the market page without a market says so and shows nothing of the warehouse; a sprite for the market on the map; Italian labels of the new orders and refusals.
+
+**Database**: no migration; the building, the merchants and their mood live in the snapshot (new snapshot format).
+
+**Lab first** (`lab/village_market.py`, from the 8-realm lab): realms that open the market at different months. To find: cost and months of the building, jobs, lots per merchant, the share of the margin as trade tax, the merchants' trade factor; to check: the market is reachable before the second winter, the first to open gains without running away, merchants' mood moves for real reasons.
+
+**Order of work** (one commit each, with tests)
+
+1. Lab and values.
+2. Engine: the building, the `trade` sector, capacity, `NO_MARKET_BUILDING`, the trade tax.
+3. Engine: mood and unrest per class (one engine, `[classes.*]`), the merchants' effort and strike.
+4. Council: briefings, manual, prompts and craft, the Voice's second voice, R10.
+5. UI: kingdom, market page, map sprite, labels.
+6. A 12-month game with three automatic realms.
+
 ## Web UI
 
 Server-rendered pages (FastAPI with Jinja2 templates), phone first, in the style of the mockups: dark ground, gold, Cormorant Garamond titles, one colour per council member. Every action is a plain form followed by a redirect, so it works without JavaScript and reloading the page does not repeat the action; HTMX (vendored, not from a CDN) is used only to refresh the council and audience panels. Approved instead of TypeScript for the prototype: the map will come as a separate component or with the move to TypeScript, without changing the APIs. All text shown to players is in Italian.
