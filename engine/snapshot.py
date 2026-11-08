@@ -7,9 +7,11 @@ then need a conversion function, otherwise old games cannot be reloaded.
 import json
 from dataclasses import asdict
 
-from engine.state import Building, GameState, Workers
+from engine.state import Building, GameState, Workers, Zone
 
-FORMAT_VERSION = 1
+# 2: the territory (map rows, zones, square, building ids and places). Format 1
+# snapshots still load: the new fields have defaults (no map).
+FORMAT_VERSION = 2
 
 
 def state_to_dict(state: GameState) -> dict:
@@ -24,6 +26,7 @@ def state_from_dict(data: dict) -> GameState:
     fields = dict(data)
     fields["workers"] = Workers(**fields["workers"])
     fields["buildings"] = [Building(**building) for building in fields["buildings"]]
+    fields["zones"] = [Zone(**zone) for zone in fields.get("zones", [])]
     return GameState(**fields)
 
 

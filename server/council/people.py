@@ -154,7 +154,7 @@ def _petition_order(ctx: MeetingContext, raw: dict | None) -> tuple[dict | None,
     text = str(raw.get("text", "")).strip()[:MAX_PETITION_CHARS]
     if order is None or order.action not in PETITION_ACTIONS or not text:
         return None, ""
-    clean = order.model_dump(exclude={"priority"})
+    clean = order.model_dump(exclude={"priority"}, exclude_none=True)
     if _changes_nothing(ctx.state, clean):
         return None, ""
     if clean["action"] == "hold_feast" and clean["gold"] > ctx.state.gold:

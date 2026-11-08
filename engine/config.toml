@@ -10,7 +10,7 @@ food = 1600  # was 2000: a sensible player now reaches spring with a thin margin
 wood = 150
 stone = 100
 gold = 100
-free_tiles = 7
+free_tiles = 7  # only for games without a map (saved before the territory)
 workers_food = 54
 workers_wood = 4
 workers_stone = 2
@@ -24,6 +24,8 @@ houses = 6
 
 # Each building: cost, construction time, jobs, output per worker per month.
 # sector = which resource the workers produce ("" for houses).
+# width x height = footprint in tiles; terrain = what every tile must be;
+# needs_forest = at least one tile must touch a forest tile.
 [buildings.farm]
 wood = 40
 stone = 10
@@ -33,6 +35,9 @@ jobs = 15
 output_per_worker = 15
 sector = "food"
 housing = 0
+width = 3
+height = 3
+terrain = "plain"
 
 [buildings.sawmill]
 wood = 30
@@ -43,6 +48,10 @@ jobs = 10
 output_per_worker = 6
 sector = "wood"
 housing = 0
+width = 2
+height = 1
+terrain = "plain"
+needs_forest = true
 
 [buildings.quarry]
 wood = 40
@@ -53,6 +62,9 @@ jobs = 10
 output_per_worker = 4
 sector = "stone"
 housing = 0
+width = 2
+height = 2
+terrain = "hill"
 
 [buildings.house]
 wood = 30
@@ -63,6 +75,22 @@ jobs = 0
 output_per_worker = 0
 sector = ""
 housing = 20
+width = 1
+height = 1
+terrain = "plain"
+
+# The territory (docs/DESIGN.md, "Territory"). Without this section (games
+# saved before) a realm has no map and counts free_tiles instead.
+[map]
+world_file = "world.txt"  # in engine/maps/; copied into the state at game start
+core_file = "core.toml"
+# Top-left tile of the 8 starting sites; the seed picks one.
+sites = [[4, 4], [26, 4], [48, 4], [4, 26], [48, 26], [4, 48], [26, 48], [48, 48]]
+core_size = 12
+square_size = 2
+max_zones = 12
+demolish_gold = 10
+demolish_refund_pct = 25  # of the wood and stone the building cost
 
 [economy]
 food_per_child = 6

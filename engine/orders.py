@@ -4,7 +4,7 @@ These Pydantic models are the single source of truth for the action
 catalog: FastAPI publishes them as OpenAPI (-> TypeScript types) and the
 same JSON schema is given to the LLMs as their mandatory reply format.
 Only shape checks live here; checks that need the game state or the
-config (costs, max tax rate, free tiles) are in validator.py.
+config (costs, max tax rate, free tiles, the map) are in validator.py.
 """
 
 from typing import Annotated, Literal
@@ -21,6 +21,11 @@ class BaseOrder(BaseModel):
 class BuildOrder(BaseOrder):
     action: Literal["build"]
     building: Literal["farm", "sawmill", "quarry", "house"]
+    # On the map: the zone to build in and, optionally, the top-left tile.
+    # Without them the engine picks the place nearest the square.
+    zone: str | None = None
+    x: int | None = None
+    y: int | None = None
 
 
 class AssignWorkersOrder(BaseOrder):
@@ -45,8 +50,29 @@ class HoldFeastOrder(BaseOrder):
     gold: int = Field(gt=0)
 
 
+class ZoneSpec(BaseModel):
+    name: str = Field(min_length=1, max_length=40)
+    purpose: Literal["fields", "center", "houses", "workshops", "reserve"]
+    x1: int
+    y1: int
+    x2: int
+    y2: int
+
+
+class SetZonesOrder(BaseOrder):
+    """The whole town plan; it replaces the one in force."""
+    action: Literal["set_zones"]
+    zones: list[ZoneSpec]
+
+
+class DemolishOrder(BaseOrder):
+    action: Literal["demolish"]
+    building_id: int = Field(ge=1)
+
+
 Order = Annotated[
-    BuildOrder | AssignWorkersOrder | SetTaxOrder | SetRationOrder | HoldFeastOrder,
+    BuildOrder | AssignWorkersOrder | SetTaxOrder | SetRationOrder | HoldFeastOrder
+    | SetZonesOrder | DemolishOrder,
     Field(discriminator="action"),
 ]
 

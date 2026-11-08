@@ -43,6 +43,12 @@ class BuildingConfig:
     output_per_worker: int
     sector: str
     housing: int
+    # Footprint and terrain on the map. Defaults: games saved before the
+    # territory had no map, so the values are never read for them.
+    width: int = 1
+    height: int = 1
+    terrain: str = "plain"
+    needs_forest: bool = False
 
 
 @dataclass(frozen=True)
@@ -136,6 +142,19 @@ class PeopleConfig:
 
 
 @dataclass(frozen=True)
+class MapConfig:
+    """The territory: map files, starting sites, demolition (engine/territory.py)."""
+    world_file: str  # in engine/maps/
+    core_file: str
+    sites: list[list[int]]  # [x, y] top-left tile of each starting core
+    core_size: int
+    square_size: int
+    max_zones: int
+    demolish_gold: int
+    demolish_refund_pct: int  # of the building's wood and stone
+
+
+@dataclass(frozen=True)
 class Config:
     start: StartConfig
     buildings: dict[str, BuildingConfig]
@@ -146,6 +165,8 @@ class Config:
     # None for games saved before the people decided anything: they keep
     # their own rules and replay unchanged.
     people: PeopleConfig | None = None
+    # None for games saved before the territory: no map, free_tiles instead.
+    map: MapConfig | None = None
 
 
 def load_raw_config(path: Path = DEFAULT_CONFIG_PATH) -> dict:
@@ -180,4 +201,5 @@ def config_from_dict(raw: dict) -> Config:
         mood=MoodConfig(**raw["mood"]),
         unrest=UnrestConfig(**raw["unrest"]),
         people=PeopleConfig(**raw["people"]) if "people" in raw else None,
+        map=MapConfig(**raw["map"]) if "map" in raw else None,
     )

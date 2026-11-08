@@ -21,6 +21,18 @@ REJECTIONS = {
     "NOT_ENOUGH_WORKERS": "non ci sono abbastanza adulti",
     "NO_FREE_TILE": "nessuna casella libera",
     "DUPLICATE_POLICY": "già deciso in questo turno",
+    # The territory (engine/territory.py).
+    "NO_SPACE": "non c'è posto nella zona",
+    "UNKNOWN_ZONE": "zona sconosciuta",
+    "OUT_OF_MAP": "fuori dalla mappa",
+    "NOT_OWNED": "fuori dalle terre del regno",
+    "WRONG_TERRAIN": "terreno non adatto",
+    "NO_FOREST": "non tocca il bosco",
+    "OVERLAP": "sopra un altro edificio",
+    "OUTSIDE_ZONE": "fuori dalla sua zona",
+    "BAD_ZONES": "piano delle zone non valido",
+    "UNKNOWN_BUILDING": "edificio sconosciuto",
+    "NO_MAP": "questo regno non ha una mappa",
     # Reasons the council module gives for discarded proposals.
     "NOT_ROLE_ACTION": "fuori dalle sue competenze",
     "TOO_MANY_PROPOSALS": "troppe proposte",
@@ -46,7 +58,12 @@ def order_label(order: dict) -> str:
     """@brief 'Costruire una fattoria', 'Tasse al 12%', ..."""
     action = order.get("action")
     if action == "build":
-        return f"Costruire: {BUILDINGS.get(order.get('building'), order.get('building'))}"
+        where = f" ({order['zone']})" if order.get("zone") else ""
+        return f"Costruire: {BUILDINGS.get(order.get('building'), order.get('building'))}{where}"
+    if action == "set_zones":
+        return f"Nuovo piano della città: {len(order.get('zones') or [])} zone"
+    if action == "demolish":
+        return f"Abbattere l'edificio n. {order.get('building_id')}"
     if action == "set_tax":
         return f"Tasse al {order.get('rate')}%"
     if action == "set_ration":

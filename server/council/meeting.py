@@ -319,7 +319,7 @@ def _check_order(role: str, raw_order: object) -> tuple[dict | None, str]:
         return None, code
     if order.action not in ROLE_ACTIONS.get(role, ()):
         return None, "NOT_ROLE_ACTION"
-    return order.model_dump(exclude={"priority"}), ""
+    return order.model_dump(exclude={"priority"}, exclude_none=True), ""
 
 
 def _validate_proposals(role: str, raw_proposals: list) -> tuple[list[dict], list[dict]]:

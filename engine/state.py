@@ -18,6 +18,22 @@ SECTORS = ("food", "wood", "stone")
 class Building:
     kind: str
     turns_left: int  # 0 = active, > 0 = still under construction
+    # Place on the map (top-left tile, world coordinates) and a stable id
+    # for orders such as demolish. Defaults: games without a map.
+    id: int = 0
+    x: int = -1
+    y: int = -1
+
+
+@dataclass
+class Zone:
+    """One rectangle of the town plan, corners included (world coordinates)."""
+    name: str
+    purpose: str  # fields, center, houses, workshops, reserve
+    x1: int
+    y1: int
+    x2: int
+    y2: int
 
 
 @dataclass
@@ -64,6 +80,18 @@ class GameState:
     # Set when the council is formed; 0 for games saved before salaries.
     council_salary: int = 0
     game_over: str | None = None  # reason, or None while the game runs
+    # The territory (engine/territory.py). Empty for games without a map,
+    # which count free_tiles instead. terrain and owned are rows of the
+    # whole world, one character per tile: terrain ". ~ T ^" (plain,
+    # river, forest, hill); owned "-" not owned, "o" owned and cleared.
+    terrain: list[str] = field(default_factory=list)
+    owned: list[str] = field(default_factory=list)
+    zones: list[Zone] = field(default_factory=list)
+    square: list[int] = field(default_factory=list)  # [x, y] top-left tile
+    next_building_id: int = 1
+
+    def has_map(self) -> bool:
+        return bool(self.terrain)
 
     def population(self) -> int:
         return self.children + self.adults + self.elders
@@ -73,7 +101,9 @@ def new_game(config: Config, seed: int) -> GameState:
     """@brief Build the starting state from the [start] section.
     @param config Loaded balance values.
     @param seed Seed saved in the state for future random rules.
-    @return Fresh state at turn 1 (January).
+    @return Fresh state at turn 1 (January). With a [map] section the realm
+            starts on the map (engine/territory.py) and its buildings come
+            from the core file instead of the [start] counts.
     """
     start = config.start
     buildings = (
@@ -82,7 +112,7 @@ def new_game(config: Config, seed: int) -> GameState:
         + [Building("quarry", 0) for _ in range(start.quarries)]
         + [Building("house", 0) for _ in range(start.houses)]
     )
-    return GameState(
+    state = GameState(
         turn=1,
         rng_seed=seed,
         food=start.food,
@@ -105,3 +135,8 @@ def new_game(config: Config, seed: int) -> GameState:
         unrest="calm",
         last_feast_turn=0,
     )
+    if config.map is not None:
+        # Imported here: territory imports this module for Building and Zone.
+        from engine.territory import start_territory
+        start_territory(state, config, seed)
+    return state

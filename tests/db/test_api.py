@@ -41,11 +41,11 @@ def test_malformed_order_gives_422_and_is_not_stored(client, game):
 
 def test_check_is_a_dry_run(client, game):
     _, realm_id = game
-    orders = [{"action": "build", "building": "farm"} for _ in range(4)]
+    orders = [{"action": "build", "building": "house"} for _ in range(4)]  # 100 stone: three fit
     report = client.post(f"/realms/{realm_id}/orders/check", json=orders).json()
     assert [r["accepted"] for r in report["results"]] == [True, True, True, False]
     assert report["results"][3]["code"] == "INSUFFICIENT_RESOURCES"
-    assert report["remaining"]["wood"] == 150 - 3 * 40
+    assert report["remaining"]["stone"] == 100 - 3 * 30
     assert client.get(f"/realms/{realm_id}/state").json()["wood"] == 150
 
 

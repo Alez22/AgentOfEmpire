@@ -9,15 +9,22 @@ import copy
 from dataclasses import dataclass
 
 from engine.config import Config
+from engine import territory
 from engine.orders import (
     AssignWorkersOrder,
     BuildOrder,
+    DemolishOrder,
     HoldFeastOrder,
     Order,
     SetRationOrder,
     SetTaxOrder,
+    SetZonesOrder,
 )
-from engine.state import Building, GameState, Workers
+from engine.state import Building, GameState, Workers, Zone
+
+# Orders that change the map run before the others of the same priority,
+# so a build can use the new town plan and the tiles a demolition frees.
+MAP_FIRST_ACTIONS = ("set_zones", "demolish")
 
 
 @dataclass
@@ -39,9 +46,38 @@ def _reject(order: Order, code: str, message: str) -> OrderResult:
     return OrderResult(order, False, code, message)
 
 
+def _place_on_map(state: GameState, order: BuildOrder, config: Config) -> tuple[tuple[int, int] | None, OrderResult | None]:
+    """@brief Where the building goes: the given tile (or one tile away),
+    else the place nearest the square in the zone.
+    @return ((x, y), None), or (None, rejection).
+    """
+    if order.zone is not None and not any(zone.name == order.zone for zone in state.zones):
+        return None, _reject(order, "UNKNOWN_ZONE", f"no zone named '{order.zone}'")
+    if (order.x is None) != (order.y is None):
+        return None, _reject(order, "INVALID_PARAM", "give both x and y, or neither")
+    if order.x is None:
+        place = territory.find_place(state, config, order.building, order.zone)
+        if place is None:
+            where = f"zone '{order.zone}'" if order.zone else "any zone of its kind"
+            return None, _reject(order, "NO_SPACE", f"no room for a {order.building} in {where}")
+        return place, None
+    error = territory.place_error(state, config, order.building, order.x, order.y, order.zone)
+    if error is None:
+        return (order.x, order.y), None
+    place = territory.nudge(state, config, order.building, order.x, order.y, order.zone)
+    if place is None:
+        return None, _reject(order, *error)
+    return place, None
+
+
 def _apply_build(state: GameState, order: BuildOrder, config: Config) -> OrderResult:
     spec = config.buildings[order.building]
-    if state.free_tiles <= 0:
+    place = None
+    if state.has_map():
+        place, rejection = _place_on_map(state, order, config)
+        if rejection:
+            return rejection
+    elif state.free_tiles <= 0:
         return _reject(order, "NO_FREE_TILE", "no free tile for a new building")
     if state.wood < spec.wood or state.stone < spec.stone or state.gold < spec.gold:
         return _reject(
@@ -52,8 +88,43 @@ def _apply_build(state: GameState, order: BuildOrder, config: Config) -> OrderRe
     state.wood -= spec.wood
     state.stone -= spec.stone
     state.gold -= spec.gold
-    state.free_tiles -= 1
-    state.buildings.append(Building(order.building, spec.build_turns))
+    if place is None:  # no map: count the tile
+        state.free_tiles -= 1
+        state.buildings.append(Building(order.building, spec.build_turns))
+        return OrderResult(order, True)
+    state.buildings.append(Building(order.building, spec.build_turns, state.next_building_id, *place))
+    state.next_building_id += 1
+    return OrderResult(order, True)
+
+
+def _apply_zones(state: GameState, order: SetZonesOrder, config: Config) -> OrderResult:
+    if not state.has_map():
+        return _reject(order, "NO_MAP", "this realm has no map")
+    zones = [Zone(z.name.strip(), z.purpose, z.x1, z.y1, z.x2, z.y2) for z in order.zones]
+    error = territory.zones_error(state, config, zones)
+    if error:
+        return _reject(order, "BAD_ZONES", error)
+    state.zones = zones
+    return OrderResult(order, True)
+
+
+def _apply_demolish(state: GameState, order: DemolishOrder, config: Config) -> OrderResult:
+    """@brief Pull a building down at once: its tiles are free for the
+    orders after it, it produces nothing this month and costs no more upkeep.
+    Its workers stay assigned; beyond the jobs they produce nothing, as today."""
+    if not state.has_map():
+        return _reject(order, "NO_MAP", "this realm has no map")
+    building = next((b for b in state.buildings if b.id == order.building_id), None)
+    if building is None:
+        return _reject(order, "UNKNOWN_BUILDING", f"no building with id {order.building_id}")
+    cost = config.map.demolish_gold
+    if state.gold < cost:
+        return _reject(order, "INSUFFICIENT_RESOURCES", f"demolition needs {cost} gold")
+    spec = config.buildings[building.kind]
+    state.gold -= cost
+    state.wood += spec.wood * config.map.demolish_refund_pct // 100
+    state.stone += spec.stone * config.map.demolish_refund_pct // 100
+    state.buildings.remove(building)
     return OrderResult(order, True)
 
 
@@ -114,6 +185,10 @@ def _apply_one(
         return _apply_assign(state, order)
     if isinstance(order, HoldFeastOrder):
         return _apply_feast(state, order)
+    if isinstance(order, SetZonesOrder):
+        return _apply_zones(state, order, config)
+    if isinstance(order, DemolishOrder):
+        return _apply_demolish(state, order, config)
     return _apply_policy(state, order, config, policies_set)
 
 
@@ -125,7 +200,7 @@ def apply_orders(state: GameState, orders: list[Order], config: Config) -> list[
     @return One result per order, in the sequence they were evaluated.
     """
     policies_set: set[str] = set()
-    ordered = sorted(orders, key=lambda order: order.priority)
+    ordered = sorted(orders, key=lambda order: (order.priority, order.action not in MAP_FIRST_ACTIONS))
     return [_apply_one(state, order, config, policies_set) for order in ordered]
 
 

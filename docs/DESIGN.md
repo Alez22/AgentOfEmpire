@@ -802,21 +802,21 @@ Approved on 2026-11-08. The first step of the map, with a single realm: the city
 
 **Map**
 
-- **World**: 40 × 40 tiles (in `config.toml`), drawn by hand in a text file in the repo, the same for every game. Terrains: plain, river, forest, hill. Later it may be generated from the seed.
+- **World**: 64 × 64 tiles (`engine/maps/world.txt`; 40 × 40 left too little room between 8 cores), the same for every game, drawn with the help of `lab/draw_world.py`; the file is the source of truth. Terrains: plain, river, forest, hill. Later it may be generated from the seed.
 - **8 starting sites**, ready for the automatic states. Every site has the **same 12 × 12 core**, rotated or mirrored (symmetric starts). The seed picks the site of the realm.
 - **The core** is owned and cleared at the start: river, forest, hill, the square and the 12 starting buildings already placed, and a starting zone plan. The starting buildings take about 60 tiles, so the need to grow comes within the first year or two (12 × 12 to be confirmed by the lab).
 - **Footprints**: house 1 × 1, sawmill 2 × 1 (must touch a forest tile), quarry 2 × 2 (on hill), farm 3 × 3 (on plain), square 2 × 2 (fixed). No roads: buildings stand side by side.
-- **In the engine**: the tiles are part of the realm state (terrain, owned, cleared, building), every building has a position and an id; `free_tiles` goes away, free space comes from the map. The snapshot holds the map, so replay stays exact. `ENGINE_VERSION` goes up: older games stay readable but are no longer resolved (the existing rule).
+- **In the engine** (`engine/territory.py`): the world rows and the ownership rows are part of the realm state, every building has an id and a position, the zones and the square are in the state; free space comes from the map. The snapshot holds the map (about 10 KB a turn instead of 1 KB), so replay stays exact. Games saved before have no `[map]` in their config: they keep counting `free_tiles` and replay unchanged, so `ENGINE_VERSION` did not need to go up (snapshot format 2 loads format 1).
 
 **Town plan (the Architect)**
 
 - **`set_zones`**: the full list of zones, each a rectangle with a name and a purpose (`fields`, `center`, `houses`, `workshops`, `reserve`), at most 12. It replaces the plan in force.
-- **Checks**: inside the territory, no overlaps, every existing building in a zone of its purpose; houses are allowed in the center too. An invalid plan is refused with the reason and the Architect retries once in the same meeting; then the plan in force stays.
+- **Checks**: inside the map, no overlaps, every existing building (and the square) wholly in one zone of its purpose; houses are allowed in the center too. A zone may reach beyond the realm's land, to plan ahead for tiles to claim; buildings still stand only on owned, cleared tiles. `set_zones` and `demolish` run before the other orders of the same priority, so a build uses the new plan and the freed tiles. An invalid plan is refused with the reason and the Architect retries once in the same meeting; then the plan in force stays.
 - **When**: the prompt asks for a new plan only when the territory grew or the plan has no room for what is needed, not every month. It goes through the Chancellor's plan and the sovereign's approval like any order.
 
 **Building inside the zones**
 
-- **`build`** becomes `{building, zone}`, with optional `x`, `y`. Without coordinates the engine takes the first valid place in the zone nearest the square (fixed tie-break, deterministic). With coordinates it checks footprint, terrain, overlap and zone; a building sticking out by one tile is moved by one tile, otherwise the order is refused.
+- **`build`** becomes `{building, zone}`, with optional `x`, `y`. Without coordinates the engine takes the valid place nearest the square, preferring places aligned on the zone's grid (tidy rows, no farm half-way that wastes the zone); fixed tie-break, deterministic. Without a zone, any zone of the building's purpose. With coordinates it checks footprint, terrain, overlap and zone; a building sticking out by one tile is moved by one tile, otherwise the order is refused.
 - **The Architect's briefing**: the map of the territory plus a ring of two tiles as a text grid (as in the probe), the zones with **how many buildings of each kind still fit** ("campi sud: posto per 1 fattoria"), the buildings with their id and position.
 
 **Demolition**

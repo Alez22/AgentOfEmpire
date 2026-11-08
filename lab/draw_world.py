@@ -97,7 +97,7 @@ def preview(grid: list[list[str]], core: dict) -> str:
     """@brief The world with the starting buildings and the site numbers."""
     shown = [row[:] for row in grid]
     for index, (sx, sy) in enumerate(SITES):
-        for building in core["buildings"]:
+        for building in core["buildings"] + [{"kind": "square", **core["square"]}]:
             width, height = FOOTPRINTS[building["kind"]]
             for dy in range(height):
                 for dx in range(width):
@@ -112,7 +112,7 @@ def core_report(core: dict) -> str:
     for row in core["rows"]:
         for terrain in row:
             counts[terrain] = counts.get(terrain, 0) + 1
-    built = sum(FOOTPRINTS[b["kind"]][0] * FOOTPRINTS[b["kind"]][1] for b in core["buildings"])
+    built = sum(FOOTPRINTS[b["kind"]][0] * FOOTPRINTS[b["kind"]][1] for b in core["buildings"]) + 4  # + square
     return (f"core 12 x 12: plain {counts.get('.', 0)}, river {counts.get('~', 0)}, forest {counts.get('T', 0)},"
             f" hill {counts.get('^', 0)}; built {built} tiles; plain left free {counts.get('.', 0) - built + 4}"
             " (the quarry stands on hill)")

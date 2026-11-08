@@ -27,13 +27,13 @@ def test_bad_parameter_is_invalid_param():
     assert code == "INVALID_PARAM"
 
 
-def test_two_builds_beyond_the_wood_give_one_accept_and_one_reject(start_state, config):
-    # 150 wood: three farms (40 each) fit, the fourth does not.
-    orders = _orders(*[{"action": "build", "building": "farm"} for _ in range(4)])
+def test_two_builds_beyond_the_stone_give_one_accept_and_one_reject(start_state, config):
+    # 100 stone: three houses (30 each) fit, the fourth does not.
+    orders = _orders(*[{"action": "build", "building": "house"} for _ in range(4)])
     results = apply_orders(start_state, orders, config)
     assert [r.accepted for r in results] == [True, True, True, False]
     assert results[3].code == "INSUFFICIENT_RESOURCES"
-    assert start_state.wood == 150 - 3 * 40
+    assert start_state.stone == 100 - 3 * 30
 
 
 def test_priority_decides_who_gets_the_resources(start_state, config):
@@ -65,6 +65,7 @@ def test_more_workers_than_adults_is_rejected(start_state, config):
 
 
 def test_no_free_tile(start_state, config):
+    start_state.terrain = []  # a game saved before the map counts free tiles
     start_state.free_tiles = 0
     start_state.wood = 1000
     results = apply_orders(start_state, _orders({"action": "build", "building": "farm"}), config)

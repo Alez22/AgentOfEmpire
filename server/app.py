@@ -158,7 +158,7 @@ def _add_routes(app: FastAPI) -> None:
         return {
             "results": [
                 {
-                    "order": result.order.model_dump(),
+                    "order": result.order.model_dump(exclude_none=True),
                     "accepted": result.accepted,
                     "code": result.code,
                     "message": result.message,
@@ -173,7 +173,7 @@ def _add_routes(app: FastAPI) -> None:
     def submit_order(realm_id: int, order: Order, conn=Depends(_connection)):
         _require_realm_game(conn, realm_id)
         try:
-            order_id = games.submit_order(conn, realm_id, order.model_dump(), order.priority)
+            order_id = games.submit_order(conn, realm_id, order.model_dump(exclude_none=True), order.priority)
         except games.TurnClosedError as error:
             raise HTTPException(409, str(error)) from error
         return {"id": order_id}

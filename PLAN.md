@@ -103,8 +103,8 @@ Still mandatory before any game with other players: until then, nobody else on T
 - [ ] Hiring and dismissal: extreme persons for hire, persons moving between realms with their lessons and memories (person separate from post), unpaid salaries hurting loyalty, the full catalog (12 + 8 + 8 per role)
 - [ ] Tile map and more states, automatic ones too. **Step 1, the territory** (one realm; spec approved 2026-11-08):
   - [x] Feasibility: the Architect plans zones on a text map (`lab/urban_probe.py`: 7 of 11 fully valid, plans sensible)
-  - [ ] Draw the 40 × 40 world with 8 sites and the 12 × 12 core, for review
-  - [ ] Engine: map, footprints, zones, placement, demolition, migration
+  - [x] Draw the world (64 × 64, 8 sites) and the 12 × 12 core (`engine/maps/`)
+  - [x] Engine: map, footprints, zones, placement, demolition (`engine/territory.py`; no migration needed: the map lives in the snapshot)
   - [ ] Claiming (gold, land fund split in December) and clearing (labour, felling the forest), with the balance lab
   - [ ] Council: orders, briefings, manual, prompts; the probe again on the real map
   - [ ] The map page on the phone (mockup first)
