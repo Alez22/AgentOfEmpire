@@ -126,6 +126,19 @@ p { margin: 0; }
 .level span { font-size: 0.85rem; color: var(--ink-soft); }
 @media (max-width: 520px) { .levels { grid-template-columns: 1fr; } }
 
+/* Accordions: deep-dive parts open on click (native <details>, works without JS). */
+.more { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.more details { border-bottom: 1px solid var(--line); }
+.more summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 1fr auto; gap: 1rem; align-items: center; padding-block: 0.85rem; font-weight: 600; color: var(--ink); }
+.more summary::-webkit-details-marker { display: none; }
+.more summary::after { content: "+"; font: 500 1.4rem/1 var(--display); color: var(--gold); transition: transform 0.2s ease; }
+.more details[open] summary::after { transform: rotate(45deg); }
+.more summary:hover { color: var(--gold-bright); }
+.more summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.more .body { display: grid; gap: 0.9rem; padding-bottom: 1.1rem; color: var(--ink-soft); }
+.more .body p { color: var(--ink-soft); }
+@media (prefers-reduced-motion: reduce) { .more summary::after { transition: none; } }
+
 /* Status */
 .status { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.4rem; }
 .status ul { margin: 0; padding-left: 1.1rem; color: var(--ink-soft); display: grid; gap: 0.35rem; }
@@ -177,11 +190,11 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
   </div>
   <p>Un ruolo è una carica: il Tesoriere tiene i conti, l'Architetto costruisce, il Maresciallo comanda l'esercito, l'Ambasciatore tratta con gli altri regni. Chi occupa la carica è una persona, con un nome, una storia e cinque tratti: prudenza o audacia, lealtà, ambizione, onestà, competenza.</p>
   <p>All'inizio il consiglio è fatto di moderati. Più avanti assumerai: tra i candidati ci sono i profili più estremi, brillanti e pericolosi, e il curriculum può mentire. Capirai chi hai davanti solo col tempo. Licenziare costa: chi esce si porta via i segreti del consiglio e può venderli a un rivale.</p>
-  <div class="pairs">
-    <div class="pair"><b>Udienze private</b><span>Puoi parlare a tu per tu con un consigliere. Tutti sapranno che lo hai ricevuto, nessuno saprà cosa vi siete detti. Lui può tacere o abbellire, mai cambiare i numeri.</span></div>
-    <div class="pair"><b>Mandati</b><span>Linee guida durature per una carica, come "case prima dei campi". Il Cancelliere le esamina e le riscrive con parole sue prima che arrivino al ministro.</span></div>
-    <div class="pair"><b>Note segrete</b><span>I consiglieri si scrivono tra loro: patti, avvertimenti, alleanze. Tu non sai se esistono. Puoi solo chiedere, e sperare in una risposta onesta.</span></div>
-    <div class="pair"><b>Memoria</b><span>A fine stagione ognuno rilegge i mesi passati e ne trae lezioni. Un ministro spesso scavalcato diventa meno leale.</span></div>
+  <div class="more">
+    <details><summary>Udienze private</summary><div class="body"><p>Puoi parlare a tu per tu con un consigliere. Tutti sapranno che lo hai ricevuto, nessuno saprà cosa vi siete detti. Lui può tacere o abbellire, mai cambiare i numeri.</p></div></details>
+    <details><summary>Mandati</summary><div class="body"><p>Linee guida durature per una carica, come "case prima dei campi". Il Cancelliere le esamina e le riscrive con parole sue prima che arrivino al ministro.</p></div></details>
+    <details><summary>Note segrete</summary><div class="body"><p>I consiglieri si scrivono tra loro: patti, avvertimenti, alleanze. Tu non sai se esistono. Puoi solo chiedere, e sperare in una risposta onesta.</p></div></details>
+    <details><summary>Memoria</summary><div class="body"><p>A fine stagione ognuno rilegge i mesi passati e ne trae lezioni. Un ministro spesso scavalcato diventa meno leale.</p></div></details>
   </div>
 </section>
 
@@ -195,9 +208,17 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
     <p class="quote">«Finché c'è pane, il re faccia come gli pare», dice la vecchia al pozzo.</p>
     <p class="quote-source">Dalla piazza di una partita di prova, gennaio. I due ministri, nel rapporto successivo, hanno ripreso la storia della legna cara.</p>
   </figure>
+  <div class="more">
+    <details><summary>Il popolo decide</summary><div class="body">
   <p>Il popolo non si limita a parlare. Ogni mese decide quanto impegnarsi nei campi, se fare figli o rimandare, e qualche volta ti porta una petizione: meno tasse, una razione più generosa, una festa. Se la esaudisci si calma, se la respingi lo ricorderà.</p>
+    </div></details>
+    <details><summary>Le classi e la loro memoria</summary><div class="body">
   <p>Con il regno crescono le classi: contadini, artigiani e mercanti, clero, soldati. Ogni classe ha i suoi bisogni e la sua memoria. I contadini ricordano gli ultimi tre mesi, i mercanti tengono i conti di anni. La piazza diventa un coro di voci che non sempre concordano, e tocca a te decidere a chi credere.</p>
-  <p class="soft">Puoi anche scendere in piazza in incognito e ascoltare con le tue orecchie.</p>
+    </div></details>
+    <details><summary>In incognito</summary><div class="body">
+  <p>Puoi anche scendere in piazza in incognito e ascoltare con le tue orecchie.</p>
+    </div></details>
+  </div>
 </section>
 
 <section class="chapter" aria-labelledby="c4">
@@ -219,7 +240,11 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
       <span><i class="swatch end"></i>Fine stagione: il resoconto, il racconto della piazza, le lezioni del consiglio</span>
     </div>
   </figure>
+  <div class="more">
+    <details><summary>Le stagioni</summary><div class="body">
   <p>Le stagioni contano. D'inverno i campi non danno e serve legna da ardere; l'estate è la stagione delle campagne militari; l'inverno è buono per tessere alleanze. La popolazione invecchia in fretta, così le conseguenze di una carestia si vedono nei figli che non sono nati.</p>
+    </div></details>
+  </div>
 </section>
 
 <section class="chapter" aria-labelledby="c5">
@@ -237,7 +262,11 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
     </div>
   </figure>
   <p>Nessuno ti dice com'è la tua terra. Il consiglio lo scopre dai raccolti, e lo stesso vale per i vicini. Nessun regno è ricco di tutto né povero di tutto, così prima o poi servono gli altri.</p>
+  <div class="more">
+    <details><summary>Il mercato e l'esperto della terra</summary><div class="body">
   <p>Al mercato comune i prezzi salgono e scendono con la domanda. Prezzi e scorte sono pubblici, chi vende e chi compra no. Più avanti potrai assumere un esperto della terra, che studia la tua e quella dei vicini. Sapere che un vicino vive vendendo pietra ed è a corto di legno ti dice quale trattato rompere per metterlo in difficoltà.</p>
+    </div></details>
+  </div>
 </section>
 
 <section class="chapter" aria-labelledby="c6">
@@ -246,14 +275,15 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
     <h2 id="c6">Gli altri sette regni</h2>
   </div>
   <p>Una partita ha otto regni su una mappa condivisa, partenze simmetriche e almeno un vicino raggiungibile. Alcuni sono guidati da altri giocatori, gli altri da sovrani automatici che usano la stessa architettura: un consiglio, gli stessi rapporti, un carattere. C'è il re guerrafondaio e c'è il mercante pacifico.</p>
-  <div class="pairs">
-    <div class="pair"><b>Diplomazia</b><span>L'Ambasciatore negozia accordi bilaterali, come grano in cambio del passaggio sul fiume. Ogni regno ha una reputazione: chi rompe i patti trova sempre meno alleati.</span></div>
-    <div class="pair"><b>Rotte commerciali</b><span>Rendono a ogni turno finché i confini restano aperti. Si possono tagliare, razziare, chiudere con un embargo. I mercanti, se il commercio si ferma, si arrabbiano.</span></div>
-    <div class="pair"><b>Spionaggio</b><span>Le spie portano stime dell'esercito altrui, a volte vecchie, a volte sbagliate. Ci sono doppiogiochisti, missioni scoperte e informazioni comprate da ministri scontenti.</span></div>
-    <div class="pair"><b>Segreti</b><span>Ogni informazione nasce con un livello. Un agente non può rivelare quello che non ha mai ricevuto, ma una fuga di notizie può far salire un segreto di livello.</span></div>
+  <div class="more">
+    <details><summary>Diplomazia</summary><div class="body"><p>L'Ambasciatore negozia accordi bilaterali, come grano in cambio del passaggio sul fiume. Ogni regno ha una reputazione: chi rompe i patti trova sempre meno alleati.</p></div></details>
+    <details><summary>Rotte commerciali</summary><div class="body"><p>Rendono a ogni turno finché i confini restano aperti. Si possono tagliare, razziare, chiudere con un embargo. I mercanti, se il commercio si ferma, si arrabbiano.</p></div></details>
+    <details><summary>Spionaggio</summary><div class="body"><p>Le spie portano stime dell'esercito altrui, a volte vecchie, a volte sbagliate. Ci sono doppiogiochisti, missioni scoperte e informazioni comprate da ministri scontenti.</p></div></details>
+    <details><summary>Segreti</summary><div class="body"><p>Ogni informazione nasce con un livello. Un agente non può rivelare quello che non ha mai ricevuto, ma una fuga di notizie può far salire un segreto di livello.</p></div></details>
   </div>
+  <div class="more">
+    <details><summary>Chi sa cosa</summary><div class="body">
   <figure class="exhibit" aria-label="Livelli di segretezza">
-    <p class="exhibit-label">Chi sa cosa</p>
     <ol class="ladder">
       <li><span class="rung">Segreto del sovrano</span><span class="rung-text">Solo tu.</span></li>
       <li><span class="rung">Consiglio</span><span class="rung-text">Tu e i tuoi ministri.</span></li>
@@ -262,6 +292,8 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
       <li><span class="rung">Estero</span><span class="rung-text">Gli altri regni.</span></li>
     </ol>
   </figure>
+    </div></details>
+  </div>
 </section>
 
 <section class="chapter" aria-labelledby="c7">
@@ -270,7 +302,11 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
     <h2 id="c7">La guerra si vince prima</h2>
   </div>
   <p>La guerra si gioca soprattutto nella preparazione: reclutare toglie braccia ai campi, i soldati vanno pagati e nutriti, le mura richiedono pietra e mesi di cantiere. L'esercito sta nelle sue caselle, e il nemico lo conosce solo attraverso le spie e l'osservazione dei confini.</p>
+  <div class="more">
+    <details><summary>Stime gonfiate e finte mobilitazioni</summary><div class="body">
   <p>Il Maresciallo può gonfiare le stime per ottenere più risorse. Anche tu puoi ingannare: proclamare in piazza una mobilitazione che non esiste, per vedere chi si muove. La battaglia ha la sua parte di caso, ma premia chi è arrivato meglio preparato.</p>
+    </div></details>
+  </div>
 </section>
 
 <section class="chapter" aria-labelledby="c8">
@@ -304,7 +340,11 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
       <li><span class="rung">Deposizione</span><span class="rung-text">Perdi il trono, ma non la partita.</span></li>
     </ol>
   </figure>
+  <div class="more">
+    <details><summary>Regimi e colpi di stato</summary><div class="body">
   <p>Un regime militare tiene a bada il popolo, ma ogni soldato costa, i soldati sono una classe con il suo umore e un Maresciallo con un grande esercito comincia a fare pensieri ambiziosi. Se perdi insieme la fiducia del popolo e quella del consiglio, un ministro può tentare il colpo di stato con l'appoggio di una classe scontenta.</p>
+    </div></details>
+  </div>
   <p>Chi perde il trono non esce dal gioco. Ricomincia alla guida di una fazione in esilio, che cerca di riprendersi il regno.</p>
 </section>
 
@@ -323,10 +363,10 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
     <h2 id="c11">Un turno al giorno</h2>
   </div>
   <p>Si gioca in modo asincrono: ogni giocatore manda i suoi ordini entro la scadenza, poi il mese si risolve per tutti insieme. Un turno al giorno, o più turni in una sera se tutti hanno confermato. Una partita di dieci anni dura qualche mese di vita reale.</p>
-  <div class="pairs">
-    <div class="pair"><b>Assenze</b><span>Se manchi, il regno va avanti con gli ultimi ordini. Dopo tre giorni subentra il sovrano automatico.</span></div>
-    <div class="pair"><b>Vacanze</b><span>Se sai che sarai via, lasci le direttive e il regno procede da solo.</span></div>
-    <div class="pair"><b>Pausa</b><span>A Natale i giocatori possono proporre di fermare il tempo per tutti.</span></div>
+  <div class="more">
+    <details><summary>Assenze</summary><div class="body"><p>Se manchi, il regno va avanti con gli ultimi ordini. Dopo tre giorni subentra il sovrano automatico.</p></div></details>
+    <details><summary>Vacanze</summary><div class="body"><p>Se sai che sarai via, lasci le direttive e il regno procede da solo.</p></div></details>
+    <details><summary>Pausa</summary><div class="body"><p>A Natale i giocatori possono proporre di fermare il tempo per tutti.</p></div></details>
   </div>
 </section>
 
