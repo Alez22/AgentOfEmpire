@@ -140,7 +140,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] A game with R5b (game 26): **no**, R5b never fired: it kept 4 months of gross eating (~3,600 food), Aurelia peaked at 2,626. **Now 2 months** (checked on game 26's states: Aurelia would sell 2 lots in November and 4 in December, the poor realms never; 1 month sold in January in the poor realms too)
 - [ ] **The village, implementation** (decided 2026-11-08): block **A** the market as a building, merchants as a class with their own mood (needed: every class flees by its own discontent), no prices without the market until the travellers exist; then block **B+C** together: bandits (stage 1), watchtower, Gastaldo, militia. Values from a lab before each block.
   - [x] A: spec approved 2026-11-08 in `docs/DESIGN.md`, "The market as a building, merchants and their mood" (unrest ladder per class, trade tax as a share of the margin)
-  - [ ] A1. Lab `lab/village_market.py` and values
+  - [x] A1. Lab `lab/village_market.py` (see "Lab: the village market, block A"): market 80 wood, no stone, 2 months; 6 jobs x 2 lots. Open: trade tax (tiny), where the market stands, the merchants' shocks
   - [ ] B+C: spec, multi-realm lab, engine, council, UI
 - [ ] Travellers, bandits and migration (designed 2026-11-08, `docs/DESIGN.md` Part 1): travellers carry public news late and distorted (in the village a public fact of another realm arrives only through them); families flee long discontent into a world pool of bandits (adults and some children, elders stay) that raids exposed stores; flight by class (clergy never), class lost in the pool, arrivals enter as peasants; a small pool from the start so rare raids teach the need for a militia; the **Gastaldo** (first council expansion, in the village, brought by the watchtower): doors (closed / normal / open), militia (none before it), news from outside, counter-espionage in the town; with open doors a raid becomes immigration; stages: 1 flight, raids, Gastaldo and militia, 2 doors and acceptance (needs a multi-realm lab for spirals), 3 spies among migrants, offended origin, remembered trade, funded bandits
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
@@ -798,6 +798,28 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
 2. **A poor level of 13 is too harsh**: the two realms poor in food spend 14 months on the reduced ration and revolt.
 3. **19 floods the market**: the price falls towards the floor and food is worth little.
 4. Limit: the lab's policy sells everything above 2 months of food. Game 24's Treasurers kept their surplus unless the sovereign asked (draft rule 5).
+
+### Lab: the village market, block A (2026-11-08)
+
+`lab/village_market.py [base|why|cost|gold|timing|capacity|tax|mood]`: 8 realms on the 8 sites, 24 months, on the real engine (market, needs, levels of `engine/config.toml`); the lab adds the market building (center or houses zone), merchants off the fields, the lot cap, the trade tax and the merchants' mood with their ladder stopped at the strike. Fixed policy (trade up to 2 months of food, wood and stone for 4 months of needs and the next building, taxes to 5 % above 150 gold, a feast a season above 200, the market first). Results are near the edge: one realm more or less fallen is partly noise.
+
+| Run | Fallen of 8 | Market open at month | Lots traded / cut by the cap | Trade tax, all realms |
+| --- | --- | --- | --- | --- |
+| No market | 4 | - | - | - |
+| Old rule (open from month 1, no cap) | 0 | 1 | 917 / 0 | - |
+| 60 wood 40 stone, 2 months | 6 | 5-7 | 540 / 68 | 73 |
+| 100 wood 60 stone, 2 or 3 months | 6-7 | 5-12 | 470-500 / 75-105 | 45-50 |
+| **80 wood, no stone, 2 months** (6 jobs x 2 lots, tax 50 %) | **1** | 5-9 | 562 / 63 | 70 |
+| 120 wood, no stone, 3 months | 4 | 7-8, two never by month 24 | 397 / 28 | 49 |
+| 50 wood 50 gold / 40 wood 80 gold | 4 / 2 | 2 for all | 570-585 | 92-95 |
+
+1. **Stone in the cost kills**: with 40-60 stone 5-7 realms fall. Diagnosis (`why`): the building alone, with no farmer lost and no cap, already makes 5 fall; a free market of one month none; 80 wood and no stone 1. The world is short of stone (price at the cap, 66) and the market takes the stone of the houses.
+2. **80 wood, 2 months** opens between month 5 and 9, before the second winter. The realm poor in wood (F= W- S+) opens last (month 9), is cold 5 months and falls at month 17; with the old rule it held.
+3. **Gold in the cost** makes everyone open at month 2 (they start with 100 gold): no longer a goal, and it does not save the realm poor in wood.
+4. **Capacity**: 6 jobs x 1 lot cuts 25 % of the lots wanted, x 2 about 10 % (mostly the rich lands selling), x 3 7 %. 6 x 2 chosen.
+5. **The trade tax is tiny**: at 50 % of the own margin about 70 gold in two years for 8 realms, 0.4 gold a realm a month. Symbolic, not "the first income that is not from the fields".
+6. **Merchants' mood**: 7 months without trade (realms 1-4, months 12-18) bring one realm of four to the strike (3 months), the others to 317-380. In falling realms the merchants reach 0: they take the peasants' shocks (cold, famine) in full and recover 2.5 times slower.
+7. **No room for the market**: with the market allowed only in the center, houses filled the center first and two realms never built it. The lab allows the houses zones too.
 
 ### Game 25: three automatic sovereigns (2026-11-08, 12 months, $0.21)
 
