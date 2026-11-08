@@ -4,6 +4,10 @@ can a council model still plan a town when the map is made of hexes?
 Usage (inside the server container, which has the key):
   docker compose exec -T -e PYTHONPATH=/app server python lab/hex_probe.py [--repeat N] [--by-zone] MODEL[:EFFORT] ...
 
+--max-tokens N: output cap of each call, reasoning included (default: the
+game's, server/council.toml); --timeout S: deadline of each call. Raised to
+read what the model does when it reasons long: the reasoning of every
+reply is printed after it.
 --by-zone: the new buildings are given by zone only and the engine picks
 the hex (find_place), as the Architect mostly builds in the game; without
 it the model gives each anchor hex.
@@ -229,12 +233,17 @@ def main(argv: list[str]) -> None:
         repeat, argv = int(argv[1]), argv[2:]
     by_zone = "--by-zone" in argv
     argv = [arg for arg in argv if arg != "--by-zone"]
+    settings = load_settings()
+    max_tokens, timeout = settings.max_output_tokens, settings.timeout_seconds
+    if argv[:1] == ["--max-tokens"]:
+        max_tokens, argv = int(argv[1]), argv[2:]
+    if argv[:1] == ["--timeout"]:
+        timeout, argv = int(argv[1]), argv[2:]
     candidates = argv or ["z-ai/glm-5.3-flash:high"]
     config = hex_config()
     state = new_game(config, SEED)
-    settings = load_settings()
     client = OpenRouterClient(settings.base_url, os.environ.get("OPENROUTER_API_KEY", ""),
-                              settings.timeout_seconds, settings.prices, settings.max_output_tokens,
+                              timeout, settings.prices, max_tokens,
                               settings.models_without_json_schema, settings.models_without_reasoning)
     user = town_text(state, config)
     out = ["# Map sent", user]
@@ -257,6 +266,7 @@ def main(argv: list[str]) -> None:
             counts["clean"] += zones_ok and places_ok
             counts["fields"] += result["new_fields"]
             out += report_lines(candidate, attempt, result, config, reply.output_tokens, reply.latency_ms / 1000)
+            out.append(f"    reasoning ({len(reply.reasoning)} chars):\n{reply.reasoning}")
             print(f"{candidate} #{attempt}: zones {'ok' if zones_ok else 'FAIL'},"
                   f" placements {len(result['placement_problems'])} problems", file=sys.stderr, flush=True)
         out.insert(0, f"{candidate}: {repeat} runs | zones clean {counts['zones']} | placements clean"

@@ -22,6 +22,9 @@ class LLMReply:
     output_tokens: int
     cost_usd: float
     latency_ms: int
+    # The model's reasoning when the provider returns it (OpenRouter
+    # "message.reasoning"); empty otherwise. Read only by the labs for now.
+    reasoning: str = ""
 
 
 class LLMError(Exception):
@@ -129,8 +132,9 @@ class OpenRouterClient:
         cost = usage.get("cost")
         if cost is None:  # fall back to the prices in council.toml
             cost = _estimated_cost(self._prices.get(model), input_tokens, output_tokens)
-        text = data["choices"][0]["message"].get("content") or ""
-        return LLMReply(text, input_tokens, output_tokens, float(cost), latency_ms)
+        message = data["choices"][0]["message"]
+        text = message.get("content") or ""
+        return LLMReply(text, input_tokens, output_tokens, float(cost), latency_ms, message.get("reasoning") or "")
 
 
 # Default answers of the fake council: plausible, always valid orders.
