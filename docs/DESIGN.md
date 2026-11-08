@@ -921,14 +921,14 @@ The vision is in Part 1, "Economy and trade" (closed market, land levels unknown
 - Every month all realms' trades are filled together at the published price: sales first, then purchases from the warehouse, split pro rata when short. Then the price moves 10 %: up if more lots were asked than there were, down if the realms' goods on sale exceed the last 3 months of asked lots (the start stock does not count), within 50–300 % of the start price.
 - **When**: at the start of the month, before the realms' orders. Gold and goods from the market are there for this month's orders. A purchase needs the gold at the start of the month; a sale needs the goods.
 - New order **`trade`** `{good: food|wood|stone, side: buy|sell, lots: 1..}` issued by the **Treasurer** (role permission): the Treasurer becomes the realm's market expert and gathers its lessons on trading season after season. The validator checks gold and goods against the published price; the warehouse may still give fewer lots than asked (pro rata), and the result says how many.
-- `engine/market.py` is pure, like `resolve_turn`: (market state, every realm's trades) → (fills per realm, gold paid to each seller, new market state, events). `resolve_turn` gets the fills of its realm as an input (like the people's choice), so a realm's turn stays a pure function.
+- `engine/market.py` is pure, like `resolve_turn`. `resolve_month(market, {realm: state, orders, people}, config)` is one month of the whole game: `check_trades` validates each realm's trades in priority order (gold and goods committed one after the other; a good traded one way a month, else `BOTH_SIDES`), `resolve_market` fills them, `apply_trade` gives each realm its goods and gold (events `trade_bought`, `trade_on_sale`, `trade_paid`), then `resolve_turn` runs unchanged with the other orders. A trade that reaches `resolve_turn` (a game without a market) is refused with `NO_MARKET`.
 - **Public**: prices, stock and the month's totals bought and sold per good. Never who sold or bought. Each realm knows its own trades and its goods still on sale.
 
 **Database and server**
 
 - Migration: table `market_states` (game, turn, state jsonb), the warehouse at the start of each turn, like a realm snapshot.
 - `resolve_open_turn` runs the market first, then each realm with its fills, in the same transaction. The replay becomes per game: market and realms turn by turn, compared with both stored states.
-- Event visibility: own fills and goods on sale at court; the totals public; `firewood_short` and `stone_upkeep_short` public (the people feel cold and the falling walls).
+- Event visibility: own trades (`trade_bought`, `trade_on_sale`, `trade_paid`) at court; the totals public (in the market state, not events); `firewood_short` and `stone_upkeep_short` at court (the people feel the cold and see the walls crumble; other states must not learn the land levels from them).
 
 **Council and phone**
 
@@ -943,7 +943,7 @@ The vision is in Part 1, "Economy and trade" (closed market, land levels unknown
 **Order of work** (one commit each, with tests)
 
 1. Engine: needs A and B, land levels, a site per realm. **Built 2026-11-08** (`[needs]`, `[levels]`, `[map] site_levels` in `engine/config.toml`; `engine/turn.py`; snapshot format 3; `tests/test_needs.py`). The manual still gives the buildings' yields until step 4.
-2. Engine: the market and the `trade` order.
+2. Engine: the market and the `trade` order. **Built 2026-11-08** (`engine/market.py`, `[market]` in `engine/config.toml`, `tests/test_market.py`). The council cannot issue trades yet (step 4).
 3. Database: market states, game-level resolution and replay.
 4. Council: briefing, manual, prompts, the Voice; the market page on the phone.
 5. A 12-month test game with three realms.

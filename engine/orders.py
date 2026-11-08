@@ -89,9 +89,18 @@ class DemolishOrder(BaseOrder):
     building_id: int = Field(ge=1)
 
 
+class TradeOrder(BaseOrder):
+    """Buy or sell lots at the common market (engine/market.py). Filled at the
+    start of the month, before the realm's other orders."""
+    action: Literal["trade"]
+    good: Literal["food", "wood", "stone"]
+    side: Literal["buy", "sell"]
+    lots: int = Field(ge=1)
+
+
 Order = Annotated[
     BuildOrder | AssignWorkersOrder | SetTaxOrder | SetRationOrder | HoldFeastOrder
-    | SetZonesOrder | DemolishOrder | ClaimTilesOrder | FellForestOrder,
+    | SetZonesOrder | DemolishOrder | ClaimTilesOrder | FellForestOrder | TradeOrder,
     Field(discriminator="action"),
 ]
 

@@ -21,6 +21,7 @@ from engine.orders import (
     SetRationOrder,
     SetTaxOrder,
     SetZonesOrder,
+    TradeOrder,
 )
 from engine.state import Building, GameState, Workers, Zone
 
@@ -247,6 +248,10 @@ def _apply_one(
         return _apply_claim(state, order, config)
     if isinstance(order, FellForestOrder):
         return _apply_fell(state, order, config)
+    if isinstance(order, TradeOrder):
+        # Trades are filled by engine/market.py before the turn; one that
+        # reaches the turn belongs to a game without a market.
+        return _reject(order, "NO_MARKET", "this game has no market")
     return _apply_policy(state, order, config, policies_set)
 
 

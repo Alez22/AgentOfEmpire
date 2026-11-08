@@ -2,7 +2,7 @@
 
 Updated 2026-11-08.
 
-The prototype is complete and playable from a phone, and the field test is closed. Phase 3 (accounts) is set aside: the game first needs richer dynamics. **Now: phase 4, the market**: the labs are done (`lab/market_sim.py`, `lab/market_closed.py`) and the spec "Market, needs and land levels" is approved (`docs/DESIGN.md`); next, the engine (step 1 built: needs, land levels, a site per realm; next step 2, the market and the `trade` order), then a game with three realms. The territory step 1 is done (spec in `docs/DESIGN.md`, "Territory").
+The prototype is complete and playable from a phone, and the field test is closed. Phase 3 (accounts) is set aside: the game first needs richer dynamics. **Now: phase 4, the market**: the labs are done (`lab/market_sim.py`, `lab/market_closed.py`) and the spec "Market, needs and land levels" is approved (`docs/DESIGN.md`); next, the engine (step 1 built: needs, land levels, a site per realm; step 2 built: the market and the `trade` order; next step 3, market states in the database and game-level resolution), then a game with three realms. The territory step 1 is done (spec in `docs/DESIGN.md`, "Territory").
 
 This file is the starting point of every work session: read it at the start and update it at the end. The full design lives in [`docs/DESIGN.md`](docs/DESIGN.md), the UI mockups in [`docs/mockups/`](docs/mockups/).
 
@@ -15,7 +15,7 @@ This file is the starting point of every work session: read it at the start and 
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (GLM 5.3 Flash "high"; the Voice on DeepSeek V4.1 Flash); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 265 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 281 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -127,7 +127,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] Stone upkeep chosen 2026-11-08: 1 per building, 3 workers on stone at the start; food levels 14 / 15 / 16
   - [x] Spec approved 2026-11-08: "Market, needs and land levels" in `docs/DESIGN.md` (Part 2); yields hidden from the manual, trades by the Treasurer
   - [x] 1. Engine: needs A and B, land levels, a site per realm (`tests/test_needs.py`; the manual still shows the yields until step 4)
-  - [ ] 2. Engine: the market and the `trade` order
+  - [x] 2. Engine: the market and the `trade` order (`engine/market.py`, `tests/test_market.py`)
   - [ ] 3. Database: market states, game-level resolution and replay
   - [ ] 4. Council: briefing, manual, prompts, the Voice; the market page on the phone
   - [ ] 5. A 12-month test game with three realms, Claude playing all three sovereigns and writing down the basic rules of the automatic sovereign

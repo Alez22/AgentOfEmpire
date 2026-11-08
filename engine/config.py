@@ -176,6 +176,19 @@ class NeedsConfig:
 
 
 @dataclass(frozen=True)
+class MarketConfig:
+    """The common market of a game (engine/market.py)."""
+    lot_units: int  # units per lot; prices are gold per lot
+    start_price: dict[str, int]  # per good; the bounds are relative to it
+    margin_pct: int  # buyers pay price + margin, sellers get price - margin
+    step_pct: int  # monthly price move
+    min_price_pct: int
+    max_price_pct: int
+    cover_months: int  # the price falls when goods on sale exceed this many months of asked lots
+    start_stock_per_realm: dict[str, int]  # units, nobody's goods; never counted as too much
+
+
+@dataclass(frozen=True)
 class LevelsConfig:
     """Output per worker by land level: {"poor": 14, "fair": 15, "rich": 16}."""
     food: dict[str, int]
@@ -199,6 +212,7 @@ class Config:
     # None for games saved before the market's needs and land levels.
     needs: NeedsConfig | None = None
     levels: LevelsConfig | None = None
+    market: MarketConfig | None = None  # None: no market, trade orders are refused
 
 
 def load_raw_config(path: Path = DEFAULT_CONFIG_PATH) -> dict:
@@ -236,4 +250,5 @@ def config_from_dict(raw: dict) -> Config:
         map=MapConfig(**raw["map"]) if "map" in raw else None,
         needs=NeedsConfig(**raw["needs"]) if "needs" in raw else None,
         levels=LevelsConfig(**raw["levels"]) if "levels" in raw else None,
+        market=MarketConfig(**raw["market"]) if "market" in raw else None,
     )

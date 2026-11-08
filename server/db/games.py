@@ -37,9 +37,15 @@ EVENT_VISIBILITY = {
     "workers_rescaled": "council",
     "salaries_unpaid": "council",  # the counsellors know they were not paid
     "tile_cleared": "court",  # the people clear the land: everyone sees the town grow
-    # The people feel the cold and see the walls crumble ([needs]).
-    "firewood_short": "public",
-    "stone_upkeep_short": "public",
+    # The people feel the cold and see the walls crumble ([needs]). Court, not
+    # public: other states must not learn a realm's land levels from them.
+    "firewood_short": "court",
+    "stone_upkeep_short": "court",
+    # The realm's own trades (engine/market.py): known at court. Who trades
+    # what is never public; the market's totals are (market state).
+    "trade_bought": "court",
+    "trade_on_sale": "court",
+    "trade_paid": "court",
 }
 
 
