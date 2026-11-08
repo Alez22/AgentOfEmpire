@@ -7,6 +7,7 @@ import psycopg
 
 from server.council import meeting, people
 from server.council.settings import CouncilSettings
+from server.db import games
 from server.sovereign import rules
 from server.ui import labels
 
@@ -52,6 +53,11 @@ def play_month(conn: psycopg.Connection, realm_id: int, client, settings: Counci
     @return The reasons, in Italian.
     @throws meeting.CouncilError (no open turn, plan already approved, ...)
     """
+    state = games.load_latest_state(conn, realm_id)
+    if state is not None and state.game_over:
+        # Why: game 27, Brenna fell in month 11; the next month the meeting ran
+        # (and was paid) and the petition check crashed on the finished realm.
+        return [labels.GAME_OVER.get(state.game_over, f"Il regno è caduto: {state.game_over}.")]
     if meeting.council_state(conn, realm_id, settings).rounds_held == 0:
         meeting.hold_meeting(conn, realm_id, client, settings)
     ctx = meeting.load_context(conn, realm_id, client, settings)

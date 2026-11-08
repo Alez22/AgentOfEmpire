@@ -1,5 +1,7 @@
 """The fixed rules of the automatic sovereign (server/sovereign/rules.py)."""
 
+import re
+
 from engine import parse_order
 from engine.market import new_market
 from engine.turn import monthly_upkeep
@@ -165,3 +167,15 @@ def test_r10_staffs_a_market_without_merchants(start_state, config):
     assert "adulti al mercato" in text and "(R10)" in reason
     staffed = _items({"action": "assign_workers", "food": 50, "wood": 4, "stone": 3, "trade": 3})
     assert "(R10)" not in (rules.directive(_month(start_state, config), staffed) or ("", ""))[1]
+
+
+def test_no_trade_directive_beyond_the_merchants_lots(start_state, config):
+    """Game 27: a directive to buy wood the month the market opened, with no merchant yet."""
+    _open_market(start_state, config, merchants=1)  # 3 lots this month
+    start_state.wood = 0
+    start_state.gold = 500
+    planned = _items({"action": "trade", "good": "food", "side": "buy", "lots": 3})
+    assert rules.directive(_month(start_state, config), planned) is None
+    text, _ = rules.directive(_month(start_state, config), [])
+    lots = int(re.search(r"compra al mercato (\d+) lott", text).group(1))
+    assert 1 <= lots <= 3

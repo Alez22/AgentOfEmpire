@@ -48,3 +48,20 @@ def test_three_automatic_realms_play_a_year(api, database_url):
     # A second call in the same month is refused: the plan is already approved.
     api.post(f"/realms/{realms[0]}/sovereign/auto")
     assert api.post(f"/realms/{realms[0]}/sovereign/auto").status_code == 409
+
+
+def test_a_fallen_realm_is_not_played(api, database_url, monkeypatch):
+    """Game 27: Brenna fell in month 11; the next month the meeting ran and the
+    petition check crashed (500) on the finished realm."""
+    from server.db import games
+    from server.sovereign import auto
+    with psycopg.connect(database_url, autocommit=True) as conn:
+        game_id = create_game(conn, load_raw_config(), seed=0, realm_names=["Nord"], council_models=COUNCIL)
+        realm_id = conn.execute("SELECT id FROM realms WHERE game_id = %s", (game_id,)).fetchone()[0]
+        fallen = games.load_latest_state(conn, realm_id)
+    fallen.game_over = "revolt"
+    monkeypatch.setattr(auto.games, "load_latest_state", lambda conn, rid: fallen)
+    response = api.post(f"/realms/{realm_id}/sovereign/auto")
+    assert response.status_code == 200 and response.json()["lines"] == ["Il popolo si è ribellato: il regno è perduto."]
+    with psycopg.connect(database_url, autocommit=True) as conn:
+        assert meeting.list_messages(conn, realm_id, 1) == []  # no meeting paid for a fallen realm

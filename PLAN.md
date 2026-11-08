@@ -144,7 +144,8 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] A2. Engine: the building, its zone and the core, the `trade` sector, capacity, the merchants' tax (`tests/test_village_market.py`; games 20-26 replay unchanged)
   - [x] A3. Engine: mood and unrest per class (`[classes.*]`), the merchants' effort and strike (one mood step and ladder for every class; strike months neutral for the trade factor; games 20-26 replay unchanged)
   - [x] A4. Council: briefings, manual, prompts, craft, the Voice, R10 (per-realm market status; merchants start at the mood base)
-  - [ ] A5. UI; A6. a 12-month game with three automatic realms
+  - [x] A6. Game 27, 12 months, three automatic realms (see "Game 27"); two defects of the automatic sovereign fixed
+  - [ ] A5. UI: the market page without a market (it still shows the prices), the market on the map (placeholder look), after a mockup
   - [ ] B+C: spec, multi-realm lab, engine, council, UI
 - [ ] Travellers, bandits and migration (designed 2026-11-08, `docs/DESIGN.md` Part 1): travellers carry public news late and distorted (in the village a public fact of another realm arrives only through them); families flee long discontent into a world pool of bandits (adults and some children, elders stay) that raids exposed stores; flight by class (clergy never), class lost in the pool, arrivals enter as peasants; a small pool from the start so rare raids teach the need for a militia; the **Gastaldo** (first council expansion, in the village, brought by the watchtower): doors (closed / normal / open), militia (none before it), news from outside, counter-espionage in the town; with open doors a raid becomes immigration; stages: 1 flight, raids, Gastaldo and militia, 2 doors and acceptance (needs a multi-realm lab for spirals), 3 spies among migrants, offended origin, remembered trade, funded bandits
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
@@ -870,6 +871,19 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 2. **The map was used little, but right**: 4 builds (a farm in every realm's Campi, Corvara a second sawmill in Botteghe del bosco), all accepted; Brenna felled 4 forest hexes and claimed 2 plain hexes to the north. No town plan redrawn (game 25 on squares: 3 builds, 2 claims). One refusal: Aurelia in May claimed 4 tiles "in Campi", a zone already all owned (`NO_LAND`): the briefing does not say a zone has nothing left to claim, and the craft's "first draw the zone beyond the border" was skipped.
 3. **Nobody fell, all calm all year.** The map pages draw the SVG board for the three realms.
 4. **R5b never fired**: Aurelia ended with 2,626 food and sold none. The rule keeps 4 months of *gross* eating (about 900 food a month, so 3,600) before selling; Aurelia never got there. Brenna and Corvara ended on the reduced ration. To decide: keep months of net need (eating minus expected harvest) or a lower number.
+
+### Game 27: the village market, three automatic sovereigns (2026-11-09, 12 months, $0.27)
+
+`lab/auto_game.py new 0 12`, seed 0 as games 24-26 (realms 35-37: Aurelia F+ W= S-, Brenna F- W+ S=, Corvara F= W- S+), with village block A (steps 2-4). 225 calls, $0.27 (game 26: $0.22), some of them a meeting of the fallen Brenna in month 12.
+
+1. **The councils built the market on their own**: Brenna in January (open in March), Aurelia in May (July), Corvara in July (September); R10 never had to order it, it only staffed Aurelia's (month 7). All before the second winter.
+2. **Merchants**: Aurelia 3, Brenna 1-2, Corvara 6 (all the places: 6 farmers less, for 2 lots in 3 months).
+3. **Little trade, as in the lab**: Brenna bought the start stock's food (6 lots, months 5-6), then the warehouse had no food from month 9 to the end: nobody sold any. Aurelia, rich in food, opened only in July, kept the abundant ration from July and sold no food (R5b keeps 2 months of eating). Aurelia 5 lots in all, Corvara 2.
+4. **Brenna fell (revolt, month 11)**, the first automatic realm to fall: poor in food, food 0 from June, buys refused for lack of food in the warehouse. Not only block A: its Treasurer set the abundant ration in July with no food (R2 excludes only from October to March), and in game 26 Brenna lived on the reduced ration. But with the market open from month 1 Aurelia would have had more months to sell.
+5. **The merchants' tax went to 0 in all three realms by month 11** (two first to 5 %), though up to 10 % it costs no mood. It yielded almost nothing anyway.
+6. **Merchants' mood**: Aurelia's and Corvara's 450-510, calm; Brenna's followed the famine down to the strike (month 11).
+7. **Two defects, fixed**: the automatic sovereign played a fallen realm (meeting paid, then a 500 from the petition check): now it skips it. R7 told Brenna to buy wood the month its market opened, with no merchant yet (`TRADE_CAPACITY`): R7 and R5 now ask no more lots than the merchants can handle.
+8. To decide: the food of the world (nobody sells food: R5b, or the Treasurer's craft, or a start stock of food that lasts longer), the abundant ration with no food outside winter (an R2 for every month?), the merchants' tax that Treasurers cut to 0 for no reason.
 
 ### Presentation page and map graphics (2026-11-08)
 

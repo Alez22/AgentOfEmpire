@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from engine import parse_order
 from engine.config import Config
 from engine.market import (MarketState, buy_price, check_month_plan, market_status, sell_price, state_after_trades,
-                           stock)
+                           stock, trade_capacity)
 from engine.orders import AssignWorkersOrder, BuildOrder, Order, TradeOrder
 from engine.state import GameState
 from engine.turn import (firewood_needed, food_needed, monthly_tax_income, monthly_upkeep, resolve_turn,
@@ -131,6 +131,17 @@ def _has_on_sale(month: Month, good: str) -> bool:
     return any(c.seller == month.realm_key for c in month.market.goods[good].queue)
 
 
+def _lots_free(month: Month, items: list[Item]) -> int:
+    """@brief Lots the merchants can still handle this month after the plan's
+    trades. Why: game 27, Brenna told to buy wood the month its market opened,
+    with no merchant yet (TRADE_CAPACITY). Without a cap, no limit."""
+    capacity = trade_capacity(month.state, month.config)
+    if capacity is None:
+        return MAX_SELL_LOTS * 100
+    planned = sum(i.order.lots for i in items if isinstance(i.order, TradeOrder))
+    return max(0, capacity - planned)
+
+
 def _trades_good(items: list[Item], good: str, side: str) -> bool:
     return any(isinstance(i.order, TradeOrder) and i.order.good == good and i.order.side == side for i in items)
 
@@ -146,7 +157,8 @@ def _buy_directive(month: Month, items: list[Item], left: dict[str, int]) -> tup
             continue
         if stock(month.market.goods[good]) == 0:
             continue
-        lots = min(-(-(need - left[good]) // lot), left["gold"] // buy_price(month.market, month.config, good))
+        lots = min(-(-(need - left[good]) // lot), left["gold"] // buy_price(month.market, month.config, good),
+                   _lots_free(month, items))
         if lots < 1:
             continue
         what = labels.lots_of(lots, good)
@@ -192,6 +204,7 @@ def _sell_directive(month: Month, items: list[Item], left: dict[str, int]) -> tu
         else:
             keep = need_ahead(month.state, month.config, good, SELL_KEEP_MONTHS) + SELL_KEEP_LOTS * lot
             lots = min(MAX_SELL_LOTS, max(0, (left[good] - keep) // lot))
+        lots = min(lots, _lots_free(month, items))
         gold = lots * sell_price(month.market, month.config, good)
         if lots >= 1 and (best is None or gold > best[2]):
             best = (good, lots, gold)
