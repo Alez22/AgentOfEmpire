@@ -8,6 +8,13 @@ Usage (inside the server container, which has the key):
 game's, server/council.toml); --timeout S: deadline of each call. Raised to
 read what the model does when it reasons long: the reasoning of every
 reply is printed after it.
+--runs: each row written as runs of equal hexes with their columns
+("x4-5 F, x6-12 .") instead of the grid, so the model need not count
+cells (probe 2: most tokens went into recounting the shifted rows).
+--ring N: hexes shown around the realm (default 2: too few for a fields
+zone 3 rows deep beyond the border). --room: each zone with the room left
+per kind, counted by the engine (server/council/map_text.zone_lines), as in
+the real briefing.
 --by-zone: the new buildings are given by zone only and the engine picks
 the hex (find_place), as the Architect mostly builds in the game; without
 it the model gives each anchor hex.
@@ -37,6 +44,7 @@ from engine import load_config, new_game
 from engine.state import Building, Zone
 from engine.territory import NOT_OWNED, WILD, find_place, footprint, place_error, square_tiles, zones_error
 from server.council.llm import LLMError, OpenRouterClient
+from server.council.map_text import zone_lines
 from server.council.settings import load_settings
 
 RING = 2
@@ -53,11 +61,11 @@ def hex_config():
         config.map, grid="hex", world_file="world_hex.txt", core_file="core_hex.toml"))
 
 
-def bounds(state) -> tuple[int, int, int, int]:
+def bounds(state, ring: int) -> tuple[int, int, int, int]:
     tiles = [(x, y) for y, row in enumerate(state.owned) for x, char in enumerate(row) if char != NOT_OWNED]
     size = len(state.terrain)
-    return (max(0, min(x for x, _ in tiles) - RING), max(0, min(y for _, y in tiles) - RING),
-            min(size - 1, max(x for x, _ in tiles) + RING), min(size - 1, max(y for _, y in tiles) + RING))
+    return (max(0, min(x for x, _ in tiles) - ring), max(0, min(y for _, y in tiles) - ring),
+            min(size - 1, max(x for x, _ in tiles) + ring), min(size - 1, max(y for _, y in tiles) + ring))
 
 
 def cell(state, x: int, y: int) -> str:
@@ -67,10 +75,40 @@ def cell(state, x: int, y: int) -> str:
     return terrain if state.owned[y][x] != NOT_OWNED else NOT_OWNED_CHARS[terrain]
 
 
-def render(state, config, marks: dict[tuple[int, int], str] | None = None) -> str:
+def _cells(state, config, ring: int) -> dict[tuple[int, int], str]:
+    """@brief Character of every hex in view: terrain, square, buildings."""
+    x1, y1, x2, y2 = bounds(state, ring)
+    cells = {(x, y): cell(state, x, y) for y in range(y1, y2 + 1) for x in range(x1, x2 + 1)}
+    for tile in square_tiles(state, config):
+        cells[tile] = "P"
+    for building in state.buildings:
+        for tile in footprint(config, building.kind, building.x, building.y):
+            cells[tile] = LETTERS[building.kind]
+    return cells
+
+
+def render_runs(state, config, ring: int) -> str:
+    """@brief One line per row: runs of equal hexes with their columns, e.g.
+    "y=13 (odd): x2-3 , | x4-5 F | x6-12 .". Nothing to count."""
+    x1, y1, x2, y2 = bounds(state, ring)
+    cells = _cells(state, config, ring)
+    lines = []
+    for y in range(y1, y2 + 1):
+        runs, start = [], x1
+        for x in range(x1, x2 + 2):
+            if x <= x2 and cells[(x, y)] == cells[(start, y)]:
+                continue
+            span = f"x{start}" if start == x - 1 else f"x{start}-{x - 1}"
+            runs.append(f"{span} {cells[(start, y)]}")
+            start = x
+        lines.append(f"y={y} ({'odd' if y & 1 else 'even'}): " + " | ".join(runs))
+    return "\n".join(lines)
+
+
+def render(state, config, ring: int, marks: dict[tuple[int, int], str] | None = None) -> str:
     """@brief The hex text grid: 4 characters a cell, odd rows 2 to the east,
     world coordinates on the edges."""
-    x1, y1, x2, y2 = bounds(state)
+    x1, y1, x2, y2 = bounds(state, ring)
     cells = {(x, y): cell(state, x, y) for y in range(y1, y2 + 1) for x in range(x1, x2 + 1)}
     for tile in square_tiles(state, config):
         cells[tile] = "P"
@@ -84,11 +122,18 @@ def render(state, config, marks: dict[tuple[int, int], str] | None = None) -> st
     return "\n".join([header] + rows)
 
 
-def town_text(state, config) -> str:
-    zones = "\n".join(f"- {z.name} ({z.purpose}): ({z.x1},{z.y1}) to ({z.x2},{z.y2})" for z in state.zones)
+def town_text(state, config, ring: int, runs: bool, room: bool) -> str:
+    """@brief The user message: the map (grid or runs), the square, the
+    buildings and the plan in force (with the room per zone if asked)."""
+    if room:
+        zones = "\n".join(zone_lines(state, config))
+    else:
+        zones = "\n".join(f"- {z.name} ({z.purpose}): ({z.x1},{z.y1}) to ({z.x2},{z.y2})" for z in state.zones)
+    town = (("Each row lists runs of equal hexes with their columns (odd rows sit half a cell to the east):\n"
+             + render_runs(state, config, ring)) if runs else render(state, config, ring))
     buildings = "\n".join(f"- {b.kind} {b.id}, anchor ({b.x},{b.y})" for b in state.buildings)
     sx, sy = state.square
-    return (f"The town today:\n{render(state, config)}\n\nThe square, anchor ({sx},{sy}).\n"
+    return (f"The town today:\n{town}\n\nThe square, anchor ({sx},{sy}).\n"
             f"Buildings:\n{buildings}\n\nTown plan in force:\n{zones}")
 
 
@@ -209,7 +254,8 @@ def judge(state, config, text: str) -> dict:
             "trial": trial}
 
 
-def report_lines(candidate: str, attempt: int, result: dict, config, tokens: int, seconds: float) -> list[str]:
+def report_lines(candidate: str, attempt: int, result: dict, config, ring: int, tokens: int,
+                 seconds: float) -> list[str]:
     clean = result["parsed"] and result["zone_problem"] is None and not result["placement_problems"]
     lines = [f"\n--- {candidate} #{attempt} | {tokens} tok | {seconds:.1f} s | {'ok' if clean else 'FAIL'}"
              f" | new fields zone beyond the border: {'yes' if result['new_fields'] else 'NO'}"]
@@ -223,7 +269,7 @@ def report_lines(candidate: str, attempt: int, result: dict, config, tokens: int
         lines.append("    placements: " + ", ".join(f"{p.get('building')} " + (f"in '{p['zone']}'" if "zone" in p
                                                      else f"({p.get('x')},{p.get('y')})")
                                                      for p in result["placements"]))
-        lines.append(render(result["trial"], config))
+        lines.append(render(result["trial"], config, ring))
     return lines
 
 
@@ -239,17 +285,23 @@ def main(argv: list[str]) -> None:
         max_tokens, argv = int(argv[1]), argv[2:]
     if argv[:1] == ["--timeout"]:
         timeout, argv = int(argv[1]), argv[2:]
+    runs, room = "--runs" in argv, "--room" in argv
+    argv = [arg for arg in argv if arg not in ("--runs", "--room")]
+    ring = RING
+    if argv[:1] == ["--ring"]:
+        ring, argv = int(argv[1]), argv[2:]
     candidates = argv or ["z-ai/glm-5.3-flash:high"]
     config = hex_config()
     state = new_game(config, SEED)
     client = OpenRouterClient(settings.base_url, os.environ.get("OPENROUTER_API_KEY", ""),
                               timeout, settings.prices, max_tokens,
                               settings.models_without_json_schema, settings.models_without_reasoning)
-    user = town_text(state, config)
+    user = town_text(state, config, ring, runs, room)
     out = ["# Map sent", user]
     for candidate in candidates:
         model, _, effort = candidate.partition(":")
         counts = {"zones": 0, "places": 0, "clean": 0, "fields": 0}
+        tokens = []
         cost = 0.0
         for attempt in range(1, repeat + 1):
             try:
@@ -265,13 +317,15 @@ def main(argv: list[str]) -> None:
             counts["places"] += places_ok
             counts["clean"] += zones_ok and places_ok
             counts["fields"] += result["new_fields"]
-            out += report_lines(candidate, attempt, result, config, reply.output_tokens, reply.latency_ms / 1000)
+            tokens.append(reply.output_tokens)
+            out += report_lines(candidate, attempt, result, config, ring, reply.output_tokens,
+                                reply.latency_ms / 1000)
             out.append(f"    reasoning ({len(reply.reasoning)} chars):\n{reply.reasoning}")
             print(f"{candidate} #{attempt}: zones {'ok' if zones_ok else 'FAIL'},"
                   f" placements {len(result['placement_problems'])} problems", file=sys.stderr, flush=True)
         out.insert(0, f"{candidate}: {repeat} runs | zones clean {counts['zones']} | placements clean"
                       f" {counts['places']} | all clean {counts['clean']} | fields zone beyond the border"
-                      f" {counts['fields']} | ${cost:.4f}")
+                      f" {counts['fields']} | output tokens {sorted(tokens)} | ${cost:.4f}")
     print("\n".join(out))
 
 
