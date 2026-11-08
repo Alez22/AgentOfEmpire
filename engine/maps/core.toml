@@ -1,6 +1,7 @@
 # The 12 x 12 core every realm starts from (docs/DESIGN.md, "Territory").
 # x = column (0 west), y = row (0 north). Terrain: . plain, ~ river,
-# T forest, ^ hill. Buildings by their top-left tile; footprints in
+# T forest, ^ hill. The river joins side by side (never only by a corner),
+# so the map can draw it as one stream. Buildings by their top-left tile; footprints in
 # engine/config.toml. Every zone keeps room to grow: 2 farms in the
 # fields, about 10 houses in the centre and 8 to the west, a second
 # sawmill and a second quarry, two reserves along the river.
@@ -11,7 +12,7 @@ TTTT.....~^^
 TTTT.....~^^
 TTTT.....~^^
 .........~^^
-.........~..
+.........~~.
 ..........~.
 ..........~.
 ..........~.
