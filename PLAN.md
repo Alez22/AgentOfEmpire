@@ -821,6 +821,26 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
 6. **Merchants' mood**: 7 months without trade (realms 1-4, months 12-18) bring one realm of four to the strike (3 months), the others to 317-380. In falling realms the merchants reach 0: they take the peasants' shocks (cold, famine) in full and recover 2.5 times slower.
 7. **No room for the market**: with the market allowed only in the center, houses filled the center first and two realms never built it. The lab allows the houses zones too.
 
+### Lab: the village market, second run (2026-11-08)
+
+Same lab, with the decisions taken after the first run: the merchants' own tax on the gold value of the month's trades (no ordinary tax for them), famine and cold shocks at half for the merchants, idle malus -250, the market on a reserved place (the palace's reserve stands in for it), and the policy buys no more than the warehouse holds (the first run asked blindly and spent the merchants' lots on empty shelves). Lots are now counted as asked and as really filled.
+
+| Run | Fallen | Lots filled (all realms, 24 months) | Value traded (gold) | Merchants' tax | Merchants' strike months |
+| --- | --- | --- | --- | --- | --- |
+| Old rule, open from month 1 | 0 | 185 | 1937 | - | - |
+| Tax 0 % | 3 | 106 | 1237 | 0 | 13 |
+| Tax 10 % | 3 | 104 | 1225 | 115 | 17 |
+| Tax 20 % | 2 | 110 | 1258 | 247 | 60 |
+| Tax 30 % | 3 | 102 | 1176 | 343 | 77 |
+| Capacity 6 x 1 / x 2 / x 3 (tax 10 %) | 3 / 3 / 3 | 100 / 104 / 122 | 1123 / 1225 / 1419 | 96 / 115 / 133 | 9 / 17 / 21 |
+
+1. **The world trades little**: even with the old rule about 1 lot a realm a month changes hands (about 10 gold of value), because the warehouse is empty most months (the world is short of food and stone). With the market as a building about 0.5 lot. Ordinary taxes bring about 30 gold a month.
+2. **So any tax on trade is small in the village**: at 10 % about 0.6 gold a realm a month; at 20-30 % 1.3-1.8 gold, and the merchants strike 60-77 months out of 192.
+3. **The merchants are angry mostly because the warehouse is empty** (the idle factor), not because of the crown: 13 strike months even with no tax.
+4. **Capacity**: with sensible buying, 6 x 2 cuts about a quarter of the lots asked (mostly sales of the rich lands); 6 x 3 cuts a sixth and fills 17 % more.
+5. Halving the shocks changed nothing in the idle test (the realms that fall are the same, poor in wood).
+6. One realm more or less fallen moves with any small change: the falls (2-3 of 8, always poor in wood or food) are near the edge with this policy.
+
 ### Game 25: three automatic sovereigns (2026-11-08, 12 months, $0.21)
 
 `lab/auto_game.py new 0 12`, seed 0 as game 24: Aurelia F+ W= S-, Brenna F- W+ S=, Corvara F= W- S+. Every realm played by the rules R1–R9.

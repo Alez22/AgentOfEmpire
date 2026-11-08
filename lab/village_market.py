@@ -12,8 +12,8 @@ does not have yet:
   (center zone); until it is active the realm cannot trade;
 - merchants: adults kept off the fields while the market is active, up to
   its jobs; they cap the lots a realm can trade in a month;
-- the trade tax: a share of the margin on the realm's own side of its
-  trades comes back to its treasury;
+- the merchants' tax: their own rate on the gold value of the month's
+  trades; the merchants no longer pay the ordinary tax;
 - the merchants' mood: the engine's shared factors (no granary reserve),
   plus a trade factor, with a slower approach; their own unrest ladder,
   which stops at the strike (no trade the next month).
@@ -56,7 +56,10 @@ SALARY = 6
 BEFORE_WINTER = (8, 9, 10, 11, 12)  # month of the year, August to December
 BASE_HANDS = {"wood": 4, "stone": 3}
 KEEP_GOLD = 20
-MARKET_PURPOSES = [("center", "houses")]  # zone purposes the market may stand in
+# Zone purposes the market may stand in. The spec (2026-11-08) wants a
+# reserved market zone; the palace's reserve east of the square stands in for it.
+# First run: ("center", "houses"); with "center" only, houses filled it first.
+MARKET_PURPOSES = [("reserve",)]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -68,12 +71,17 @@ class Rules:
     build_turns: int = 2
     jobs: int = 6
     lots_per_merchant: int = 2
-    tax_share_pct: int = 50  # of the margin on the realm's own side
+    # The merchants' own tax (decided 2026-11-08), on the gold value of the
+    # month's trades; they no longer pay the ordinary tax.
+    merchant_tax_pct: int = 10
+    merchant_tax_free: int = 5  # like the peasants' tax_free_rate
+    merchant_tax_per_point: int = -10
+    shock_pct: int = 50  # famine and cold shocks on the merchants (deaths in full)
     # Merchants' mood (per mille, like the engine's)
     approach_pct: int = 10  # peasants: 25; merchants remember longer
     busy_bonus: int = 100  # recent use of the capacity at least busy_use_pct
     busy_use_pct: int = 40
-    idle_malus: int = -150  # no lot traded in the recent months
+    idle_malus: int = -250  # no lot traded in the recent months (first run: -150)
     recent_months: int = 3
     effort_loss_pct: int = 50  # capacity lost by discontented merchants
     strike_months: int = 1  # months without trade after the ladder reaches the strike
@@ -112,6 +120,7 @@ class Realm:
         self.opened = 0  # month the market became active
         self.tax_earned, self.lots_traded, self.lots_wanted, self.lots_cut = 0, 0, 0, 0
         self.max_lots = 0
+        self.lots_filled, self.value_traded = 0, 0  # what the warehouse really gave or took
         self.lowest_food, self.reduced_months, self.cold_months = self.state.food, 0, 0
         self.strike_months, self.protest_months = 0, 0
         self.merchant_low = 1000
@@ -227,6 +236,11 @@ def wanted_trades(state, config, market, policy):
             trade[good] = _affordable(-(-(target - have) // lot), buy_price(market, config, good), state.gold)
         elif have - (target + lot) >= lot:
             trade[good] = -((have - target - lot) // lot)
+    # A Treasurer sees the warehouse: no more lots asked than it holds (the
+    # first run asked blindly and spent the merchants' lots on empty shelves).
+    for good, lots in trade.items():
+        if lots > 0:
+            trade[good] = min(lots, -(-stock(market.goods[good]) // lot))
     return {g: n for g, n in trade.items() if n}
 
 
@@ -327,19 +341,21 @@ def build_orders(state, config, policy):
 
 # ---- after the month: tax and the merchants' mood --------------------------
 
-def trade_tax(events, market_before, config, rules):
-    """@brief Share of the margin on the realm's own side of this month's trades.
-    Purchases: gold paid minus the mid price. Sales paid: the margin is
-    price - sell price per lot, i.e. paid * margin / (100 - margin)."""
-    margin = 0
-    margin_pct = config.market.margin_pct
+def merchant_tax(events, market_before, rules):
+    """@brief The merchants' tax: their rate on the gold value of this month's
+    trades (lots bought and lots put on sale, at the month's mid price)."""
+    value = 0
     for event in events:
-        if event.kind == "trade_bought":
-            mid = event.data["lots"] * market_before.goods[event.data["good"]].price
-            margin += max(0, event.data["gold"] - mid)
-        elif event.kind == "trade_paid":
-            margin += event.data["gold"] * margin_pct // (100 - margin_pct)
-    return margin * rules.tax_share_pct // 100
+        if event.kind in ("trade_bought", "trade_on_sale"):
+            value += event.data["lots"] * market_before.goods[event.data["good"]].price
+    return value * rules.merchant_tax_pct // 100
+
+
+def ordinary_tax_on_merchants(adults, merchants, tax_rate, config):
+    """@brief The part of the engine's ordinary tax that the merchants paid
+    (the engine taxes every adult); the lab gives it back."""
+    divisor = config.economy.tax_divisor
+    return adults * tax_rate // divisor - (adults - merchants) * tax_rate // divisor
 
 
 def _event_value(events, kind, key):
@@ -357,13 +373,16 @@ def update_merchants(realm, config, rules, events):
     deaths = _event_value(events, "demography", "deaths")
     factors = mood_factors(state, config, food_needed(state, config), missing_pct, deaths)
     factors.pop("reserve")
+    factors["taxes"] = max(0, rules.merchant_tax_pct - rules.merchant_tax_free) * rules.merchant_tax_per_point
     factors["trade"] = trade_factor(m, rules)
     target = max(0, min(1000, config.mood.base + sum(factors.values())))
     m.mood += (target - m.mood) * rules.approach_pct // 100
-    m.mood -= missing_pct * config.mood.famine_shock_per_missing_pct + deaths * config.mood.death_shock
+    m.mood -= missing_pct * config.mood.famine_shock_per_missing_pct * rules.shock_pct // 100
+    m.mood -= deaths * config.mood.death_shock
     needed = _event_value(events, "firewood_short", "needed")
     if needed:
-        m.mood -= _event_value(events, "firewood_short", "missing") * 100 // needed * config.needs.cold_shock_per_pct
+        cold_pct = _event_value(events, "firewood_short", "missing") * 100 // needed
+        m.mood -= cold_pct * config.needs.cold_shock_per_pct * rules.shock_pct // 100
     m.mood = max(0, min(1000, m.mood))
     update_ladder(realm, config, rules)
 
@@ -418,12 +437,17 @@ def play(rules, policies, label):
         price_log.append({g: (buy_price(market, config, g), stock(market.goods[g])) for g in GOODS})
         months = {r.key: RealmMonth(r.state, month_orders(r, config, market, rules)) for r in live}
         before = market
+        taxed = {r.key: (r.state.adults, merchant_count(r, rules), r.state.tax_rate) for r in live}
         market, results = resolve_month(market, months, config)
         for r in live:
             result = results[r.key]
             r.state = result.state
-            tax = trade_tax(result.events, before, config, rules)
-            r.state.gold += tax
+            tax = merchant_tax(result.events, before, rules)
+            for event in result.events:
+                if event.kind in ("trade_bought", "trade_on_sale"):
+                    r.lots_filled += event.data["lots"]
+                    r.value_traded += event.data["lots"] * before.goods[event.data["good"]].price
+            r.state.gold += tax - ordinary_tax_on_merchants(*taxed[r.key], config)
             r.tax_earned += tax
             if market_active(r.state) and not r.opened:
                 r.opened = r.state.turn - 1
@@ -440,8 +464,9 @@ def report(label, realms, price_log):
     for r in realms:
         s, m = r.state, r.merchants
         end = f" | {s.game_over} at {s.turn - 1}" if s.game_over else ""
-        print(f"  {r.name:<11} open {r.opened or '-':>2} | gold {s.gold:>4} tax {r.tax_earned:>3}"
-              f" | lots {r.lots_traded:>3} (max/month {r.max_lots:>2}, cut {r.lots_cut:>3} of {r.lots_wanted:>3})"
+        print(f"  {r.name:<11} open {r.opened or '-':>2} | gold {s.gold:>4} mtax {r.tax_earned:>3}"
+              f" | lots asked {r.lots_traded:>3} filled {r.lots_filled:>3} value {r.value_traded:>4}"
+              f" (max/month {r.max_lots:>2}, cut {r.lots_cut:>3} of {r.lots_wanted:>3})"
               f" | food low {r.lowest_food:>5} reduced {r.reduced_months:>2} cold {r.cold_months}"
               f" | pop {s.population():>3}/{housing_capacity(s, CONFIG[0]):>3} farms {sum(b.kind == 'farm' for b in s.buildings)}"
               f" mood {s.mood:>3} {s.unrest}"
@@ -449,7 +474,8 @@ def report(label, realms, price_log):
               f" protests {r.protest_months} strike {r.strike_months}{end}")
     fallen = sum(1 for r in realms if r.state.game_over)
     opened = [r.opened for r in realms if r.opened]
-    print(f"  ALL: fallen {fallen} | opened {len(opened)} (months {sorted(opened)}) | lots {sum(r.lots_traded for r in realms)}"
+    print(f"  ALL: fallen {fallen} | opened {len(opened)} (months {sorted(opened)}) | lots asked {sum(r.lots_traded for r in realms)}"
+          f" filled {sum(r.lots_filled for r in realms)} value {sum(r.value_traded for r in realms)}"
           f" cut {sum(r.lots_cut for r in realms)} | tax {sum(r.tax_earned for r in realms)}"
           f" | gold {sum(r.state.gold for r in realms)} | merchants' strike months {sum(r.strike_months for r in realms)}")
     for month in (1, 6, 12, 18, 24):
@@ -466,7 +492,7 @@ def main_base():
     """@brief Baselines for the same policy: no market at all, and the old rule
     (market open from month 1, no building, no cap, no tax)."""
     play(Rules(), same(Policy(open_from=0)), "base: no market at all")
-    play(Rules(tax_share_pct=0), same(Policy(open_from=0, free_market=True)), "base: old rule, market open from month 1")
+    play(Rules(merchant_tax_pct=0), same(Policy(open_from=0, free_market=True)), "base: old rule, market open from month 1")
 
 
 def main_why():
@@ -509,15 +535,19 @@ def main_capacity():
 
 
 def main_tax():
-    for share in (0, 25, 50, 75):
-        play(Rules(tax_share_pct=share), same(Policy(open_from=1)), f"trade tax {share} % of the own margin")
+    """@brief The merchants' tax on the value of the month's trades.
+    First run: a share of the margin, 0.4 gold a realm a month at 50 %."""
+    for rate in (0, 5, 10, 20, 30):
+        play(Rules(merchant_tax_pct=rate), same(Policy(open_from=1)), f"merchants' tax {rate} % of the trades' value")
 
 
 def main_mood():
     """@brief Realms 1-4 stop trading in months 12-18: do the merchants strike,
     and only there?"""
     policies = [Policy(open_from=1, stop_trade=(12, 18)) for _ in range(4)] + [Policy(open_from=1) for _ in range(4)]
-    play(Rules(), policies, "mood, realms 1-4 trade nothing in months 12-18")
+    play(Rules(idle_malus=-150, shock_pct=100), policies, "mood, first run's values (idle -150, shocks in full), realms 1-4 idle 12-18")
+    play(Rules(idle_malus=-250, shock_pct=100), policies, "mood, idle -250, shocks in full, realms 1-4 idle 12-18")
+    play(Rules(), policies, "mood, idle -250, shocks at half, realms 1-4 idle 12-18")
 
 
 if __name__ == "__main__":
