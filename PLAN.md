@@ -110,7 +110,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - Step 2: the land fund split in December among the other states (needs them, and a cross-realm input for the replay)
   - [x] Council: orders, briefings, manual, prompts; first test with real models (game 19, 6 months)
   - [x] The map page on the phone (mockup first: illustrated tiles, the river joined, the realm's border in gold)
-  - [ ] A 12-month test game
+  - [x] A 12-month test game (game 20): the Architect plans the land unprompted; gold stops the growth; 3 runaway replies
   - Step 2: automatic states and contested borders; then trade, diplomacy, war
 - [ ] Market, trade and diplomacy (they give gold a use)
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
@@ -528,6 +528,23 @@ Same seed and persons as games 10 and 14–17. New since game 17: the Architect'
 3. The Treasurer called the gold "sufficient" while it fell from 104 to 48 (the house, upkeep and salaries above 19 a month of taxes).
 
 **Voice and people on GLM "high"**: the same cost as Flash "none" (about 0.0002 a call: GLM reasons little there), a little slower (2.7–2.9 s against 1.3–1.8). The people's decisions looked sound (effort +1 to +6, births 102–105%, one petition). The Voice's Italian is worse than with Flash: the Voice went back to Flash "none", the people stay on GLM "high".
+
+### Game 20 "Pianverde" (2026-11-08, first 12 months on the map; GLM 5.3 Flash "high", Voice on Flash "none")
+
+Claude as a sensible sovereign: approved most plans, removed 5 orders (two claims and a tax raise against an empty treasury, two feasts, a town plan the Chancellor invented), answered 5 petitions (3 granted). **$0.066 in 71 calls** ($0.0055 a month: the Architect's calls cost the most, input 4,500 → 6,300 tokens). The realm ended calm with food 1,899 and gold 12; 6 farms, 146 tiles.
+
+**On the map, good**
+
+1. **The Architect foresaw the land**: in February, "the Campi will be full as soon as the farm opens", it claimed 2 plain tiles to the south; in April it put 2 hands to clearing "as promised"; both tiles were cleared by June. In October, with the Campi full, it redrew the plan stretching the fields zone to row 62, beyond the border, and waited for the gold to claim more. It built the sixth farm in the last free place.
+2. **The Chancellor remembered** that the sovereign removed the claims ("la Vostra avversione alle acquisizioni") and kept the land for when the treasury allows.
+
+**Weak**
+
+1. **The Architect missed 2 meetings** (August, September): a reply ran up to the 8,000-token cap in 60 s and the retry at reasoning "none" got HTTP 400 from GLM (fixed: "low" for models that must reason); in September the call timed out at 90 s. In October one more runaway was saved by the fix. 3 runaways in 12 months, none in game 18: the longer briefing (map, zones, memory) may push GLM "high" into long reasoning.
+2. **Gold, not labour, stopped the growth**: the people petitioned the tax down to 6% three times; at 6% income is 18-20 against 23-24 of upkeep and salaries, so a 20-gold tile was never affordable after March. Gold now has a use, but a realm that listens to its people cannot grow: to watch in the next games (price, salaries, taxes).
+3. **The Chancellor**: put a "secret note" for the Treasurer inside the summary the sovereign reads (May); wrote in June "I add the farm to the plan" with no farm in the plan; in September, with the Architect absent, invented a town plan in the corner of the world (refused by the engine anyway); raised the tax to 10% two months after the petition for 6% was granted.
+4. **The ministers' memory says "Not approved by the sovereign" also for what the Chancellor left out**: the Architect believed the sovereign had refused a house it never saw.
+5. Sawmill and quarry without hands from July on (stores were large); garbled words again ("tarned", "sta Thanks", "Ora di goodwill"); the Treasurer's report once only "Petition check"; the Architect's report twice generic and off its duty (January, May).
 
 ### Lab: famine balance (2026-11-07)
 
