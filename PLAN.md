@@ -564,6 +564,18 @@ Same models; after the game 20 fixes (memory, Chancellor rules, ring 1, cap 6,00
 2. **"Room for 1 farm" does not say where**: the Architect believed the sixth farm would stand on the cleared land; it went to the core's last place.
 3. The Architect's report was generic and off its duty twice (round 2 of October; earlier games too); the Treasurer once proposed a house (not its order); "cinquantacinque" for 60 adults in a summary.
 
+### Game 22 "Valchiara" (2026-11-08, 12 months; price 10, salaries halved, claims inside zones)
+
+Claude as sovereign kept the tax at 8% (income 24-26 against 19-21 of upkeep and salaries: about +5 a month): granted the petitions to 8% and back to the normal ration, refused the one to 6%, removed two feasts, a tax raise to 10% and two claims the Chancellor invented in zones already owned. **$0.049 in 70 calls**, no missed meeting, longest call 23 s. The length check worked once (a one-word report asked again). The realm ended calm with food 1,779 and gold 27; 6 farms, 7 houses, 155 tiles (11 claimed, 113 gold into the fund; 5 still being cleared).
+
+**Good**: the Architect claimed **inside the fields zone** every time ("so the block grows as a block"), cleared outside winter with 3 to 6 hands, waited for the surplus ("111 ducats are not enough for nine tiles and the wages"); the Treasurer read the new margin right ("25 of income against 14 of upkeep and 6 of wages"); the Chancellor held the house back so the treasury would not fall to 2 gold before winter. Gold is now a real but reachable brake.
+
+**Weak**
+
+1. **The new fields zone was 2 rows deep again** (rows 60-61): the Architect claimed 11 tiles into it while the briefing said "Campi: full", and never saw that no farm fits there. "Full" does not say that even the whole zone, claimed and cleared, holds no farm. No farm on new land in 12 months.
+2. **The Chancellor invents territory orders**: in June two claims "inside" zones the realm already owned (refused by the engine anyway).
+3. Generic reports without numbers again (Treasurer and Architect in December; the same output size as good ones, so not a short reasoning); the Treasurer proposed a tax raise twice in calm months.
+
 ### Lab: famine balance (2026-11-07)
 
 The exact orders of games 1 and 2 replayed under mood variants (the base replay reproduces both games exactly). Mood month by month, from turn 2.
