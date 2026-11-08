@@ -176,6 +176,26 @@ def _after_full_fills(state: GameState, trade_results: list[OrderResult], market
     return trial
 
 
+def _share(asked: dict[str, int], available: int) -> dict[str, int]:
+    """@brief Lots for each buyer: all they asked when the warehouse holds
+    enough, else in proportion, rounded down, and the lots the rounding leaves
+    go one each to the largest remainders (ties: the realms' fixed order).
+
+    Why: rounded down only, 1 lot asked by two realms for 2 lots each gave
+    0 + 0 and stayed in the warehouse (game 24, September).
+    @param asked {realm: lots} in the realms' fixed order.
+    """
+    total = sum(asked.values())
+    if total <= available:
+        return dict(asked)
+    granted = {realm: lots * available // total for realm, lots in asked.items()}
+    leftover = available - sum(granted.values())
+    by_remainder = sorted(asked, key=lambda realm: -(asked[realm] * available % total))  # stable: ties keep order
+    for realm in by_remainder[:leftover]:
+        granted[realm] += 1
+    return granted
+
+
 def _take_oldest(book: GoodBook, units: int) -> dict[str, int]:
     """@brief Remove units from the oldest consignments. @return {seller: units}."""
     taken: dict[str, int] = {}
@@ -232,8 +252,7 @@ def resolve_market(market: MarketState, requests: dict[str, dict[str, int]],
         total = sum(asked.values())
         available = stock(book) // lot
         book.last_bought = 0
-        for realm, lots in asked.items():
-            granted = lots if total <= available else lots * available // total
+        for realm, granted in _share(asked, available).items():
             fills[realm][good] = granted
             book.last_bought += granted * lot
             for seller, units in _take_oldest(book, granted * lot).items():

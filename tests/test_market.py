@@ -177,3 +177,15 @@ def test_the_sovereign_reads_trades_in_italian():
     assert order_label({"action": "trade", "good": "wood", "side": "sell", "lots": 2}) == "Vendere al mercato 2 lotti di legno"
     assert event_label("trade_paid", {"gold": 27}) == "Il mercato ha pagato 27 oro per la merce venduta."
     assert rejection_label("NO_MARKET") == "in questo mondo non c'è mercato"
+
+
+def test_the_lots_left_by_rounding_still_go_to_a_buyer(config):
+    """Game 24: one lot asked by two realms for two each stayed unsold (0 + 0)."""
+    market = _empty_market(config)
+    market.goods["food"].queue = [Consignment("9", 50)]
+    _, fills, _ = resolve_market(market, {"1": {"food": 2}, "2": {"food": 2}}, config)
+    assert (fills["1"]["food"], fills["2"]["food"]) == (1, 0)  # equal remainders: the fixed order decides
+    market.goods["food"].queue = [Consignment("9", 250)]  # 5 lots for 3 + 3 + 1 asked
+    _, fills, _ = resolve_market(market, {"1": {"food": 3}, "2": {"food": 3}, "3": {"food": 1}}, config)
+    assert sum(f["food"] for f in fills.values()) == 5
+    assert (fills["1"]["food"], fills["2"]["food"], fills["3"]["food"]) == (2, 2, 1)

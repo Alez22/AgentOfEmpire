@@ -10,7 +10,8 @@
 # salary: gold a month, paid by the engine after the buildings' upkeep.
 # Halved on 2026-11-08 (rounded up): with 10 gold a month for a council and
 # taxes at 8%, the treasury kept about 4 gold a month and land was out of reach.
-# Small test set (2026-11-07): 2 moderate + 2 extreme per role.
+# Small test set (2026-11-07): 2 moderate + 2 extreme per role; a third
+# moderate per role on 2026-11-08, for games of three realms.
 
 # ------------------------------------------------------------ treasurers
 
@@ -35,6 +36,17 @@ traits = { prudence = 520, loyalty = 600, ambition = 480, honesty = 620, compete
 tier = "medium"
 salary = 2
 resume = "Figlia di un mugnaio, ha tenuto per dieci anni i registri del granaio del monastero. Conosce le famiglie del borgo una per una."
+
+[[persona]]
+id = "gualtiero"
+role = "treasurer"
+name = "Gualtiero Bracci"
+gender = "m"
+group = "moderate"
+traits = { prudence = 540, loyalty = 560, ambition = 500, honesty = 560, competence = 560 }
+tier = "medium"
+salary = 2
+resume = "Ha portato i conti di una compagnia di mulattieri tra le valli. Sa quanto vale una soma al passo e quanto al borgo."
 
 [[persona]]
 id = "lapo"
@@ -70,6 +82,17 @@ traits = { prudence = 560, loyalty = 600, ambition = 420, honesty = 640, compete
 tier = "medium"
 salary = 2
 resume = "Figlia di un capomastro, ha costruito granai per i monasteri della valle. Misura due volte prima di tagliare."
+
+[[persona]]
+id = "ilaria"
+role = "architect"
+name = "Ilaria Fonti"
+gender = "f"
+group = "moderate"
+traits = { prudence = 520, loyalty = 580, ambition = 480, honesty = 600, competence = 540 }
+tier = "medium"
+salary = 2
+resume = "Ha scavato canali e rifatto mulini lungo il fiume. Pensa prima all'acqua e alle strade, poi alle mura."
 
 [[persona]]
 id = "bertoldo"
@@ -116,6 +139,17 @@ traits = { prudence = 560, loyalty = 620, ambition = 440, honesty = 600, compete
 tier = "medium"
 salary = 2
 resume = "Notaio del borgo, ha messo d'accordo più eredi litigiosi di chiunque altro. Ascolta tutti prima di parlare."
+
+[[persona]]
+id = "ruggero"
+role = "chancellor"
+name = "Ruggero Landi"
+gender = "m"
+group = "moderate"
+traits = { prudence = 540, loyalty = 600, ambition = 460, honesty = 580, competence = 560 }
+tier = "medium"
+salary = 2
+resume = "Già giudice delle fiere del contado, ha risolto liti tra mercanti venuti da lontano. Vuole i patti scritti e firmati."
 
 [[persona]]
 id = "costanza"
