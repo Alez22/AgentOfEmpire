@@ -216,7 +216,8 @@ def test_clearing_workers_make_the_land_usable(start_state, config):
     apply_orders(start_state, _orders({"action": "assign_workers", "food": 54, "wood": 4, "stone": 0,
                                        "clearing": 2}), config)
     state = resolve_turn(start_state, [], config).state
-    assert state.clearing_queue[0][:2] == list(first) and state.clearing_queue[0][2] == 4
+    assert state.clearing_queue[0][:2] == list(first)
+    assert state.clearing_queue[0][2] == config.map.clear_work_plain - 2
     state.workers.clearing = 10
     result = resolve_turn(state, [], config)
     assert result.state.owned[first[1]][first[0]] == OWNED

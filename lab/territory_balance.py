@@ -119,11 +119,11 @@ def play(policy, config):
 def main():
     base = load_config()
     variants = {
-        "today (claim 10, plain 6, fell 5)": base,
-        "cheap land (claim 5)": _variant(base, claim_base_gold=5),
-        "dear land (claim 20)": _variant(base, claim_base_gold=20),
-        "quick clearing (plain 3)": _variant(base, clear_work_plain=3),
-        "rich felling (fell 10)": _variant(base, fell_wood_per_work=10),
+        "today (claim 20, plain 3, fell 10)": base,
+        "older values (claim 10, plain 6, fell 5)": _variant(base, claim_base_gold=10, clear_work_plain=6,
+                                                             fell_wood_per_work=5),
+        "cheap land (claim 10)": _variant(base, claim_base_gold=10),
+        "slow clearing (plain 6)": _variant(base, clear_work_plain=6),
     }
     for name, policy in (("still", still_orders), ("grower", grower_orders), ("feller", feller_orders)):
         print(f"\n== {name}")

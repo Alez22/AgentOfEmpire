@@ -93,16 +93,16 @@ demolish_gold = 10
 demolish_refund_pct = 25  # of the wood and stone the building cost
 # Claiming a bordering tile: gold per tile = base + 1 for every claim_step_tiles
 # tiles already owned beyond the core. The gold goes to the land fund.
-claim_base_gold = 10
+claim_base_gold = 20  # lab 2026-11-08: at 10 gold was no brake
 claim_step_tiles = 8
 claim_max_per_order = 4
 # Clearing a claimed tile, in worker-months. A claimed forest stays standing
 # (it feeds the sawmills); felling it is a choice (fell_forest) and gives
 # wood for every worker-month, then the tile is plain. To tune in the lab.
-clear_work_plain = 6
+clear_work_plain = 3  # lab: at 6 no farm on new land in two years
 clear_work_hill = 10
 clear_work_forest = 12
-fell_wood_per_work = 5
+fell_wood_per_work = 10  # lab: at 5 felling paid less than a sawmill worker (6)
 
 [economy]
 food_per_child = 6
