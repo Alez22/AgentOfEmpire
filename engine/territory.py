@@ -28,10 +28,12 @@ from engine.state import Building, Event, GameState, Zone
 MAPS_DIR = Path(__file__).with_name("maps")
 TERRAIN_CHARS = {"plain": ".", "river": "~", "forest": "T", "hill": "^"}
 NOT_OWNED, OWNED, WILD = "-", "o", "w"
-ZONE_PURPOSES = ("fields", "center", "houses", "workshops", "reserve")
+ZONE_PURPOSES = ("fields", "center", "houses", "workshops", "reserve", "market")
 # Zone purposes each building kind may stand in (houses also around the square).
+# The market only in its own zone: in the lab, houses filled the center first
+# and two realms of eight never found room for it (2026-11-08).
 KIND_PURPOSES = {"farm": ("fields",), "sawmill": ("workshops",), "quarry": ("workshops",),
-                 "house": ("houses", "center")}
+                 "house": ("houses", "center"), "market": ("market",)}
 SQUARE = "square"
 # Shifts tried, in this order, when a building given by coordinates does
 # not fit: one tile north, east, south, west, then the diagonals.

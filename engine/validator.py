@@ -18,6 +18,7 @@ from engine.orders import (
     FellForestOrder,
     HoldFeastOrder,
     Order,
+    SetMerchantTaxOrder,
     SetRationOrder,
     SetTaxOrder,
     SetZonesOrder,
@@ -74,6 +75,11 @@ def _place_on_map(state: GameState, order: BuildOrder, config: Config) -> tuple[
 
 
 def _apply_build(state: GameState, order: BuildOrder, config: Config) -> OrderResult:
+    if order.building not in config.buildings:
+        # A game saved before the market building has none in its config.
+        return _reject(order, "UNKNOWN_BUILDING", f"no {order.building} in this game")
+    if order.building == "market" and any(b.kind == "market" for b in state.buildings):
+        return _reject(order, "ONE_PER_REALM", "the realm already has a market (or its site)")
     spec = config.buildings[order.building]
     place = None
     if state.has_map():
@@ -182,14 +188,14 @@ def _apply_demolish(state: GameState, order: DemolishOrder, config: Config) -> O
 
 
 def _apply_assign(state: GameState, order: AssignWorkersOrder) -> OrderResult:
-    requested = order.food + order.wood + order.stone + order.clearing
+    requested = order.food + order.wood + order.stone + order.clearing + order.trade
     if requested > state.adults:
         return _reject(
             order, "NOT_ENOUGH_WORKERS", f"{requested} requested, {state.adults} adults"
         )
     if order.clearing and not state.has_map():
         return _reject(order, "NO_MAP", "this realm has no map: no land to clear")
-    state.workers = Workers(order.food, order.wood, order.stone, order.clearing)
+    state.workers = Workers(order.food, order.wood, order.stone, order.clearing, order.trade)
     return OrderResult(order, True)
 
 
@@ -199,6 +205,16 @@ def _apply_tax(state: GameState, order: SetTaxOrder, config: Config) -> OrderRes
             order, "INVALID_PARAM", f"tax rate above {config.economy.max_tax_rate} %"
         )
     state.tax_rate = order.rate
+    return OrderResult(order, True)
+
+
+def _apply_merchant_tax(state: GameState, order: SetMerchantTaxOrder, config: Config) -> OrderResult:
+    market = config.market
+    if market is None or not market.needs_building:
+        return _reject(order, "NO_MARKET", "this game has no merchants' tax")
+    if order.rate > market.max_merchant_tax:
+        return _reject(order, "INVALID_PARAM", f"merchants' tax above {market.max_merchant_tax} %")
+    state.merchant_tax_rate = order.rate
     return OrderResult(order, True)
 
 
@@ -218,12 +234,15 @@ def _apply_ration(state: GameState, order: SetRationOrder) -> OrderResult:
 
 
 def _apply_policy(
-    state: GameState, order: SetTaxOrder | SetRationOrder, config: Config, policies_set: set[str]
+    state: GameState, order: SetTaxOrder | SetRationOrder | SetMerchantTaxOrder, config: Config,
+    policies_set: set[str],
 ) -> OrderResult:
     if order.action in policies_set:
         return _reject(order, "DUPLICATE_POLICY", f"{order.action} already set this turn")
     if isinstance(order, SetTaxOrder):
         result = _apply_tax(state, order, config)
+    elif isinstance(order, SetMerchantTaxOrder):
+        result = _apply_merchant_tax(state, order, config)
     else:
         result = _apply_ration(state, order)
     if result.accepted:

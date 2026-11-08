@@ -187,7 +187,11 @@ def test_each_realm_of_a_game_starts_on_its_own_site(db):
 
 
 def _three_realm_game(db):
-    game_id = create_game(db, load_raw_config(), seed=0, realm_names=["Nord", "Est", "Sud"], council_models=COUNCIL)
+    # The market open from the first month, as before village block A
+    # (tests/test_village_market.py covers the market building).
+    raw = load_raw_config()
+    raw["market"]["needs_building"] = False
+    game_id = create_game(db, raw, seed=0, realm_names=["Nord", "Est", "Sud"], council_models=COUNCIL)
     realm_ids = [r[0] for r in db.execute("SELECT id FROM realms WHERE game_id = %s ORDER BY id", (game_id,))]
     return game_id, realm_ids
 

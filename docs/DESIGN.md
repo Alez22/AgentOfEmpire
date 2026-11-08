@@ -1260,7 +1260,7 @@ The vision is in Part 1 ("The eras": every class is born from a building; "Trave
 **Order of work** (one commit each, with tests)
 
 1. Lab and values. **Done 2026-11-08** (`lab/village_market.py`, three runs in `PLAN.md`).
-2. Engine: the building and its zone purpose, the core redrawn, the `trade` sector, capacity, `NO_MARKET_BUILDING`, the merchants' tax and `set_merchant_tax`.
+2. Engine: the building and its zone purpose, the core redrawn, the `trade` sector, capacity, `NO_MARKET_BUILDING`, the merchants' tax and `set_merchant_tax`. **Built 2026-11-08**: `[buildings.market]` (80 wood, 2 months, 6 jobs, sector `trade`) and `[market]` `needs_building`, `lots_per_merchant` 3, `merchant_tax_start` 10, `max_merchant_tax` 30 in `engine/config.toml`; zone purpose `market` and the core's "Mercato" zone (2 hexes south of the square; the center lost 2 house places); `Workers.trade`, `merchant_tax_rate` (snapshot format 4); refusals `NO_MARKET_BUILDING`, `TRADE_CAPACITY` (checked on the merchants at the start of the month: trades run before this month's `assign_workers`), `ONE_PER_REALM`, `UNKNOWN_BUILDING`; the merchants' tax paid with the trades, before the month's orders (event `merchant_tax`); the ordinary tax on the other adults only. `tests/test_village_market.py`; games 20–26 replay unchanged. Until step 4 the council does not know the market building: a new game's Treasurer would propose trades that are refused.
 3. Engine: mood and unrest per class (one engine, `[classes.*]`), the merchants' effort and strike.
 4. Council: briefings, manual, prompts and craft, the Voice's second voice, R10.
 5. UI: kingdom, market page, map sprite, labels.

@@ -57,8 +57,11 @@ def housing_capacity(state: GameState, config: Config) -> int:
 
 
 def monthly_tax_income(state: GameState, config: Config) -> int:
-    """@brief Gold the taxes bring this month at the current rate."""
-    return state.adults * state.tax_rate // config.economy.tax_divisor
+    """@brief Gold the ordinary tax brings this month at the current rate.
+    The merchants (workers.trade) pay their own tax on trade instead
+    (engine/market.py); games without merchants have workers.trade = 0."""
+    taxed_adults = state.adults - state.workers.trade
+    return taxed_adults * state.tax_rate // config.economy.tax_divisor
 
 
 def monthly_upkeep(state: GameState, config: Config) -> int:
@@ -332,14 +335,15 @@ def _rescale_workers(state: GameState, events: list[Event]) -> None:
     assigned = state.workers.total()
     if assigned <= state.adults:
         return
-    # Clearing last: with no clearing workers (games without a map) the
-    # result is the same as with the three sectors alone.
-    counts = [state.workers.food, state.workers.wood, state.workers.stone, state.workers.clearing]
+    # Clearing and trade last: with none of them (games without a map or a
+    # market) the result is the same as with the three sectors alone.
+    counts = [state.workers.food, state.workers.wood, state.workers.stone, state.workers.clearing,
+              state.workers.trade]
     shares = [count * state.adults for count in counts]
     new_counts = [share // assigned for share in shares]
     remainders = [share % assigned for share in shares]
     leftover = state.adults - sum(new_counts)
-    by_remainder = sorted(range(4), key=lambda i: -remainders[i])  # stable sort
+    by_remainder = sorted(range(5), key=lambda i: -remainders[i])  # stable sort
     for index in by_remainder[:leftover]:
         new_counts[index] += 1
     state.workers = Workers(*new_counts)

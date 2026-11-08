@@ -6,8 +6,9 @@
 # zigzags through hex sides, so it joins as one stream.
 # Buildings by their anchor tile (the farm's centre, the others' first
 # tile); shapes in engine/config.toml (hex_steps). Room to grow: 2 farm
-# flowers in the fields, 14 houses (Centro, Case di ponente, Case della riva),
-# a second sawmill by the forest, a second quarry on the hills.
+# flowers in the fields, 12 houses (Centro, Case di ponente, Case della riva),
+# a second sawmill by the forest, a second quarry on the hills, and the
+# market's place (2 hexes south of the square).
 
 terrain = """
 TTTT.....~^^
@@ -43,7 +44,11 @@ buildings = [
 # keeps the palace's rhombus (7,2) (8,2) (7,3) (8,3) free, east of the square
 # (DESIGN: the palace comes later, without a redraw).
 zones = [
-  { name = "Centro", purpose = "center", x1 = 4, y1 = 2, x2 = 6, y2 = 5 },
+  { name = "Centro", purpose = "center", x1 = 4, y1 = 2, x2 = 6, y2 = 4 },
+  # The market's reserved place (village block A, 2026-11-08): the two free
+  # hexes south of the square, out of the center so houses cannot take them.
+  { name = "Mercato", purpose = "market", x1 = 5, y1 = 5, x2 = 6, y2 = 5 },
+  { name = "Case del mercato", purpose = "houses", x1 = 4, y1 = 5, x2 = 4, y2 = 5 },
   { name = "Riserva del palazzo", purpose = "reserve", x1 = 7, y1 = 2, x2 = 8, y2 = 3 },
   { name = "Case della riva", purpose = "houses", x1 = 7, y1 = 4, x2 = 8, y2 = 5 },
   { name = "Case di ponente", purpose = "houses", x1 = 0, y1 = 4, x2 = 3, y2 = 5 },

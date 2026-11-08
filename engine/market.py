@@ -17,6 +17,9 @@ lab/market_closed.py. Pure and integer-only, like the turn.
 - With short_last_lot, units under a whole lot (left by spoilage) sell as
   one short lot, paid by the unit.
 - Food in the warehouse spoils like the granaries.
+- With needs_building (village block A): a realm trades only once its
+  market building is active, at most its merchants' lots a month, and the
+  merchants pay their own tax on the gold value of the month's trades.
 
 A month of the whole game (resolve_month): check every realm's trades,
 fill them, give each realm its goods and gold, then resolve each realm's
@@ -30,7 +33,7 @@ from engine.config import Config
 from engine.orders import Order, TradeOrder
 from engine.people import PeopleChoice
 from engine.state import Event, GameState
-from engine.turn import TurnResult, resolve_turn
+from engine.turn import TurnResult, jobs_in_sector, resolve_turn
 from engine.validator import OrderResult, PlanReport, check_plans
 
 GOODS = ("food", "wood", "stone")
@@ -103,6 +106,22 @@ def stock(book: GoodBook, include_start_stock: bool = True) -> int:
     return sum(c.units for c in book.queue if include_start_stock or c.seller != MERCHANT)
 
 
+def has_active_market(state: GameState) -> bool:
+    """@brief True if the realm's market building is finished."""
+    return any(b.kind == "market" and b.turns_left == 0 for b in state.buildings)
+
+
+def trade_capacity(state: GameState, config: Config) -> int | None:
+    """@brief Lots the realm may trade this month: its merchants at the start of
+    the month (trades run before this month's assign_workers) times
+    lots_per_merchant, merchants above the market's jobs not counted.
+    @return None when the game has no cap (market open from the first month)."""
+    if not config.market.needs_building:
+        return None
+    merchants = min(state.workers.trade, jobs_in_sector(state, config, "trade"))
+    return merchants * config.market.lots_per_merchant
+
+
 def _has_on_sale(market: MarketState, good: str, realm_key: str) -> bool:
     return any(c.seller == realm_key for c in market.goods[good].queue)
 
@@ -119,8 +138,16 @@ def check_trades(state: GameState, orders: list[TradeOrder], market: MarketState
     requests: dict[str, int] = {}
     gold_left = state.gold
     goods_left = {good: getattr(state, good) for good in GOODS}
+    lots_left = trade_capacity(state, config)
     results = []
     for order in sorted(orders, key=lambda o: o.priority):
+        if config.market.needs_building and not has_active_market(state):
+            results.append(OrderResult(order, False, "NO_MARKET_BUILDING", "the realm has no market yet"))
+            continue
+        if lots_left is not None and order.lots > lots_left:
+            results.append(OrderResult(order, False, "TRADE_CAPACITY",
+                                       f"the merchants can handle {lots_left} more lots this month"))
+            continue
         signed = order.lots if order.side == "buy" else -order.lots
         if requests.get(order.good, 0) * signed < 0:
             results.append(OrderResult(order, False, "BOTH_SIDES", f"already trading {order.good} the other way"))
@@ -143,6 +170,8 @@ def check_trades(state: GameState, orders: list[TradeOrder], market: MarketState
                 continue
             gold_left -= cost
         requests[order.good] = requests.get(order.good, 0) + signed
+        if lots_left is not None:
+            lots_left -= order.lots
         results.append(OrderResult(order, True))
     return requests, results
 
@@ -353,7 +382,20 @@ def apply_trade(state: GameState, fills: dict[str, int], gold_paid: int, market:
     if gold_paid:
         state.gold += gold_paid
         events.append(Event("trade_paid", {"gold": gold_paid}))
+    tax = merchant_tax(state, fills, market)
+    if tax:
+        state.gold += tax
+        events.append(Event("merchant_tax", {"gold": tax}))
     return events
+
+
+def merchant_tax(state: GameState, fills: dict[str, int], market: MarketState) -> int:
+    """@brief The merchants' tax of this month: their rate on the gold value of
+    the lots bought and put on sale, at the month's mid price (rounded down).
+    New gold, like the ordinary tax (the realm is one purse); 0 when the rate
+    is 0, as in games where the market needs no building."""
+    value = sum(abs(lots) * market.goods[good].price for good, lots in fills.items())
+    return value * state.merchant_tax_rate // 100
 
 
 def resolve_month(market: MarketState | None, realms: dict[str, RealmMonth],

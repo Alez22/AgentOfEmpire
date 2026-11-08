@@ -19,7 +19,7 @@ SEASONS = ("winter", "spring", "summer", "autumn")
 SEASONS_IT = {"winter": "inverno", "spring": "primavera", "summer": "estate", "autumn": "autunno"}
 PRODUCT = {"food": "food", "wood": "wood", "stone": "stone"}
 PRODUCT_IT = {"food": "cibo", "wood": "legno", "stone": "pietra"}
-BUILDING_IT = {"farm": "Fattoria", "sawmill": "Segheria", "quarry": "Cava", "house": "Casa"}
+BUILDING_IT = {"farm": "Fattoria", "sawmill": "Segheria", "quarry": "Cava", "house": "Casa", "market": "Mercato"}
 
 
 def _season_pcts(config: Config) -> dict[str, int]:
@@ -45,6 +45,13 @@ def _yield_text_it(config: Config, spec) -> str:
     return f"ogni lavoratore produce {spec.output_per_worker} {PRODUCT_IT[spec.sector]} al mese"
 
 
+def _buildings(config: Config) -> list:
+    """@brief The building kinds of this game. The market building only where
+    the market needs one (village block A): elsewhere it is not a rule."""
+    needs_market = config.market is not None and config.market.needs_building
+    return [(kind, spec) for kind, spec in config.buildings.items() if spec.sector != "trade" or needs_market]
+
+
 def _gold_text(config: Config) -> str:
     if config.market is not None:
         return ("Gold also buys food, wood and stone at the common market, and selling them there brings gold "
@@ -60,9 +67,14 @@ def prompt_text(config: Config) -> str:
              else "each uses one free tile")
     lines = ["The manual of the realm (how things work; the numbers of this month are in your briefing):",
              f"Buildings ({where}; a site produces nothing until finished):"]
-    for kind, spec in config.buildings.items():
+    for kind, spec in _buildings(config):
         cost = f"costs wood {spec.wood}, stone {spec.stone}, gold {spec.gold}; built in {spec.build_turns} months"
-        if spec.jobs:
+        if spec.sector == "trade":
+            # Village block A: the merchants produce no goods, they handle lots.
+            line = (f"- {kind}: {cost}; only one per realm, in a market zone; {spec.jobs} jobs for merchants, "
+                    f"each handles {config.market.lots_per_merchant} lots a month at the common market. "
+                    "Without it the realm cannot trade.")
+        elif spec.jobs:
             line = f"- {kind}: {cost}; {spec.jobs} jobs; {_yield_text(config, spec)}"
             if spec.sector == "food":
                 line += f" at the season's yield ({seasons})"
@@ -190,10 +202,14 @@ def page_sections(config: Config) -> list[dict]:
     economy, unrest = config.economy, config.unrest
     seasons = ", ".join(f"{SEASONS_IT[s]} {p}%" for s, p in _season_pcts(config).items())
     buildings = []
-    for kind, spec in config.buildings.items():
+    for kind, spec in _buildings(config):
         cost = (f"Costa {spec.wood} legno, {spec.stone} pietra, {spec.gold} oro; "
                 f"si costruisce in {spec.build_turns} mesi.")
-        if spec.jobs:
+        if spec.sector == "trade":
+            text = (f"{cost} Uno solo per regno, in una zona del mercato; {spec.jobs} posti per i mercanti, ognuno "
+                    f"tratta {config.market.lots_per_merchant} lotti al mese al mercato comune. Senza, il regno "
+                    "non commercia.")
+        elif spec.jobs:
             text = f"{cost} {spec.jobs} posti di lavoro; {_yield_text_it(config, spec)}"
             text += f", secondo la stagione ({seasons})." if spec.sector == "food" else "."
             text += " Rende per ogni lavoratore, anche se non è piena."

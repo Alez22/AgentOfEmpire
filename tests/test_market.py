@@ -4,9 +4,20 @@ land levels", step 2)."""
 import copy
 from dataclasses import replace
 
-from engine import check_plans, new_game, parse_order, resolve_turn
+import pytest
+
+from engine import check_plans, load_config, new_game, parse_order, resolve_turn
 from engine.market import (MERCHANT, Consignment, RealmMonth, buy_price, check_month_plan, check_trades, market_from_dict,
                            market_to_dict, new_market, resolve_market, resolve_month, sell_price, stock)
+
+
+@pytest.fixture
+def config():
+    """@brief The market's own mechanics, as before village block A: open from
+    the first month, no lot cap, no merchants' tax (tests/test_village_market.py
+    covers the market building)."""
+    base = load_config()
+    return replace(base, market=replace(base.market, needs_building=False))
 
 
 def _trade(good, side, lots, priority=0):

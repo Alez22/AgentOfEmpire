@@ -35,6 +35,14 @@ def realm(db):
     return game_id, realm_id
 
 
+def _open_market_raw() -> dict:
+    """@brief The config with the market open from the first month, as before
+    village block A (the council's side of block A comes in its step 4)."""
+    raw = load_raw_config()
+    raw["market"]["needs_building"] = False
+    return raw
+
+
 def _messages(db, realm_id, turn=1):
     return meeting.list_messages(db, realm_id, turn)
 
@@ -567,9 +575,10 @@ def test_the_treasurer_reads_the_market(db, realm, settings):
     assert "- Market prices (buy/sell a lot of 50): food 11/9, wood 17/13, stone 22/18." in chancellor
 
 
-def test_the_cost_check_counts_the_trades_first(db, realm, settings):
+def test_the_cost_check_counts_the_trades_first(db, settings):
     """Wood bought at the market pays for a house the same month."""
-    _, realm_id = realm
+    game_id = create_game(db, _open_market_raw(), seed=3, realm_names=["Nord"], council_models=COUNCIL)
+    realm_id = db.execute("SELECT id FROM realms WHERE game_id = %s", (game_id,)).fetchone()[0]
     buy_wood = {"action": "trade", "good": "wood", "side": "buy", "lots": 1}
     treasurer = json.dumps({"report": "Maestà, compriamo un lotto di legno al mercato.", "proposals": [buy_wood]})
     architect = json.dumps({"report": "Maestà, costruiamo una nuova fattoria nei campi.", "proposals": [{"action": "build", "building": "farm"}]})

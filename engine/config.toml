@@ -85,6 +85,25 @@ height = 1
 terrain = "plain"
 hex_steps = []
 
+# The market building (docs/DESIGN.md, "The market as a building, merchants and
+# their mood"; lab/village_market.py). Wood only: with 40-60 stone 5-7 realms of
+# 8 fell in the lab (the world is short of stone). Its jobs are the merchants
+# (sector "trade"); they produce no goods, they cap the lots a month ([market]).
+# Only in a zone of purpose "market" (a reserved place in the core).
+[buildings.market]
+wood = 80
+stone = 0
+gold = 0
+build_turns = 2
+jobs = 6
+output_per_worker = 0
+sector = "trade"
+housing = 0
+width = 2
+height = 1
+terrain = "plain"
+hex_steps = [["E"]]
+
 # The territory (docs/DESIGN.md, "Territory"). Without this section (games
 # saved before) a realm has no map and counts free_tiles instead.
 [map]
@@ -145,6 +164,13 @@ cover_months = 3
 start_stock_per_realm = { food = 100, wood = 50, stone = 30 }
 short_last_lot = true  # game 24: 48 food rotted, nobody could buy less than a lot
 no_buying_own_goods = true  # game 24: buying back one's own goods pays the margin twice
+# Village block A (2026-11-08): the realm trades only once its market building
+# is active, within its merchants' lots; the merchants pay their own tax on the
+# gold value of the month's trades instead of the ordinary tax.
+needs_building = true
+lots_per_merchant = 3  # lab: x 2 cut a quarter of the lots asked
+merchant_tax_start = 10  # percent of the trades' value; about 0.6 gold a realm a month in the lab
+max_merchant_tax = 30
 
 # Output per worker by land level; it replaces output_per_worker for realms
 # on a site with levels. Fair equals the buildings' values above.

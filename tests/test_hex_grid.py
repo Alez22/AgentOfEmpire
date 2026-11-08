@@ -152,7 +152,8 @@ def test_the_hex_core_leaves_room_to_grow(hex_world_config):
     assert _room(state, hex_world_config, "farm") == 2
     assert _room(state, hex_world_config, "sawmill") == 1
     assert _room(state, hex_world_config, "quarry") == 1
-    assert _room(state, hex_world_config, "house") == 14
+    assert _room(state, hex_world_config, "house") == 12  # 14 before the market's place (2026-11-08)
+    assert _room(state, hex_world_config, "market") == 1
 
 
 def test_the_palace_rhombus_is_left_free(hex_world_config):

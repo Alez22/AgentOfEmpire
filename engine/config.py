@@ -198,6 +198,12 @@ class MarketConfig:
     # as they were played.
     short_last_lot: bool = False  # less than a lot in the warehouse sells as one short lot
     no_buying_own_goods: bool = False  # a realm with a good on sale cannot buy that good
+    # Village block A (2026-11-08); False / 0 keeps older games as they were:
+    # the market open from the first month, no cap, no merchants' tax.
+    needs_building: bool = False  # trade only with an active market building
+    lots_per_merchant: int = 0  # lots a month per merchant at the market
+    merchant_tax_start: int = 0  # merchants' tax at game start, % of the trades' value
+    max_merchant_tax: int = 0
 
 
 @dataclass(frozen=True)

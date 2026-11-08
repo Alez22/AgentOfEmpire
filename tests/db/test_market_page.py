@@ -46,7 +46,9 @@ def test_the_market_page_shows_the_prices(ui, database_url):
 
 
 def test_own_goods_on_sale_are_shown_and_no_one_else_s(ui, database_url):
-    game_id, (nord, est) = _game(database_url, load_raw_config(), ("Nord", "Est"))
+    raw = load_raw_config()
+    raw["market"]["needs_building"] = False  # trade from the first month, as before village block A
+    game_id, (nord, est) = _game(database_url, raw, ("Nord", "Est"))
     with psycopg.connect(database_url, autocommit=True) as conn:
         submit_order(conn, nord, {"action": "trade", "good": "wood", "side": "sell", "lots": 2})
         submit_order(conn, est, {"action": "trade", "good": "stone", "side": "buy", "lots": 1})

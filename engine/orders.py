@@ -20,7 +20,7 @@ class BaseOrder(BaseModel):
 
 class BuildOrder(BaseOrder):
     action: Literal["build"]
-    building: Literal["farm", "sawmill", "quarry", "house"]
+    building: Literal["farm", "sawmill", "quarry", "house", "market"]
     # On the map: the zone to build in and, optionally, the top-left tile.
     # Without them the engine picks the place nearest the square.
     zone: str | None = None
@@ -34,6 +34,7 @@ class AssignWorkersOrder(BaseOrder):
     wood: int = Field(ge=0)
     stone: int = Field(ge=0)
     clearing: int = Field(default=0, ge=0)  # totals like the others: missing = 0
+    trade: int = Field(default=0, ge=0)  # merchants at the market building
 
 
 class SetTaxOrder(BaseOrder):
@@ -46,6 +47,12 @@ class SetRationOrder(BaseOrder):
     ration: Literal["reduced", "normal", "abundant"]
 
 
+class SetMerchantTaxOrder(BaseOrder):
+    """The merchants' own tax, percent of the gold value of the month's trades."""
+    action: Literal["set_merchant_tax"]
+    rate: int = Field(ge=0)
+
+
 class HoldFeastOrder(BaseOrder):
     action: Literal["hold_feast"]
     gold: int = Field(gt=0)
@@ -53,7 +60,7 @@ class HoldFeastOrder(BaseOrder):
 
 class ZoneSpec(BaseModel):
     name: str = Field(min_length=1, max_length=40)
-    purpose: Literal["fields", "center", "houses", "workshops", "reserve"]
+    purpose: Literal["fields", "center", "houses", "workshops", "reserve", "market"]
     x1: int
     y1: int
     x2: int
@@ -100,7 +107,8 @@ class TradeOrder(BaseOrder):
 
 Order = Annotated[
     BuildOrder | AssignWorkersOrder | SetTaxOrder | SetRationOrder | HoldFeastOrder
-    | SetZonesOrder | DemolishOrder | ClaimTilesOrder | FellForestOrder | TradeOrder,
+    | SetZonesOrder | DemolishOrder | ClaimTilesOrder | FellForestOrder | TradeOrder
+    | SetMerchantTaxOrder,
     Field(discriminator="action"),
 ]
 

@@ -42,9 +42,10 @@ class Workers:
     wood: int
     stone: int
     clearing: int = 0  # clearing claimed land (territory); 0 for games without a map
+    trade: int = 0  # merchants at the market building; 0 for games without one
 
     def total(self) -> int:
-        return self.food + self.wood + self.stone + self.clearing
+        return self.food + self.wood + self.stone + self.clearing + self.trade
 
 
 @dataclass
@@ -99,6 +100,9 @@ class GameState:
     # "stone": "poor"}. Empty for games without levels: buildings yield their
     # config value. Never shown to players (docs/DESIGN.md, "Land levels").
     land_levels: dict[str, str] = field(default_factory=dict)
+    # The merchants' own tax, percent of the gold value of the month's trades
+    # (village block A). 0 for games where the market needs no building.
+    merchant_tax_rate: int = 0
 
     def has_map(self) -> bool:
         return bool(self.terrain)
@@ -147,6 +151,8 @@ def new_game(config: Config, seed: int, site_index: int | None = None) -> GameSt
         unrest="calm",
         last_feast_turn=0,
     )
+    if config.market is not None and config.market.needs_building:
+        state.merchant_tax_rate = config.market.merchant_tax_start
     if config.map is not None:
         # Imported here: territory imports this module for Building and Zone.
         from engine.territory import start_territory
