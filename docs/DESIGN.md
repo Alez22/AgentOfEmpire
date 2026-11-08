@@ -21,7 +21,7 @@ Multiplayer *[Lost: details]*: each player leads a **state**, formed by **a sing
 ## Actors
 
 - **Sovereign** (player): orders, approvals, interventions in the debate, incognito outings in the square.
-- **Ministers** (LLM): Treasurer (economy), Marshal (army), Architect (construction), Ambassador (diplomacy). Each with a personality, a level of trust from the sovereign and a dedicated model.
+- **Ministers** (LLM): Treasurer (economy), Marshal (army), Architect (construction), Ambassador (diplomacy), Gastaldo (doors, militia, news from outside; arrives with the watchtower, see "The Gastaldo and the watchtower"). Each with a personality, a level of trust from the sovereign and a dedicated model.
 - **Chancellor**: routes the orders, collects the plans, detects resource conflicts, proposes compromises. Decided: an LLM. The arithmetic checks (sum of costs, comparison with resources) are done by the engine and handed to it already computed.
 - **People**: social classes with mood and trust towards the sovereign and towards each minister.
 - **Voice of the square** (LLM): tells the story of the people through pleas, market rumours and delegations. Decides nothing.
@@ -96,7 +96,7 @@ The automatic sovereign comes in two versions, technically identical (same counc
 
 War is about **preparation** *[Lost: rest of the paragraph, beginning "the sovereign…"]*.
 
-**Decided 2026-11-08**: no war in the village (a peasant militia against bandits only); war begins in the town (sacks, land, tributes, sieges); annexing a whole realm only for a kingdom. See "War by era" in "Progress".
+**Decided 2026-11-08**: no war in the village (only a militia against bandits, once the Gastaldo exists); war begins in the town (sacks, land, tributes, sieges); annexing a whole realm only for a kingdom. See "War by era" in "Progress".
 
 - *[Lost: four items.]*
 - **Information**: the army sits in reserved tiles. The enemy estimates it through spies and border observation, with estimates that may be old or wrong; the Marshal can inflate them to get resources. Deceptions are possible, such as proclaiming in the square a mobilisation that does not exist.
@@ -225,13 +225,13 @@ Replaces the lost items of this section. Values in brackets are starting points 
 
 **War by era**
 
-- **Village**: no war (tutorial); only a peasant militia against bandits.
+- **Village**: no war (tutorial); only a militia against bandits, kept by the Gastaldo once the watchtower is built.
 - **Town**: **war begins**. The barracks bring the soldiers, the Marshal recruits, walls and weapons (from the artisans) are needed. A realm can sack other towns, take land, impose tributes, lay sieges.
 - **Kingdom**: a standing army, and **annexing a whole realm**, possible only for a kingdom: to conquer a realm you must be one (the path to the Dominion victory). The Marshal's ambition grows with the army.
 
 **Council by era** (agreed in outline)
 
-- **Village**: Chancellor, Treasurer, Architect, moderates.
+- **Village**: Chancellor, Treasurer, Architect, moderates; the **Gastaldo** joins when the watchtower is built (decided 2026-11-08), the first expansion of the council.
 - **Town**: the Marshal (war begins) and the Ambassador (before, contacts with other realms are informal and go through the Chancellor); hiring and dismissal open, with the extreme profiles and the expert of the land.
 - **Kingdom**: the full council, with more ambition at stake.
 
@@ -261,7 +261,7 @@ In the village there is no press and no Ambassador: news of other realms arrives
 - **Late**: 1 to 3 months, by distance.
 - **Distorted**: the engine picks a true fact (seeded generator, replay exact); the Voice of the square tells it as a wayfarer would, possibly overstated ("they say in the north people die of hunger" when three died).
 - **Variable amount**: more travellers with the market built (merchants carry most news), with close neighbours and in summer; almost none in winter.
-- **Where they are heard**: in the square (the Voice: "a merchant from the north says…") and in a "Voci da fuori" section of the council briefings, marked as rumours, not facts.
+- **Where they are heard**: in the square (the Voice: "a merchant from the north says…") and in a "Voci da fuori" section of the council briefings, marked as rumours, not facts. Once the Gastaldo exists, it is the one who collects them at the gate and reports them.
 - **Both ways**: what a realm does in public reaches the others the same way. The first possible deception: a mobilisation proclaimed in the square that does not exist, carried abroad by the travellers.
 - **Cost**: no extra model call; the engine picks the facts, the Voice tells them inside its usual call.
 - **Visibility change**: today "public" means visible at once to other realms. With travellers, in the village a public fact of another realm reaches you only through them, late and noisy. Later eras shorten the channel: press and Ambassador in the town, journalism in the kingdom.
@@ -272,28 +272,63 @@ In the village there is no press and no Ambassador: news of other realms arrives
 In the village realms do not attack each other: the threat from outside is **bandits**, and bandits are **people who left a realm**. Discontent costs something even before revolt, and a neighbour's misrule becomes your problem.
 
 - **Flight**: after long, deep discontent, every month a small share of a realm's people leaves and joins the **world's pool of bandits** (a game-level state, like the market's warehouse and the land fund). Families leave: **adults and a smaller share of children**; elders stay. Once gone they no longer belong to the realm.
-- **The pool**: adults and children counted apart. Only adults raid; children are mouths to feed. Children in the pool age at the realms' pace, so a bandit's child grows up a bandit.
+- **Flight by class**: every class can flee, each by **its own** discontent (unhappy merchants leave, not the content peasants). Peasants and artisans make most of the fugitives. **The clergy never flees.** Soldiers who desert are left for later (a deserter is a more dangerous bandit).
+- **The pool**: adults and children counted apart. **In the pool the class is lost**: a bandit is a bandit. Only adults raid; children are mouths to feed. Children in the pool age at the realms' pace, so a bandit's child grows up a bandit.
+- **A small pool from the start** (the world's wanderers, size seeded): raids are rare in the first year but they happen, so the need for a militia is felt before discontent anywhere fills the pool.
 - **Raids**: every month the pool raids. The raids are shared among the realms by **how much lies exposed** (full granaries, wood piles, market caravans) and **how weak the militia is**. Deterministic shares, seeded generator, replay exact.
 - **Natural decline**: the pool shrinks by itself (winter in the woods, people who scatter).
 - **A world full of discontent is full of bandits; a serene world has almost none.**
 - **Information**: the size of the pool is never shown. It is heard in the square ("the Rossi are gone, they say to the woods"), from travellers ("in the south people flee to the forests") and felt in the raids suffered.
 
-### Militia (the Treasurer)
+### The Gastaldo and the watchtower
 
-- A **policy of the Treasurer**, like taxes and ration: "keep N men on guard". The Treasurer weighs costs and benefits: less food, more safety.
-- The engine takes the guards first; the Architect assigns the adults that remain. The Chancellor sees the conflict in the plan ("every guard is grain less").
-- Few guards: part of the exposed stores is lost; enough guards: the raid is repelled.
-- In the town the militia becomes the barracks with the soldiers (see "The eras").
+Decided 2026-11-08. The first counsellor added to the council, in the village. Doors and migrants are not the Architect's office, and the first expansion of the council teaches, on a small case, what a new counsellor means (one more voice, one more salary, one more conflict) before the Marshal and the Ambassador.
 
-### Migration (acceptance)
+- **Unlocked by a building**: the **watchtower** at the village's gate, medium-low cost, after the market. Building it brings the **Gastaldo** (a person from the catalog, with traits and salary). A realm may stay without it.
+- **Office**: who comes in, who goes out, who keeps guard, what is said outside. A medieval minister of the interior:
+  - **the doors**: the immigration policy (below);
+  - **the militia**: "keep N men on guard";
+  - **news from outside**: it collects what travellers say at the gate;
+  - **in the town** (proposed): **counter-espionage**, finding spies hidden among migrants. The Marshal looks outward with the army, the Gastaldo inward.
+- **No militia before the Gastaldo.** The militia is not moved between offices during a game (the duties of an office never change), so before the watchtower the realm cannot keep guards: early raids are the lesson that makes the player want the Gastaldo.
+- **Militia**: the engine takes the guards first; the Architect assigns the adults that remain. The Treasurer weighs the cost in council, the Chancellor sees the conflict in the plan ("every guard is grain less"). Few guards: part of the exposed stores is lost; enough guards: the raid is repelled. In the town the soldiers of the barracks come on top.
+- **Village sequence**: first winter → market (merchants) → the first bandits → watchtower (the Gastaldo, militia and doors) → rare resources → town hall.
+- **Cost**: one more call a month (the council goes from 3 to 4 voices, about +25–30 % of the council's cost) and one more salary.
 
-- A realm that is content, with **free houses and jobs**, attracts people from the pool, who become its citizens again: adults become peasants, **children arrive as children** (they need houses and food at once and give hands only years later). Accepting families is an investment, not a gift.
+### Migration and the doors
+
+**Arrival**: people from the pool who become citizens enter as **peasants** (free hands), adults and children alike; children arrive as children. From there they move to other classes like any adult of the realm, when the Architect assigns them to the market, a workshop or the barracks. No random class: a merchant never appears in a realm without a market.
+
+**The doors** (a policy of the Gastaldo, three levels, like the ration; without the watchtower the realm is at "normal"):
+
+| Doors | Effect |
+| --- | --- |
+| **Closed** | nobody comes in; enforcing it takes guards, so closing costs |
+| **Normal** | those who find free houses and jobs come, in proportion to how well the realm is doing |
+| **Open** | more come, beyond the jobs too: a bet on growth |
+
+How many really arrive depends on the policy and on the realm's **attraction** (mood, food, free houses, jobs): with open doors a hungry realm still attracts nobody.
+
+**A raid can become immigration** (with the Gastaldo): the bandits who meet the guards are driven off or offered a place, by the doors. Closed: they are driven off, almost none stays. Open: they are treated well and almost all become citizens. Their children follow later through normal acceptance. Open doors turn raids into growth; closed doors keep them out, but the bandits stay in the world.
+
+**Advantages of accepting**
+
+- **Hands at once**: births are slow and a child works years later; an accepted adult works the next month. The fastest way to grow and out of the growth trap seen in the playtests.
+- **Fewer bandits for everyone**: every fugitive accepted is a bandit less in the world, so the accepting realm lowers the neighbours' raids too, at no cost to them. In the common case accepting is a common good paid by one: a small moral tension the council can argue about.
+- **Fame**: travellers tell that "in the south they take people in"; later it may weigh on reputation.
+
+**Disadvantages**
+
+- **Children cost** food and houses at once and give back years later.
+- **Houses fill up**: no births and a mood malus (the known full-housing problem).
+- **The natives' grumbling**: when food or jobs are scarce and many newcomers arrive together, the square murmurs ("they take our bread"). A mood malus in proportion to arrivals against the population, only in times of scarcity; when there is enough for all, nobody complains.
+- **Later (stage 3)**: spies of other realms hidden among migrants (the Gastaldo's counter-espionage in the town), bandits who keep stealing from inside, the realm of origin offended when its fugitives are taken in.
 
 ### Stages
 
-1. **Flight and raids**: the pool, the militia, natural decline. A complete lesson on its own: discontent costs.
-2. **Acceptance**: people from the pool become citizens where life is good; real migration.
-3. **Later**: refugees who remember their realm of origin, open or closed doors as a political choice, and in the town realms that secretly fund bandits against a neighbour.
+1. **Flight and raids**: the pool (with its small start), flight by class, the watchtower and the Gastaldo, the militia, natural decline. A complete lesson on its own: discontent costs.
+2. **Acceptance**: the doors, attraction, raids turned into immigration, arrival as peasants, children's cost, the natives' grumbling.
+3. **Later**: spies among migrants, the realm of origin offended, a remembered trade (an accepted ex-soldier is a better guard, an ex-artisan learns the workshop sooner), deserters, and in the town realms that secretly fund bandits against a neighbour.
 
 **Risk: spirals.** A realm in crisis loses adults, produces less and grows more discontent, while a rich realm absorbs them and grows. Brakes: bandits raid those with much to take, not the weakest; acceptance is limited by free houses; flight is slow and starts only after several months of deep discontent; children cost before they give. To be tried in a multi-realm lab (like the 8-realm market lab) before stage 2 enters the engine.
 
