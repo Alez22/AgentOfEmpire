@@ -15,7 +15,7 @@ This file is the starting point of every work session: read it at the start and 
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (GLM 5.3 Flash "high"; the Voice on DeepSeek V4.1 Flash); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, map, market, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 313 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 315 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -135,7 +135,8 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] Food levels 14 / 15 / 18 (decided 2026-11-08, see "Lab: food levels")
   - [x] No buying a good one has on sale (`OWN_GOODS_ON_SALE`); units under a lot sell as one short lot, paid by the unit (decided and built 2026-11-08; flags in `[market]`, game 24 replays unchanged)
   - [x] Automatic sovereign, first version (spec approved 2026-11-08, `docs/DESIGN.md`): fixed rules R1–R9 from game 24, no model for the sovereign (`server/sovereign/`), `POST /realms/{id}/sovereign/auto`, reasons in a council message `sovereign` (migration 013), `lab/auto_game.py`
-  - [ ] A game with three automatic realms and real models (`lab/auto_game.py new 0 12`), then tune the rules
+  - [x] Game 25: three automatic realms, 12 months, real models, $0.21 (see "Game 25")
+  - [ ] Decide: should the sovereign sell a surplus also when gold is not short (Aurelia kept 1858 food)
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
 - [ ] Eras, variable trust and loyalty, leaks
 - [ ] Press by era: rumours only, then government communiqués (propaganda, also to other states), then independent journalism (see Progress in `docs/DESIGN.md`)
@@ -791,6 +792,15 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
 2. **A poor level of 13 is too harsh**: the two realms poor in food spend 14 months on the reduced ration and revolt.
 3. **19 floods the market**: the price falls towards the floor and food is worth little.
 4. Limit: the lab's policy sells everything above 2 months of food. Game 24's Treasurers kept their surplus unless the sovereign asked (draft rule 5).
+
+### Game 25: three automatic sovereigns (2026-11-08, 12 months, $0.21)
+
+`lab/auto_game.py new 0 12`, seed 0 as game 24: Aurelia F+ W= S-, Brenna F- W+ S=, Corvara F= W- S+. Every realm played by the rules R1–R9.
+
+1. **Nobody fell, every realm calm all year.** The rules caught what Claude caught in game 24: Corvara's Chancellor taking 52 farmers off the fields in February (R2), claims in winter (R3), farms with 14–24 empty jobs (R8), tax cuts below the costs (R6).
+2. **The market was hardly used**: 9 trade events in 12 months, one sale by a realm (Brenna's lot of food in November, bought by Corvara the same month). A short lot of 45 food was sold in June (the new rule works).
+3. **Aurelia, rich in food, piled up 1858 food and never sold it**: R5 sells only when gold is short, and Aurelia's 67 gold covered 3 months of costs. Brenna, poor in food, ended on the reduced ration. Open: a rule to sell a surplus anyway.
+4. **Two defects of the rules, fixed**: R4b counted the next 4 months of firewood, so from April to July every wood purchase was "useless" (wood now counts to the end of the next winter); R5 told Brenna to sell the wood its own plan was buying (a good the plan buys is no longer sold). Brenna's Treasurer refused that directive on its own, with the right reason.
 
 ## Open decisions
 

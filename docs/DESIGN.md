@@ -971,14 +971,14 @@ The rules Claude followed as the three sovereigns of game 24 (`docs/game24_notes
 1. The council meeting (`meeting.hold_meeting`), unless already held.
 2. At most one directive (`meeting.give_directive`, one more council round):
    - **R7 buy**: wood or stone left after the plan covers less than 3 months of its need (firewood ahead, stone upkeep), the warehouse holds at least a lot, the plan does not buy it and the realm has none of it on sale: "buy N lots", as many as cover the 3 months and the gold left allows.
-   - **R5 sell**: the gold left after the plan covers less than 3 months of costs (building upkeep + salaries) and a good is above its needs: wood and stone above 6 months of need + 2 lots, food only if the winter check still passes after the sale and 3 months of eating stay. Up to 4 lots, the good that brings most gold.
+   - **R5 sell**: the gold left after the plan covers less than 3 months of costs (building upkeep + salaries) and a good the plan neither buys nor sells is above its needs: wood and stone above 6 months of need + 2 lots, food only if the winter check still passes after the sale and 3 months of eating stay. Up to 4 lots, the good that brings most gold.
    - R7 before R5: a need first.
 3. The petition (R1), checked with the petition first, as the turn runs it: a tax is granted when income at the asked rate still covers the costs; a ration when the winter check passes with it; a feast when R9 holds.
 4. Exclusions, only among the plan items the engine check accepted:
    - **R2 winter food**: from October to March, an `assign_workers` that takes farmers off the fields; any item without which the winter check passes and with which it fails.
    - **R3**: no `claim_tiles` in winter (January to March): gold stays for the market.
    - **R6**: a tax cut that brings income below the costs (equal passes).
-   - **R4b**: buying wood or stone that already covers 4 months of need without it.
+   - **R4b**: buying wood that already covers the firewood until the end of the next winter, or stone that covers 4 months of upkeep, without it (wood counted to spring after game 25: by 4 months no wood was ever needed from April to July).
    - **R8**: a new building of a kind that already has at least half a building's jobs (or a house's places) empty, counting sites under construction.
    - **R9**: a feast that leaves less than a month of costs in gold.
 5. Approval of the plan without the excluded items (`meeting.approve_plan`); trades accepted by the check stay (R4).

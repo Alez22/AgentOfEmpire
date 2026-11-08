@@ -104,3 +104,21 @@ def test_a_directive_sells_a_surplus_when_gold_is_short(start_state, config):
 def test_no_directive_without_a_market(start_state, config):
     start_state.stone = 0
     assert rules.directive(rules.Month(start_state, config, None, "1"), []) is None
+
+
+def test_wood_bought_in_spring_counts_the_coming_winter(start_state, config):
+    """Game 25: in April every wood purchase was "useless" (no firewood in the next 4 months)."""
+    start_state.turn = 4  # April
+    start_state.wood = 12
+    assert _excluded(start_state, config, {"action": "trade", "good": "wood", "side": "buy", "lots": 2}) == []
+    start_state.wood = 5000
+    assert _excluded(start_state, config, {"action": "trade", "good": "wood", "side": "buy", "lots": 2}) == [0]
+
+
+def test_a_good_the_plan_buys_is_not_sold(start_state, config):
+    """Game 25: Brenna was told to sell the wood its plan was buying."""
+    start_state.gold, start_state.wood, start_state.stone = 40, 40, 1000
+    start_state.turn = 5
+    buy = _items({"action": "trade", "good": "wood", "side": "buy", "lots": 2})
+    found = rules.directive(_month(start_state, config), buy)
+    assert found is None or "legno" not in found[0]

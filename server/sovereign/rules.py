@@ -24,7 +24,7 @@ from server.ui import labels
 FOOD_WATCH_MONTHS = (10, 11, 12, 1, 2, 3)  # October to March: the granary must reach spring
 LAST_WINTER_MONTH = 3
 BUY_COVER_MONTHS = 3  # R7: buy below this many months of need
-USELESS_BUY_MONTHS = 4  # R4b: a purchase is useless above this many months of need
+USELESS_BUY_MONTHS = 4  # R4b: a stone purchase is useless above this many months of need
 SELL_KEEP_MONTHS = 6  # R5: wood and stone kept before selling
 SELL_KEEP_LOTS = 2  # R5: and this many lots more
 SELL_FOOD_KEEP_MONTHS = 3  # R5: months of eating kept before selling food
@@ -77,6 +77,13 @@ def need_ahead(state: GameState, config: Config, good: str, months: int) -> int:
         later.turn = state.turn + ahead
         total += firewood_needed(later, config)
     return total
+
+
+def months_to_spring(turn: int) -> int:
+    """@brief Months from this one to the end of the next March, both included.
+    Why: R4b measured wood by the next 4 months, so from April to July it
+    found no firewood ahead and refused any purchase (game 25: "12 contro 0")."""
+    return (LAST_WINTER_MONTH - month_of(turn)) % 12 + 1
 
 
 def _famine(result) -> bool:
@@ -162,7 +169,9 @@ def _sell_directive(month: Month, items: list[Item], left: dict[str, int]) -> tu
     orders = [i.order for i in items]
     best = None
     for good in ("food", "wood", "stone"):
-        if _trades_good(items, good, "sell"):
+        # Why: a good the plan buys looks plentiful after the purchase (game 25,
+        # Brenna in May: told to sell the very wood its plan was buying).
+        if _trades_good(items, good, "sell") or _trades_good(items, good, "buy"):
             continue
         if good == "food":
             lots = _food_lots_to_sell(month, orders, left["food"])
@@ -270,11 +279,14 @@ def _useless_buy(month: Month, item: Item, others: list[Order]) -> str:
     order = item.order
     if not isinstance(order, TradeOrder) or order.side != "buy" or order.good == "food":
         return ""
-    need = need_ahead(month.state, month.config, order.good, USELESS_BUY_MONTHS)
+    months = months_to_spring(month.state.turn) if order.good == "wood" else USELESS_BUY_MONTHS
+    need = need_ahead(month.state, month.config, order.good, months)
     left = _remaining(month, others)[order.good]
     if left < need:
         return ""
-    return f"{labels.GOODS_IT[order.good]} basta già per {USELESS_BUY_MONTHS} mesi ({left} contro {need}) (R4b)"
+    if order.good == "wood":
+        return f"il legno basta già fino alla fine dell'inverno ({left} contro {need}) (R4b)"
+    return f"la pietra basta già per {USELESS_BUY_MONTHS} mesi ({left} contro {need}) (R4b)"
 
 
 def _costly_feast(month: Month, item: Item, kept: list[Order]) -> str:
