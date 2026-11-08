@@ -8,6 +8,18 @@ from engine.territory import OWNED, find_place, place_error, zones_error
 from engine.validator import apply_orders
 
 
+# Square-grid rules (games saved before the hex grid, 2026-11-08): this
+# module checks them on the square world and core.
+@pytest.fixture
+def config(square_config):
+    return square_config
+
+
+@pytest.fixture
+def start_state(square_config):
+    return new_game(square_config, seed=42)
+
+
 def _orders(*raw_orders):
     return [parse_order(raw)[0] for raw in raw_orders]
 

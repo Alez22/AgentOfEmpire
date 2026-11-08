@@ -11,6 +11,23 @@
 <section class="card"><p>Questo regno è nato prima della mappa: conta solo le caselle libere, nella pagina Regno.</p></section>
 {% else %}
 <section class="card" style="padding: 3px; gap: 6px">
+  {% if map.board %}{% set g = map.board %}
+  <div class="map-frame hex-frame">
+    <svg class="hex-board" viewBox="0 0 {{ g.width }} {{ g.height }}" role="group"
+         aria-label="Mappa della città: tocca un edificio per i dettagli"
+         style="width: {% if map.zoom %}{{ g.width }}px{% else %}100%{% endif %}">
+      {% for h in g.hexes %}<polygon class="{{ h.cls }}" points="{{ h.points }}"/>{% endfor %}
+      {% if g.waves %}<path class="waves" d="{{ g.waves | join(' ') }}"/>{% endif %}
+      {% for i in g.icons %}<use href="{{ i.href }}" class="{{ i.cls }}" x="{{ i.x }}" y="{{ i.y }}" width="{{ i.size }}" height="{{ i.size }}"/>{% endfor %}
+      {% for d in g.dimmed %}<polygon class="dim" points="{{ d }}"/>{% endfor %}
+      {% for s in g.lot_lines %}<line class="lot" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}
+      {% for z in g.zones %}<g class="zone{% if z.lit %} lit{% endif %}" style="stroke: {{ z.color }}">{% for s in z.segments %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}</g>{% endfor %}
+      {% for s in g.border %}<line class="border" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}
+      {% for b in g.buildings %}<a href="{{ b.href }}" aria-label="{{ b.label }}" class="map-building" {% if b.selected %}aria-current="true"{% endif %}>{% for pts in b.polygons %}<polygon class="hit" points="{{ pts }}"/>{% endfor %}</a>{% endfor %}
+      {% for b in g.buildings if b.selected %}{% for s in b.outline %}<line class="chosen" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}{% endfor %}
+    </svg>
+  </div>
+  {% else %}
   <div class="map-frame">
     <div class="map-grid" role="group" aria-label="Mappa della città: tocca un edificio per i dettagli"
          style="grid-template-columns: repeat({{ map.cols }}, {{ map.tile_px }}px); grid-template-rows: repeat({{ map.rows }}, {{ map.tile_px }}px); width: {{ map.cols * map.tile_px }}px">
@@ -23,6 +40,7 @@
          style="--zone: {{ z.color }}; grid-area: {{ z.row1 }} / {{ z.col1 }} / {{ z.row2 }} / {{ z.col2 }}"></div>{% endfor %}
     </div>
   </div>
+  {% endif %}
   <div class="map-tools" style="padding: 0 6px 6px">
     <span class="hint">Nord in alto · in oro il confine del regno</span>
     <span style="display: flex; gap: 6px">
@@ -33,7 +51,8 @@
 </section>
 
 <section class="card map-detail" aria-live="polite">
-  <span aria-hidden="true" class="map-picture {{ map.detail.cls }}"></span>
+  {% if map.detail.icon %}<svg aria-hidden="true" class="map-picture hex-picture" viewBox="0 0 512 512"><use href="{{ map.detail.icon }}"/></svg>
+  {% else %}<span aria-hidden="true" class="map-picture {{ map.detail.cls }}"></span>{% endif %}
   <div style="display: flex; flex-direction: column; gap: 4px">
     <h2>{{ map.detail.title }}</h2>
     {% for line in map.detail.lines %}<p style="margin: 0">{{ line }}</p>{% endfor %}
@@ -66,6 +85,17 @@
   {% endfor %}
 </section>
 
+{% if map.board %}
+<section class="map-legend hex-legend" aria-label="Legenda">
+  {% for cls, icon, name in [("h-plain", None, "Pianura"), ("h-forest", "pine-tree", "Bosco"), ("h-hill", "hills", "Collina"),
+                             ("h-river", None, "Fiume"), ("h-wild", None, "Da dissodare"), ("h-square", "well", "Piazza"),
+                             ("h-field", "barn", "Fattoria"), ("h-plain", "family-house", "Casa"),
+                             ("h-sawmill", "circular-saw", "Segheria"), ("h-quarry", "mining", "Cava")] %}
+  <span><svg aria-hidden="true" viewBox="-26 -26 52 52"><polygon class="{{ cls }}" points="20.8,-12 20.8,12 0,24 -20.8,12 -20.8,-12 0,-24"/>{% if icon %}<use href="{{ map.sprite }}#i-{{ icon }}" class="{% if icon in ('pine-tree',) %}i-tree{% elif icon == 'hills' %}i-hill{% else %}i-building{% endif %}" x="-15" y="-15" width="30" height="30"/>{% endif %}</svg>{{ name }}</span>
+  {% endfor %}
+</section>
+<p class="hint"><a href="/ui/credits">Crediti delle icone</a></p>
+{% else %}
 <section class="map-legend" aria-label="Legenda">
   <span><i class="t-plain"></i>Pianura</span><span><i class="t-forest"></i>Bosco</span>
   <span><i class="t-hill"></i>Collina</span><span><i class="t-river-ns"></i>Fiume</span>
@@ -73,5 +103,6 @@
   <span><i class="b-farm"></i>Fattoria</span><span><i class="b-house"></i>Casa</span>
   <span><i class="b-sawmill"></i>Segheria</span><span><i class="b-quarry"></i>Cava</span>
 </section>
+{% endif %}
 {% endif %}
 {% endblock %}

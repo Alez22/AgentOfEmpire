@@ -176,6 +176,27 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
 .b-sawmill { background-image: url(/static/map/sawmill.svg); }
 .b-quarry { background-image: url(/static/map/quarry.svg); }
 .b-square { background-image: url(/static/map/square.svg); }
+/* Hex board (server/ui/hex_board.py), night theme of lab/hex_map_mockup.py. */
+.hex-frame { background: var(--ground); }
+.hex-board { display: block; margin: 0 auto; max-width: none; }
+.hex-board polygon, .hex-legend polygon { stroke: #3A352B; stroke-width: 1; }
+.h-plain { fill: #2A261D; } .h-forest { fill: #222A1C; } .h-hill { fill: #302A21; } .h-river { fill: #1C2C34; }
+.h-field { fill: #3D3420; } .h-quarry { fill: #33302B; } .h-square { fill: #3A352D; } .h-sawmill { fill: #382E21; }
+.h-wild { fill: #2E2A1C; stroke-dasharray: 3 3; }
+.hex-board .waves { fill: none; stroke: #4F7584; stroke-width: 1.6; stroke-linecap: round; }
+.i-tree { fill: #74845A; } .i-hill { fill: #8E8068; } .i-wheat { fill: #C9A54E; } .i-building { fill: #ECE5D6; }
+.hex-board .site { opacity: 0.45; }
+.hex-board polygon.dim { fill: rgba(0, 0, 0, 0.5); stroke: none; }
+.hex-board line { stroke-linecap: round; }
+.hex-board .lot { stroke: #8A7448; stroke-width: 1.6; }
+.hex-board .border { stroke: var(--gold); stroke-width: 3; }
+.hex-board .zone line { stroke-width: 2; stroke-dasharray: 5 4; }
+.hex-board .zone.lit line { stroke-width: 3.5; stroke-dasharray: none; }
+.hex-board .chosen { stroke: #FFF1C2; stroke-width: 3; }
+.hex-board polygon.hit { fill: transparent; stroke: none; }
+.hex-board a:focus-visible polygon.hit { fill: rgba(232, 199, 120, 0.3); }
+.hex-picture { padding: 6px; background: var(--card-raised); fill: var(--text); }
+.hex-legend svg { width: 26px; height: 26px; flex-shrink: 0; }
 
 /* The market page (server/ui/market_view.py). */
 .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }

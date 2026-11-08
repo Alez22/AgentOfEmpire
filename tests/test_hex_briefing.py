@@ -35,14 +35,14 @@ def test_the_architect_reads_hexes_and_anchors(hex_world_config):
     assert "room for 2 farm" in text
 
 
-def test_the_square_briefing_keeps_its_grid(config):
-    text = "\n".join(architect_lines(new_game(config, seed=0), config))
+def test_the_square_briefing_keeps_its_grid(square_config):
+    text = "\n".join(architect_lines(new_game(square_config, seed=0), square_config))
     assert HEX_LEGEND not in text and "top-left tile" in text
 
 
-def test_the_manual_gives_shapes_in_hexes(hex_world_config, config):
+def test_the_manual_gives_shapes_in_hexes(hex_world_config, square_config):
     hex_text = manual.prompt_text(hex_world_config)
     assert "farm 7 hexes" in hex_text and "rhombus of 4 hexes" in hex_text and "3 x 3" not in hex_text
-    assert "farm 3 x 3 tiles" in manual.prompt_text(config)
+    assert "farm 3 x 3 tiles" in manual.prompt_text(square_config)
     notes = next(s for s in manual.page_sections(hex_world_config) if s["title"] == "Territorio")["notes"]
     assert "esagoni" in notes[0] and "7 esagoni" in notes[0]

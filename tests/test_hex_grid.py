@@ -50,8 +50,8 @@ def test_neighbours_are_mutual_and_one_step_away(hex_config):
     assert hex_distance(0, 0, 0, 4) == 4  # straight down zigzags: one step a row
 
 
-def test_square_grid_keeps_four_neighbours(config):
-    assert len(neighbours(config, 5, 2)) == 4
+def test_square_grid_keeps_four_neighbours(square_config):
+    assert len(neighbours(square_config, 5, 2)) == 4
 
 
 def test_footprints_are_walked_so_the_shape_follows_the_row(hex_config):
@@ -66,10 +66,10 @@ def test_the_square_is_a_rhombus(hex_state, hex_config):
     assert square_tiles(hex_state, hex_config) == [(10, 10), (11, 10), (10, 11), (11, 11)]
 
 
-def test_a_sawmill_touches_the_forest_across_a_hex_side(hex_state, hex_config, config):
+def test_a_sawmill_touches_the_forest_across_a_hex_side(hex_state, hex_config, square_config):
     # (4, 1) is the north-west hex of (5, 2): a neighbour on hexes, a corner on squares.
     assert place_error(hex_state, hex_config, "sawmill", 5, 2) is None
-    assert place_error(hex_state, config, "sawmill", 5, 2)[0] == "NO_FOREST"
+    assert place_error(hex_state, square_config, "sawmill", 5, 2)[0] == "NO_FOREST"
 
 
 def test_farm_flowers_pack_six_in_a_nine_by_six_zone(hex_state, hex_config):

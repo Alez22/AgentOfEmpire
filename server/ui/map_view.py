@@ -8,14 +8,19 @@ plain link with query parameters.
 Cost: the window is the realm's land plus a ring of 2 tiles, about 16 x 17
 tiles (one <div> each, plus about 60 border pieces) at the start; the room
 per zone is counted as in the Architect's briefing (server/council/map_text.py).
+
+On the hex grid the board is one SVG instead (server/ui/hex_board.py); the
+CSS grid of tiles stays for games saved on the square grid.
 """
 
 from urllib.parse import urlencode
 
 from engine.config import Config
 from engine.state import GameState
-from engine.territory import NOT_OWNED, TERRAIN_CHARS, WILD, building_works, claim_price, owned_count
+from engine.territory import NOT_OWNED, TERRAIN_CHARS, WILD, building_works, claim_price, is_hex, owned_count
 from server.council import map_text
+from server.council.manual import HEX_SIZES_IT
+from server.ui.hex_board import KIND_ICON, SPRITE, hex_board
 
 TILE_PX = {False: 22, True: 34}  # zoom off / on
 PURPOSE_IT = {"fields": "Campi", "center": "Centro", "houses": "Case", "workshops": "Botteghe", "reserve": "Riserva"}
@@ -91,7 +96,8 @@ def _building_sprite(kind: str, building_id: int) -> str:
 
 def _building_lines(state: GameState, config: Config, building) -> list[str]:
     spec = config.buildings[building.kind]
-    where = f"{spec.width}×{spec.height} caselle di {TERRAIN_IT.get(spec.terrain, spec.terrain)}"
+    size = HEX_SIZES_IT[building.kind] if is_hex(config) else f"{spec.width}×{spec.height} caselle"
+    where = f"{size} di {TERRAIN_IT.get(spec.terrain, spec.terrain)}"
     if spec.needs_forest:
         where += ", accanto al bosco del regno"
     lines = [where]
@@ -145,9 +151,10 @@ def map_page(state: GameState, config: Config, realm_id: int, selected: int | No
               "w": config.map.square_size, "h": config.map.square_size}
     items = [square] + [{"id": b.id, "kind": b.kind, "x": b.x, "y": b.y, "w": config.buildings[b.kind].width,
                          "h": config.buildings[b.kind].height, "building": b} for b in state.buildings]
-    buildings = []
+    buildings, labels = [], {}
     for item in items:
         label = "Piazza" if item["kind"] == "square" else f"{KIND_IT[item['kind']]} n. {item['id']}"
+        labels[item["id"]] = label
         building = item.get("building")
         buildings.append({
             "col": item["x"] - x1 + 1, "row": item["y"] - y1 + 1, "w": item["w"], "h": item["h"], "label": label,
@@ -175,10 +182,15 @@ def map_page(state: GameState, config: Config, realm_id: int, selected: int | No
             # Clipped to the window: a zone may reach beyond the realm's land.
             "col1": max(zone.x1, x1) - x1 + 1, "col2": min(zone.x2, x2) - x1 + 2,
             "row1": max(zone.y1, y1) - y1 + 1, "row2": min(zone.y2, y2) - y1 + 2,
+            "x1": zone.x1, "y1": zone.y1, "x2": zone.x2, "y2": zone.y2,  # for the hex board
         })
 
+    board = hex_board(state, config, bounds, selected, zones, labels, link) if is_hex(config) else None
+    if board is not None:  # the detail and legend pictures come from the icon sprite
+        detail["icon"] = f"{SPRITE}#i-{KIND_ICON[chosen['kind']]}"
     queue = state.clearing_queue
     return {
+        "board": board, "sprite": SPRITE,
         "cols": x2 - x1 + 1, "rows": y2 - y1 + 1, "tile_px": tile_px,
         "tiles": tiles, "edges": edges, "buildings": buildings, "zones": zones, "detail": detail,
         "land": {"owned": owned_count(state), "price": claim_price(state, config), "paid": state.land_paid_total,

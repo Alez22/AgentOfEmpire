@@ -1,7 +1,22 @@
 """The territory in the Architect's briefing (server/council/map_text.py)."""
 
+import pytest
+
+from engine import new_game
 from engine.state import Zone
 from server.council import map_text
+
+
+# Square-grid rules (games saved before the hex grid, 2026-11-08): this
+# module checks them on the square world and core.
+@pytest.fixture
+def config(square_config):
+    return square_config
+
+
+@pytest.fixture
+def start_state(square_config):
+    return new_game(square_config, seed=42)
 
 
 def _stretch_fields(state, rows):

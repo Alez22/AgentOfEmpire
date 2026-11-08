@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Crediti · AgentOfEmpire{% endblock %}
+{% block content %}
+<section>
+  <h1>Crediti</h1>
+  <p class="hint">Le icone della mappa vengono da <a href="https://game-icons.net">game-icons.net</a>,
+    con licenza <a href="https://creativecommons.org/licenses/by/3.0/">CC BY 3.0</a>. Grazie ai loro autori.</p>
+</section>
+<section class="card">
+  <table class="numbers">
+    {% for c in credits %}
+    <tr><th><svg aria-hidden="true" viewBox="0 0 512 512" style="width: 22px; height: 22px; fill: var(--text); vertical-align: middle; margin-right: 8px"><use href="/static/icons/sprite.svg#i-{{ c.icon }}"/></svg>{{ c.icon }}</th>
+        <td>{{ c.author }}</td></tr>
+    {% endfor %}
+  </table>
+</section>
+<a href="/ui">Torna alle partite</a>
+{% endblock %}

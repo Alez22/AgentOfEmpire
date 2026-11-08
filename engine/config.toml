@@ -88,8 +88,8 @@ hex_steps = []
 # The territory (docs/DESIGN.md, "Territory"). Without this section (games
 # saved before) a realm has no map and counts free_tiles instead.
 [map]
-world_file = "world.txt"  # in engine/maps/; copied into the state at game start
-core_file = "core.toml"
+world_file = "world_hex.txt"  # in engine/maps/; copied into the state at game start (world.txt: square grid)
+core_file = "core_hex.toml"  # core.toml: square grid
 # Top-left tile of the 8 starting sites; the seed picks one.
 sites = [[4, 4], [26, 4], [48, 4], [4, 26], [48, 26], [4, 48], [26, 48], [48, 48]]
 # Land levels of each site, same order: [food, wood, stone]. Zero sum: one
@@ -102,8 +102,8 @@ site_levels = [
 ]
 core_size = 12
 square_size = 2
-# "square" or "hex"; square until the hex world and core are drawn (DESIGN, "Hex grid", step 2).
-grid = "square"
+# "square" (games saved before 2026-11-08, with world.txt and core.toml) or "hex" (DESIGN, "Hex grid").
+grid = "hex"
 square_hex_steps = [["E"], ["SE"], ["E", "SE"]]  # a rhombus of 4
 max_zones = 12
 demolish_gold = 10

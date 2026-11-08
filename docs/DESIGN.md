@@ -916,7 +916,7 @@ The first lab run also moved the world's forests and hills from straight below t
 4. The map page on the phone.
 5. A 12-month test game.
 
-## Hex grid (phase 4, spec approved 2026-11-08)
+## Hex grid (phase 4, spec approved and built 2026-11-08)
 
 The map becomes a real hex grid, drawn as in the "night" mockup (`lab/hex_map_mockup.py`): flat hexes, game-icons silhouettes, gold border. Why real and not only drawn: on a drawn-only hex map the screen shows 6 neighbours while the rules count 4, and the Architect, the player and the engine would disagree on what touches what.
 
@@ -970,6 +970,7 @@ Land taken by the start: 4 farms × 7 + 2 + 4 + 6 + 4 = 44 tiles instead of 52; 
 3. Probe of the hex text grid with a model; then briefing, manual, prompts.
    **Built 2026-11-08**: `server/council/map_text.py` writes hex maps as runs per row with a ring of 4 (`run_lines`, `HEX_LEGEND`, buildings by "anchor hex"); the frontier and the forest warning use the engine's `neighbours()`; `shape_text` gives footprints in words ("7 hexes, a centre and its 6 neighbours (3 rows, 3 columns)"). The manual says how a building is placed on either grid and shows the shapes in hexes (Italian page too). The prompts use words true on both grids ("anchor", "a block 3 rows deep and 3 columns wide"), so they need no second version. The Architect's output cap is 10,000 tokens (`[max_output_tokens_by_role]` in `server/council.toml`), the others keep 6,000. Square games keep their grid briefing until the switch.
 4. Map page as SVG board, night theme, icon sprite, credits.
+   **Built 2026-11-08**: `server/ui/hex_board.py` builds the board (hexes by terrain or lot, icons from `server/ui/static/icons/sprite.svg` coloured by CSS, lot outlines, the realm's border in gold, outside land dimmed, zones as outlines, the chosen building outlined, buildings as `<a>` inside the SVG); `templates/map.html` draws it for hex games and keeps the CSS grid of tiles for square games (no rewrite of the old view). Night theme in `style.css`; the detail card and the legend use the sprite. The sprite is built by `lab/build_icon_sprite.py` from `lab/assets/game_icons` (15 icons, 24 KB, `AUTHORS.txt` copied beside it); `/ui/credits` lists every icon's author, the map page links it, the presentation page has a credit line. About 95 KB of markup for the start view. **Then `config.toml` switched to the hex grid** (`grid = "hex"`, `world_hex.txt`, `core_hex.toml`): every new game is hex; the square-grid tests run on a `square_config` fixture, so the rules of old games stay checked.
 
 **Out of this step**: hexes for war and borders between realms (they will use the same neighbours and distance), seasons on the map, the presentation page's mockups (they stay as they are).
 

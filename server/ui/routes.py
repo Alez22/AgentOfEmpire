@@ -385,6 +385,26 @@ def map_page(request: Request, realm_id: int, b: int | None = None, zone: str | 
     return templates.TemplateResponse(request, "map.html", context)
 
 
+ICON_AUTHORS = Path(__file__).with_name("static") / "icons" / "AUTHORS.txt"
+
+
+def icon_credits() -> list[dict]:
+    """@brief The icons of the sprite with their authors, from AUTHORS.txt
+    (lines "name.svg  author  source (licence)"; lab/build_icon_sprite.py)."""
+    credits = []
+    for line in ICON_AUTHORS.read_text(encoding="utf-8").splitlines():
+        parts = line.split(None, 2)
+        if len(parts) == 3:
+            credits.append({"icon": parts[0].removesuffix(".svg"), "author": parts[1], "source": parts[2]})
+    return credits
+
+
+@router.get("/ui/credits", response_class=HTMLResponse)
+def credits_page(request: Request):
+    """@brief Who made the icons of the map (CC BY 3.0 asks for the credit)."""
+    return templates.TemplateResponse(request, "credits.html", {"credits": icon_credits()})
+
+
 @router.get("/ui/realms/{realm_id}/market", response_class=HTMLResponse)
 def market_page(request: Request, realm_id: int, conn=Depends(_connection)):
     """@brief The common market as this realm sees it (server/ui/market_view.py):

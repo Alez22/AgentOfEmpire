@@ -816,7 +816,9 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
   - [x] Step 3b, probe with a 24000-token cap ($0.04): 8 of 10 clean; typical reply 9,000 output tokens. The reasoning shows the cost is reading the shifted grid (recounting cells per row), a task the 2-hex ring cannot satisfy, and overlap checks by hand; hex geometry itself is right. Next probe: rows as runs with columns, wider ring, room per zone
   - [x] Step 3c, probe with rows as runs, room per zone, ring 4 ($0.02): by zone 5 of 5 clean, by anchor 4 of 5; output 600–4,700 tokens (was ~9,000). Room per zone is the big saving, runs another third. Decided for the briefing: runs, ring 4, room per zone, build by zone
   - [x] Step 3, briefing (2026-11-08): runs and ring 4 in `map_text.py`, `neighbours()` for frontier and forest warning, shapes in words, manual on both grids, prompts in words true on both grids; Architect output cap 10,000 (`[max_output_tokens_by_role]`), others 6,000 (`tests/test_hex_briefing.py`) (`map_text.py` still has its own 4-neighbour loops at the frontier and the forest warning), manual, prompts
-  - [ ] Step 4: map page as SVG board, night theme, icon sprite, credits; then `config.toml` to `grid = "hex"`, `world_hex.txt`, `core_hex.toml` for new games
+  - [x] Step 4, map page (2026-11-08): SVG board for hex games (`server/ui/hex_board.py`), night theme, icon sprite (`lab/build_icon_sprite.py` → `server/ui/static/icons/`), credits page `/ui/credits`; the square view stays for old games. **New games are hex** (`config.toml`: `grid = "hex"`, `world_hex.txt`, `core_hex.toml`); square-grid tests use `square_config`
+  - [ ] A 12-month test game on the hex grid with real models (the Architect has not yet met the hex briefing in a real meeting; timeout 90 s against replies up to 10,000 tokens)
+  - [ ] Map page: the lit zone's colour (fields #F2D27A) is close to the realm's gold border; pick zone colours for the night board
 
 ## Open decisions
 
