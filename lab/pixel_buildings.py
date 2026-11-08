@@ -141,19 +141,74 @@ def draw_banner(canvas, palette, pole_x, top_y, pole_height, flag_left: bool = T
     frame(canvas, palette, flag_x0, top_y + 1, 7, 5, GOLD_DARK)
 
 
+def draw_gable_roof(canvas, palette, centre_x: int, top: int, half_base: int, height: int,
+                    kind: str, seed: int) -> None:
+    """@brief A roof seen gable-on: a triangle, sunlit left slope, shaded
+    right slope, courses (or straw) and an ink outline."""
+    light, mid, dark = ROOFS[kind]
+    for row in range(height):
+        half = 1 + (half_base - 1) * row // (height - 1)
+        x0, x1 = centre_x - half, centre_x + half - 1
+        for x in range(x0, x1 + 1):
+            colour = mid
+            if kind == "thatch" and (x * 7 + row + seed) % 5 == 0:
+                colour = dark
+            elif kind != "thatch" and row % 3 == 2 and (x + row) % 4 != 0:
+                colour = dark
+            put(canvas, palette, x, top + row, colour)
+        if half > 2:
+            put(canvas, palette, x0 + 1, top + row, light)
+            put(canvas, palette, x1 - 1, top + row, dark)
+        put(canvas, palette, x0, top + row, INK)
+        put(canvas, palette, x1, top + row, INK)
+    for x in range(centre_x - half_base, centre_x + half_base):
+        put(canvas, palette, x, top + height - 1, INK)
+
+
+def cast_shadow(canvas, x_right: int, y0: int, y1: int, x_left: int) -> None:
+    """@brief Shadow on the grass: two columns right of the building and one
+    row under it, so neighbours read as separate volumes."""
+    for y in range(y0, y1 + 1):
+        shade_pixel(canvas, x_right + 1, y)
+        shade_pixel(canvas, x_right + 2, y)
+    for x in range(x_left + 2, x_right + 3):
+        shade_pixel(canvas, x, y1 + 1)
+
+
+def shade_pixel(canvas, x: int, y: int, factor: float = 0.72) -> None:
+    canvas.pixels[y][x] = tuple(int(c * factor) for c in canvas.pixels[y][x])
+
+
 def draw_house(canvas, palette, px: int, py: int, building_id: int, era: int) -> None:
-    """@brief One house in its 32 x 32 block: grass shows 1-2 px on each
-    side, so neighbours stay apart. Door left or right, chimney on some."""
+    """@brief One house in its 32 x 32 block, narrower than the block so
+    6 px of grass separate two neighbours. Houses alternate by id between
+    eaves-on (long roof, chimney on some) and gable-on (triangle over the
+    front), so a row of houses never reads as one block."""
     roof, wall = ERA_STYLES[era][building_id % len(ERA_STYLES[era])]
-    door_left = building_id % 2 == 0
+    if building_id % 2 == 0:
+        draw_gable_house(canvas, palette, px, py, building_id, roof, wall)
+    else:
+        draw_eaves_house(canvas, palette, px, py, building_id, roof, wall)
+
+
+def draw_eaves_house(canvas, palette, px, py, building_id, roof, wall) -> None:
+    door_left = building_id % 4 == 1
     if building_id % 3 == 0:
-        fill(canvas, palette, px + 21, py + 1, 4, 6, WALLS["stone"][1])
-        frame(canvas, palette, px + 21, py + 1, 4, 6)
-    draw_roof(canvas, palette, px + 1, py + 4, 30, 14, roof, building_id)
-    draw_wall(canvas, palette, px + 4, py + 18, 24, 12, wall, building_id)
-    draw_door(canvas, palette, px + (7 if door_left else 19), py + 22, 6, 8)
-    draw_window(canvas, palette, px + (19 if door_left else 8), py + 21)
-    shade(canvas, px + 4, py + 30, 24)
+        fill(canvas, palette, px + 20, py + 3, 4, 6, WALLS["stone"][1])
+        frame(canvas, palette, px + 20, py + 3, 4, 6)
+    draw_roof(canvas, palette, px + 3, py + 7, 26, 12, roof, building_id)
+    draw_wall(canvas, palette, px + 6, py + 19, 20, 10, wall, building_id)
+    draw_door(canvas, palette, px + (8 if door_left else 19), py + 22, 5, 7)
+    draw_window(canvas, palette, px + (19 if door_left else 8), py + 21, 4, 4)
+    cast_shadow(canvas, px + 28, py + 9, py + 28, px + 6)
+
+
+def draw_gable_house(canvas, palette, px, py, building_id, roof, wall) -> None:
+    draw_gable_roof(canvas, palette, px + 16, py + 3, 12, 15, roof, building_id)
+    draw_wall(canvas, palette, px + 6, py + 18, 20, 11, wall, building_id)
+    draw_window(canvas, palette, px + 15, py + 11, 3, 3)
+    draw_door(canvas, palette, px + 13, py + 21, 6, 8)
+    cast_shadow(canvas, px + 27, py + 10, py + 28, px + 6)
 
 
 def draw_lord_hall(canvas, palette, px: int, py: int) -> None:
