@@ -131,7 +131,8 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] 3. Database: market states, game-level resolution and replay (migration 012)
   - [x] 4a. Council: briefing, manual, prompts, craft, cost check, the Voice, Italian labels
   - [x] 4b. The market page on the phone, after a mockup (`server/ui/market_view.py`)
-  - [ ] 5. A 12-month test game with three realms, Claude playing all three sovereigns and writing down the basic rules of the automatic sovereign
+  - [x] 5. Game 24, 12 months, three realms played by Claude (notes and draft sovereign rules: `docs/game24_notes.md`). No realm fell. Findings: nobody has food to sell (levels 14/15/16 too narrow, winter halves every harvest); wood is short in the whole world; Treasurers rarely think of selling their surplus without a directive; a realm may buy back its own goods (margin paid twice); remnants under a lot cannot be sold; a pro-rata rounding defect fixed (dbdaca4)
+  - [ ] Decide: wider food levels, buying back own goods, remnants, then write the automatic sovereign from the draft rules
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
 - [ ] Eras, variable trust and loyalty, leaks
 - [ ] Press by era: rumours only, then government communiqués (propaganda, also to other states), then independent journalism (see Progress in `docs/DESIGN.md`)
