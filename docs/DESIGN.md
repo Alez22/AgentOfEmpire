@@ -910,7 +910,7 @@ The vision is in Part 1, "Economy and trade" (closed market, land levels unknown
 **Land levels (engine and world map, `[levels]`)**
 
 - Every site of `[map] sites` carries a level per resource: poor, fair or rich (`[map] site_levels`, next to the sites: the world's description, stored with each game's config). A zero-sum spread: one rich, one fair, one poor resource in any order, and two sites all fair. The order puts different profiles side by side, because a game of N realms takes N sites in a row from the one the seed picks.
-- Output per worker by level: food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6. They replace the building's `output_per_worker` for realms on a map with levels.
+- Output per worker by level: food 14 / 15 / 18 (rich was 16 until game 24: nobody had food to sell), wood 3 / 6 / 9, stone 2 / 4 / 6. They replace the building's `output_per_worker` for realms on a map with levels.
 - The realm keeps its levels in the state (`land_levels`), so a replay needs nothing else. **Each realm of a game gets its own site** (by realm order, not by the seed: today every realm of a game would start on the same site).
 - **Hidden**: no page, briefing or manual names a level. The manual says that yields depend on the land and gives no number per worker; the briefings keep the realm's own output and expected output (that is how a council finds out).
 

@@ -138,7 +138,7 @@ start_stock_per_realm = { food = 100, wood = 50, stone = 30 }
 # Output per worker by land level; it replaces output_per_worker for realms
 # on a site with levels. Fair equals the buildings' values above.
 [levels]
-food = { poor = 14, fair = 15, rich = 16 }  # narrow: a realm poor in food fell even with the market
+food = { poor = 14, fair = 15, rich = 18 }  # 18 (2026-11-08, game 24 and lab "food"): with 16 nobody had food to sell; 13 too harsh, 19 floods
 wood = { poor = 3, fair = 6, rich = 9 }
 stone = { poor = 2, fair = 4, rich = 6 }
 

@@ -132,7 +132,8 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] 4a. Council: briefing, manual, prompts, craft, cost check, the Voice, Italian labels
   - [x] 4b. The market page on the phone, after a mockup (`server/ui/market_view.py`)
   - [x] 5. Game 24, 12 months, three realms played by Claude (notes and draft sovereign rules: `docs/game24_notes.md`). No realm fell. Findings: nobody has food to sell (levels 14/15/16 too narrow, winter halves every harvest); wood is short in the whole world; Treasurers rarely think of selling their surplus without a directive; a realm may buy back its own goods (margin paid twice); remnants under a lot cannot be sold; a pro-rata rounding defect fixed (dbdaca4)
-  - [ ] Decide: wider food levels, buying back own goods, remnants, then write the automatic sovereign from the draft rules
+  - [x] Food levels 14 / 15 / 18 (decided 2026-11-08, see "Lab: food levels")
+  - [ ] Decide: buying back own goods, remnants, then write the automatic sovereign from the draft rules
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
 - [ ] Eras, variable trust and loyalty, leaks
 - [ ] Press by era: rumours only, then government communiqués (propaganda, also to other states), then independent journalism (see Progress in `docs/DESIGN.md`)
@@ -772,6 +773,22 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
 3. **Alone, both are harsh**: 6 of 8 realms fall. The market becomes what keeps most realms standing.
 4. **Gold follows food**, not stone: the realms rich in stone are also fair or poor in food, and end with 137–199 gold.
 5. A third hand on stone comes from the fields: food is a little scarcer (food bought 3850, price 20 at the end).
+
+### Lab: food levels (2026-11-08, after game 24)
+
+`python lab/market_closed.py food`. Game 24 had no food on sale: with 14 / 15 / 16, a farmer of the rich land makes about 848 a month against about 900 eaten. Same lab as the third tuning (upkeep 1 per building, 3 hands on stone); the lab now drops the engine's own `[needs]` and `[levels]` so they are not counted twice. 8 realms, 24 months, at one market.
+
+| Food levels | Fallen | Food bought | Food sold by the 2 rich realms | Food price (buy) months 15–24 | Gold: rich food / poor food |
+| --- | --- | --- | --- | --- | --- |
+| 14 / 15 / 16 (before) | none | 3850 | 1150 + 1150 | 16–20 | 443, 425 / 180, 137 |
+| **14 / 15 / 18** | none | 6500 | 2150 + 2700 | 11–17 | 582, 593 / 149, 142 |
+| 13 / 15 / 18 | 2 (both poor in food, month 21) | 6700 | 2150 + 2700 | 11–20 | 445, 710 / 88, 73 |
+| 13 / 16 / 19 | 2 (both poor in food, month 21) | 8050 | 2900 + 4000 | 11 falling to 6, stock up to 6716 | 607, 546 / 52, 32 |
+
+1. **14 / 15 / 18 is the only wider variant where no realm falls.** Food changes hands 70 % more, the price stays near its start, and a rich land pays (590 gold against 430).
+2. **A poor level of 13 is too harsh**: the two realms poor in food spend 14 months on the reduced ration and revolt.
+3. **19 floods the market**: the price falls towards the floor and food is worth little.
+4. Limit: the lab's policy sells everything above 2 months of food. Game 24's Treasurers kept their surplus unless the sovereign asked (draft rule 5).
 
 ## Open decisions
 

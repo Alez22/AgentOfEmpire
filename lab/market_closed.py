@@ -553,8 +553,40 @@ def main_eight():
         print_prices(price_log)
 
 
+def lab_base():
+    """@brief The engine config without its own needs and land levels (step 1
+    of the market, 2026-11-08): this lab applies its own needs and yields,
+    and the engine must not count them a second time."""
+    return dataclasses.replace(load_config(), needs=None, levels=None)
+
+
+def main_food():
+    """@brief Wider food levels (2026-11-08, after game 24: with 14/15/16 no
+    realm had food to sell). Same needs as the engine config: firewood
+    November to March, stone upkeep 1 per building, 3 hands on stone."""
+    base = lab_base()
+    needs = Needs(firewood_months=(0, 1, 2, 10, 11), stone_buildings=1)
+    rules = Rules(start_stock=START_STOCK_EIGHT, start_stock_in_price=False)
+    for food in ((14, 15, 16), (14, 15, 18), (13, 15, 18), (13, 16, 19)):
+        level_yield = _levels((3, 6, 9), (2, 4, 6), food=food)
+        print(f"\n== food {food[0]}/{food[1]}/{food[2]}, each alone (no market)")
+        for name, config in eight_lands(base, level_yield):
+            alone = play([(name, config)], needs=needs, stone_hands=3)[0]
+            print(f"  {name:<12} {alone.summary(None)}")
+        print(f"== food {food[0]}/{food[1]}/{food[2]}, eight realms at one market")
+        books, price_log = new_books(rules), []
+        realms = play(eight_lands(base, level_yield), books, rules, price_log, needs, True, 3)
+        for realm in realms:
+            print(f"  {realm.name:<12} {realm.summary(books)}")
+        print_totals(realms)
+        print(f"  prices buy/sell per lot of {LOT} (warehouse stock):")
+        print_prices(price_log)
+
+
 if __name__ == "__main__":
     if sys.argv[1:] == ["eight"]:
         main_eight()
+    elif sys.argv[1:] == ["food"]:
+        main_food()
     else:
         main()
