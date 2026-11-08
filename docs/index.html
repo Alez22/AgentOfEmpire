@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AgentOfEmpire</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Un gioco di strategia in cui governi un regno attraverso un consiglio di ministri con un carattere, una memoria e i propri interessi.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: a single reading column, like a chronicle read chapter by chapter;
+   each chapter opens one more layer of the game, with a wider "exhibit" (a council
+   scene, a calendar, a ladder) set inside the column.
+   Palette and faces come from the project's mockups (docs/mockups): dark ground,
+   gold, one colour per council member. Deliberately a single dark look. */
+:root {
+  color-scheme: dark;
+  --ground: #14120E;
+  --panel: #1C1A14;
+  --line: #3A352B;
+  --ink: #ECE5D6;
+  --ink-soft: #A8A090;
+  --ink-faint: #8C8576;
+  --gold: #D4AF5A;
+  --gold-bright: #E8C778;
+  --treasurer: #8FC07A;
+  --marshal: #E07A4F;
+  --architect: #7DB3E0;
+  --ambassador: #C3A2E0;
+  --display: "Cormorant Garamond", "Garamond", "Times New Roman", serif;
+  --body: "Inter", "Segoe UI", system-ui, sans-serif;
+  --step-0: 1rem;
+  --step-1: 1.2rem;
+  --step-2: 1.7rem;
+  --step-3: 2.4rem;
+  --step-4: clamp(2.8rem, 8vw, 5.2rem);
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font: 400 var(--step-0)/1.7 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: env(safe-area-inset-top, 0px) env(safe-area-inset-bottom, 0px);
+}
+.column { max-width: 42rem; margin: 0 auto; }
+a { color: var(--gold-bright); }
+a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; line-height: 1.1; }
+p { margin: 0; }
+
+/* Hero */
+.hero { padding-block: 5rem 3.5rem; display: grid; gap: 1.6rem; border-bottom: 1px solid var(--line); }
+.hero .seal { font: 600 0.75rem/1 var(--body); letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); }
+.hero h1 { font-size: var(--step-4); font-weight: 700; letter-spacing: -0.01em; }
+.hero .thesis { font: italic 500 var(--step-2)/1.3 var(--display); color: var(--gold-bright); max-width: 30ch; }
+.hero .lede { color: var(--ink-soft); max-width: 60ch; }
+.hero .roster { display: flex; flex-wrap: wrap; gap: 0.5rem 1.2rem; font-size: 0.85rem; color: var(--ink-soft); }
+.hero .roster span { display: inline-flex; align-items: center; gap: 0.45rem; }
+.dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; display: inline-block; flex: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .hero > * { animation: rise 0.9s ease-out both; }
+  .hero > *:nth-child(2) { animation-delay: 0.08s; }
+  .hero > *:nth-child(3) { animation-delay: 0.16s; }
+  .hero > *:nth-child(4) { animation-delay: 0.24s; }
+  .hero > *:nth-child(5) { animation-delay: 0.32s; }
+  /* Starts visible (opacity 0.4), so the first frame is never empty. */
+  @keyframes rise { from { opacity: 0.4; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+}
+
+/* Chapters: the roman numeral is real information, the order in which a player discovers the game. */
+.chapter { padding-block: 3.5rem; border-bottom: 1px solid var(--line); display: grid; gap: 1.3rem; }
+.chapter-head { display: grid; gap: 0.5rem; }
+.numeral { font: 600 0.75rem/1 var(--body); letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); }
+.chapter h2 { font-size: var(--step-3); }
+.chapter p { color: var(--ink); max-width: 65ch; }
+.chapter p.soft { color: var(--ink-soft); }
+.chapter h3 { font-size: var(--step-1); font-family: var(--body); font-weight: 600; color: var(--gold-bright); }
+
+/* Exhibits */
+.exhibit { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 1.4rem; display: grid; gap: 1rem; min-width: 0; }
+.exhibit-label { font: 500 0.7rem/1 var(--body); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-faint); }
+
+.council { display: grid; gap: 1rem; }
+.speech { display: grid; grid-template-columns: 0.6rem 1fr; gap: 0.8rem; align-items: start; }
+.speech .dot { margin-top: 0.55rem; }
+.speech .who { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; }
+.speech .what { font: 500 1.15rem/1.45 var(--display); color: var(--ink); }
+.speech.sovereign .what { font-style: italic; color: var(--gold-bright); }
+
+.quote { font: italic 500 var(--step-2)/1.35 var(--display); color: var(--ink); max-width: 34ch; }
+.quote-source { font-size: 0.8rem; color: var(--ink-faint); }
+
+/* Calendar of a game year: 8 in-season months, 4 season-end months. */
+.year { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 3px; }
+.month { aspect-ratio: 1 / 1.4; max-width: 100%; border: 1px solid var(--line); border-radius: 2px; display: grid; place-items: end center; padding-bottom: 0.3rem; font-size: 0.7rem; color: var(--ink-faint); }
+.month.end { background: var(--gold); border-color: var(--gold); color: var(--ground); font-weight: 600; }
+.legend { display: flex; flex-wrap: wrap; gap: 0.4rem 1.4rem; font-size: 0.85rem; color: var(--ink-soft); }
+.legend span { display: inline-flex; align-items: center; gap: 0.45rem; }
+.swatch { width: 0.9rem; height: 0.9rem; border: 1px solid var(--line); border-radius: 2px; display: inline-block; }
+.swatch.end { background: var(--gold); border-color: var(--gold); }
+
+/* Ladders: secrecy levels, unrest, eras. */
+.ladder { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.ladder li { display: grid; grid-template-columns: 9rem 1fr; gap: 1rem; padding-block: 0.7rem; border-top: 1px solid var(--line); }
+.ladder li:first-child { border-top: 0; }
+.ladder .rung { font: 600 1.1rem/1.3 var(--display); color: var(--gold-bright); }
+.ladder .rung-text { color: var(--ink-soft); font-size: 0.95rem; min-width: 0; }
+@media (max-width: 520px) {
+  .ladder li { grid-template-columns: 1fr; gap: 0.2rem; }
+}
+
+.pairs { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 1rem 1.6rem; }
+.pair { display: grid; gap: 0.3rem; min-width: 0; }
+.pair b { font-weight: 600; color: var(--ink); }
+.pair span { color: var(--ink-soft); font-size: 0.95rem; }
+
+.levels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.6rem; }
+.level { border: 1px solid var(--line); border-radius: 2px; padding: 0.8rem; display: grid; gap: 0.3rem; min-width: 0; }
+.level b { font: 600 1.15rem/1.2 var(--display); color: var(--gold-bright); }
+.level span { font-size: 0.85rem; color: var(--ink-soft); }
+@media (max-width: 520px) { .levels { grid-template-columns: 1fr; } }
+
+/* Status */
+.status { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.4rem; }
+.status ul { margin: 0; padding-left: 1.1rem; color: var(--ink-soft); display: grid; gap: 0.35rem; }
+.status h3 { margin-bottom: 0.6rem; }
+
+footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem; display: grid; gap: 0.4rem; }
+</style>
+</head>
+<body>
+<main class="column">
+
+<header class="hero">
+  <p class="seal">Un gioco di strategia a turni</p>
+  <h1>AgentOfEmpire</h1>
+  <p class="thesis">Non muovi pedine. Governi persone che a volte ti obbediscono.</p>
+  <p class="lede">Un gioco di strategia a turni in cui sei il sovrano di una città stato. Non costruisci e non combatti con le tue mani: dai ordini a un consiglio di ministri. Ognuno ha un carattere, una memoria e interessi suoi. Fuori dal palazzo c'è un popolo che ti giudica e ci sono altri sette regni che ti osservano.</p>
+  <p class="roster">
+    <span><i class="dot" style="background:var(--gold)"></i>Cancelliere</span>
+    <span><i class="dot" style="background:var(--treasurer)"></i>Tesoriere</span>
+    <span><i class="dot" style="background:var(--architect)"></i>Architetto</span>
+    <span><i class="dot" style="background:var(--marshal)"></i>Maresciallo</span>
+    <span><i class="dot" style="background:var(--ambassador)"></i>Ambasciatore</span>
+  </p>
+</header>
+
+<section class="chapter" aria-labelledby="c1">
+  <div class="chapter-head">
+    <p class="numeral">Capitolo I</p>
+    <h2 id="c1">La sala del consiglio</h2>
+  </div>
+  <p>Ogni mese il consiglio si riunisce. I ministri leggono i conti del regno, ognuno dal suo punto di vista, e ti portano rapporti e proposte. Il Cancelliere raccoglie tutto, vede dove le richieste si contendono le stesse risorse e ti presenta un piano. Tu lo approvi, lo correggi o lo respingi.</p>
+  <p>I numeri li tiene il motore del gioco e nessuno li può inventare. Le parole sono dei ministri, e le parole si possono scegliere con cura.</p>
+  <figure class="exhibit" aria-label="Esempio di consiglio">
+    <p class="exhibit-label">Febbraio, terzo anno</p>
+    <div class="council">
+      <div class="speech"><i class="dot" style="background:var(--treasurer)"></i><div><p class="who" style="color:var(--treasurer)">Tesoriere · prudente</p><p class="what">I granai bastano fino a primavera, non oltre. Prima il pane, poi le mura.</p></div></div>
+      <div class="speech"><i class="dot" style="background:var(--marshal)"></i><div><p class="who" style="color:var(--marshal)">Maresciallo · impulsivo</p><p class="what">Le spie dicono che al confine nord si arma qualcuno. Quaranta arcieri, subito.</p></div></div>
+      <div class="speech"><i class="dot" style="background:var(--architect)"></i><div><p class="who" style="color:var(--architect)">Architetta · metodica</p><p class="what">Arcieri senza palizzata sono bersagli. Datemi il legno e in due mesi il nord è chiuso.</p></div></div>
+      <div class="speech"><i class="dot" style="background:var(--gold)"></i><div><p class="who" style="color:var(--gold)">Cancelliere</p><p class="what">Legno e oro non bastano per tutti. Propongo la palizzata ora e gli arcieri dopo il raccolto.</p></div></div>
+      <div class="speech sovereign"><i class="dot" style="background:var(--ink)"></i><div><p class="who" style="color:var(--ink-soft)">Il sovrano</p><p class="what">Approvato. E voglio sapere chi ha visto queste armi al confine.</p></div></div>
+    </div>
+  </figure>
+</section>
+
+<section class="chapter" aria-labelledby="c2">
+  <div class="chapter-head">
+    <p class="numeral">Capitolo II</p>
+    <h2 id="c2">Persone, non funzioni</h2>
+  </div>
+  <p>Un ruolo è una carica: il Tesoriere tiene i conti, l'Architetto costruisce, il Maresciallo comanda l'esercito, l'Ambasciatore tratta con gli altri regni. Chi occupa la carica è una persona, con un nome, una storia e cinque tratti: prudenza o audacia, lealtà, ambizione, onestà, competenza.</p>
+  <p>All'inizio il consiglio è fatto di moderati. Più avanti assumerai: tra i candidati ci sono i profili più estremi, brillanti e pericolosi, e il curriculum può mentire. Capirai chi hai davanti solo col tempo. Licenziare costa: chi esce si porta via i segreti del consiglio e può venderli a un rivale.</p>
+  <div class="pairs">
+    <div class="pair"><b>Udienze private</b><span>Puoi parlare a tu per tu con un consigliere. Tutti sapranno che lo hai ricevuto, nessuno saprà cosa vi siete detti. Lui può tacere o abbellire, mai cambiare i numeri.</span></div>
+    <div class="pair"><b>Mandati</b><span>Linee guida durature per una carica, come "case prima dei campi". Il Cancelliere le esamina e le riscrive con parole sue prima che arrivino al ministro.</span></div>
+    <div class="pair"><b>Note segrete</b><span>I consiglieri si scrivono tra loro: patti, avvertimenti, alleanze. Tu non sai se esistono. Puoi solo chiedere, e sperare in una risposta onesta.</span></div>
+    <div class="pair"><b>Memoria</b><span>A fine stagione ognuno rilegge i mesi passati e ne trae lezioni. Un ministro spesso scavalcato diventa meno leale.</span></div>
+  </div>
+</section>
+
+<section class="chapter" aria-labelledby="c3">
+  <div class="chapter-head">
+    <p class="numeral">Capitolo III</p>
+    <h2 id="c3">La voce della piazza</h2>
+  </div>
+  <p>Non vedrai mai un numero che misura l'umore del popolo, e non lo vedono nemmeno i tuoi ministri. Il popolo lo conosci dalla piazza: suppliche, voci di mercato, lamenti, feste. La Voce della piazza racconta quello che la gente vede e sente, e come ogni folla esagera l'ultima disgrazia e non si accorge del malcontento che cresce piano.</p>
+  <figure class="exhibit">
+    <p class="quote">«Finché c'è pane, il re faccia come gli pare», dice la vecchia al pozzo.</p>
+    <p class="quote-source">Dalla piazza di una partita di prova, gennaio. I due ministri, nel rapporto successivo, hanno ripreso la storia della legna cara.</p>
+  </figure>
+  <p>Il popolo non si limita a parlare. Ogni mese decide quanto impegnarsi nei campi, se fare figli o rimandare, e qualche volta ti porta una petizione: meno tasse, una razione più generosa, una festa. Se la esaudisci si calma, se la respingi lo ricorderà.</p>
+  <p>Con il regno crescono le classi: contadini, artigiani e mercanti, clero, soldati. Ogni classe ha i suoi bisogni e la sua memoria. I contadini ricordano gli ultimi tre mesi, i mercanti tengono i conti di anni. La piazza diventa un coro di voci che non sempre concordano, e tocca a te decidere a chi credere.</p>
+  <p class="soft">Puoi anche scendere in piazza in incognito e ascoltare con le tue orecchie.</p>
+</section>
+
+<section class="chapter" aria-labelledby="c4">
+  <div class="chapter-head">
+    <p class="numeral">Capitolo IV</p>
+    <h2 id="c4">Il tempo del regno</h2>
+  </div>
+  <p>Un turno è un mese, un anno sono dodici turni, una partita di riferimento dura dieci anni. Tra un turno e l'altro il motore simula il mese: raccolti, consumi, nascite, morti, cantieri, umori. Con le stesse scelte, il mese va sempre allo stesso modo.</p>
+  <figure class="exhibit" aria-label="Calendario di un anno di gioco">
+    <p class="exhibit-label">Un anno di gioco</p>
+    <div class="year" role="img" aria-label="Dodici mesi: otto mesi di stagione e quattro mesi di fine stagione, marzo, giugno, settembre e dicembre">
+      <span class="month">G</span><span class="month">F</span><span class="month end">M</span>
+      <span class="month">A</span><span class="month">M</span><span class="month end">G</span>
+      <span class="month">L</span><span class="month">A</span><span class="month end">S</span>
+      <span class="month">O</span><span class="month">N</span><span class="month end">D</span>
+    </div>
+    <div class="legend">
+      <span><i class="swatch"></i>Mese di stagione: costruire, trattare, armarsi</span>
+      <span><i class="swatch end"></i>Fine stagione: il resoconto, il racconto della piazza, le lezioni del consiglio</span>
+    </div>
+  </figure>
+  <p>Le stagioni contano. D'inverno i campi non danno e serve legna da ardere; l'estate è la stagione delle campagne militari; l'inverno è buono per tessere alleanze. La popolazione invecchia in fretta, così le conseguenze di una carestia si vedono nei figli che non sono nati.</p>
+</section>
+
+<section class="chapter" aria-labelledby="c5">
+  <div class="chapter-head">
+    <p class="numeral">Capitolo V</p>
+    <h2 id="c5">La terra e il mercato</h2>
+  </div>
+  <p>Il regno vive di cinque risorse: cibo, legno, pietra, oro e una risorsa rara, come ferro o sale, distribuita in modo diseguale sulla mappa. La città occupa caselle vere: l'Architetto disegna il piano urbano, i mulini stanno accanto ai campi, le segherie lungo il bosco. Quando lo spazio finisce, il regno si allarga sulle terre intorno, pagando oro e lavoro.</p>
+  <figure class="exhibit" aria-label="Livelli della terra">
+    <p class="exhibit-label">Ogni terra, per ogni risorsa</p>
+    <div class="levels">
+      <div class="level"><b>Povera</b><span>Rende meno di quanto serve. Bisogna comprare.</span></div>
+      <div class="level"><b>Discreta</b><span>Più o meno quanto serve.</span></div>
+      <div class="level"><b>Ricca</b><span>Avanza. C'è da vendere.</span></div>
+    </div>
+  </figure>
+  <p>Nessuno ti dice com'è la tua terra. Il consiglio lo scopre dai raccolti, e lo stesso vale per i vicini. Nessun regno è ricco di tutto né povero di tutto, così prima o poi servono gli altri.</p>
+  <p>Al mercato comune i prezzi salgono e scendono con la domanda. Prezzi e scorte sono pubblici, chi vende e chi compra no. Più avanti potrai assumere un esperto della terra, che studia la tua e quella dei vicini. Sapere che un vicino vive vendendo pietra ed è a corto di legno ti dice quale trattato rompere per metterlo in difficoltà.</p>
+</section>
+
+<section class="chapter" aria-labelledby="c6">
+  <div class="chapter-head">
+    <p class="numeral">Capitolo VI</p>
+    <h2 id="c6">Gli altri sette regni</h2>
+  </div>
+  <p>Una partita ha otto regni su una mappa condivisa, partenze simmetriche e almeno un vicino raggiungibile. Alcuni sono guidati da altri giocatori, gli altri da sovrani automatici che usano la stessa architettura: un consiglio, gli stessi rapporti, un carattere. C'è il re guerrafondaio e c'è il mercante pacifico.</p>
+  <div class="pairs">
+    <div class="pair"><b>Diplomazia</b><span>L'Ambasciatore negozia accordi bilaterali, come grano in cambio del passaggio sul fiume. Ogni regno ha una reputazione: chi rompe i patti trova sempre meno alleati.</span></div>
+    <div class="pair"><b>Rotte commerciali</b><span>Rendono a ogni turno finché i confini restano aperti. Si possono tagliare, razziare, chiudere con un embargo. I mercanti, se il commercio si ferma, si arrabbiano.</span></div>
+    <div class="pair"><b>Spionaggio</b><span>Le spie portano stime dell'esercito altrui, a volte vecchie, a volte sbagliate. Ci sono doppiogiochisti, missioni scoperte e informazioni comprate da ministri scontenti.</span></div>
+    <div class="pair"><b>Segreti</b><span>Ogni informazione nasce con un livello. Un agente non può rivelare quello che non ha mai ricevuto, ma una fuga di notizie può far salire un segreto di livello.</span></div>
+  </div>
+  <figure class="exhibit" aria-label="Livelli di segretezza">
+    <p class="exhibit-label">Chi sa cosa</p>
+    <ol class="ladder">
+      <li><span class="rung">Segreto del sovrano</span><span class="rung-text">Solo tu.</span></li>
+      <li><span class="rung">Consiglio</span><span class="rung-text">Tu e i tuoi ministri.</span></li>
+      <li><span class="rung">Corte</span><span class="rung-text">Il palazzo, e quello che trapela verso la piazza.</span></li>
+      <li><span class="rung">Pubblico</span><span class="rung-text">Il tuo popolo.</span></li>
+      <li><span class="rung">Estero</span><span class="rung-text">Gli altri regni.</span></li>
+    </ol>
+  </figure>
+</section>
+
+<section class="chapter" aria-labelledby="c7">
+  <div class="chapter-head">
+    <p class="numeral">Capitolo VII</p>
+    <h2 id="c7">La guerra si vince prima</h2>
+  </div>
+  <p>La guerra si gioca soprattutto nella preparazione: reclutare toglie braccia ai campi, i soldati vanno pagati e nutriti, le mura richiedono pietra e mesi di cantiere. L'esercito sta nelle sue caselle, e il nemico lo conosce solo attraverso le spie e l'osservazione dei confini.</p>
+  <p>Il Maresciallo può gonfiare le stime per ottenere più risorse. Anche tu puoi ingannare: proclamare in piazza una mobilitazione che non esiste, per vedere chi si muove. La battaglia ha la sua parte di caso, ma premia chi è arrivato meglio preparato.</p>
+</section>
+
+<section class="chapter" aria-labelledby="c8">
+  <div class="chapter-head">
+    <p class="numeral">Capitolo VIII</p>
+    <h2 id="c8">Tre ere</h2>
+  </div>
+  <p>Il regno passa per tre ere. Salire richiede risorse ed edifici chiave, sblocca nuove costruzioni e cambia l'aspetto della città. Tutti vedono chi è avanzato. In ogni era cambia anche il modo in cui le notizie viaggiano.</p>
+  <figure class="exhibit" aria-label="Le tre ere">
+    <ol class="ladder">
+      <li><span class="rung">Villaggio</span><span class="rung-text">Niente stampa. Si sa solo quello che corre di bocca in bocca: la piazza, i viaggiatori, le spie.</span></li>
+      <li><span class="rung">Città</span><span class="rung-text">Nasce la stampa. Il governo pubblica comunicati, anche di propaganda. Un comunicato può mentire, ma quando i fatti lo smentiscono la piazza se ne accorge.</span></li>
+      <li><span class="rung">Regno</span><span class="rung-text">Nasce il giornalismo. Una voce indipendente pubblica quello che scopre, anche ciò che preferiresti nascondere.</span></li>
+    </ol>
+  </figure>
+</section>
+
+<section class="chapter" aria-labelledby="c9">
+  <div class="chapter-head">
+    <p class="numeral">Capitolo IX</p>
+    <h2 id="c9">Quando il regno si rivolta</h2>
+  </div>
+  <p>Un popolo scontento a lungo non resta fermo. Il malcontento sale per gradi e a ogni gradino puoi rispondere: la repressione del Maresciallo funziona subito ma lascia un rancore lungo, le concessioni del Tesoriere costano ma calmano davvero.</p>
+  <figure class="exhibit" aria-label="I gradi della rivolta">
+    <p class="exhibit-label">I gradi del malcontento</p>
+    <ol class="ladder">
+      <li><span class="rung">Proteste</span><span class="rung-text">La piazza alza la voce.</span></li>
+      <li><span class="rung">Scioperi</span><span class="rung-text">Le botteghe chiudono, i campi rendono meno.</span></li>
+      <li><span class="rung">Rivolta</span><span class="rung-text">Tumulti, edifici danneggiati, caselle che sfuggono al tuo controllo.</span></li>
+      <li><span class="rung">Assedio</span><span class="rung-text">Il castello è circondato.</span></li>
+      <li><span class="rung">Deposizione</span><span class="rung-text">Perdi il trono, ma non la partita.</span></li>
+    </ol>
+  </figure>
+  <p>Un regime militare tiene a bada il popolo, ma ogni soldato costa, i soldati sono una classe con il suo umore e un Maresciallo con un grande esercito comincia a fare pensieri ambiziosi. Se perdi insieme la fiducia del popolo e quella del consiglio, un ministro può tentare il colpo di stato con l'appoggio di una classe scontenta.</p>
+  <p>Chi perde il trono non esce dal gioco. Ricomincia alla guida di una fazione in esilio, che cerca di riprendersi il regno.</p>
+</section>
+
+<section class="chapter" aria-labelledby="c10">
+  <div class="chapter-head">
+    <p class="numeral">Capitolo X</p>
+    <h2 id="c10">Come si vince</h2>
+  </div>
+  <p>Ci sono più strade, e ogni partita può sceglierne alcune all'inizio. Si può vincere per dominio, controllando i regni vicini; per prosperità, con il regno più ricco e popoloso alla fine dei dieci anni; per prestigio, con la reputazione e le alleanze più solide; o semplicemente per durata, arrivando in fondo con la stessa dinastia sul trono.</p>
+  <p class="soft">Nessuna strada è sicura, perché tutte passano per le stesse persone: un consiglio che ti segue, un popolo che ti sopporta e dei vicini che non hanno ancora deciso cosa fare di te.</p>
+</section>
+
+<section class="chapter" aria-labelledby="c11">
+  <div class="chapter-head">
+    <p class="numeral">Capitolo XI</p>
+    <h2 id="c11">Un turno al giorno</h2>
+  </div>
+  <p>Si gioca in modo asincrono: ogni giocatore manda i suoi ordini entro la scadenza, poi il mese si risolve per tutti insieme. Un turno al giorno, o più turni in una sera se tutti hanno confermato. Una partita di dieci anni dura qualche mese di vita reale.</p>
+  <div class="pairs">
+    <div class="pair"><b>Assenze</b><span>Se manchi, il regno va avanti con gli ultimi ordini. Dopo tre giorni subentra il sovrano automatico.</span></div>
+    <div class="pair"><b>Vacanze</b><span>Se sai che sarai via, lasci le direttive e il regno procede da solo.</span></div>
+    <div class="pair"><b>Pausa</b><span>A Natale i giocatori possono proporre di fermare il tempo per tutti.</span></div>
+  </div>
+</section>
+
+<section class="chapter" aria-labelledby="c12">
+  <div class="chapter-head">
+    <p class="numeral">A che punto siamo</p>
+    <h2 id="c12">Il prototipo</h2>
+  </div>
+  <p>Questa pagina descrive il gioco finito. Il codice di oggi ne copre una parte, giocabile e messa alla prova in decine di partite.</p>
+  <div class="status">
+    <div>
+      <h3>C'è già</h3>
+      <ul>
+        <li>Una città con Cancelliere, Tesoriere e Architetto</li>
+        <li>Persone con tratti, storia e stipendio</li>
+        <li>Udienze private, mandati, note segrete, dibattito sul piano</li>
+        <li>La Voce della piazza e il popolo che decide</li>
+        <li>Mappa a caselle e piano urbano</li>
+        <li>Tre regni allo stesso mercato, guidati dal sovrano automatico</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Deve ancora arrivare</h3>
+      <ul>
+        <li>Maresciallo, esercito e guerra</li>
+        <li>Ambasciatore, trattati e reputazione</li>
+        <li>Spie e fughe di notizie</li>
+        <li>Altre classi sociali, ere e stampa</li>
+        <li>Assunzioni e licenziamenti</li>
+        <li>Multigiocatore e condizioni di vittoria</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>AgentOfEmpire è un progetto personale in sviluppo.</p>
+  <p><a href="https://github.com/Alez22/AgentOfEmpire">Il codice su GitHub</a></p>
+</footer>
+
+</main>
+</body>
+</html>

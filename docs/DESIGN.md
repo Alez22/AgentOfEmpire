@@ -4,6 +4,8 @@ Formerly "Il Consiglio del Regno – Handoff di design" (Claude Docs).
 
 > **Reconstructed on 2026-11-07.** The original doc was deleted by mistake. This version is rebuilt from the session transcript: every section read in full or written during the session is complete. Parts of the **game vision** were only ever seen as an outline. Those parts are marked **[Lost]**, with the fragments that survive, and need to be rewritten. Numbers in the prototype sections match the code as of this date (`engine/config.toml`, `server/council.toml`).
 
+The game's name is **AgentOfEmpire** (decided 2026-11-08; "Il Consiglio del Regno" is no longer a name for it). The presentation page of the finished game is [`index.html`](index.html) (GitHub Pages, Italian).
+
 Part 1 is the vision for the full game. Part 2 is the specification of what is built (the prototype). The UI mockups are in [`mockups/`](mockups/) (Design canvas files, Italian text).
 
 ---
@@ -62,7 +64,7 @@ Lifecycle:
 
 A year of play is **12 turns** (one turn = one month). *[Lost: rest of the sentence.]*
 
-- **In-season turns (8 per year)**: diplomacy, military strategy, construction, other operations. Possibly a main theme per season (e.g. summer for military campaigns, winter for diplomacy and preparation).
+- **In-season turns (8 per year)**: diplomacy, military strategy, construction, other operations. A main theme per season (decided 2026-11-08 with the presentation page): summer for military campaigns, winter for diplomacy and preparation.
 - **Season-end turns (4 per year)**: season report: demography, class mood, harvest, story from the Voice of the square.
 - **Asynchronous multiplayer**: each player sends orders before a deadline, then the turn resolves for everyone at the same time.
 - **The game is no longer real-time**: between turns the deterministic engine simulates the month. Ministers work at the start of each turn.
@@ -102,6 +104,8 @@ War is about **preparation** *[Lost: rest of the paragraph, beginning "the sover
 
 *[Lost: five items.]*
 
+- **Decided 2026-11-08** (presentation page): battles have a share of chance, but reward the side that arrived better prepared. Chance comes from the engine's seeded generator, so replay stays exact.
+
 ## Victory conditions
 
 The modes *[Lost]*. **No victory** *[Lost]* at the end *[Lost]*.
@@ -113,6 +117,13 @@ The modes *[Lost]*. **No victory** *[Lost]* at the end *[Lost]*.
 ### Rules
 
 *[Lost: five items.]*
+
+**Decided 2026-11-08** (presentation page, replaces the lost modes for now): several paths to victory, and each game picks some of them at the start.
+
+- **Dominion**: control of the neighbouring realms.
+- **Prosperity**: the richest and most populous realm at the end of the game (10 years by default).
+- **Prestige**: the strongest reputation and alliances.
+- **Endurance**: reaching the end with the same dynasty on the throne.
 
 ## Economy and trade
 
@@ -147,6 +158,8 @@ Each state has a **reputation** *[Lost]*, similar to *[Lost]*.
 
 *[Lost: three items.]*
 
+- **Decided 2026-11-08** (presentation page): whoever breaks pacts finds fewer and fewer allies; reputation is the memory other realms keep of how a state honours its treaties.
+
 ## Espionage
 
 The spy does not *[Lost]*; **the engine** *[Lost]*. No *[Lost]*.
@@ -156,10 +169,11 @@ The spy does not *[Lost]*; **the engine** *[Lost]*. No *[Lost]*.
 - **Missions**: *[Lost: four items.]*
 - **Discovery**: *[Lost: three items.]*
 - **Double agents**: *[Lost: three items.]*
+- **Decided 2026-11-08** (presentation page): spies bring estimates of other armies that may be old or wrong; there are double agents, missions that get discovered, and information bought from unhappy ministers.
 
 ## Progress
 
-- **Three eras** (e.g. village, town, kingdom): moving up needs resources and key buildings, unlocks buildings and units and changes the look of the city. It is public: everyone sees who has advanced.
+- **Three eras**, named **village, town, kingdom** (names decided 2026-11-08 with the presentation page): moving up needs resources and key buildings, unlocks buildings and units and changes the look of the city. It is public: everyone sees who has advanced.
 - **Press by era** (idea, 2026-11-07): how information spreads depends on the era.
   - **First era, no press**: nothing is announced. The people, and the other states, know only rumours (the Voice of the square, travellers, spies).
   - **Second era, the press is born**: the government can issue **communiqués** that the people read, also as propaganda, and send communiqués to other states. A communiqué may lie: when the facts contradict it, the square notices and trust in the sovereign falls. Foreign press brings other states' communiqués.
