@@ -225,6 +225,26 @@ def draw_water(canvas: Canvas, palette, world: list[str], sub_x: int, sub_y: int
                 px, py = {"N": (i, depth), "S": (i, TILE - 1 - depth),
                           "W": (depth, i), "E": (TILE - 1 - depth, i)}[side]
                 canvas.pixels[top + py][left + px] = palette[colour]
+        draw_reeds(canvas, palette, left, top, side, spot_hash(sub_x, sub_y, 97))
+
+
+REED_STEM, REED_TIP = 22, 1
+
+
+def draw_reeds(canvas: Canvas, palette, left: int, top: int, side: str, seed: int) -> None:
+    """@brief Two clumps of reeds standing in the water along a bank: dark
+    green stems of uneven height, a brown head on the tallest."""
+    for clump in range(2):
+        along = 2 + (seed * (clump + 3)) % 11
+        for stem in range(3):
+            height = 3 + (seed + stem * 2 + clump) % 4
+            for step in range(height):
+                depth = 3 + step
+                offset = along + stem
+                px, py = {"N": (offset, depth), "S": (offset, TILE - 1 - depth),
+                          "W": (depth, offset), "E": (TILE - 1 - depth, offset)}[side]
+                colour = REED_TIP if step == height - 1 and stem == 1 else REED_STEM
+                canvas.pixels[top + py][left + px] = palette[colour]
 
 
 def view_sub(x: int, y: int) -> tuple[int, int]:
@@ -354,7 +374,8 @@ def draw_square(canvas: Canvas, sheet, sub_x: int, sub_y: int, era: int | None =
 def draw_buildings(canvas: Canvas, sheet, core: dict, era: int | None = None) -> None:
     """@brief Square, buildings and, when an era is given, the proposed palace."""
     site_x, site_y = SITE
-    draw_square(canvas, sheet, *view_sub(site_x + core["square"]["x"], site_y + core["square"]["y"]), era)
+    square_x, square_y = view_sub(site_x + core["square"]["x"], site_y + core["square"]["y"])
+    pixel_buildings.draw_square(canvas, sheet[1], square_x * TILE, square_y * TILE, era or 2)
     if era is not None:
         draw_palace(canvas, sheet, era, *view_sub(site_x + PALACE_CORE_TILE[0], site_y + PALACE_CORE_TILE[1]))
     drawers = {"farm": draw_farm, "sawmill": draw_sawmill, "quarry": draw_quarry}
@@ -362,6 +383,8 @@ def draw_buildings(canvas: Canvas, sheet, core: dict, era: int | None = None) ->
         sub_x, sub_y = view_sub(site_x + item["x"], site_y + item["y"])
         if item["kind"] == "house":
             draw_house(canvas, sheet, building_id, sub_x, sub_y, era)
+        elif item["kind"] == "farm":
+            pixel_buildings.draw_farm(canvas, sheet[1], sub_x * TILE, sub_y * TILE, building_id)
         else:
             drawers[item["kind"]](canvas, sheet, sub_x, sub_y)
 

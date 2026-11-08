@@ -362,3 +362,139 @@ def draw_castle(canvas, palette, px: int, py: int) -> None:
         draw_arrow_slit(canvas, palette, tower_x + 7, py + 42)
     shade(canvas, px + 2, py + 59, 60)
     draw_banner(canvas, palette, px + 32, py + 0, 6, flag_left=False)
+
+
+# Crops per farm, picked in turn by farm id: (ear light, ear dark, stalk).
+CROPS = {
+    "wheat": (24, 21, 1),       # golden wheat
+    "barley": (11, 17, 6),      # pale barley
+    "cabbage": (29, 15, 22),    # rows of green heads
+}
+CROP_ORDER = ("wheat", "cabbage", "barley", "wheat")
+SOIL_LIGHT, SOIL, SOIL_DARK = 6, 13, 1
+
+
+def draw_fence(canvas, palette, x0: int, y0: int, width: int, height: int, gate_x: int) -> None:
+    """@brief A wooden rail with posts every 6 px around a field; a gap at
+    the bottom (the gate) at gate_x."""
+    wood_light, wood, wood_dark = WALLS["planks"]
+    for x in range(x0, x0 + width):
+        if not gate_x <= x < gate_x + 6:
+            put(canvas, palette, x, y0 + height - 1, wood)
+        put(canvas, palette, x, y0, wood)
+    for y in range(y0, y0 + height):
+        put(canvas, palette, x0, y, wood)
+        put(canvas, palette, x0 + width - 1, y, wood)
+    posts = [(x, y0) for x in range(x0, x0 + width, 6)]
+    posts += [(x, y0 + height - 1) for x in range(x0, x0 + width, 6) if not gate_x <= x < gate_x + 6]
+    posts += [(x0, y) for y in range(y0, y0 + height, 6)] + [(x0 + width - 1, y) for y in range(y0, y0 + height, 6)]
+    for x, y in posts:
+        put(canvas, palette, x, y - 1, wood_light)
+        put(canvas, palette, x, y, wood_dark)
+        put(canvas, palette, x, y + 1, INK)
+
+
+def draw_haystack(canvas, palette, x: int, y: int) -> None:
+    """@brief A haystack: a straw dome with streaks and a dark outline."""
+    light, mid, dark = ROOFS["thatch"]
+    for row in range(9):
+        half = min(row + 2, 6)
+        for dx in range(-half, half + 1):
+            colour = INK if dx in (-half, half) or row == 8 else light if dx < -1 else mid
+            if colour == mid and (dx + row) % 3 == 0:
+                colour = dark
+            put(canvas, palette, x + dx, y + row, colour)
+    shade(canvas, x - 5, y + 9, 12)
+
+
+def draw_crop_rows(canvas, palette, x0: int, y0: int, width: int, height: int, crop: str) -> None:
+    """@brief Furrows across the field, the crop standing in them."""
+    light, mid, dark = CROPS[crop]
+    fill(canvas, palette, x0, y0, width, height, SOIL)
+    for y in range(y0, y0 + height):
+        if (y - y0) % 6 == 5:
+            for x in range(x0, x0 + width):
+                put(canvas, palette, x, y, SOIL_DARK)
+    for row_top in range(y0 + 1, y0 + height - 4, 6):
+        for x in range(x0 + 1, x0 + width - 1):
+            if crop == "cabbage":
+                if (x - x0) % 5 in (1, 2, 3):
+                    put(canvas, palette, x, row_top + 1, light)
+                    put(canvas, palette, x, row_top + 2, mid)
+                    put(canvas, palette, x, row_top + 3, dark)
+                continue
+            if (x - x0) % 4 == 3:
+                continue
+            put(canvas, palette, x, row_top, light)
+            put(canvas, palette, x, row_top + 1, light)
+            put(canvas, palette, x, row_top + 2, mid)
+            put(canvas, palette, x, row_top + 3, dark)
+
+
+def draw_farm(canvas, palette, px: int, py: int, farm_number: int) -> None:
+    """@brief A farm on its 96 x 96 block (3 x 3 engine tiles): crop rows of
+    the farm's own crop, a fence with a gate, a haystack in a corner."""
+    crop = CROP_ORDER[farm_number % len(CROP_ORDER)]
+    draw_crop_rows(canvas, palette, px + 5, py + 5, 86, 86, crop)
+    draw_fence(canvas, palette, px + 3, py + 3, 90, 90, px + 45)
+    corner_x = px + 82 if farm_number % 2 else px + 14
+    draw_haystack(canvas, palette, corner_x, py + 76)
+
+
+def draw_cobbles(canvas, palette, x0: int, y0: int, width: int, height: int) -> None:
+    """@brief Paving of round cobbles: light stones on ink joints, rows offset."""
+    stone_light, stone, stone_dark = WALLS["stone"]
+    # Light ground with sparse dark joints: a square must read as an open,
+    # bright place, not as a dark block (first try was too heavy).
+    fill(canvas, palette, x0, y0, width, height, stone_light)
+    for row, y in enumerate(range(y0 + 2, y0 + height - 1, 4)):
+        for x in range(x0 + 1 + (row % 2) * 2, x0 + width - 2, 4):
+            put(canvas, palette, x + 2, y, stone)
+            put(canvas, palette, x + 1, y + 1, stone)
+            put(canvas, palette, x + 2, y + 1, stone_dark)
+    frame(canvas, palette, x0, y0, width, height)
+
+
+def draw_well(canvas, palette, centre_x: int, centre_y: int) -> None:
+    """@brief A round stone well with dark water, under a small wooden roof."""
+    stone_light, stone, stone_dark = WALLS["stone"]
+    for dy in range(-6, 7):
+        for dx in range(-7, 8):
+            distance = dx * dx * 0.75 + dy * dy
+            if distance > 40:
+                continue
+            colour = INK if distance > 33 else stone_light if dy < -2 else stone if distance > 14 else 2
+            put(canvas, palette, centre_x + dx, centre_y + dy, colour)
+    wood_light, wood, wood_dark = WALLS["planks"]
+    for post_x in (centre_x - 7, centre_x + 7):
+        for y in range(centre_y - 14, centre_y + 1):
+            put(canvas, palette, post_x, y, wood_dark)
+    draw_gable_roof(canvas, palette, centre_x, centre_y - 20, 10, 7, "tiles", 1)
+
+
+def draw_stall(canvas, palette, x0: int, y0: int, awning: int) -> None:
+    """@brief A market stall: striped awning, counter with goods."""
+    for x in range(x0, x0 + 14):
+        for y in range(y0, y0 + 4):
+            put(canvas, palette, x, y, awning if (x - x0) // 2 % 2 == 0 else 8)
+    frame(canvas, palette, x0, y0, 14, 4)
+    fill(canvas, palette, x0 + 1, y0 + 4, 12, 5, WALLS["planks"][1])
+    frame(canvas, palette, x0 + 1, y0 + 4, 12, 5)
+    for i, goods in enumerate((24, 29, 20, 21)):
+        put(canvas, palette, x0 + 3 + i * 2, y0 + 5, goods)
+        put(canvas, palette, x0 + 3 + i * 2, y0 + 6, goods)
+
+
+def draw_square(canvas, palette, px: int, py: int, era: int) -> None:
+    """@brief The square on its 64 x 64 block: beaten earth and the well in
+    the village; cobbles, the well and two market stalls from the town on."""
+    if era == 1:
+        fill(canvas, palette, px + 2, py + 2, 60, 60, SOIL)
+        for i in range(50):
+            put(canvas, palette, px + 3 + (i * 29) % 58, py + 3 + (i * 17) % 58, SOIL_DARK if i % 2 else SOIL_LIGHT)
+        draw_well(canvas, palette, px + 32, py + 36)
+        return
+    draw_cobbles(canvas, palette, px + 2, py + 2, 60, 60)
+    draw_well(canvas, palette, px + 32, py + 36)
+    draw_stall(canvas, palette, px + 6, py + 46, 26)
+    draw_stall(canvas, palette, px + 44, py + 46, 27)
