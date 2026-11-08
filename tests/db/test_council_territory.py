@@ -94,7 +94,7 @@ def test_a_town_plan_refused_twice_is_dropped_and_the_rest_stays(db, realm, sett
     _, realm_id = realm
     state = games.load_latest_state(db, realm_id)
     bad = [z for z in _zones(state) if z["name"] != "Campi"]
-    reply = json.dumps({"report": "Maestà, ecco.", "proposals": [
+    reply = json.dumps({"report": "Maestà, ecco il rapporto.", "proposals": [
         {"action": "set_zones", "zones": bad}, {"action": "build", "building": "house", "zone": "Centro"}]})
     client = FakeClient()
     client.queue("architect", reply, reply)
@@ -107,7 +107,7 @@ def test_a_town_plan_refused_twice_is_dropped_and_the_rest_stays(db, realm, sett
 def test_the_cost_check_warns_of_clearing_hands_with_nothing_to_clear(db, realm, settings):
     _, realm_id = realm
     client = FakeClient()
-    client.queue("architect", json.dumps({"report": "Maestà.", "proposals": [
+    client.queue("architect", json.dumps({"report": "Maestà, ecco il rapporto.", "proposals": [
         {"action": "assign_workers", "food": 50, "wood": 4, "stone": 2, "clearing": 4}]}))
     meeting.hold_meeting(db, realm_id, client, settings)
     chancellor = _calls(client, "chancellor")[0]["user"]

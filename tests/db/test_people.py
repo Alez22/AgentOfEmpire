@@ -213,7 +213,7 @@ def test_granted_petition_keeps_the_plan_from_repeating_its_law(db, realm, setti
     plan = [{"proposer": "treasurer", "order": {"action": "set_tax", "rate": 7}},
             {"proposer": "architect", "order": {"action": "build", "building": "farm"}}]
     client = FakeClient({"people": [_people_reply(0, 100, petition)],
-                         "chancellor": [json.dumps({"summary": "Maestà.", "plan": plan})]})
+                         "chancellor": [json.dumps({"summary": "Maestà, ecco il piano.", "plan": plan})]})
     meeting.hold_meeting(db, realm_id, client, settings)
     people.answer_petition(db, realm_id, "granted")
     meeting.approve_plan(db, realm_id, excluded=[])
@@ -225,7 +225,7 @@ def test_petition_granted_after_the_plan_links_the_same_order(db, realm, setting
     petition = {"order": {"action": "set_tax", "rate": 7}, "text": "Maestà, la gabella pesa."}
     plan = [{"proposer": "treasurer", "order": {"action": "set_tax", "rate": 7}}]
     client = FakeClient({"people": [_people_reply(0, 100, petition)],
-                         "chancellor": [json.dumps({"summary": "Maestà.", "plan": plan})]})
+                         "chancellor": [json.dumps({"summary": "Maestà, ecco il piano.", "plan": plan})]})
     meeting.hold_meeting(db, realm_id, client, settings)
     meeting.approve_plan(db, realm_id, excluded=[])
     people.answer_petition(db, realm_id, "granted")

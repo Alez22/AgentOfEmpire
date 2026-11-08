@@ -85,7 +85,10 @@ def _room_text(state: GameState, config: Config, zone) -> str:
     for kind in kinds:
         room = room_in_zone(state, config, kind, zone.name)
         if room:
-            parts.append(f"{'20 or more' if room >= MAX_ROOM else room} {kind}")
+            # Where the next one would stand (game 21: the Architect thought a
+            # farm would rise on the land just cleared; it took the core's last place).
+            x, y = find_place(state, config, kind, zone.name)
+            parts.append(f"{'20 or more' if room >= MAX_ROOM else room} {kind} (the next at ({x},{y}))")
     return ("room for " + ", ".join(parts)) if parts else "full"
 
 

@@ -53,6 +53,13 @@ LESSON_HINTS = {
     "chancellor": "You can also learn what the sovereign tends to approve, remove or ask for.",
 }
 MAX_PROPOSALS = 3
+# Words the sovereign reads: the prompts ask for at most 120 (reports) and
+# 150 (summary). A text far beyond, or a few words only, is refused and asked
+# again like malformed JSON (game 21: a report of over a thousand words
+# repeating its signature, and a summary of "..." with an empty plan).
+MIN_TEXT_WORDS = 3  # "..." and "Petition check" were the short ones (games 20-21)
+MAX_REPORT_WORDS = 300
+MAX_SUMMARY_WORDS = 350
 
 # Player-facing texts written by the server itself (the game is in Italian).
 # The names also go into the prompts: "Architect" is neutral in English and
@@ -749,7 +756,7 @@ def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
     )
     schema = _MinisterSchema.model_json_schema()
     system = _minister_system(ctx, actor)
-    reply, status = _ask(ctx, actor, system, user, schema, _MinisterReply)
+    reply, status = _ask(ctx, actor, system, user, schema, _MinisterReply, extra_check=_report_length)
     if reply is None:
         report, valid, discarded = _absence_text(ctx, actor.role, status), [], []
     else:
@@ -760,6 +767,24 @@ def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
     payload = {"proposals": valid, "discarded": discarded, "absent": reply is None, "status": status}
     insert_message(ctx, round_number, "report", actor, report, payload)
     return report, valid
+
+
+def _length_refusal(text: str, max_words: int) -> str:
+    """@brief Why a text the sovereign reads is refused for its length, or ""."""
+    words = len(text.split())
+    if words < MIN_TEXT_WORDS:
+        return f"the text has {words} words: write a real report to the sovereign"
+    if words > max_words:
+        return f"the text has {words} words, far over the limit: keep to the asked length and do not repeat yourself"
+    return ""
+
+
+def _report_length(reply) -> str:
+    return _length_refusal(reply.report, MAX_REPORT_WORDS)
+
+
+def _summary_length(reply) -> str:
+    return _length_refusal(reply.summary, MAX_SUMMARY_WORDS)
 
 
 def _zones_refusal(ctx: MeetingContext, proposals: list[dict]) -> str:
@@ -783,7 +808,8 @@ def _retry_bad_zones(ctx: MeetingContext, actor: Actor, system: str, user: str, 
     if not refusal:
         return reply, valid, discarded
     retry_user = user + RETRY_REMINDER.format(error=f"your town plan (set_zones) would be refused: {refusal}")
-    second, _status = _ask(ctx, actor, system, retry_user, _MinisterSchema.model_json_schema(), _MinisterReply)
+    second, _status = _ask(ctx, actor, system, retry_user, _MinisterSchema.model_json_schema(), _MinisterReply,
+                           extra_check=_report_length)
     if second is not None:
         reply = second
         valid, discarded = _validate_proposals(actor.role, second.proposals)
@@ -807,7 +833,8 @@ def _chancellor_turn(ctx: MeetingContext, round_number: int, events: list[dict],
             square_voices=square_voices(ctx), **_people_kwargs(ctx), note_lines=_note_lines(ctx, actor),
         )
         schema = _ChancellorSchema.model_json_schema()
-        reply, status = _ask(ctx, actor, _chancellor_system(ctx, actor), user, schema, _ChancellorReply)
+        reply, status = _ask(ctx, actor, _chancellor_system(ctx, actor), user, schema, _ChancellorReply,
+                             extra_check=_summary_length)
     if reply is None:
         # Fixed-template fallback: the plan is every proposal that passes the check.
         plan = [item for item, verdict in zip(proposals, check["verdicts"]) if verdict["accepted"]]

@@ -108,7 +108,7 @@ def test_invalid_reply_is_retried_once_then_minister_is_absent(db, realm, settin
 
 def test_reply_in_a_code_fence_is_accepted(db, realm, settings):
     _, realm_id = realm
-    fenced = "```json\n" + json.dumps({"report": "Ok.", "proposals": []}) + "\n```"
+    fenced = "```json\n" + json.dumps({"report": "Ok, Maestà, approvo.", "proposals": []}) + "\n```"
     meeting.hold_meeting(db, realm_id, FakeClient({"treasurer": [fenced]}), settings)
     assert _messages(db, realm_id)[0]["payload"]["absent"] is False
 
@@ -642,3 +642,24 @@ def test_treasurer_reads_every_ration_and_the_registry(db, realm, settings):
     assert "children will come of age in the next three months" in treasurer
     assert "Housing: 100 people, 120 places, 20 free." in treasurer
     assert "Registry" not in client.calls[1]["user"]  # the Architect has to ask
+
+
+def test_a_report_far_over_its_length_is_asked_again(db, realm, settings):
+    """Game 21: a report of over a thousand words, repeating its signature."""
+    _, realm_id = realm
+    endless = json.dumps({"report": "Maestà, firmato la Tesoriera. " * 120, "proposals": []})
+    client = FakeClient({"treasurer": [endless]})
+    meeting.hold_meeting(db, realm_id, client, settings)
+    treasurer_calls = [c for c in client.calls if c["role"] == "treasurer"]
+    assert len(treasurer_calls) == 2 and "far over the limit" in treasurer_calls[1]["user"]
+    report = next(m for m in _messages(db, realm_id) if m["speaker"] == "treasurer")
+    assert report["content"].startswith("Maestà, le casse reggono")  # the retry's answer
+
+
+def test_a_summary_of_three_dots_is_asked_again(db, realm, settings):
+    """Game 21: the Chancellor answered "..." with an empty plan."""
+    _, realm_id = realm
+    client = FakeClient({"chancellor": [json.dumps({"summary": "...", "plan": []})]})
+    meeting.hold_meeting(db, realm_id, client, settings)
+    assert _summary(db, realm_id)["content"] == "Maestà, ecco il piano del consiglio."
+    assert len(_summary(db, realm_id)["payload"]["plan"]) == 2

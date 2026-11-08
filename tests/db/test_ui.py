@@ -110,7 +110,7 @@ def test_directive_runs_a_second_round(ui, fake):
 
 def test_model_text_cannot_inject_html(ui, fake):
     realm_id = _new_realm(ui)
-    fake.queue("treasurer", json.dumps({"report": "<script>alert('x')</script>", "proposals": []}))
+    fake.queue("treasurer", json.dumps({"report": "<script>alert('x')</script> Maestà, ecco il rapporto.", "proposals": []}))
     ui.post(f"/ui/realms/{realm_id}/meeting")
     panel = _wait_for_council(ui, realm_id, raw=True)
     assert "<script>alert" not in panel
