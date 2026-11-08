@@ -109,7 +109,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] Values from the lab: clearing plain 3, felling 10 wood, claim 20 gold
   - Step 2: the land fund split in December among the other states (needs them, and a cross-realm input for the replay)
   - [x] Council: orders, briefings, manual, prompts; first test with real models (game 19, 6 months)
-  - [ ] The map page on the phone (mockup first)
+  - [x] The map page on the phone (mockup first: illustrated tiles, the river joined, the realm's border in gold)
   - [ ] A 12-month test game
   - Step 2: automatic states and contested borders; then trade, diplomacy, war
 - [ ] Market, trade and diplomacy (they give gold a use)

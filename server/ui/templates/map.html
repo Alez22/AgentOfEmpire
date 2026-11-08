@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ realm.name }} · la mappa{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Partita {{ game.id }} · turno {{ turn }}</div>
+  <h1>La città e le sue terre</h1>
+  <p class="hint">Il piano della città lo disegna l'Architetta; tu lo approvi con gli altri ordini.</p>
+</section>
+
+{% if not map %}
+<section class="card"><p>Questo regno è nato prima della mappa: conta solo le caselle libere, nella pagina Regno.</p></section>
+{% else %}
+<section class="card" style="padding: 3px; gap: 6px">
+  <div class="map-frame">
+    <div class="map-grid" role="group" aria-label="Mappa della città: tocca un edificio per i dettagli"
+         style="grid-template-columns: repeat({{ map.cols }}, {{ map.tile_px }}px); grid-template-rows: repeat({{ map.rows }}, {{ map.tile_px }}px); width: {{ map.cols * map.tile_px }}px">
+      {% for t in map.tiles %}<div aria-hidden="true" class="{{ t.cls }}" style="grid-area: {{ t.row }} / {{ t.col }}"></div>{% endfor %}
+      {% for e in map.edges %}<div aria-hidden="true" class="map-edge" style="grid-area: {{ e.row }} / {{ e.col }}; box-shadow: {{ e.shadow }}"></div>{% endfor %}
+      {% for b in map.buildings %}<a href="{{ b.href }}" aria-label="{{ b.label }}" {% if b.selected %}aria-current="true"{% endif %}
+         class="map-building {{ b.cls }}{% if b.selected %} selected{% endif %}{% if b.building_site %} site{% endif %}"
+         style="grid-area: {{ b.row }} / {{ b.col }} / span {{ b.h }} / span {{ b.w }}"></a>{% endfor %}
+      {% for z in map.zones if z.shown %}<div aria-hidden="true" class="map-zone{% if z.lit %} lit{% endif %}"
+         style="--zone: {{ z.color }}; grid-area: {{ z.row1 }} / {{ z.col1 }} / {{ z.row2 }} / {{ z.col2 }}"></div>{% endfor %}
+    </div>
+  </div>
+  <div class="map-tools" style="padding: 0 6px 6px">
+    <span class="hint">Nord in alto · in oro il confine del regno</span>
+    <span style="display: flex; gap: 6px">
+      <a href="{{ map.zoom_href }}">{% if map.zoom %}Rimpicciolisci{% else %}Ingrandisci{% endif %}</a>
+      <a href="{{ map.zones_href }}">{% if map.show_zones %}Nascondi le zone{% else %}Mostra le zone{% endif %}</a>
+    </span>
+  </div>
+</section>
+
+<section class="card map-detail" aria-live="polite">
+  <span aria-hidden="true" class="map-picture {{ map.detail.cls }}"></span>
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <h2>{{ map.detail.title }}</h2>
+    {% for line in map.detail.lines %}<p style="margin: 0">{{ line }}</p>{% endfor %}
+  </div>
+</section>
+
+<section class="card">
+  <h2>Le terre del regno</h2>
+  <table class="numbers">
+    <tr><th>Caselle</th><td>{{ map.land.owned }}</td></tr>
+    <tr><th>Prossima casella</th><td>{{ map.land.price }} oro</td></tr>
+    <tr><th>Versati al fondo delle terre</th><td>{{ map.land.paid }} oro</td></tr>
+    <tr><th>Da dissodare o abbattere</th><td>{% if map.land.queued %}{{ map.land.queued }} caselle, {{ map.land.work_left }} mesi di lavoro{% else %}nessuna{% endif %}</td></tr>
+    <tr><th>Adulti a dissodare</th><td>{{ map.land.clearing }}</td></tr>
+  </table>
+</section>
+
+<section class="card">
+  <h2>Il piano della città</h2>
+  <p class="hint">Tocca una zona per vederla sulla mappa.</p>
+  {% for z in map.zones %}
+  <a href="{{ z.href }}" class="zone-row{% if z.lit %} lit{% endif %}" style="--zone: {{ z.color }}" {% if z.lit %}aria-current="true"{% endif %}>
+    <span aria-hidden="true" class="zone-swatch"></span>
+    <span style="display: flex; flex-direction: column; flex-grow: 1">
+      <strong style="font-size: 15px">{{ z.name }}</strong>
+      <span class="hint">{{ z.purpose }}</span>
+    </span>
+    <span style="font-size: 13px; text-align: right">{{ z.room }}</span>
+  </a>
+  {% endfor %}
+</section>
+
+<section class="map-legend" aria-label="Legenda">
+  <span><i class="t-plain"></i>Pianura</span><span><i class="t-forest"></i>Bosco</span>
+  <span><i class="t-hill"></i>Collina</span><span><i class="t-river-ns"></i>Fiume</span>
+  <span><i class="t-wild"></i>Da dissodare</span><span><i class="b-square"></i>Piazza</span>
+  <span><i class="b-farm"></i>Fattoria</span><span><i class="b-house"></i>Casa</span>
+  <span><i class="b-sawmill"></i>Segheria</span><span><i class="b-quarry"></i>Cava</span>
+</section>
+{% endif %}
+{% endblock %}

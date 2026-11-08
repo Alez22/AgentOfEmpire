@@ -135,3 +135,44 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
 /* The people's petition: two buttons side by side, wrapping on a narrow phone. */
 .petition-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .petition-actions form { margin: 0; }
+
+/* Map page (server/ui/map_view.py): illustrated tiles in a CSS grid. */
+.map-frame { overflow: auto; max-height: 560px; border-radius: 9px; }
+.map-grid { display: grid; margin: 0 auto; background: var(--card); }
+.map-grid > * { background-size: 100% 100%; background-repeat: no-repeat; }
+.map-grid .out { filter: saturate(0.35) brightness(0.48); }
+.map-edge, .map-zone { pointer-events: none; }
+.map-edge { z-index: 4; }
+.map-building { display: block; border-radius: 2px; z-index: 1; }
+.map-building:focus-visible { outline: 3px solid var(--gold-strong); outline-offset: -1px; z-index: 6; }
+.map-building.selected { outline: 2px solid #FFF1C2; outline-offset: -1px; box-shadow: 0 0 0 4px rgba(232, 199, 120, 0.45); z-index: 3; }
+.map-building.site { opacity: 0.6; }
+.map-zone { z-index: 5; border-radius: 5px; border: 2px dashed var(--zone); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5); }
+.map-zone.lit { border: 3px solid var(--zone); background: color-mix(in srgb, var(--zone) 20%, transparent); box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.55); }
+.map-tools { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px; }
+.map-tools a { min-height: 44px; display: inline-flex; align-items: center; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--card-raised); color: var(--text); text-decoration: none; font-size: 13px; font-weight: 500; }
+.map-detail { display: flex; gap: 14px; align-items: flex-start; }
+.map-picture { width: 56px; height: 56px; border-radius: 8px; flex-shrink: 0; background-size: 100% 100%; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); }
+.zone-row { min-height: 52px; display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); color: var(--text); text-decoration: none; }
+.zone-row.lit { background: var(--card-raised); border-color: var(--zone); }
+.zone-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; border: 2px solid var(--zone); }
+.map-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; }
+.map-legend span { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-soft); }
+.map-legend i { width: 26px; height: 26px; border-radius: 4px; flex-shrink: 0; background-size: 100% 100%; }
+.t-plain { background-image: url(/static/map/plain.svg); }
+.t-plain2 { background-image: url(/static/map/plain2.svg); }
+.t-forest { background-image: url(/static/map/forest.svg); }
+.t-hill { background-image: url(/static/map/hill.svg); }
+.t-wild { background-image: url(/static/map/wild.svg); }
+.t-river-ns { background-image: url(/static/map/river-ns.svg); }
+.t-river-ew { background-image: url(/static/map/river-ew.svg); }
+.t-river-ne { background-image: url(/static/map/river-ne.svg); }
+.t-river-se { background-image: url(/static/map/river-se.svg); }
+.t-river-sw { background-image: url(/static/map/river-sw.svg); }
+.t-river-nw { background-image: url(/static/map/river-nw.svg); }
+.b-farm { background-image: url(/static/map/farm.svg); }
+.b-house { background-image: url(/static/map/house.svg); }
+.b-house2 { background-image: url(/static/map/house2.svg); }
+.b-sawmill { background-image: url(/static/map/sawmill.svg); }
+.b-quarry { background-image: url(/static/map/quarry.svg); }
+.b-square { background-image: url(/static/map/square.svg); }

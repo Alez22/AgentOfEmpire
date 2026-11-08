@@ -28,7 +28,7 @@ from server.council import audience, debate, mandates, manual, meeting, people, 
 from server.council.briefing import months_until_winter
 from server.db import games
 from server.sovereign_view import sovereign_state
-from server.ui import labels
+from server.ui import labels, map_view
 
 TEMPLATES_DIR = Path(__file__).with_name("templates")
 _environment = jinja2.Environment(
@@ -358,6 +358,31 @@ def kingdom_page(request: Request, realm_id: int, conn=Depends(_connection)):
         "realm_id": realm_id,
     }
     return templates.TemplateResponse(request, "kingdom.html", context)
+
+
+@router.get("/ui/realms/{realm_id}/map", response_class=HTMLResponse)
+def map_page(request: Request, realm_id: int, b: int | None = None, zone: str | None = None,
+             zones: int = 0, zoom: int = 0, conn=Depends(_connection)):
+    """@brief The realm's land, buildings and town plan (server/ui/map_view.py).
+    Every choice is a link: b = building id (0 the square), zone = zone to
+    light up, zones = 1 to draw every zone, zoom = 1 for bigger tiles."""
+    game_id = games.realm_game_id(conn, realm_id)
+    if game_id is None:
+        return _not_found(request, f"il regno {realm_id}")
+    game = games.load_game(conn, game_id)
+    state = games.load_latest_state(conn, realm_id)
+    config = games.load_game_config(conn, game_id)
+    view = (map_view.map_page(state, config, realm_id, b, zone, bool(zones), bool(zoom))
+            if state.has_map() else None)
+    context = {
+        "game": game,
+        "realm": next(r for r in game["realms"] if r["id"] == realm_id),
+        "turn": state.turn,
+        "map": view,
+        "nav": "map",
+        "realm_id": realm_id,
+    }
+    return templates.TemplateResponse(request, "map.html", context)
 
 
 @router.get("/ui/realms/{realm_id}/chronicle", response_class=HTMLResponse)

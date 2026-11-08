@@ -35,7 +35,8 @@
     <tr><th>Nei campi</th><td>{{ state.workers.food }} / {{ jobs.food }} posti</td></tr>
     <tr><th>Nei boschi</th><td>{{ state.workers.wood }} / {{ jobs.wood }} posti</td></tr>
     <tr><th>Nelle cave</th><td>{{ state.workers.stone }} / {{ jobs.stone }} posti</td></tr>
-    <tr><th>Senza lavoro</th><td>{{ state.adults - state.workers.food - state.workers.wood - state.workers.stone }}</td></tr>
+    {% if land %}<tr><th>A dissodare</th><td>{{ state.workers.clearing }}</td></tr>{% endif %}
+    <tr><th>Senza lavoro</th><td>{{ state.adults - state.workers.food - state.workers.wood - state.workers.stone - state.workers.clearing }}</td></tr>
   </table>
 </section>
 

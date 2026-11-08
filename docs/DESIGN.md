@@ -865,6 +865,8 @@ The first lab run also moved the world's forests and hills from straight below t
 - New page **"Mappa": the territory and its ring in SVG, colours by terrain, buildings as shapes with a letter or a simple icon, zones as coloured outlines, tiles being cleared hatched; tapping a building or a zone shows its details. A mockup comes before the code.
 - Admin: the whole world and the fund.
 
+**Built (2026-11-08)**: `/ui/realms/{id}/map` (tab "Mappa"), after a mockup on a Design canvas. The land and a ring of 2 tiles as a CSS grid of illustrated tiles, top-down like a storybook map: 17 small original SVGs in `server/ui/static/map/` (about 1 KB each: two grasses, forest, hill, wild land, six river pieces that join their river neighbours, farm, two houses, sawmill, quarry, square with its fountain). Land outside the realm is the same drawing faded; the realm's border is a gold line. No JavaScript: choosing a building (`b`), lighting a zone (`zone`), drawing every zone (`zones=1`) and bigger tiles (`zoom=1`, 22 → 34 px, scrolling in its frame) are links. Below: the chosen building, the land (tiles, price, fund, clearing), the town plan with the room per zone in Italian, a legend. The sovereign sees no coordinates. The world view comes with the other states.
+
 **Order of work** (one commit each, with tests)
 
 1. Engine: map, footprints, zones, placement, demolition, migration (no models).
