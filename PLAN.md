@@ -137,7 +137,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] Automatic sovereign, first version (spec approved 2026-11-08, `docs/DESIGN.md`): fixed rules R1–R9 from game 24, no model for the sovereign (`server/sovereign/`), `POST /realms/{id}/sovereign/auto`, reasons in a council message `sovereign` (migration 013), `lab/auto_game.py`
   - [x] Game 25: three automatic realms, 12 months, real models, $0.21 (see "Game 25")
   - [x] R5b: the sovereign sells a surplus also when gold is not short (decided and built 2026-11-08)
-  - [ ] A game with R5b (`lab/auto_game.py new 0 12`): does Aurelia's food reach Brenna?
+  - [x] A game with R5b (game 26): **no**, R5b never fired: it keeps 4 months of gross eating (~3,600 food), Aurelia peaked at 2,626. To decide: net need or fewer months
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
 - [ ] Eras, variable trust and loyalty, leaks
 - [ ] Press by era: rumours only, then government communiqués (propaganda, also to other states), then independent journalism (see Progress in `docs/DESIGN.md`)
@@ -803,6 +803,15 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
 3. **Aurelia, rich in food, piled up 1858 food and never sold it**: R5 sells only when gold is short, and Aurelia's 67 gold covered 3 months of costs. Brenna, poor in food, ended on the reduced ration. Open: a rule to sell a surplus anyway.
 4. **Two defects of the rules, fixed**: R4b counted the next 4 months of firewood, so from April to July every wood purchase was "useless" (wood now counts to the end of the next winter); R5 told Brenna to sell the wood its own plan was buying (a good the plan buys is no longer sold). Brenna's Treasurer refused that directive on its own, with the right reason.
 
+### Game 26: three automatic sovereigns on the hex grid (2026-11-08, 12 months, $0.22)
+
+`lab/auto_game.py new 0 12`, seed 0 as games 24 and 25, the first game on hexes (realms 32-34). 217 calls, $0.22 (game 25: $0.21).
+
+1. **The hex briefing works in real meetings.** Architect: 48 calls, 1,970 output tokens on average, 4,394 at most (cap 10,000), 13.8 s on average, 40 s at most; one timeout (Corvara, month 5) out of 48. No reply cut by the cap. The other counsellors as before (Treasurer one invalid reply).
+2. **The map was used little, but right**: 4 builds (a farm in every realm's Campi, Corvara a second sawmill in Botteghe del bosco), all accepted; Brenna felled 4 forest hexes and claimed 2 plain hexes to the north. No town plan redrawn (game 25 on squares: 3 builds, 2 claims). One refusal: Aurelia in May claimed 4 tiles "in Campi", a zone already all owned (`NO_LAND`): the briefing does not say a zone has nothing left to claim, and the craft's "first draw the zone beyond the border" was skipped.
+3. **Nobody fell, all calm all year.** The map pages draw the SVG board for the three realms.
+4. **R5b never fired**: Aurelia ended with 2,626 food and sold none. The rule keeps 4 months of *gross* eating (about 900 food a month, so 3,600) before selling; Aurelia never got there. Brenna and Corvara ended on the reduced ration. To decide: keep months of net need (eating minus expected harvest) or a lower number.
+
 ### Presentation page and map graphics (2026-11-08)
 
 - **Presentation page** of the finished game: `docs/index.html`, live at https://alez22.github.io/AgentOfEmpire/ (GitHub Pages from `main` → `/docs`). Eleven chapters in Italian, click-to-open deep dives, a "where we are" section. The vision decisions it needed are in `docs/DESIGN.md` (victory paths, reputation, espionage, eras' names, seasons, battles). The game's name is **AgentOfEmpire**.
@@ -817,7 +826,8 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
   - [x] Step 3c, probe with rows as runs, room per zone, ring 4 ($0.02): by zone 5 of 5 clean, by anchor 4 of 5; output 600–4,700 tokens (was ~9,000). Room per zone is the big saving, runs another third. Decided for the briefing: runs, ring 4, room per zone, build by zone
   - [x] Step 3, briefing (2026-11-08): runs and ring 4 in `map_text.py`, `neighbours()` for frontier and forest warning, shapes in words, manual on both grids, prompts in words true on both grids; Architect output cap 10,000 (`[max_output_tokens_by_role]`), others 6,000 (`tests/test_hex_briefing.py`) (`map_text.py` still has its own 4-neighbour loops at the frontier and the forest warning), manual, prompts
   - [x] Step 4, map page (2026-11-08): SVG board for hex games (`server/ui/hex_board.py`), night theme, icon sprite (`lab/build_icon_sprite.py` → `server/ui/static/icons/`), credits page `/ui/credits`; the square view stays for old games. **New games are hex** (`config.toml`: `grid = "hex"`, `world_hex.txt`, `core_hex.toml`); square-grid tests use `square_config`
-  - [ ] A 12-month test game on the hex grid with real models (the Architect has not yet met the hex briefing in a real meeting; timeout 90 s against replies up to 10,000 tokens)
+  - [x] Game 26, 12 months on the hex grid, three automatic realms ($0.22): the Architect's hex briefing works (output ≤ 4,394 tokens, ≤ 40 s, 1 timeout in 48 calls); see "Game 26"
+  - [ ] The briefing could say when a zone has no land left to claim (Aurelia's `NO_LAND`, game 26)
   - [ ] Map page: the lit zone's colour (fields #F2D27A) is close to the realm's gold border; pick zone colours for the night board
 
 ## Open decisions
