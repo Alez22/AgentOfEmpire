@@ -176,3 +176,19 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
 .b-sawmill { background-image: url(/static/map/sawmill.svg); }
 .b-quarry { background-image: url(/static/map/quarry.svg); }
 .b-square { background-image: url(/static/map/square.svg); }
+
+/* The market page (server/ui/market_view.py). */
+.card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.good { display: flex; flex-direction: column; gap: 8px; }
+.good + .good { border-top: 1px solid var(--line); padding-top: 14px; }
+.stats.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.trend { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: var(--muted); }
+.trend.up { color: var(--danger); }
+.trend.down { color: var(--ok); }
+.bars { display: flex; align-items: flex-end; gap: 4px; height: 32px; }
+.bar { flex: 1; background: var(--line-strong); border-radius: 3px; }
+.bar.now { background: var(--gold); }
+.bars-axis { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+.trades { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.trades li { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; background: var(--card-raised); border-radius: 10px; padding: 10px 12px; }
+.link-button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #4A3E22; border-radius: 10px; text-decoration: none; font-weight: 600; }

@@ -28,7 +28,7 @@ from server.council import audience, debate, mandates, manual, meeting, people, 
 from server.council.briefing import months_until_winter
 from server.db import games
 from server.sovereign_view import sovereign_state
-from server.ui import labels, map_view
+from server.ui import labels, map_view, market_view
 
 TEMPLATES_DIR = Path(__file__).with_name("templates")
 _environment = jinja2.Environment(
@@ -383,6 +383,38 @@ def map_page(request: Request, realm_id: int, b: int | None = None, zone: str | 
         "realm_id": realm_id,
     }
     return templates.TemplateResponse(request, "map.html", context)
+
+
+@router.get("/ui/realms/{realm_id}/market", response_class=HTMLResponse)
+def market_page(request: Request, realm_id: int, conn=Depends(_connection)):
+    """@brief The common market as this realm sees it (server/ui/market_view.py):
+    public prices and totals, its own goods on sale, the Treasurer's trades.
+    Read only: trades go through the council like every other order."""
+    game_id = games.realm_game_id(conn, realm_id)
+    if game_id is None:
+        return _not_found(request, f"il regno {realm_id}")
+    game = games.load_game(conn, game_id)
+    state = games.load_latest_state(conn, realm_id)
+    config = games.load_game_config(conn, game_id)
+    history = games.load_market_history(conn, game_id, state.turn, market_view.HISTORY_MONTHS)
+    view = None
+    if history and config.market is not None:
+        summaries = [m for m in meeting.list_messages(conn, realm_id, state.turn) if m["kind"] == "summary"]
+        last_events = []
+        if state.turn > 1:
+            last_events = [e for e in games.list_events_for_sovereign(conn, game_id, realm_id, state.turn - 1)
+                           if e["realm_id"] == realm_id]
+        view = market_view.market_page(history, state, config, str(realm_id),
+                                       summaries[-1]["payload"] if summaries else None, last_events)
+    context = {
+        "game": game,
+        "realm": next(r for r in game["realms"] if r["id"] == realm_id),
+        "turn": state.turn,
+        "market": view,
+        "nav": "market",
+        "realm_id": realm_id,
+    }
+    return templates.TemplateResponse(request, "market.html", context)
 
 
 @router.get("/ui/realms/{realm_id}/chronicle", response_class=HTMLResponse)

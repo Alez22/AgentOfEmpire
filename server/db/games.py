@@ -163,6 +163,16 @@ def _insert_market(conn: psycopg.Connection, game_id: int, turn: int, market: Ma
                  (game_id, turn, Jsonb(market_to_dict(market))))
 
 
+def load_market_history(conn: psycopg.Connection, game_id: int, last_turn: int,
+                        months: int) -> list[tuple[int, MarketState]]:
+    """@brief (turn, market at its start) for the last `months` turns up to
+    last_turn, oldest first; empty for a game without a market."""
+    rows = conn.execute(
+        "SELECT turn, state FROM market_states WHERE game_id = %s AND turn > %s AND turn <= %s ORDER BY turn",
+        (game_id, last_turn - months, last_turn)).fetchall()
+    return [(turn, market_from_dict(state)) for turn, state in rows]
+
+
 def load_market(conn: psycopg.Connection, game_id: int, turn: int) -> MarketState | None:
     """@brief The warehouse at the start of a turn; None for a game without a market."""
     row = conn.execute("SELECT state FROM market_states WHERE game_id = %s AND turn = %s",

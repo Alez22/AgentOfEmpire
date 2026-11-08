@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ realm.name }} · il mercato{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">{{ realm.name }} · turno {{ turn }}, {{ labels.month_name(turn) }}</div>
+  <h1>Il mercato</h1>
+  {% if market %}
+  <p class="hint">Un solo magazzino per tutti i regni del mondo. Qui vedi i prezzi e quanto si è scambiato, mai chi ha comprato o venduto. Gli scambi li propone il Tesoriere.</p>
+  {% endif %}
+</section>
+
+{% if not market %}
+<p class="banner info">In questo mondo non c'è mercato: l'oro non compra cibo, legno o pietra.</p>
+{% else %}
+<section class="card" aria-labelledby="prezzi">
+  <div class="card-head"><h2 id="prezzi">Prezzi del mese</h2><span class="hint">oro per lotto da {{ market.lot }}</span></div>
+  {% for good in market.goods %}
+  <div class="good">
+    <div class="card-head">
+      <h3>{{ good.name }}</h3>
+      <span class="trend {{ good.trend }}">
+        {% if good.trend == "up" %}<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 11V3M3.5 6.5 7 3l3.5 3.5"/></svg>
+        {% elif good.trend == "down" %}<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v8M3.5 7.5 7 11l3.5-3.5"/></svg>
+        {% else %}<svg aria-hidden="true" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7h8"/></svg>{% endif %}
+        {{ good.trend_words }}
+      </span>
+    </div>
+    <div class="stats two">
+      <div class="stat"><div class="label">Compri a</div><div class="value">{{ good.buy }}</div></div>
+      <div class="stat"><div class="label">Vendi a</div><div class="value">{{ good.sell }}</div></div>
+    </div>
+    <p class="hint">Nel magazzino {{ good.stock }}. Il mese scorso: comprati {{ good.last_bought }}, messi in vendita {{ good.last_sold }}.</p>
+    <div class="bars" role="img" aria-label="{{ good.bars_label }}">
+      {% for bar in good.bars %}<div class="bar{% if bar.now %} now{% endif %}" style="height: {{ bar.height }}px"></div>{% endfor %}
+    </div>
+    <div class="bars-axis"><span>{{ good.first_month }}</span><span>{{ good.last_month }}</span></div>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="card" aria-labelledby="attesa">
+  <h2 id="attesa">La tua merce in attesa</h2>
+  {% for row in market.waiting %}
+  <div class="card-head"><span>{{ row.name }}</span><strong>{{ row.units }}</strong></div>
+  <p class="hint">Al prezzo di oggi varrebbe circa {{ row.worth }} oro.</p>
+  {% else %}
+  <p class="hint">Nessuna merce in vendita.</p>
+  {% endfor %}
+  {% if market.waiting %}<p class="hint">È pagata quando qualcuno la compra, prima la merce più vecchia. Non si può ritirare.</p>{% endif %}
+</section>
+
+<section class="card" aria-labelledby="magazzini">
+  <h2 id="magazzini">I magazzini del regno</h2>
+  <div class="stats two">
+    {% for name, value in market.stores %}<div class="stat"><div class="label">{{ name }}</div><div class="value">{{ value }}</div></div>{% endfor %}
+  </div>
+  {% if market.needs %}<ul class="events">{% for line in market.needs %}<li>{{ line }}</li>{% endfor %}</ul>{% endif %}
+</section>
+
+<section class="card" aria-labelledby="tesoriere">
+  <h2 id="tesoriere">Il Tesoriere propone</h2>
+  {% if not market.met %}
+  <p class="hint">Il consiglio non si è ancora riunito questo mese.</p>
+  {% elif market.proposals %}
+  <ul class="trades">
+    {% for row in market.proposals %}<li><span>{{ row.label }}</span><span class="hint">{{ row.gold }}</span></li>{% endfor %}
+  </ul>
+  <p class="hint">Fa parte del piano del consiglio: lo approvi o lo escludi nella pagina del turno.</p>
+  {% else %}
+  <p class="hint">Questo mese il piano non ha scambi.</p>
+  {% endif %}
+  <a class="link-button" href="/ui/realms/{{ realm_id }}">Vai al piano del turno</a>
+</section>
+
+<section class="card" aria-labelledby="scorso">
+  <h2 id="scorso">Il mese scorso</h2>
+  {% if market.last_month %}
+  <ul class="events">{% for line in market.last_month %}<li>{{ line }}</li>{% endfor %}</ul>
+  {% else %}
+  <p class="hint">Nessuno scambio.</p>
+  {% endif %}
+</section>
+
+<p class="hint">Come funziona il mercato: <a href="/ui/realms/{{ realm_id }}/manual">Manuale, sezione Mercato</a>.</p>
+{% endif %}
+{% endblock %}

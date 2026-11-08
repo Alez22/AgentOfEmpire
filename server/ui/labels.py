@@ -7,6 +7,11 @@ new engine value shows up (ugly but visible) instead of crashing the page.
 
 BUILDINGS = {"farm": "fattoria", "sawmill": "segheria", "quarry": "cava", "house": "casa"}
 GOODS_IT = {"food": "cibo", "wood": "legno", "stone": "pietra"}
+
+
+def lots_of(lots, good: str) -> str:
+    """@brief "1 lotto di legno", "3 lotti di pietra"."""
+    return f"{lots} {'lotto' if lots == 1 else 'lotti'} di {GOODS_IT.get(good, good)}"
 TERRAINS = {"plain": "pianura", "forest": "bosco", "hill": "collina"}
 DIRECTIONS = {"north": "nord", "south": "sud", "east": "est", "west": "ovest"}
 RATIONS = {"reduced": "ridotta", "normal": "normale", "abundant": "abbondante"}
@@ -91,7 +96,7 @@ def order_label(order: dict) -> str:
                 f"{order.get('stone')} nelle cave{clearing}")
     if action == "trade":
         verb = "Comprare" if order.get("side") == "buy" else "Vendere"
-        return f"{verb} al mercato {order.get('lots')} lotti di {GOODS_IT.get(order.get('good'), order.get('good'))}"
+        return f"{verb} al mercato {lots_of(order.get('lots'), order.get('good'))}"
     return str(order)
 
 
@@ -133,9 +138,9 @@ def event_label(kind: str, data: dict) -> str:
         return (f"Mancava la pietra per la manutenzione ({data.get('missing')} su {data.get('needed')}): "
                 "gli edifici si sono consumati e hanno reso meno.")
     if kind == "trade_bought":
-        return f"Comprati al mercato {data.get('lots')} lotti di {GOODS_IT.get(data.get('good'), data.get('good'))} per {data.get('gold')} oro."
+        return f"Comprati al mercato {lots_of(data.get('lots'), data.get('good'))} per {data.get('gold')} oro."
     if kind == "trade_on_sale":
-        return f"Messi in vendita al mercato {data.get('lots')} lotti di {GOODS_IT.get(data.get('good'), data.get('good'))}."
+        return f"Messi in vendita al mercato {lots_of(data.get('lots'), data.get('good'))}."
     if kind == "trade_paid":
         return f"Il mercato ha pagato {data.get('gold')} oro per la merce venduta."
     if kind == "salaries_unpaid":
