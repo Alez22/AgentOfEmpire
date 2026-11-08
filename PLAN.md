@@ -142,7 +142,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] A: spec approved 2026-11-08 in `docs/DESIGN.md`, "The market as a building, merchants and their mood" (unrest ladder per class, trade tax as a share of the margin)
   - [x] A1. Lab `lab/village_market.py` (see "Lab: the village market, block A"): market 80 wood, no stone, 2 months; 6 merchants x 3 lots; merchants' own tax on the trades' value (10 %); a reserved market zone; shocks at half; idle malus only for the crown's fault
   - [x] A2. Engine: the building, its zone and the core, the `trade` sector, capacity, the merchants' tax (`tests/test_village_market.py`; games 20-26 replay unchanged)
-  - [ ] A3. Engine: mood and unrest per class (`[classes.*]`), the merchants' effort and strike
+  - [x] A3. Engine: mood and unrest per class (`[classes.*]`), the merchants' effort and strike (one mood step and ladder for every class; strike months neutral for the trade factor; games 20-26 replay unchanged)
   - [ ] A4. Council: briefings, manual, prompts, craft, the Voice, R10 (until then a new game's council does not know the market building)
   - [ ] A5. UI; A6. a 12-month game with three automatic realms
   - [ ] B+C: spec, multi-realm lab, engine, council, UI

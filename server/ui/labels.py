@@ -5,7 +5,9 @@ here, in one place. An unknown key falls back to the raw identifier, so a
 new engine value shows up (ugly but visible) instead of crashing the page.
 """
 
-BUILDINGS = {"farm": "fattoria", "sawmill": "segheria", "quarry": "cava", "house": "casa"}
+BUILDINGS = {"farm": "fattoria", "sawmill": "segheria", "quarry": "cava", "house": "casa", "market": "mercato"}
+MASCULINE_BUILDINGS = ("market",)  # "Completato un mercato", the others "Completata una ..."
+CLASSES_IT = {"merchants": "I mercanti"}
 GOODS_IT = {"food": "cibo", "wood": "legno", "stone": "pietra"}
 
 
@@ -112,9 +114,17 @@ def event_label(kind: str, data: dict) -> str:
     if kind == "unrest_changed":
         return (f"Il popolo passa da {UNREST.get(data.get('from'), data.get('from'))} "
                 f"a {UNREST.get(data.get('to'), data.get('to'))}.")
+    if kind == "class_unrest_changed":
+        who = CLASSES_IT.get(data.get("class"), data.get("class"))
+        return (f"{who} passano da {UNREST.get(data.get('from'), data.get('from'))} "
+                f"a {UNREST.get(data.get('to'), data.get('to'))}.")
+    if kind == "merchant_tax":
+        return f"I mercanti hanno pagato {data.get('gold')} oro di tassa sul commercio."
     if kind == "game_over":
         return GAME_OVER.get(data.get("reason"), f"Fine della partita: {data.get('reason')}.")
     if kind == "building_completed":
+        if data.get("kind") in MASCULINE_BUILDINGS:
+            return f"Completato un {BUILDINGS.get(data.get('kind'), data.get('kind'))}."
         return f"Completata una {BUILDINGS.get(data.get('kind'), data.get('kind'))}."
     if kind == "season_end":
         return f"Finisce la stagione: {SEASONS.get(data.get('season'), data.get('season'))}."

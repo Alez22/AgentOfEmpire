@@ -47,6 +47,9 @@ EVENT_VISIBILITY = {
     "trade_bought": "court",
     "trade_on_sale": "court",
     "trade_paid": "court",
+    "merchant_tax": "court",  # the merchants' own tax, paid with the trades (village block A)
+    # A class's unrest is public like the peasants'; its mood never is.
+    "class_unrest_changed": "public",
 }
 
 

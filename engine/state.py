@@ -49,6 +49,19 @@ class Workers:
 
 
 @dataclass
+class ClassState:
+    """@brief One class born from a building (the merchants): its own mood and
+    unrest ladder, like the peasants' fields of GameState."""
+    mood: int  # per mille, hidden like the peasants'
+    low_mood_turns: int = 0
+    unrest: str = "calm"
+    # The last months at the market, oldest first: [lots filled, lots the
+    # merchants could handle, 1 if others' goods were on sale]; a strike month
+    # is [-1, 0, 0] and does not count (a strike vents the anger, see turn.py).
+    recent_trade: list[list[int]] = field(default_factory=list)
+
+
+@dataclass
 class Event:
     kind: str
     data: dict = field(default_factory=dict)
@@ -103,6 +116,9 @@ class GameState:
     # The merchants' own tax, percent of the gold value of the month's trades
     # (village block A). 0 for games where the market needs no building.
     merchant_tax_rate: int = 0
+    # Classes born from buildings, by name ("merchants"); empty until their
+    # building is finished, and in games saved before village block A.
+    classes: dict[str, ClassState] = field(default_factory=dict)
 
     def has_map(self) -> bool:
         return bool(self.terrain)

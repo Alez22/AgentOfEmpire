@@ -5,7 +5,11 @@ results, so any change must be versioned. Integer arithmetic only.
 Step order: orders -> fixed rules -> construction -> taxes and upkeep ->
 firewood and stone upkeep ([needs]) -> production -> clearing (territory) ->
 food consumption -> spoilage -> demography -> worker rescale -> mood -> unrest
--> closing.
+-> the classes' mood and unrest -> closing.
+
+Every class (peasants, merchants) goes through the same mood and unrest
+functions (_approach, _climb_ladder); what differs is its factors and its
+rules ([mood] and [unrest] for the peasants, [classes.*] for the others).
 
 Taxes and upkeep run BEFORE production (the design doc listed them
 after): unpaid upkeep halves the output of the same month, so it must be
@@ -16,13 +20,18 @@ import copy
 from dataclasses import dataclass
 
 from engine import territory
-from engine.config import Config
+from engine.config import ClassConfig, Config
 from engine.orders import Order
 from engine.people import PeopleChoice
-from engine.state import Event, GameState, Workers
+from engine.state import ClassState, Event, GameState, Workers
 from engine.validator import OrderResult, apply_orders
 
 SEASONS = ("winter", "spring", "summer", "autumn")
+UNREST_STEPS = ("calm", "protests", "strike", "revolt")
+# The class each building brings when it is finished (docs/DESIGN.md, "The eras").
+CLASS_OF_BUILDING = {"market": "merchants"}
+# Each class's own tax rate in the state (the peasants' is tax_rate).
+CLASS_TAX_RATE = {"merchants": "merchant_tax_rate"}
 
 
 @dataclass
@@ -406,14 +415,21 @@ def _update_mood(
     subtract the shock of a famine and its deaths and of missing firewood,
     and add the effect of the sovereign's answer to a petition: all immediate."""
     target = _target_mood(state, config, needed, missing_pct, deaths)
-    # Python's // floors negative numbers too, which is still deterministic.
-    state.mood += (target - state.mood) * config.mood.approach_pct // 100
-    state.mood += _feast_bonus(state, config)
-    state.mood -= missing_pct * config.mood.famine_shock_per_missing_pct + deaths * config.mood.death_shock
-    state.mood += petition_mood
+    shocks = _feast_bonus(state, config)
+    shocks -= missing_pct * config.mood.famine_shock_per_missing_pct + deaths * config.mood.death_shock
+    shocks += petition_mood
     if cold_pct:
-        state.mood -= cold_pct * config.needs.cold_shock_per_pct
-    state.mood = max(0, min(1000, state.mood))
+        shocks -= cold_pct * config.needs.cold_shock_per_pct
+    state.mood = _approach(state.mood, target, config.mood.approach_pct, shocks)
+
+
+def _approach(mood: int, target: int, approach_pct: int, shocks: int) -> int:
+    """@brief One month of any class's mood: inertia toward the target, then the
+    immediate shocks and bonuses (their sum), clamped to 0..1000.
+    The order matters only for the inertia step: the rest are integer sums."""
+    # Python's // floors negative numbers too, which is still deterministic.
+    mood += (target - mood) * approach_pct // 100
+    return max(0, min(1000, mood + shocks))
 
 
 def _unrest_level(low_mood_turns: int, config: Config) -> str:
@@ -427,15 +443,88 @@ def _unrest_level(low_mood_turns: int, config: Config) -> str:
     return "calm"
 
 
-def _update_unrest(state: GameState, config: Config, events: list[Event]) -> None:
-    if state.mood < config.unrest.threshold:
-        state.low_mood_turns += 1
+def _climb_ladder(mood: int, low_mood_turns: int, config: Config, max_unrest: str) -> tuple[int, str]:
+    """@brief One month of any class's unrest ladder: a month under the
+    threshold climbs a step's count, a month above it goes back one.
+    @param max_unrest The highest step this class can reach.
+    @return (low_mood_turns, level)."""
+    if mood < config.unrest.threshold:
+        low_mood_turns += 1
     else:
-        state.low_mood_turns = max(0, state.low_mood_turns - 1)
-    new_level = _unrest_level(state.low_mood_turns, config)
+        low_mood_turns = max(0, low_mood_turns - 1)
+    level = _unrest_level(low_mood_turns, config)
+    highest = UNREST_STEPS.index(max_unrest)
+    return low_mood_turns, UNREST_STEPS[min(UNREST_STEPS.index(level), highest)]
+
+
+def _update_unrest(state: GameState, config: Config, events: list[Event]) -> None:
+    state.low_mood_turns, new_level = _climb_ladder(state.mood, state.low_mood_turns, config, "revolt")
     if new_level != state.unrest:
         events.append(Event("unrest_changed", {"from": state.unrest, "to": new_level}))
     state.unrest = new_level
+
+
+def _found_classes(state: GameState, config: Config) -> None:
+    """@brief A finished building brings its class (the market its merchants).
+    They come from the peasants, so they start with the peasants' mood."""
+    if not config.classes:
+        return
+    for building in state.buildings:
+        name = CLASS_OF_BUILDING.get(building.kind)
+        if building.turns_left == 0 and name in config.classes and name not in state.classes:
+            state.classes[name] = ClassState(mood=state.mood)
+
+
+def trade_factor(cls: ClassState, rules: ClassConfig) -> int:
+    """@brief The merchants' own factor, from their last months at the market.
+    Strike months do not count: if they did, a strike (no trade) would look
+    like the crown's fault and the merchants would never come out of it.
+    @return busy_bonus, idle_malus (others' goods on sale, nothing traded),
+            empty_malus (nothing on sale either) or 0."""
+    months = [m for m in cls.recent_trade[-rules.recent_months:] if m[0] >= 0]
+    if not months:
+        return 0
+    lots = sum(m[0] for m in months)
+    capacity = sum(m[1] for m in months)
+    if lots == 0:
+        return rules.idle_malus if any(m[2] for m in months) else rules.empty_malus
+    if capacity and lots * 100 // capacity >= rules.busy_use_pct:
+        return rules.busy_bonus
+    return 0
+
+
+def class_factors(state: GameState, config: Config, name: str, needed: int, missing_pct: int,
+                  deaths: int) -> dict[str, int]:
+    """@brief The named parts of a class's target mood (base excluded).
+    The peasants' shared factors, without the granaries' reserve (they care
+    about the market, not the fields), with their own tax, plus trade."""
+    rules = config.classes[name]
+    factors = mood_factors(state, config, needed, missing_pct, deaths)
+    del factors["reserve"]
+    own_rate = getattr(state, CLASS_TAX_RATE[name])
+    factors["taxes"] = max(0, own_rate - rules.tax_free_rate) * rules.tax_per_point
+    if name == "merchants":
+        factors["trade"] = trade_factor(state.classes[name], rules)
+    return factors
+
+
+def _update_classes(state: GameState, config: Config, needed: int, missing_pct: int, deaths: int,
+                    cold_pct: int, events: list[Event]) -> None:
+    """@brief The month of every class born from a building: the same mood step
+    and ladder as the peasants, with the class's own factors and rules."""
+    for name, cls in state.classes.items():
+        rules = config.classes[name]
+        factors = class_factors(state, config, name, needed, missing_pct, deaths)
+        target = max(0, min(1000, config.mood.base + sum(factors.values())))
+        shocks = -(missing_pct * config.mood.famine_shock_per_missing_pct * rules.shock_pct // 100)
+        shocks -= deaths * config.mood.death_shock
+        if cold_pct:
+            shocks -= cold_pct * config.needs.cold_shock_per_pct * rules.shock_pct // 100
+        cls.mood = _approach(cls.mood, target, rules.approach_pct, shocks)
+        cls.low_mood_turns, level = _climb_ladder(cls.mood, cls.low_mood_turns, config, rules.max_unrest)
+        if level != cls.unrest:
+            events.append(Event("class_unrest_changed", {"class": name, "from": cls.unrest, "to": level}))
+        cls.unrest = level
 
 
 def _check_game_over(state: GameState, events: list[Event]) -> None:
@@ -526,6 +615,8 @@ def resolve_turn(state: GameState, orders: list[Order], config: Config,
     _rescale_workers(new_state, events)
     _update_mood(new_state, config, needed, missing_pct, deaths, petition_mood, cold_pct)
     _update_unrest(new_state, config, events)
+    _update_classes(new_state, config, needed, missing_pct, deaths, cold_pct, events)
+    _found_classes(new_state, config)
     _check_game_over(new_state, events)
 
     if new_state.turn % 3 == 0:

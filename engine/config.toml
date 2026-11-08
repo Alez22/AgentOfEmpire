@@ -172,6 +172,24 @@ lots_per_merchant = 3  # lab: x 2 cut a quarter of the lots asked
 merchant_tax_start = 10  # percent of the trades' value; about 0.6 gold a realm a month in the lab
 max_merchant_tax = 30
 
+# Classes born from buildings (docs/DESIGN.md, "The market as a building,
+# merchants and their mood"; values from lab/village_market.py, 2026-11-08).
+# Each shares the peasants' base, factors (hunger, ration, deaths, housing) and
+# unrest thresholds ([mood], [unrest]) and differs in what is here.
+[classes.merchants]
+approach_pct = 10  # peasants 25: merchants remember a year or more
+shock_pct = 50  # they live in the town and buy their food; lab: in full they fell to 0
+tax_free_rate = 10  # their own tax, on the trades' value (merchant_tax_start)
+tax_per_point = -10
+discontent_below = 400
+effort_loss_pct = 50  # discontented merchants handle half the lots
+max_unrest = "strike"  # a handful of merchants cannot topple the crown
+recent_months = 3
+busy_use_pct = 40
+busy_bonus = 100
+idle_malus = -250  # the crown's fault: goods on sale, nothing traded
+empty_malus = -80  # the warehouse empty for everyone
+
 # Output per worker by land level; it replaces output_per_worker for realms
 # on a site with levels. Fair equals the buildings' values above.
 [levels]

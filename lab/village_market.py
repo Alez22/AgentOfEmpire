@@ -148,7 +148,10 @@ def lab_config(rules):
     # Center or houses: with "center" only, houses filled the center first
     # and two realms never found room for the market (first run).
     territory.KIND_PURPOSES["market"] = MARKET_PURPOSES[0]
-    return dataclasses.replace(base, buildings={**base.buildings, "market": market})
+    # The engine has block A since 2026-11-08 (steps 2-3); this lab keeps its
+    # own version of it, so the engine's is switched off here.
+    return dataclasses.replace(base, buildings={**base.buildings, "market": market}, classes=None,
+                               market=dataclasses.replace(base.market, needs_building=False))
 
 
 # ---- the market building and the merchants ---------------------------------

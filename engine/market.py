@@ -19,7 +19,9 @@ lab/market_closed.py. Pure and integer-only, like the turn.
 - Food in the warehouse spoils like the granaries.
 - With needs_building (village block A): a realm trades only once its
   market building is active, at most its merchants' lots a month, and the
-  merchants pay their own tax on the gold value of the month's trades.
+  merchants pay their own tax on the gold value of the month's trades. The
+  merchants' mood (engine/turn.py) lowers their lots when they are
+  discontented and stops the market while they strike.
 
 A month of the whole game (resolve_month): check every realm's trades,
 fill them, give each realm its goods and gold, then resolve each realm's
@@ -119,7 +121,42 @@ def trade_capacity(state: GameState, config: Config) -> int | None:
     if not config.market.needs_building:
         return None
     merchants = min(state.workers.trade, jobs_in_sector(state, config, "trade"))
-    return merchants * config.market.lots_per_merchant
+    lots = merchants * config.market.lots_per_merchant
+    cls = state.classes.get("merchants")
+    if cls is None:
+        return lots
+    if cls.unrest == "strike":
+        return 0  # the merchants' strike: the market stops
+    rules = config.classes["merchants"]
+    if cls.mood < rules.discontent_below:
+        lots = lots * (100 - rules.effort_loss_pct) // 100  # discontented merchants work less
+    return lots
+
+
+def _others_on_sale(market: MarketState, config: Config, realm_key: str) -> bool:
+    """@brief True if the warehouse holds a lot of some good that the realm
+    could buy (the start stock or other realms' goods)."""
+    lot = config.market.lot_units
+    return any(sum(c.units for c in book.queue if c.seller != realm_key) >= lot
+               for book in market.goods.values())
+
+
+def note_trade(state: GameState, fills: dict[str, int], market: MarketState, config: Config,
+               realm_key: str) -> None:
+    """@brief Remember the month at the market for the merchants' trade factor
+    (engine/turn.py, trade_factor): lots filled, lots they could handle,
+    whether others' goods were on sale. A strike month is marked as such.
+    @param state The realm's state at the start of the month (modified).
+    @param market The market at the start of the month."""
+    cls = state.classes.get("merchants")
+    if cls is None:
+        return
+    if cls.unrest == "strike":
+        record = [-1, 0, 0]
+    else:
+        record = [sum(abs(lots) for lots in fills.values()), trade_capacity(state, config) or 0,
+                  int(_others_on_sale(market, config, realm_key))]
+    cls.recent_trade = (cls.recent_trade + [record])[-config.classes["merchants"].recent_months:]
 
 
 def _has_on_sale(market: MarketState, good: str, realm_key: str) -> bool:
@@ -422,6 +459,7 @@ def resolve_month(market: MarketState | None, realms: dict[str, RealmMonth],
     results = {}
     for key, realm in realms.items():
         state = copy.deepcopy(realm.state)
+        note_trade(state, fills[key], market, config, key)
         events = apply_trade(state, fills[key], paid.get(key, 0), market, config, short[key])
         others = [o for o in realm.orders if not isinstance(o, TradeOrder)]
         turn = resolve_turn(state, others, config, realm.people)

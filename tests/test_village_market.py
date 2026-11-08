@@ -125,3 +125,113 @@ def test_rescaling_keeps_the_merchants_in_proportion(start_state, config):
     start_state.adults = 30
     _rescale_workers(start_state, [])
     assert start_state.workers.total() == 30 and start_state.workers.trade in (2, 3)
+
+
+# ---- Step 3: the merchants' mood and unrest (one engine for every class) ----
+
+from engine.state import ClassState  # noqa: E402
+from engine.turn import class_factors, resolve_turn, trade_factor  # noqa: E402
+
+
+def _with_merchants(state, config, mood=500, records=()):
+    _open_market(state, merchants=6)
+    state.classes["merchants"] = ClassState(mood=mood, recent_trade=[list(r) for r in records])
+    return config.classes["merchants"]
+
+
+def test_finishing_the_market_brings_the_merchants(start_state, config):
+    apply_orders(start_state, [_order({"action": "build", "building": "market"})], config)
+    state = start_state
+    for _ in range(config.buildings["market"].build_turns):
+        assert "merchants" not in state.classes
+        state = resolve_turn(state, [], config).state
+    assert state.classes["merchants"].mood == state.mood  # they come from the peasants
+
+
+def test_the_trade_factor_blames_the_crown_more_than_an_empty_warehouse(start_state, config):
+    rules = _with_merchants(start_state, config)
+    cls = start_state.classes["merchants"]
+    cls.recent_trade = [[0, 18, 1], [0, 18, 1], [0, 18, 0]]
+    assert trade_factor(cls, rules) == rules.idle_malus  # goods were on sale
+    cls.recent_trade = [[0, 18, 0]] * 3
+    assert trade_factor(cls, rules) == rules.empty_malus
+    cls.recent_trade = [[10, 18, 1], [10, 18, 1], [2, 18, 1]]
+    assert trade_factor(cls, rules) == rules.busy_bonus  # 22 of 54 lots: 40 %
+    cls.recent_trade = [[4, 18, 1], [4, 18, 1], [0, 18, 1]]
+    assert trade_factor(cls, rules) == 0  # some trade, under 40 % of the lots
+
+
+def test_strike_months_do_not_count_for_the_trade_factor(start_state, config):
+    rules = _with_merchants(start_state, config)
+    cls = start_state.classes["merchants"]
+    cls.recent_trade = [[-1, 0, 0]] * 3
+    assert trade_factor(cls, rules) == 0
+
+
+def test_the_merchants_pay_no_heed_to_the_granaries_and_feel_their_own_tax(start_state, config):
+    _with_merchants(start_state, config)
+    start_state.merchant_tax_rate = 15
+    factors = class_factors(start_state, config, "merchants", 900, 0, 0)
+    assert "reserve" not in factors
+    assert factors["taxes"] == (15 - 10) * -10
+    start_state.merchant_tax_rate = 10
+    assert class_factors(start_state, config, "merchants", 900, 0, 0)["taxes"] == 0
+
+
+def test_the_merchants_take_half_the_cold(start_state, config):
+    _with_merchants(start_state, config, mood=500)
+    start_state.turn = 1  # January: firewood
+    start_state.wood = 0
+    after = resolve_turn(start_state, [], config).state
+    # Cold shock 100 % missing x 2 = 200 for the peasants; the merchants take 100
+    # (plus their slow approach towards a target near 500).
+    assert after.classes["merchants"].mood > after.mood
+    assert 380 <= after.classes["merchants"].mood <= 420
+
+
+def test_merchants_kept_idle_by_the_crown_end_on_strike_not_in_revolt(start_state, config):
+    _with_merchants(start_state, config, mood=360, records=[[0, 18, 1]] * 3)
+    state = start_state
+    levels = []
+    for _ in range(12):
+        state.gold = 500
+        state.food = 5000
+        cls = state.classes["merchants"]
+        if cls.unrest != "strike":
+            cls.recent_trade = (cls.recent_trade + [[0, 18, 1]])[-3:]  # goods on sale, nothing traded
+        state = resolve_turn(state, [], config).state
+        levels.append(state.classes["merchants"].unrest)
+    assert "protests" in levels and "strike" in levels and "revolt" not in levels
+    assert state.game_over is None
+
+
+def test_a_strike_stops_the_market_and_discontent_halves_the_lots(start_state, config):
+    _with_merchants(start_state, config, mood=500)
+    full = trade_capacity(start_state, config)
+    start_state.classes["merchants"].mood = 300
+    assert trade_capacity(start_state, config) == full // 2
+    start_state.classes["merchants"].unrest = "strike"
+    assert trade_capacity(start_state, config) == 0
+    start_state.gold = 500
+    _, results = check_trades(start_state, [_trade("food", "buy", 1)], new_market(config, 1), config, "1")
+    assert results[0].code == "TRADE_CAPACITY"
+
+
+def test_the_month_at_the_market_is_remembered(start_state, config):
+    _with_merchants(start_state, config)
+    start_state.gold = 200
+    _, results = resolve_month(new_market(config, 1), {"1": RealmMonth(start_state, [_trade("food", "buy", 2)])},
+                               config)
+    assert results["1"].state.classes["merchants"].recent_trade == [[2, 18, 1]]
+
+
+def test_the_peasants_mood_is_the_same_as_before_the_classes(start_state, config):
+    """The peasants go through the shared step: a month with feast, petition,
+    famine and cold gives the numbers of the old formula."""
+    from engine.people import PeopleChoice
+    start_state.turn = 1
+    start_state.wood = 10
+    start_state.food = 300
+    feast = _order({"action": "hold_feast", "gold": 40})
+    after = resolve_turn(start_state, [feast], config, PeopleChoice(0, 100, "granted", 20)).state
+    assert after.mood == 224  # the engine before step 3 (commit 203f951) gives 224 for the same month

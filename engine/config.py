@@ -207,6 +207,27 @@ class MarketConfig:
 
 
 @dataclass(frozen=True)
+class ClassConfig:
+    """A class born from a building (docs/DESIGN.md, "The market as a building,
+    merchants and their mood"). The peasants' rules stay in [mood] and [unrest];
+    a class shares their factors (hunger, ration, deaths, housing), the base and
+    the unrest thresholds, and differs in what is here."""
+    approach_pct: int  # monthly inertia; a lower value is a longer memory
+    shock_pct: int  # famine and cold shocks, percent of the peasants' (deaths in full)
+    tax_free_rate: int  # its own tax: no complaint up to this rate
+    tax_per_point: int  # mood per point of its own tax above the free rate
+    discontent_below: int  # mood under which it works less
+    effort_loss_pct: int  # share of its work lost when discontented
+    max_unrest: str  # highest step of its ladder ("strike": it cannot topple the crown)
+    # The merchants' trade factor over the last months at the market.
+    recent_months: int = 0
+    busy_use_pct: int = 0  # bonus when they used at least this share of their lots
+    busy_bonus: int = 0
+    idle_malus: int = 0  # others' goods were on sale and the realm traded nothing
+    empty_malus: int = 0  # nothing traded, but nothing was on sale either
+
+
+@dataclass(frozen=True)
 class LevelsConfig:
     """Output per worker by land level: {"poor": 14, "fair": 15, "rich": 16}."""
     food: dict[str, int]
@@ -231,6 +252,9 @@ class Config:
     needs: NeedsConfig | None = None
     levels: LevelsConfig | None = None
     market: MarketConfig | None = None  # None: no market, trade orders are refused
+    # Classes born from buildings (village block A); None for games saved
+    # before: the peasants are the only class.
+    classes: dict[str, ClassConfig] | None = None
 
 
 def load_raw_config(path: Path = DEFAULT_CONFIG_PATH) -> dict:
@@ -269,4 +293,6 @@ def config_from_dict(raw: dict) -> Config:
         needs=NeedsConfig(**raw["needs"]) if "needs" in raw else None,
         levels=LevelsConfig(**raw["levels"]) if "levels" in raw else None,
         market=MarketConfig(**raw["market"]) if "market" in raw else None,
+        classes=({name: ClassConfig(**values) for name, values in raw["classes"].items()}
+                 if "classes" in raw else None),
     )
