@@ -949,6 +949,34 @@ The vision is in Part 1, "Economy and trade" (closed market, land levels unknown
 4. Council: briefing, manual, prompts, the Voice; the market page on the phone. **Council part built 2026-11-08**: the Treasurer's "## The market" section (prices, stock, last month's totals, own goods waiting, stores, firewood and stone upkeep); the needs line also for the Architect and the Chancellor; the Chancellor's prices line; the `trade` order for the Treasurer only, in games with a market (`MARKET_ACTIONS`, `prompts/order_formats_market.txt`); the trading craft (`prompts/expertise_treasurer_market.txt`); the trade rule of every prompt from `meeting.market_rule` (the old "no market" rule stays in games without one); the manual with Market and "Legna e pietra" and, with land levels, no yield per worker; the cost check and the sovereign's preview through `engine.market.check_month_plan` (trades first, every purchase assumed filled in full; verdicts in the plan's order, which also fixes a mismatch when a map order followed another order); the Voice hears cold, wear and goods bought; Italian labels of the new events, orders and refusals. **Market page built 2026-11-08** after a mockup on a Design canvas: `/ui/realms/{id}/market` (tab "Mercato", between Mappa and Cronaca; `server/ui/market_view.py`). Prices of the month (buy and sell, the trend in words against last month, stock, last month's totals, a bar of the last 6 months' prices), the realm's own goods waiting and what they would fetch today, its stores with firewood and stone upkeep, the Treasurer's trades in this month's plan with their gold, last month's own trades, a link to the manual. Read only: trades go through the council. A world without a market says so.
 5. A 12-month test game with three realms.
 
+## Automatic sovereign, first version (spec approved 2026-11-08)
+
+The rules Claude followed as the three sovereigns of game 24 (`docs/game24_notes.md`), written as fixed rules: **no model for the sovereign**, so it costs nothing, is tested with the fake client and decides the same way every time. The council keeps its models. A sovereign with a personality and a model ("Automatic states", Part 1) comes later, on top of these rules.
+
+**One month** (`server/sovereign/auto.py`, `play_month`), through the functions the sovereign's buttons use:
+1. The council meeting (`meeting.hold_meeting`), unless already held.
+2. At most one directive (`meeting.give_directive`, one more council round):
+   - **R7 buy**: wood or stone left after the plan covers less than 3 months of its need (firewood ahead, stone upkeep), the warehouse holds at least a lot, the plan does not buy it and the realm has none of it on sale: "buy N lots", as many as cover the 3 months and the gold left allows.
+   - **R5 sell**: the gold left after the plan covers less than 3 months of costs (building upkeep + salaries) and a good is above its needs: wood and stone above 6 months of need + 2 lots, food only if the winter check still passes after the sale and 3 months of eating stay. Up to 4 lots, the good that brings most gold.
+   - R7 before R5: a need first.
+3. The petition (R1), checked with the petition first, as the turn runs it: a tax is granted when income at the asked rate still covers the costs; a ration when the winter check passes with it; a feast when R9 holds.
+4. Exclusions, only among the plan items the engine check accepted:
+   - **R2 winter food**: from October to March, an `assign_workers` that takes farmers off the fields; any item without which the winter check passes and with which it fails.
+   - **R3**: no `claim_tiles` in winter (January to March): gold stays for the market.
+   - **R6**: a tax cut that brings income below the costs (equal passes).
+   - **R4b**: buying wood or stone that already covers 4 months of need without it.
+   - **R8**: a new building of a kind that already has at least half a building's jobs (or a house's places) empty, counting sites under construction.
+   - **R9**: a feast that leaves less than a month of costs in gold.
+5. Approval of the plan without the excluded items (`meeting.approve_plan`); trades accepted by the check stay (R4).
+
+**The winter check**: the month is run with the engine on a copy (trades filled in full, then the plan), then month after month with no orders. From October to March: no famine until the end of March. Other months: no famine this month and at least one month of eating left.
+
+**The sovereign's reasons**: each decision with its reason in Italian ("Esclusa: …, R2"), in a council message of the new kind `sovereign` (migration 013), shown on the turn page and kept with the turn.
+
+**API and lab**: `POST /realms/{id}/sovereign/auto` plays the month of one realm; `lab/auto_game.py` plays a game of N months with every realm automatic, through the HTTP API.
+
+**Not in this version**: taking over an absent player (phase 3), personality, audiences, mandates, debate.
+
 ## Web UI
 
 Server-rendered pages (FastAPI with Jinja2 templates), phone first, in the style of the mockups: dark ground, gold, Cormorant Garamond titles, one colour per council member. Every action is a plain form followed by a redirect, so it works without JavaScript and reloading the page does not repeat the action; HTMX (vendored, not from a CDN) is used only to refresh the council and audience panels. Approved instead of TypeScript for the prototype: the map will come as a separate component or with the move to TypeScript, without changing the APIs. All text shown to players is in Italian.

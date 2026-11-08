@@ -173,6 +173,17 @@ def check_month_plan(state: GameState, orders: list[Order], market: MarketState 
     return PlanReport([by_order[id(o)] for o in orders], spent, report.remaining)
 
 
+def state_after_trades(state: GameState, trades: list[TradeOrder], market: MarketState | None,
+                       config: Config, realm_key: str) -> GameState:
+    """@brief A copy of the state as if the realm's accepted trades were filled
+    in full (the same assumption as check_month_plan). Without a market, a
+    plain copy."""
+    if market is None or config.market is None or not trades:
+        return copy.deepcopy(state)
+    _, trade_results = check_trades(state, trades, market, config, realm_key)
+    return _after_full_fills(state, trade_results, market, config)
+
+
 def _after_full_fills(state: GameState, trade_results: list[OrderResult], market: MarketState,
                       config: Config) -> GameState:
     """@brief A copy of the state as if every accepted trade were filled in full."""

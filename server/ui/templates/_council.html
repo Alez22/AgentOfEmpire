@@ -43,6 +43,11 @@
     <div class="kicker">{% if m.payload.season %}La stagione vista dalla piazza{% else %}Si dice in piazza{% endif %}</div>
     <p class="report">{{ m.content }}</p>
   </article>
+  {% elif m.kind == "sovereign" %}
+  <article class="card">
+    <div class="kicker">Il sovrano automatico ha deciso</div>
+    <ul class="events">{% for line in m.payload.lines %}<li>{{ line }}</li>{% else %}<li>{{ m.content }}</li>{% endfor %}</ul>
+  </article>
   {% elif m.kind == "summary" %}
   <article class="card" style="border-top: 3px solid {{ labels.ROLES.chancellor.color }}">
     {{ speaker_block(m) }}

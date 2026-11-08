@@ -30,6 +30,7 @@ from server.council.jobs import CouncilJobs
 from server.council.llm import FakeClient, OpenRouterClient
 from server.council.settings import CouncilSettings, load_settings
 from server.db import games
+from server.sovereign import auto
 from server.sovereign_view import sovereign_state
 from server.admin.routes import router as admin_router
 from server.ui.routes import router as ui_router
@@ -279,6 +280,22 @@ def _add_routes(app: FastAPI) -> None:
     def get_council(realm_id: int, turn: int, conn=Depends(_connection)):
         _require_realm_game(conn, realm_id)
         return meeting.list_messages(conn, realm_id, turn)
+
+    @app.post("/realms/{realm_id}/sovereign/auto")
+    def play_automatic_month(realm_id: int, request: Request, conn=Depends(_connection)):
+        """The automatic sovereign plays this realm's month (runs inside the request)."""
+        _require_realm_game(conn, realm_id)
+        jobs = request.app.state.council_jobs
+        if not jobs.reserve(realm_id, "meeting"):
+            raise HTTPException(409, "the council of this realm is busy")
+        try:
+            lines = auto.play_month(conn, realm_id, request.app.state.llm_client,
+                                    request.app.state.council_settings)
+        except meeting.CouncilError as error:
+            raise HTTPException(409, str(error)) from error
+        finally:
+            jobs.release(realm_id)
+        return {"lines": lines}
 
     @app.post("/realms/{realm_id}/council/approve", status_code=201)
     def approve_plan(realm_id: int, body: ApproveRequest, conn=Depends(_connection)):
