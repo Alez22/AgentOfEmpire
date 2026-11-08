@@ -521,12 +521,65 @@ def test_orders_that_change_nothing_leave_the_plan(db, realm, settings):
     assert [d["reason"] for d in payload["discarded"]] == ["NO_CHANGE"] * 3
 
 
-def test_prompts_say_there_is_no_market(db, realm, settings):
+def test_prompts_tell_the_market_and_a_feast_brings_no_food(db, realm, settings):
     _, realm_id = realm
     client = FakeClient()
     meeting.hold_meeting(db, realm_id, client, settings)
     for call in client.calls:
-        assert "gold cannot buy food" in call["system"] and "it brings no food" in call["system"]
+        assert "common market shared with the other realms" in call["system"] and "it brings no food" in call["system"]
+        assert "gold cannot buy food" not in call["system"]
+
+
+def test_prompts_without_a_market_keep_the_old_rule(db, settings):
+    raw = load_raw_config()
+    del raw["market"]
+    game_id = create_game(db, raw, seed=3, realm_names=["Nord"], council_models=COUNCIL)
+    realm_id = db.execute("SELECT id FROM realms WHERE game_id = %s", (game_id,)).fetchone()[0]
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)
+    for call in client.calls:
+        assert "gold cannot buy food" in call["system"] and '"action": "trade"' not in call["system"]
+    assert "## The market" not in client.calls[0]["user"]
+
+
+def test_only_the_treasurer_trades(db, realm, settings):
+    _, realm_id = realm
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)
+    treasurer, architect, chancellor = (call["system"] for call in client.calls[:3])
+    assert "set_tax, set_ration, hold_feast, trade" in treasurer
+    assert ", trade" not in architect.split("You may only propose these orders:")[1].split("\n")[0]
+    assert "treasurer (set_tax, set_ration, hold_feast, trade)" in chancellor
+    assert '"action": "trade"' in treasurer
+
+
+def test_the_treasurer_reads_the_market(db, realm, settings):
+    _, realm_id = realm
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)
+    treasurer, chancellor = client.calls[0]["user"], client.calls[2]["user"]
+    assert "## The market (shared with the other realms; lots of 50)" in treasurer
+    assert "- food: buy 11, sell 9 gold a lot; in the warehouse 100; last month bought 0, put on sale 0." in treasurer
+    assert "- Your goods waiting in the warehouse: none." in treasurer
+    assert "- Firewood: 50 wood a month in Nov/Dec/Jan/Feb/Mar (50 this month)." in treasurer
+    assert "## The market" not in client.calls[1]["user"]  # the Architect sees the needs, not the market
+    assert "- Firewood: 50 wood a month" in client.calls[1]["user"]
+    assert "- Market prices (buy/sell a lot of 50): food 11/9, wood 17/13, stone 22/18." in chancellor
+
+
+def test_the_cost_check_counts_the_trades_first(db, realm, settings):
+    """Wood bought at the market pays for a house the same month."""
+    _, realm_id = realm
+    buy_wood = {"action": "trade", "good": "wood", "side": "buy", "lots": 1}
+    treasurer = json.dumps({"report": "Maestà, compriamo un lotto di legno al mercato.", "proposals": [buy_wood]})
+    architect = json.dumps({"report": "Maestà, costruiamo una nuova fattoria nei campi.", "proposals": [{"action": "build", "building": "farm"}]})
+    client = FakeClient({"treasurer": [treasurer], "architect": [architect]})
+    meeting.hold_meeting(db, realm_id, client, settings)
+    chancellor = client.calls[2]["user"]
+    assert '- treasurer {"action": "trade", "good": "wood", "side": "buy", "lots": 1}: affordable' in chancellor
+    assert '- architect {"action": "build", "building": "farm"}: affordable' in chancellor
+    # 150 wood + 50 bought - 40 for the farm; 100 gold - 17 for the lot.
+    assert "left: {'food': 1600, 'wood': 160, 'stone': 90, 'gold': 83}" in chancellor
 
 
 def test_chancellor_is_warned_of_workers_beyond_the_jobs(db, realm, settings):

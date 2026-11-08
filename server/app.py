@@ -22,7 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from psycopg_pool import ConnectionPool
 from pydantic import BaseModel, Field
 
-from engine import check_plans
+from engine.market import check_month_plan
 from engine.config import load_raw_config
 from engine.orders import Order
 from server.council import audience, debate, mandates, meeting, people, persons
@@ -154,7 +154,8 @@ def _add_routes(app: FastAPI) -> None:
     def check_orders(realm_id: int, orders: list[Order], conn=Depends(_connection)):
         game_id = _require_realm_game(conn, realm_id)
         state = games.load_latest_state(conn, realm_id)
-        report = check_plans(state, orders, games.load_game_config(conn, game_id))
+        report = check_month_plan(state, orders, games.load_market(conn, game_id, state.turn),
+                                  games.load_game_config(conn, game_id))
         return {
             "results": [
                 {

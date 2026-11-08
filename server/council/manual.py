@@ -26,6 +26,30 @@ def _season_pcts(config: Config) -> dict[str, int]:
             "summer": economy.farm_summer_pct, "autumn": economy.farm_autumn_pct}
 
 
+def _yield_text(config: Config, spec) -> str:
+    """@brief The yield per worker, or (with land levels) only that it depends
+    on the land: the levels are a secret the council finds out from its
+    production (docs/DESIGN.md, "Land levels")."""
+    if config.levels is not None:
+        return (f"each worker yields {PRODUCT[spec.sector]} every month; how much depends on the realm's land "
+                "(your briefing shows what this month will yield)")
+    return f"each worker yields {spec.output_per_worker} {PRODUCT[spec.sector]} a month"
+
+
+def _yield_text_it(config: Config, spec) -> str:
+    if config.levels is not None:
+        return (f"ogni lavoratore produce {PRODUCT_IT[spec.sector]} ogni mese; quanto, dipende dalla terra del "
+                "regno, e lo si scopre dal raccolto")
+    return f"ogni lavoratore produce {spec.output_per_worker} {PRODUCT_IT[spec.sector]} al mese"
+
+
+def _gold_text(config: Config) -> str:
+    if config.market is not None:
+        return ("Gold also buys food, wood and stone at the common market, and selling them there brings gold "
+                "(see Market below).")
+    return "There is no market and no trade: gold cannot buy food, wood or stone."
+
+
 def prompt_text(config: Config) -> str:
     """@brief The manual for the counsellors' system prompts (English)."""
     economy, unrest = config.economy, config.unrest
@@ -37,8 +61,7 @@ def prompt_text(config: Config) -> str:
     for kind, spec in config.buildings.items():
         cost = f"costs wood {spec.wood}, stone {spec.stone}, gold {spec.gold}; built in {spec.build_turns} months"
         if spec.jobs:
-            line = (f"- {kind}: {cost}; {spec.jobs} jobs; each worker yields {spec.output_per_worker} "
-                    f"{PRODUCT[spec.sector]} a month")
+            line = f"- {kind}: {cost}; {spec.jobs} jobs; {_yield_text(config, spec)}"
             if spec.sector == "food":
                 line += f" at the season's yield ({seasons})"
             # A fact only: "a half-filled building already pays" was read as "build
@@ -61,8 +84,7 @@ def prompt_text(config: Config) -> str:
         "food rots. If the food runs out there is hunger: people die, and the people suffer at once.",
         "Births need food and free places in the houses: none while houses are full or there is hunger.",
         f"Taxes and gold: gold a month = adults x tax rate / {economy.tax_divisor} (maximum rate "
-        f"{economy.max_tax_rate}%). There is no market and no trade: gold cannot buy food, wood or stone. "
-        "Gold pays for houses, feasts and upkeep.",
+        f"{economy.max_tax_rate}%). {_gold_text(config)} Gold pays for houses, feasts and upkeep.",
         "Feast: it costs the gold given and lifts the people's spirits at once, for a while; repeated the "
         "month after it is worth half. It brings no food.",
         "The people: heavy taxes, a short ration, hunger, deaths and full houses weigh on them; a generous "
@@ -72,9 +94,50 @@ def prompt_text(config: Config) -> str:
         f"production); after {unrest.strike_turns} a strike (all production {unrest.strike_output_pct - 100}%); "
         f"after {unrest.revolt_turns} a revolt, the end of the realm.",
     ]
+    if config.needs is not None:
+        lines += _needs_lines(config)
+    if config.market is not None:
+        lines += _market_lines(config)
     if config.map is not None:
         lines += _territory_lines(config)
     return "\n".join(lines) + "\n"
+
+
+def _month_names(months: list[int]) -> str:
+    names = ("January", "February", "March", "April", "May", "June", "July", "August", "September",
+             "October", "November", "December")
+    return ", ".join(names[m - 1] for m in months)
+
+
+def _needs_lines(config: Config) -> list[str]:
+    needs = config.needs
+    return [
+        f"Firewood: in {_month_names(needs.firewood_months)} the realm burns 1 wood for every "
+        f"{needs.firewood_people} people each month. Without enough wood the people are cold and suffer at once.",
+        f"Stone upkeep: every month each {'' if needs.stone_upkeep_buildings == 1 else str(needs.stone_upkeep_buildings) + ' '}"
+        f"active building{'' if needs.stone_upkeep_buildings == 1 else 's'} needs 1 stone. Without enough stone "
+        "the buildings wear and all production falls that month.",
+    ]
+
+
+def _market_lines(config: Config) -> list[str]:
+    """@brief The market rules (engine/market.py), for the prompts."""
+    m = config.market
+    return [
+        f"Market: one warehouse shared by every realm of the world. Food, wood and stone are traded in lots of "
+        f"{m.lot_units}, only by the Treasurer's trade orders. Trades run at the start of the month, before every "
+        "other order, so what is bought can be used the same month.",
+        f"- Buying costs the price + {m.margin_pct}%, selling pays the price - {m.margin_pct}%. A realm sells "
+        "OR buys a good in a month, not both.",
+        "- Goods sold leave the stores at once and wait in the warehouse; the seller is paid only when a buyer "
+        "takes them, oldest first, maybe months later. They cannot be taken back. Food there rots like in the "
+        "granaries.",
+        "- A purchase gets only what the warehouse holds: when the buyers ask more, they share what there is and "
+        "may get fewer lots.",
+        f"- Prices move by {m.step_pct}% a month: up when more was asked than there was, down when goods on sale "
+        "pile up unsold.",
+        "- Everyone sees the prices, the stock and the month's totals; nobody sees who sold or bought.",
+    ]
 
 
 def _footprints(config: Config) -> str:
@@ -113,8 +176,7 @@ def page_sections(config: Config) -> list[dict]:
         cost = (f"Costa {spec.wood} legno, {spec.stone} pietra, {spec.gold} oro; "
                 f"si costruisce in {spec.build_turns} mesi.")
         if spec.jobs:
-            text = (f"{cost} {spec.jobs} posti di lavoro; ogni lavoratore produce {spec.output_per_worker} "
-                    f"{PRODUCT_IT[spec.sector]} al mese")
+            text = f"{cost} {spec.jobs} posti di lavoro; {_yield_text_it(config, spec)}"
             text += f", secondo la stagione ({seasons})." if spec.sector == "food" else "."
             text += " Rende per ogni lavoratore, anche se non è piena."
         else:
@@ -145,7 +207,10 @@ def page_sections(config: Config) -> list[dict]:
         ]},
         {"title": "Tasse e oro", "entries": [], "notes": [
             f"Oro al mese = adulti × aliquota / {economy.tax_divisor} (aliquota massima {economy.max_tax_rate}%).",
-            "Non c'è mercato né commercio: l'oro non compra cibo, legno o pietra. Serve per case, feste e manutenzione.",
+            ("L'oro compra anche cibo, legno e pietra al mercato, e venderli lì porta oro (vedi Mercato)."
+             if config.market is not None else
+             "Non c'è mercato né commercio: l'oro non compra cibo, legno o pietra.")
+            + " Serve per case, feste e manutenzione.",
             "Una festa costa l'oro che le dai e solleva subito il popolo, per un po'; ripetuta il mese dopo vale "
             "la metà. Non porta cibo.",
         ]},
@@ -157,7 +222,44 @@ def page_sections(config: Config) -> list[dict]:
             f"effetto sulla produzione), dopo {unrest.strike_turns} lo sciopero (tutta la produzione "
             f"{unrest.strike_output_pct - 100}%), dopo {unrest.revolt_turns} la rivolta, la fine del regno.",
         ]},
-    ] + ([_territory_section(config)] if config.map is not None else [])
+    ] + ([_needs_section(config)] if config.needs is not None else []) \
+      + ([_market_section(config)] if config.market is not None else []) \
+      + ([_territory_section(config)] if config.map is not None else [])
+
+
+MONTHS_IT = ("gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre",
+             "ottobre", "novembre", "dicembre")
+
+
+def _needs_section(config: Config) -> dict:
+    needs = config.needs
+    months = ", ".join(MONTHS_IT[m - 1] for m in needs.firewood_months)
+    per = "ogni edificio attivo" if needs.stone_upkeep_buildings == 1 else f"ogni {needs.stone_upkeep_buildings} edifici attivi"
+    return {"title": "Legna e pietra", "entries": [], "notes": [
+        f"Legna: nei mesi di {months} il regno brucia 1 legno ogni {needs.firewood_people} abitanti al mese. "
+        "Se il legno non basta, il popolo patisce il freddo e ne soffre subito.",
+        f"Manutenzione in pietra: ogni mese {per} vuole 1 pietra. Se la pietra non basta, gli edifici si "
+        "consumano e quel mese tutta la produzione cala.",
+    ]}
+
+
+def _market_section(config: Config) -> dict:
+    m = config.market
+    return {"title": "Mercato", "entries": [], "notes": [
+        f"Un solo magazzino per tutti i regni del mondo. Cibo, legno e pietra si scambiano a lotti di "
+        f"{m.lot_units}, solo con gli ordini del Tesoriere. Gli scambi avvengono all'inizio del mese, prima di "
+        "ogni altro ordine: ciò che si compra si usa subito.",
+        f"Chi compra paga il prezzo più il {m.margin_pct}%, chi vende riceve il prezzo meno il {m.margin_pct}%. "
+        "In un mese un bene si compra oppure si vende, non entrambe le cose.",
+        "La merce venduta lascia subito i magazzini del regno e aspetta nel magazzino comune: chi vende è "
+        "pagato solo quando qualcuno la compra, prima la più vecchia, anche mesi dopo. Non si può ritirare. "
+        "Il cibo lì marcisce come nei granai.",
+        "Un acquisto prende solo ciò che il magazzino ha: se si chiede più di quanto c'è, i compratori si "
+        "dividono ciò che c'è e possono ricevere meno lotti.",
+        f"I prezzi si muovono del {m.step_pct}% al mese: salgono se si è chiesto più di quanto c'era, scendono "
+        "se la merce resta invenduta.",
+        "Tutti vedono prezzi, scorte e totali del mese; nessuno vede chi ha venduto o comprato.",
+    ]}
 
 
 TERRAIN_IT = {"plain": "pianura", "hill": "collina", "forest": "bosco"}

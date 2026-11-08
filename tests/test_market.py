@@ -4,8 +4,8 @@ land levels", step 2)."""
 import copy
 from dataclasses import replace
 
-from engine import new_game, parse_order, resolve_turn
-from engine.market import (MERCHANT, Consignment, RealmMonth, buy_price, check_trades, market_from_dict,
+from engine import check_plans, new_game, parse_order, resolve_turn
+from engine.market import (MERCHANT, Consignment, RealmMonth, buy_price, check_month_plan, check_trades, market_from_dict,
                            market_to_dict, new_market, resolve_market, resolve_month, sell_price, stock)
 
 
@@ -136,6 +136,17 @@ def test_a_month_trades_first_so_bought_wood_can_build(config):
     assert results["1"].state.wood < seller.wood  # the sold wood left at once
 
 
+def test_the_plan_check_runs_trades_first_and_keeps_the_input_order(start_state, config):
+    start_state.wood = 0
+    build = parse_order({"action": "build", "building": "house"})[0]
+    assert not check_plans(start_state, [build], config).results[0].accepted  # no wood without the market
+    report = check_month_plan(start_state, [build, _trade("wood", "buy", 1)], new_market(config, 1), config)
+    assert [r.order.action for r in report.results] == ["build", "trade"]
+    assert all(r.accepted for r in report.results)
+    assert report.remaining["wood"] == 50 - config.buildings["house"].wood
+    assert start_state.wood == 0  # a dry run
+
+
 def test_a_game_without_a_market_refuses_trades(start_state, config):
     no_market = replace(config, market=None)
     _, results = resolve_month(None, {"1": RealmMonth(start_state, [_trade("food", "sell", 1)])}, no_market)
@@ -159,3 +170,10 @@ def test_a_partial_fill_is_told_in_the_result(config):
     market.goods["stone"].queue = [Consignment(MERCHANT, 50)]
     _, results = resolve_month(market, {"1": RealmMonth(realm, [_trade("stone", "buy", 2)])}, config)
     assert results["1"].order_results[0].message == "filled 1 of 2 lots of stone asked this month"
+
+
+def test_the_sovereign_reads_trades_in_italian():
+    from server.ui.labels import event_label, order_label, rejection_label
+    assert order_label({"action": "trade", "good": "wood", "side": "sell", "lots": 2}) == "Vendere al mercato 2 lotti di legno"
+    assert event_label("trade_paid", {"gold": 27}) == "Il mercato ha pagato 27 oro per la merce venduta."
+    assert rejection_label("NO_MARKET") == "in questo mondo non c'è mercato"

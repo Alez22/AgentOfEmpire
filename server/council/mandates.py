@@ -31,6 +31,7 @@ from server.council.meeting import (
     load_context,
     name_of,
     render_prompt,
+    market_rule,
 )
 from server.council import manual
 from server.council.personality import describe_traits
@@ -123,7 +124,8 @@ def review(conn: psycopg.Connection, realm_id: int, role: str, request: str, cli
     chancellor = ctx.actors["chancellor"]
     system = render_prompt("mandate_review_system.txt", realm_name=ctx.realm_name,
                            traits=describe_traits(chancellor.traits), language=settings.language,
-                           manual=manual.prompt_text(ctx.config))
+                           manual=manual.prompt_text(ctx.config),
+                           market_rule=market_rule(ctx.config, "mandate"))
     reply, _status = _ask(ctx, chancellor, system, _review_user(ctx, role, request),
                           _ReviewSchema.model_json_schema(), _ReviewReply)
     decision, mandate, words = "rejected", None, NO_ANSWER

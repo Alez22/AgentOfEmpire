@@ -22,7 +22,8 @@ def settings():
 
 
 def test_manual_follows_the_config():
-    config = load_config()
+    # A game saved before the market and the land levels: the yields are told.
+    config = replace(load_config(), market=None, levels=None, needs=None)
     text = manual.prompt_text(config)
     assert "- farm: costs wood 40, stone 10, gold 0; built in 2 months; 15 jobs; each worker yields 15 food" in text
     assert "even when not all its jobs are filled" in text
@@ -30,6 +31,28 @@ def test_manual_follows_the_config():
     assert "a strike (all production -30%)" in text
     richer = replace(config, buildings={**config.buildings, "farm": replace(config.buildings["farm"], jobs=20)})
     assert "20 jobs" in manual.prompt_text(richer)
+    assert "gold cannot buy food" in meeting.market_rule(config, "council")
+
+
+def test_with_land_levels_the_manual_hides_the_yields():
+    """The council finds out its land from its production (docs/DESIGN.md, "Land levels")."""
+    config = load_config()
+    text = manual.prompt_text(config)
+    assert "yields 15" not in text and "yields 6" not in text and "yields 4" not in text
+    assert "how much depends on the realm's land" in text
+    page = " ".join(n for s in manual.page_sections(config) for n in s["notes"] + [e["text"] for e in s["entries"]])
+    assert "produce 15" not in page and "lo si scopre dal raccolto" in page
+
+
+def test_the_manual_explains_the_market_and_the_needs():
+    config = load_config()
+    text = manual.prompt_text(config)
+    assert "Market: one warehouse shared by every realm" in text and "only by the Treasurer's trade orders" in text
+    assert "nobody sees who sold or bought" in text
+    assert "Firewood: in November, December, January, February, March the realm burns 1 wood for every 2 people" in text
+    assert "each active building needs 1 stone" in text
+    assert "gold cannot buy food" not in text
+    assert "common market" in meeting.market_rule(config, "council")
 
 
 def test_manual_leaves_out_the_mood_formulas():
@@ -54,5 +77,6 @@ def test_manual_page_in_italian(database_url, settings):
         realm_id = int(re.search(r"/ui/realms/(\d+)", created.headers["location"]).group(1))
         page = html.unescape(ui.get(f"/ui/realms/{realm_id}/manual").text)
         assert "Fattoria." in page and "15 posti di lavoro" in page and "anche se non è piena." in page
-        assert "l'oro non compra cibo" in page
+        assert "L'oro compra anche cibo, legno e pietra al mercato" in page
+        assert "Mercato" in page and "Legna e pietra" in page
         assert "Manuale" in ui.get(f"/ui/realms/{realm_id}").text  # the tab

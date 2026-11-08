@@ -28,7 +28,7 @@ from engine.orders import Order, TradeOrder
 from engine.people import PeopleChoice
 from engine.state import Event, GameState
 from engine.turn import TurnResult, resolve_turn
-from engine.validator import OrderResult
+from engine.validator import OrderResult, PlanReport, check_plans
 
 GOODS = ("food", "wood", "stone")
 MERCHANT = ""  # seller of the start stock: nobody is paid for it
@@ -132,6 +132,48 @@ def check_trades(state: GameState, orders: list[TradeOrder], market: MarketState
         requests[order.good] = requests.get(order.good, 0) + signed
         results.append(OrderResult(order, True))
     return requests, results
+
+
+def check_month_plan(state: GameState, orders: list[Order], market: MarketState | None,
+                     config: Config) -> PlanReport:
+    """@brief Dry run of a realm's month as resolve_month runs it: trades first,
+    then the other orders on the state the trades leave. For the council's cost
+    check and the sovereign's preview; the state is NOT modified.
+
+    Assumption: every accepted purchase is filled in full and the gold of
+    sales arrives later (the warehouse is shared, so the real fill is known
+    only when every realm has traded).
+    @return Verdicts in the order of the input list (not the evaluation order,
+            so callers can pair them with their items); spent and remaining
+            against the state given (a purchase shows as negative spending).
+    """
+    trades = [o for o in orders if isinstance(o, TradeOrder)]
+    trial, trade_results, others = state, [], orders
+    if market is not None and config.market is not None and trades:
+        _, trade_results = check_trades(state, trades, market, config)
+        trial = _after_full_fills(state, trade_results, market, config)
+        others = [o for o in orders if not isinstance(o, TradeOrder)]
+    report = check_plans(trial, others, config)
+    by_order = {id(r.order): r for r in trade_results + report.results}
+    resources = ("food", "wood", "stone", "gold")
+    spent = {name: getattr(state, name) - report.remaining[name] for name in resources}
+    return PlanReport([by_order[id(o)] for o in orders], spent, report.remaining)
+
+
+def _after_full_fills(state: GameState, trade_results: list[OrderResult], market: MarketState,
+                      config: Config) -> GameState:
+    """@brief A copy of the state as if every accepted trade were filled in full."""
+    trial = copy.deepcopy(state)
+    lot = config.market.lot_units
+    for verdict in trade_results:
+        if not verdict.accepted:
+            continue
+        order = verdict.order
+        units = order.lots * lot if order.side == "buy" else -order.lots * lot
+        setattr(trial, order.good, getattr(trial, order.good) + units)
+        if order.side == "buy":
+            trial.gold -= order.lots * buy_price(market, config, order.good)
+    return trial
 
 
 def _take_oldest(book: GoodBook, units: int) -> dict[str, int]:

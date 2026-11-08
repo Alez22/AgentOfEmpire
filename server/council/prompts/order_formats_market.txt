@@ -1,0 +1,1 @@
+- {{"action": "trade", "good": "food" | "wood" | "stone", "side": "buy" | "sell", "lots": <int >= 1>}}   trade at the common market, in lots of {lot} units, at the prices in the briefing; it runs at the start of the month, before every other order

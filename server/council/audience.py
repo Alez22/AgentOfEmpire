@@ -19,6 +19,7 @@ from server.council.meeting import (
     ask_text,
     load_context,
     render_prompt,
+    market_rule,
     _note_lines,
     duties_of,
     expertise_block,
@@ -133,7 +134,7 @@ def _system(ctx: MeetingContext, actor) -> str:
         "audience_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
-        expertise=expertise_block(actor.role, ctx.config.map is not None),
+        expertise=expertise_block(actor.role, ctx.config.map is not None, ctx.config.market is not None),
         role_title=ROLE_TITLES[actor.role],
         display_name=name_of(ctx, actor.role),
         person=person_block(actor),
@@ -141,6 +142,7 @@ def _system(ctx: MeetingContext, actor) -> str:
         duties=duties_of(ctx, actor.role),
         traits=describe_traits(actor.traits),
         language=ctx.settings.language,
+        market_rule=market_rule(ctx.config, "council"),
     )
 
 

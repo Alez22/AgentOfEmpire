@@ -9,10 +9,13 @@ import json
 from collections import Counter
 
 from engine.config import Config
+from engine.market import GOODS, MarketState, buy_price, sell_price, stock
 from engine.state import GameState
 from engine.turn import (
     expected_output,
+    firewood_needed,
     food_needed,
+    stone_upkeep,
     housing_capacity,
     jobs_in_sector,
     monthly_tax_income,
@@ -126,6 +129,49 @@ def treasury_lines(state: GameState, config: Config, people=None) -> list[str]:
     ]
 
 
+def needs_line(state: GameState, config: Config) -> str:
+    """@brief Firewood and stone upkeep ([needs]); "" for games without them."""
+    if config.needs is None:
+        return ""
+    months = "/".join(MONTHS[m - 1][:3] for m in config.needs.firewood_months)
+    now = firewood_needed(state, config)
+    return (f"- Firewood: {state.population() // config.needs.firewood_people} wood a month in {months} "
+            f"({now} this month). Stone upkeep: {stone_upkeep(state, config)} stone a month for the active "
+            "buildings. Both are taken before this month's production.")
+
+
+def market_lines(state: GameState, config: Config, market: MarketState | None, realm_key: str) -> list[str]:
+    """@brief The Treasurer's market section: public prices, stock and totals,
+    and this realm's own goods still on sale (never another realm's)."""
+    if market is None or config.market is None:
+        return []
+    lot = config.market.lot_units
+    lines = [f"## The market (shared with the other realms; lots of {lot})"]
+    for good in GOODS:
+        book = market.goods[good]
+        lines.append(f"- {good}: buy {buy_price(market, config, good)}, sell {sell_price(market, config, good)} "
+                     f"gold a lot; in the warehouse {stock(book)}; last month bought {book.last_bought}, "
+                     f"put on sale {book.last_sold}.")
+    own = {good: sum(c.units for c in market.goods[good].queue if c.seller == realm_key) for good in GOODS}
+    waiting = ", ".join(f"{good} {units}" for good, units in own.items() if units)
+    lines.append("- Your goods waiting in the warehouse: "
+                 + (f"{waiting} (paid when someone buys them)." if waiting else "none."))
+    lines.append(f"- Your stores: food {state.food}, wood {state.wood}, stone {state.stone}, gold {state.gold}.")
+    if config.needs is not None:
+        lines.append(needs_line(state, config))
+    return lines
+
+
+def market_summary_line(config: Config, market: MarketState | None) -> list[str]:
+    """@brief One line of prices for the Chancellor's cost check."""
+    if market is None or config.market is None:
+        return []
+    prices = ", ".join(f"{good} {buy_price(market, config, good)}/{sell_price(market, config, good)}"
+                       for good in GOODS)
+    return [f"- Market prices (buy/sell a lot of {config.market.lot_units}): {prices}. "
+            "Trades run first; the cost check assumes every purchase is filled in full."]
+
+
 def _vacant(state: GameState, config: Config, sector: str) -> int:
     return max(0, jobs_in_sector(state, config, sector) - getattr(state.workers, sector))
 
@@ -171,6 +217,7 @@ def works_lines(state: GameState, config: Config, people=None, territory_summary
         f"- Expected this month if nothing changes: food +{output['food']}, wood +{output['wood']}, "
         f"stone +{output['stone']}.",
         f"- Housing: {state.population()} people, {housing_capacity(state, config)} places.",
+        *([needs_line(state, config)] if config.needs is not None else []),
         "- Building costs: " + "; ".join(costs) + ".",
     ]
 
@@ -234,13 +281,14 @@ def minister_briefing(
     role: str, state: GameState, config: Config, events: list[dict],
     history: list[str], directives: list[str], lessons: list[str],
     audiences: list[str] = (), audience_facts: list[str] = (), square_voices: list = (),
-    people=None, people_lines: list[str] = (), note_lines: list[str] = (),
+    people=None, people_lines: list[str] = (), note_lines: list[str] = (), market: list[str] = (),
 ) -> str:
     """@brief Full briefing of a minister; each role sees only its own section.
     Lessons come first: they are the lens through which the numbers are read.
+    @param market The Treasurer's market section (market_lines), if any.
     """
     if role == "treasurer":
-        section = treasury_lines(state, config, people)
+        section = treasury_lines(state, config, people) + list(market)
     else:
         section = works_lines(state, config, people, territory_summary=False)
         if state.has_map():
@@ -256,10 +304,11 @@ def chancellor_briefing(
     state: GameState, config: Config, events: list[dict], directives: list[str],
     reports: dict[str, str], proposals: list[dict], check_lines: list[str], lessons: list[str],
     audiences: list[str] = (), audience_facts: list[str] = (), square_voices: list = (),
-    people=None, people_lines: list[str] = (), note_lines: list[str] = (),
+    people=None, people_lines: list[str] = (), note_lines: list[str] = (), market: list[str] = (),
 ) -> str:
     """@brief The Chancellor sees both sections, the reports, the proposals
     (also as one JSON line, easy to quote back) and the scribes' cost check.
+    @param market The prices line (market_summary_line), if any.
     """
     lines = (header_lines(state) + lessons_lines(lessons)
              + treasury_lines(state, config, people) + works_lines(state, config, people))
@@ -269,6 +318,7 @@ def chancellor_briefing(
     lines.append("## Reports of the ministers")
     lines += [f"- {role}: {text}" for role, text in reports.items()]
     lines.append("## Cost check of all proposals together, in this order")
+    lines += list(market)
     lines += [f"- {line}" for line in check_lines] or ["- No proposals."]
     lines.append(PROPOSALS_MARKER + json.dumps(proposals, ensure_ascii=False))
     return "\n".join(lines)

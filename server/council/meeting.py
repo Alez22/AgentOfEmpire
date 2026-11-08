@@ -18,6 +18,7 @@ from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ValidationError
 
 from engine import check_plans, parse_order
+from engine.market import MarketState, check_month_plan
 from engine.turn import jobs_at_harvest
 from engine.config import Config
 from engine.orders import Order
@@ -32,12 +33,14 @@ from server.db.access import Clearance
 PROMPTS_DIR = Path(__file__).with_name("prompts")
 MINISTERS = ("treasurer", "architect")
 ROLE_ACTIONS = {
-    "treasurer": ("set_tax", "set_ration", "hold_feast"),
+    "treasurer": ("set_tax", "set_ration", "hold_feast", "trade"),
     "architect": ("build", "assign_workers", "set_zones", "claim_tiles", "fell_forest", "demolish"),
 }
 # Orders that exist only on the map: left out of the prompts of games
 # without one (the engine would refuse them with NO_MAP anyway).
 MAP_ACTIONS = ("set_zones", "claim_tiles", "fell_forest", "demolish")
+# Likewise trade exists only in games with a market (else NO_MARKET).
+MARKET_ACTIONS = ("trade",)
 ROLE_TITLES = {"treasurer": "Treasurer", "architect": "Architect", "chancellor": "Chancellor"}
 ROLE_DUTIES = {
     "treasurer": "the treasury, taxes, food rations and feasts for the people.",
@@ -175,6 +178,7 @@ class MeetingContext:
     state: GameState
     config: Config
     actors: dict[str, Actor]
+    market: MarketState | None = None  # the warehouse at the start of this turn; None: no market
 
 
 # ------------------------------------------------------------ model calls
@@ -395,9 +399,10 @@ def _drop_no_change(state: GameState, plan: list[dict]) -> tuple[list[dict], lis
 
 
 def _run_check(ctx: MeetingContext, items: list[dict]) -> dict:
-    """@brief Engine dry run of a list of {proposer, order} in list order."""
+    """@brief Engine dry run of a list of {proposer, order}: trades first, as
+    the month runs them, then the rest in list order; one verdict per item."""
     orders = [parse_order(item["order"])[0] for item in items]
-    report = check_plans(ctx.state, orders, ctx.config)
+    report = check_month_plan(ctx.state, orders, ctx.market, ctx.config)
     verdicts = [
         {"accepted": result.accepted, "code": result.code, "message": result.message}
         for result in report.results
@@ -454,15 +459,42 @@ def render_prompt(name: str, **values) -> str:
     return (PROMPTS_DIR / name).read_text().format(**values)
 
 
+# The rule about trade in every prompt: games without a market keep the
+# rule of the playtests (game 2: the council believed gold buys food).
+MARKET_RULES = {
+    "council": (
+        "- There is no market and no trade yet: gold cannot buy food, wood or stone. Food comes only from the "
+        "farms. A feast costs gold and only lifts the people's mood for a while; it brings no food.",
+        "- There is a common market shared with the other realms: only the Treasurer buys and sells food, wood "
+        "and stone there, at the prices in the briefing (see Market in the manual). A feast costs gold and only "
+        "lifts the people's mood for a while; it brings no food."),
+    "lessons": (
+        "- There is no market yet: gold cannot buy food, and a feast brings no food; do not learn otherwise.",
+        "- Gold buys at the market only what the other realms put on sale, and a feast brings no food; do not "
+        "learn otherwise."),
+    "mandate": (
+        "there is no market or trade, gold cannot buy food",
+        "trade happens only through the Treasurer's trade orders at the common market"),
+}
+
+
+def market_rule(config: Config, kind: str) -> str:
+    """@brief The trade rule of a prompt kind ("council", "lessons", "mandate")."""
+    return MARKET_RULES[kind][config.market is not None]
+
+
 def _order_formats(ctx: MeetingContext) -> str:
-    base = render_prompt("order_formats.txt", max_tax_rate=ctx.config.economy.max_tax_rate)
-    if ctx.config.map is None:
-        return base
-    return base + render_prompt("order_formats_map.txt", max_claim=ctx.config.map.claim_max_per_order)
+    text = render_prompt("order_formats.txt", max_tax_rate=ctx.config.economy.max_tax_rate)
+    if ctx.config.market is not None:
+        text += render_prompt("order_formats_market.txt", lot=ctx.config.market.lot_units)
+    if ctx.config.map is not None:
+        text += render_prompt("order_formats_map.txt", max_claim=ctx.config.map.claim_max_per_order)
+    return text
 
 
 def allowed_actions(ctx: MeetingContext, role: str) -> str:
-    actions = [a for a in ROLE_ACTIONS[role] if ctx.config.map is not None or a not in MAP_ACTIONS]
+    actions = [a for a in ROLE_ACTIONS[role] if (ctx.config.map is not None or a not in MAP_ACTIONS)
+               and (ctx.config.market is not None or a not in MARKET_ACTIONS)]
     return ", ".join(actions)
 
 
@@ -480,17 +512,19 @@ EXPERTISE_INTRO = (
 )
 
 
-def expertise_block(role: str, with_map: bool = False) -> str:
+def expertise_block(role: str, with_map: bool = False, with_market: bool = False) -> str:
     """@brief What the office's training teaches (a role's craft, the same
     for every holder today; later it can differ by person, in a résumé).
-    On the map the Architect's craft adds town planning (expertise_<role>_map.txt)."""
+    On the map the Architect's craft adds town planning (expertise_<role>_map.txt);
+    with a market the Treasurer's adds trading (expertise_<role>_market.txt)."""
     path = PROMPTS_DIR / f"expertise_{role}.txt"
     if not path.exists():
         return ""
     text = path.read_text()
-    map_path = PROMPTS_DIR / f"expertise_{role}_map.txt"
-    if with_map and map_path.exists():
-        text += map_path.read_text()
+    for wanted, suffix in ((with_map, "map"), (with_market, "market")):
+        extra = PROMPTS_DIR / f"expertise_{role}_{suffix}.txt"
+        if wanted and extra.exists():
+            text += extra.read_text()
     return EXPERTISE_INTRO + text
 
 
@@ -528,7 +562,7 @@ def _minister_system(ctx: MeetingContext, actor: Actor) -> str:
         "minister_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
-        expertise=expertise_block(actor.role, ctx.config.map is not None),
+        expertise=expertise_block(actor.role, ctx.config.map is not None, ctx.config.market is not None),
         role_title=ROLE_TITLES[actor.role],
         display_name=name_of(ctx, actor.role),
         person=person_block(actor),
@@ -538,6 +572,7 @@ def _minister_system(ctx: MeetingContext, actor: Actor) -> str:
         allowed_actions=allowed_actions(ctx, actor.role),
         language=ctx.settings.language,
         order_formats=_order_formats(ctx),
+        market_rule=market_rule(ctx.config, "council"),
     )
 
 
@@ -546,7 +581,7 @@ def _chancellor_system(ctx: MeetingContext, actor: Actor) -> str:
         "chancellor_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
-        expertise=expertise_block(actor.role, ctx.config.map is not None),
+        expertise=expertise_block(actor.role, ctx.config.map is not None, ctx.config.market is not None),
         realm_name=ctx.realm_name,
         traits=describe_traits(actor.traits),
         treasurer_name=name_of(ctx, "treasurer"),
@@ -554,10 +589,11 @@ def _chancellor_system(ctx: MeetingContext, actor: Actor) -> str:
         treasurer_gender=persons.GENDER_WORDS[persons.gender_of("treasurer", _person(ctx, "treasurer"))],
         architect_gender=persons.GENDER_WORDS[persons.gender_of("architect", _person(ctx, "architect"))],
         person=person_block(actor),
-        treasurer_actions=", ".join(ROLE_ACTIONS["treasurer"]),
+        treasurer_actions=allowed_actions(ctx, "treasurer"),
         architect_actions=allowed_actions(ctx, "architect"),
         language=ctx.settings.language,
         order_formats=_order_formats(ctx),
+        market_rule=market_rule(ctx.config, "council"),
     )
 
 
@@ -675,7 +711,7 @@ def _lessons_system(ctx: MeetingContext, actor: Actor) -> str:
         "lessons_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
-        expertise=expertise_block(actor.role, ctx.config.map is not None),
+        expertise=expertise_block(actor.role, ctx.config.map is not None, ctx.config.market is not None),
         role_title=ROLE_TITLES[actor.role],
         display_name=name_of(ctx, actor.role),
         person=person_block(actor),
@@ -685,6 +721,7 @@ def _lessons_system(ctx: MeetingContext, actor: Actor) -> str:
         language=ctx.settings.language,
         max_lessons=ctx.settings.max_lessons,
         role_hint=LESSON_HINTS.get(actor.role, ""),
+        market_rule=market_rule(ctx.config, "lessons"),
     )
 
 
@@ -753,6 +790,8 @@ def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
         [memory.lesson_line(lesson) for lesson in memory.current_lessons(ctx.conn, actor.id)],
         *_audience_memory(ctx, actor),
         square_voices=square_voices(ctx), **_people_kwargs(ctx), note_lines=_note_lines(ctx, actor),
+        market=briefing.market_lines(ctx.state, ctx.config, ctx.market, str(ctx.realm_id))
+        if actor.role == "treasurer" else (),
     )
     schema = _MinisterSchema.model_json_schema()
     system = _minister_system(ctx, actor)
@@ -831,6 +870,7 @@ def _chancellor_turn(ctx: MeetingContext, round_number: int, events: list[dict],
             ctx.state, ctx.config, events, directives, reports, proposals,
             _check_lines(ctx, proposals, check), lessons, *_audience_memory(ctx, actor),
             square_voices=square_voices(ctx), **_people_kwargs(ctx), note_lines=_note_lines(ctx, actor),
+            market=briefing.market_summary_line(ctx.config, ctx.market),
         )
         schema = _ChancellorSchema.model_json_schema()
         reply, status = _ask(ctx, actor, _chancellor_system(ctx, actor), user, schema, _ChancellorReply,
@@ -888,6 +928,7 @@ def load_context(conn: psycopg.Connection, realm_id: int, client, settings) -> M
     return MeetingContext(
         conn, client, settings, game_id, realm_id, realm_name, turn,
         games.load_latest_state(conn, realm_id), games.load_game_config(conn, game_id), actors,
+        games.load_market(conn, game_id, turn),
     )
 
 

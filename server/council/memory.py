@@ -25,7 +25,8 @@ ROLE_METRICS = {
     "chancellor": ("food", "gold", "wood", "stone"),
 }
 # Events worth remembering; routine ones (demography, spoilage) would be noise.
-NOTABLE_EVENTS = ("famine", "unrest_changed", "upkeep_unpaid", "building_completed", "game_over")
+NOTABLE_EVENTS = ("famine", "unrest_changed", "upkeep_unpaid", "building_completed", "game_over",
+                  "firewood_short", "stone_upkeep_short")
 FOLLOW_UP_MONTHS = 2  # "Afterwards" shows the start of the turn and the next two months
 
 

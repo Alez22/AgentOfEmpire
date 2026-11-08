@@ -32,7 +32,9 @@ SEASON_RULE = ("A season has just ended: tell how the people lived it, month aft
 # Engine events the people would talk about. The voice reads them with COURT
 # clearance, so council-only bookkeeping (upkeep, spoilage, rescaled
 # workers) never reaches the square even if listed here.
-TOLD_EVENTS = ("famine", "unrest_changed", "building_completed", "demography", "game_over", "audience")
+# Cold, worn buildings and carts of bought goods are seen by everyone ([needs], market).
+TOLD_EVENTS = ("famine", "unrest_changed", "building_completed", "demography", "game_over", "audience",
+               "firewood_short", "stone_upkeep_short", "trade_bought")
 # How far back the peasants remember (mood and events). One value while the
 # peasants are the only class; later each class gets its own horizon
 # (e.g. merchants and clergy a year or more): see docs/DESIGN.md.

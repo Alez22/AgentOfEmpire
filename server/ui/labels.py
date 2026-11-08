@@ -6,6 +6,7 @@ new engine value shows up (ugly but visible) instead of crashing the page.
 """
 
 BUILDINGS = {"farm": "fattoria", "sawmill": "segheria", "quarry": "cava", "house": "casa"}
+GOODS_IT = {"food": "cibo", "wood": "legno", "stone": "pietra"}
 TERRAINS = {"plain": "pianura", "forest": "bosco", "hill": "collina"}
 DIRECTIONS = {"north": "nord", "south": "sud", "east": "est", "west": "ovest"}
 RATIONS = {"reduced": "ridotta", "normal": "normale", "abundant": "abbondante"}
@@ -23,6 +24,9 @@ REJECTIONS = {
     "NOT_ENOUGH_WORKERS": "non ci sono abbastanza adulti",
     "NO_FREE_TILE": "nessuna casella libera",
     "DUPLICATE_POLICY": "già deciso in questo turno",
+    # The market (engine/market.py).
+    "NO_MARKET": "in questo mondo non c'è mercato",
+    "BOTH_SIDES": "questo mese il bene si compra o si vende, non entrambe le cose",
     # The territory (engine/territory.py).
     "NO_SPACE": "non c'è posto nella zona",
     "UNKNOWN_ZONE": "zona sconosciuta",
@@ -85,6 +89,9 @@ def order_label(order: dict) -> str:
         clearing = f", {order['clearing']} a dissodare" if order.get("clearing") else ""
         return (f"Lavoratori: {order.get('food')} nei campi, {order.get('wood')} nei boschi, "
                 f"{order.get('stone')} nelle cave{clearing}")
+    if action == "trade":
+        verb = "Comprare" if order.get("side") == "buy" else "Vendere"
+        return f"{verb} al mercato {order.get('lots')} lotti di {GOODS_IT.get(order.get('good'), order.get('good'))}"
     return str(order)
 
 
@@ -120,6 +127,17 @@ def event_label(kind: str, data: dict) -> str:
         return "Meno adulti di prima: i lavoratori sono stati ridistribuiti."
     if kind == "tile_cleared":
         return "Abbattuto un bosco: ora è pianura." if data.get("felled") else "Dissodata una nuova casella."
+    if kind == "firewood_short":
+        return f"Mancava la legna: il popolo ha patito il freddo ({data.get('missing')} legno su {data.get('needed')})."
+    if kind == "stone_upkeep_short":
+        return (f"Mancava la pietra per la manutenzione ({data.get('missing')} su {data.get('needed')}): "
+                "gli edifici si sono consumati e hanno reso meno.")
+    if kind == "trade_bought":
+        return f"Comprati al mercato {data.get('lots')} lotti di {GOODS_IT.get(data.get('good'), data.get('good'))} per {data.get('gold')} oro."
+    if kind == "trade_on_sale":
+        return f"Messi in vendita al mercato {data.get('lots')} lotti di {GOODS_IT.get(data.get('good'), data.get('good'))}."
+    if kind == "trade_paid":
+        return f"Il mercato ha pagato {data.get('gold')} oro per la merce venduta."
     if kind == "salaries_unpaid":
         return f"L'oro non bastava: i consiglieri non hanno ricevuto il salario ({data.get('salaries')} oro)."
     return f"{kind}: {data}"
