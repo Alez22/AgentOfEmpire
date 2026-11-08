@@ -972,6 +972,7 @@ The rules Claude followed as the three sovereigns of game 24 (`docs/game24_notes
 2. At most one directive (`meeting.give_directive`, one more council round):
    - **R7 buy**: wood or stone left after the plan covers less than 3 months of its need (firewood ahead, stone upkeep), the warehouse holds at least a lot, the plan does not buy it and the realm has none of it on sale: "buy N lots", as many as cover the 3 months and the gold left allows.
    - **R5 sell**: the gold left after the plan covers less than 3 months of costs (building upkeep + salaries) and a good the plan neither buys nor sells is above its needs: wood and stone above 6 months of need + 2 lots, food only if the winter check still passes after the sale and 3 months of eating stay. Up to 4 lots, the good that brings most gold.
+   - **R5b sell a surplus** (added after game 25, where Aurelia kept 1858 food): gold not short, the same as R5 but food keeps 4 months of eating, and a good sells only at its start price or above (no selling off into a full warehouse).
    - R7 before R5: a need first.
 3. The petition (R1), checked with the petition first, as the turn runs it: a tax is granted when income at the asked rate still covers the costs; a ration when the winter check passes with it; a feast when R9 holds.
 4. Exclusions, only among the plan items the engine check accepted:

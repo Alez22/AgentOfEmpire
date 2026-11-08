@@ -122,3 +122,15 @@ def test_a_good_the_plan_buys_is_not_sold(start_state, config):
     buy = _items({"action": "trade", "good": "wood", "side": "buy", "lots": 2})
     found = rules.directive(_month(start_state, config), buy)
     assert found is None or "legno" not in found[0]
+
+
+def test_a_large_surplus_is_sold_even_with_gold_enough(start_state, config):
+    """R5b, game 25: Aurelia kept 1858 food with gold enough."""
+    start_state.turn, start_state.gold = 8, 1000  # August
+    start_state.food, start_state.wood, start_state.stone = 50_000, 100, 1000
+    month = _month(start_state, config)
+    month.market.goods["stone"].price = 1  # stone is cheap: not sold off
+    text, reason = rules.directive(month, [])
+    assert text == "Tesoriere, vendi al mercato 4 lotti di cibo." and "(R5b)" in reason
+    start_state.food = 4 * rules.food_needed(start_state, config)  # only what it keeps
+    assert rules.directive(month, []) is None

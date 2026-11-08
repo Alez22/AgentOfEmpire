@@ -15,7 +15,7 @@ This file is the starting point of every work session: read it at the start and 
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (GLM 5.3 Flash "high"; the Voice on DeepSeek V4.1 Flash); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, map, market, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 315 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 316 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -136,7 +136,8 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] No buying a good one has on sale (`OWN_GOODS_ON_SALE`); units under a lot sell as one short lot, paid by the unit (decided and built 2026-11-08; flags in `[market]`, game 24 replays unchanged)
   - [x] Automatic sovereign, first version (spec approved 2026-11-08, `docs/DESIGN.md`): fixed rules R1–R9 from game 24, no model for the sovereign (`server/sovereign/`), `POST /realms/{id}/sovereign/auto`, reasons in a council message `sovereign` (migration 013), `lab/auto_game.py`
   - [x] Game 25: three automatic realms, 12 months, real models, $0.21 (see "Game 25")
-  - [ ] Decide: should the sovereign sell a surplus also when gold is not short (Aurelia kept 1858 food)
+  - [x] R5b: the sovereign sells a surplus also when gold is not short (decided and built 2026-11-08)
+  - [ ] A game with R5b (`lab/auto_game.py new 0 12`): does Aurelia's food reach Brenna?
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
 - [ ] Eras, variable trust and loyalty, leaks
 - [ ] Press by era: rumours only, then government communiqués (propaganda, also to other states), then independent journalism (see Progress in `docs/DESIGN.md`)

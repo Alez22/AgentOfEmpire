@@ -29,6 +29,7 @@ SELL_KEEP_MONTHS = 6  # R5: wood and stone kept before selling
 SELL_KEEP_LOTS = 2  # R5: and this many lots more
 SELL_FOOD_KEEP_MONTHS = 3  # R5: months of eating kept before selling food
 GOLD_SHORT_MONTHS = 3  # R5: gold is short below this many months of costs
+SURPLUS_FOOD_KEEP_MONTHS = 4  # R5b: months of eating kept before selling food when gold is not short
 MAX_SELL_LOTS = 4
 
 
@@ -149,9 +150,9 @@ def _buy_directive(month: Month, items: list[Item], left: dict[str, int]) -> tup
     return None
 
 
-def _food_lots_to_sell(month: Month, orders: list[Order], left_food: int) -> int:
+def _food_lots_to_sell(month: Month, orders: list[Order], left_food: int, keep_months: int) -> int:
     lot = month.config.market.lot_units
-    keep = SELL_FOOD_KEEP_MONTHS * food_needed(month.state, month.config)
+    keep = keep_months * food_needed(month.state, month.config)
     for lots in range(min(MAX_SELL_LOTS, (left_food - keep) // lot), 0, -1):
         sale = parse_order({"action": "trade", "good": "food", "side": "sell", "lots": lots})[0]
         if food_lasts(month, orders + [sale]):
@@ -161,10 +162,13 @@ def _food_lots_to_sell(month: Month, orders: list[Order], left_food: int) -> int
 
 def _sell_directive(month: Month, items: list[Item], left: dict[str, int]) -> tuple[str, str] | None:
     """@brief R5: gold short and a good above its needs: sell the one that
-    brings the most gold."""
+    brings the most gold. R5b: gold not short, the same but food keeps 4
+    months of eating and a good sells only at its start price or above (no
+    selling off into a full warehouse).
+    Why R5b: in game 25 Aurelia, rich in food, piled up 1858 food with enough
+    gold, while Brenna, poor in food, ended on the reduced ration."""
     monthly_costs = costs(month.state, month.config)
-    if left["gold"] >= GOLD_SHORT_MONTHS * monthly_costs:
-        return None
+    gold_short = left["gold"] < GOLD_SHORT_MONTHS * monthly_costs
     lot = month.config.market.lot_units
     orders = [i.order for i in items]
     best = None
@@ -173,8 +177,12 @@ def _sell_directive(month: Month, items: list[Item], left: dict[str, int]) -> tu
         # Brenna in May: told to sell the very wood its plan was buying).
         if _trades_good(items, good, "sell") or _trades_good(items, good, "buy"):
             continue
+        book = month.market.goods[good]
+        if not gold_short and book.price < month.config.market.start_price[good]:
+            continue
         if good == "food":
-            lots = _food_lots_to_sell(month, orders, left["food"])
+            keep_months = SELL_FOOD_KEEP_MONTHS if gold_short else SURPLUS_FOOD_KEEP_MONTHS
+            lots = _food_lots_to_sell(month, orders, left["food"], keep_months)
         else:
             keep = need_ahead(month.state, month.config, good, SELL_KEEP_MONTHS) + SELL_KEEP_LOTS * lot
             lots = min(MAX_SELL_LOTS, max(0, (left[good] - keep) // lot))
@@ -185,6 +193,9 @@ def _sell_directive(month: Month, items: list[Item], left: dict[str, int]) -> tu
         return None
     good, lots, _ = best
     what = labels.lots_of(lots, good)
+    if not gold_short:
+        return (f"Tesoriere, vendi al mercato {what}.",
+                f"Direttiva: vendere {what}: è più di quanto serve al regno, e il prezzo regge (R5b).")
     return (f"Tesoriere, vendi al mercato {what}.",
             f"Direttiva: vendere {what}: l'oro ({left['gold']}) copre meno di {GOLD_SHORT_MONTHS} mesi di "
             f"spese ({monthly_costs} al mese) (R5).")
