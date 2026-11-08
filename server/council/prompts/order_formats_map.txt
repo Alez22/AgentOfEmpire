@@ -1,0 +1,7 @@
+On the map (the zone names and the numbers are in your briefing):
+- "build" also takes "zone": "<zone name>" (the building goes where it fits nearest the square) and, only if you want a precise place, "x" and "y" of its top-left tile: {{"action": "build", "building": "farm", "zone": "Campi"}}
+- "assign_workers" also takes "clearing": <int>, the adults clearing the claimed land (a total like the others; missing means 0)
+- {{"action": "set_zones", "zones": [{{"name": "<name>", "purpose": "fields" | "center" | "houses" | "workshops" | "reserve", "x1": <int>, "y1": <int>, "x2": <int>, "y2": <int>}}, ...]}}   the WHOLE town plan, replacing the one in force: rectangles with corners included, no overlaps, every building inside a zone of its kind (houses may stand in the center); a zone may reach beyond the realm's land to plan for tiles to claim
+- {{"action": "claim_tiles", "direction": "north" | "south" | "east" | "west", "terrain": "plain" | "forest" | "hill", "count": <integer 1-{max_claim}>}}   bordering tiles on that side of the square, paid in gold; plain and hill must then be cleared, a forest stands
+- {{"action": "fell_forest", "count": <int>, "direction": "north" | "south" | "east" | "west" (optional)}}   queue the realm's forest nearest the square for felling: wood now, plain afterwards, and a sawmill without forest stops
+- {{"action": "demolish", "building_id": <int>}}   pull down a building (its id from the list), at a cost in gold; part of its wood and stone comes back

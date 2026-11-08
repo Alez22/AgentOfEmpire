@@ -31,6 +31,8 @@ FOLLOW_UP_MONTHS = 2  # "Afterwards" shows the start of the turn and the next tw
 
 def order_text(order: dict) -> str:
     """@brief Compact wording of an order: 'set_tax 12', 'build farm'."""
+    if order.get("action") == "set_zones":  # the full plan would fill the memory
+        return "set_zones (" + ", ".join(str(z.get("name")) for z in order.get("zones", [])) + ")"
     values = [f"{key} {value}" if key in ("food", "wood", "stone") else str(value)
               for key, value in order.items() if key not in ("action", "priority")]
     return " ".join([order["action"], *values])

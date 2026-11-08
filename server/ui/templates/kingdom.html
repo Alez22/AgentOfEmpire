@@ -45,7 +45,11 @@
     {% for kind, counts in buildings|dictsort %}
     <tr><th>{{ labels.BUILDINGS.get(kind, kind)|capitalize }}</th><td>{{ counts.active }}{% if counts.building %} + {{ counts.building }} in costruzione{% endif %}</td></tr>
     {% endfor %}
+    {% if land %}
+    <tr><th>Terre del regno</th><td>{{ land.owned }} caselle{% if land.wild %}, {{ land.wild }} da dissodare o abbattere{% endif %}</td></tr>
+    {% else %}
     <tr><th>Caselle libere</th><td>{{ state.free_tiles }}</td></tr>
+    {% endif %}
     <tr><th>Tasse</th><td>{{ state.tax_rate }}%</td></tr>
     <tr><th>Razione</th><td>{{ labels.RATIONS.get(state.ration, state.ration) }}</td></tr>
   </table>

@@ -22,6 +22,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 from engine.config import load_raw_config
+from engine.territory import owned_count
 from engine.turn import food_needed, housing_capacity, jobs_in_sector, season_of
 from server.council import audience, debate, mandates, manual, meeting, people, persons
 from server.council.briefing import months_until_winter
@@ -351,6 +352,8 @@ def kingdom_page(request: Request, realm_id: int, conn=Depends(_connection)):
         "housing": housing_capacity(state, config),
         "jobs": {sector: jobs_in_sector(state, config, sector) for sector in ("food", "wood", "stone")},
         "buildings": buildings,
+        # On the map the free space is the land, not a count of free tiles.
+        "land": ({"owned": owned_count(state), "wild": len(state.clearing_queue)} if state.has_map() else None),
         "nav": "kingdom",
         "realm_id": realm_id,
     }

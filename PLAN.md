@@ -108,7 +108,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] Claiming (gold into the land fund), clearing and felling (labour), sawmills need the realm's forest; balance lab (`lab/territory_balance.py`)
   - [x] Values from the lab: clearing plain 3, felling 10 wood, claim 20 gold
   - Step 2: the land fund split in December among the other states (needs them, and a cross-realm input for the replay)
-  - [ ] Council: orders, briefings, manual, prompts; the probe again on the real map
+  - [x] Council: orders, briefings, manual, prompts; first test with real models (game 19, 6 months)
   - [ ] The map page on the phone (mockup first)
   - [ ] A 12-month test game
   - Step 2: automatic states and contested borders; then trade, diplomacy, war

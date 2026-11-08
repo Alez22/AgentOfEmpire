@@ -15,7 +15,6 @@ from pydantic import BaseModel
 from server.council.memory import order_text
 from server.council.meeting import (
     MINISTERS,
-    ROLE_DUTIES,
     ROLE_TITLES,
     AlreadyApprovedError,
     CouncilError,
@@ -26,6 +25,7 @@ from server.council.meeting import (
     _rounds_held,
     insert_message,
     load_context,
+    duties_of,
     expertise_block,
     mandate_block,
     name_of,
@@ -112,10 +112,10 @@ def hold_debate(conn: psycopg.Connection, realm_id: int, client, settings) -> No
         system = render_prompt(
             "debate_system.txt", role_title=ROLE_TITLES[role], display_name=name_of(ctx, role),
             person=person_block(actor),
-            realm_name=ctx.realm_name, duties=ROLE_DUTIES[role], traits=describe_traits(actor.traits),
+            realm_name=ctx.realm_name, duties=duties_of(ctx, role), traits=describe_traits(actor.traits),
             language=settings.language, mandate=mandate_block(ctx, actor),
             manual=manual.prompt_text(ctx.config),
-            expertise=expertise_block(role),
+            expertise=expertise_block(role, ctx.config.map is not None),
         )
         reply, _status = _ask(ctx, actor, system, _user_prompt(ctx, role, messages, comments),
                               _CommentSchema.model_json_schema(), _CommentReply)

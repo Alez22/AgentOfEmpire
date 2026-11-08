@@ -13,7 +13,6 @@ from psycopg.types.json import Jsonb
 
 from server.council import briefing, memory
 from server.council.meeting import (
-    ROLE_DUTIES,
     ROLE_TITLES,
     CouncilError,
     MeetingContext,
@@ -21,6 +20,7 @@ from server.council.meeting import (
     load_context,
     render_prompt,
     _note_lines,
+    duties_of,
     expertise_block,
     mandate_block,
     name_of,
@@ -133,12 +133,12 @@ def _system(ctx: MeetingContext, actor) -> str:
         "audience_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
-        expertise=expertise_block(actor.role),
+        expertise=expertise_block(actor.role, ctx.config.map is not None),
         role_title=ROLE_TITLES[actor.role],
         display_name=name_of(ctx, actor.role),
         person=person_block(actor),
         realm_name=ctx.realm_name,
-        duties=ROLE_DUTIES[actor.role],
+        duties=duties_of(ctx, actor.role),
         traits=describe_traits(actor.traits),
         language=ctx.settings.language,
     )

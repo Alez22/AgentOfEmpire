@@ -33,14 +33,20 @@ PROMPTS_DIR = Path(__file__).with_name("prompts")
 MINISTERS = ("treasurer", "architect")
 ROLE_ACTIONS = {
     "treasurer": ("set_tax", "set_ration", "hold_feast"),
-    "architect": ("build", "assign_workers"),
+    "architect": ("build", "assign_workers", "set_zones", "claim_tiles", "fell_forest", "demolish"),
 }
+# Orders that exist only on the map: left out of the prompts of games
+# without one (the engine would refuse them with NO_MAP anyway).
+MAP_ACTIONS = ("set_zones", "claim_tiles", "fell_forest", "demolish")
 ROLE_TITLES = {"treasurer": "Treasurer", "architect": "Architect", "chancellor": "Chancellor"}
 ROLE_DUTIES = {
     "treasurer": "the treasury, taxes, food rations and feasts for the people.",
     # How to do the job well is the craft (prompts/expertise_<role>.txt),
     # not the duty: the duty only says what the office is for.
     "architect": "construction and the assignment of adults to fields, sawmills and quarries.",
+    # On the map the Architect is also the town planner and keeps the land.
+    "architect_map": "construction, the town plan and the realm's land (claiming, clearing, felling, "
+                     "demolishing), and the assignment of adults to fields, sawmills, quarries and clearing.",
     "chancellor": "chairing the council: turning the ministers' proposals into one plan for the sovereign.",
 }
 LESSON_HINTS = {
@@ -361,7 +367,8 @@ def _changes_nothing(state: GameState, order: dict) -> bool:
         return order["ration"] == state.ration
     if action == "assign_workers":
         workers = state.workers
-        return (order["food"], order["wood"], order["stone"]) == (workers.food, workers.wood, workers.stone)
+        return ((order["food"], order["wood"], order["stone"], order.get("clearing", 0))
+                == (workers.food, workers.wood, workers.stone, workers.clearing))
     return False
 
 
@@ -407,8 +414,16 @@ def _idle_left(order: dict, adults: int) -> str:
     """
     if order["action"] != "assign_workers":
         return ""
-    idle = adults - order["food"] - order["wood"] - order["stone"]
+    idle = adults - order["food"] - order["wood"] - order["stone"] - order.get("clearing", 0)
     return f"; WARNING: {idle} adults would be left without work" if idle > 0 else ""
+
+
+def _clearing_without_land(order: dict, state: GameState) -> str:
+    """@brief Warning for clearing workers with nothing queued (they would idle)."""
+    if order["action"] != "assign_workers" or not order.get("clearing") or state.clearing_queue:
+        return ""
+    return (f"; WARNING: {order['clearing']} clearing workers but nothing is queued for clearing"
+            " (unless a claim or a felling in this plan queues it)")
 
 
 def _check_lines(ctx: MeetingContext, items: list[dict], check: dict) -> list[str]:
@@ -416,7 +431,8 @@ def _check_lines(ctx: MeetingContext, items: list[dict], check: dict) -> list[st
     lines = []
     for item, verdict in zip(items, check["verdicts"]):
         outcome = "affordable" if verdict["accepted"] else f"REJECTED {verdict['code']}: {verdict['message']}"
-        outcome += _idle_beyond_jobs(item["order"], jobs) + _idle_left(item["order"], ctx.state.adults)
+        outcome += (_idle_beyond_jobs(item["order"], jobs) + _idle_left(item["order"], ctx.state.adults)
+                    + _clearing_without_land(item["order"], ctx.state))
         lines.append(f"{item['proposer']} {json.dumps(item['order'])}: {outcome}")
     lines.append(f"Spent if all accepted ones run: {check['spent']}; left: {check['remaining']}")
     return lines
@@ -429,7 +445,21 @@ def render_prompt(name: str, **values) -> str:
 
 
 def _order_formats(ctx: MeetingContext) -> str:
-    return render_prompt("order_formats.txt", max_tax_rate=ctx.config.economy.max_tax_rate)
+    base = render_prompt("order_formats.txt", max_tax_rate=ctx.config.economy.max_tax_rate)
+    if ctx.config.map is None:
+        return base
+    return base + render_prompt("order_formats_map.txt", max_claim=ctx.config.map.claim_max_per_order)
+
+
+def allowed_actions(ctx: MeetingContext, role: str) -> str:
+    actions = [a for a in ROLE_ACTIONS[role] if ctx.config.map is not None or a not in MAP_ACTIONS]
+    return ", ".join(actions)
+
+
+def duties_of(ctx: MeetingContext, role: str) -> str:
+    if role == "architect" and ctx.config.map is not None:
+        return ROLE_DUTIES["architect_map"]
+    return ROLE_DUTIES[role]
 
 
 EXPERTISE_INTRO = (
@@ -440,11 +470,18 @@ EXPERTISE_INTRO = (
 )
 
 
-def expertise_block(role: str) -> str:
+def expertise_block(role: str, with_map: bool = False) -> str:
     """@brief What the office's training teaches (a role's craft, the same
-    for every holder today; later it can differ by person, in a résumé)."""
+    for every holder today; later it can differ by person, in a résumé).
+    On the map the Architect's craft adds town planning (expertise_<role>_map.txt)."""
     path = PROMPTS_DIR / f"expertise_{role}.txt"
-    return (EXPERTISE_INTRO + path.read_text()) if path.exists() else ""
+    if not path.exists():
+        return ""
+    text = path.read_text()
+    map_path = PROMPTS_DIR / f"expertise_{role}_map.txt"
+    if with_map and map_path.exists():
+        text += map_path.read_text()
+    return EXPERTISE_INTRO + text
 
 
 def _person(ctx: MeetingContext, role: str) -> dict:
@@ -481,14 +518,14 @@ def _minister_system(ctx: MeetingContext, actor: Actor) -> str:
         "minister_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
-        expertise=expertise_block(actor.role),
+        expertise=expertise_block(actor.role, ctx.config.map is not None),
         role_title=ROLE_TITLES[actor.role],
         display_name=name_of(ctx, actor.role),
         person=person_block(actor),
         realm_name=ctx.realm_name,
-        duties=ROLE_DUTIES[actor.role],
+        duties=duties_of(ctx, actor.role),
         traits=describe_traits(actor.traits),
-        allowed_actions=", ".join(ROLE_ACTIONS[actor.role]),
+        allowed_actions=allowed_actions(ctx, actor.role),
         language=ctx.settings.language,
         order_formats=_order_formats(ctx),
     )
@@ -499,7 +536,7 @@ def _chancellor_system(ctx: MeetingContext, actor: Actor) -> str:
         "chancellor_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
-        expertise=expertise_block(actor.role),
+        expertise=expertise_block(actor.role, ctx.config.map is not None),
         realm_name=ctx.realm_name,
         traits=describe_traits(actor.traits),
         treasurer_name=name_of(ctx, "treasurer"),
@@ -508,7 +545,7 @@ def _chancellor_system(ctx: MeetingContext, actor: Actor) -> str:
         architect_gender=persons.GENDER_WORDS[persons.gender_of("architect", _person(ctx, "architect"))],
         person=person_block(actor),
         treasurer_actions=", ".join(ROLE_ACTIONS["treasurer"]),
-        architect_actions=", ".join(ROLE_ACTIONS["architect"]),
+        architect_actions=allowed_actions(ctx, "architect"),
         language=ctx.settings.language,
         order_formats=_order_formats(ctx),
     )
@@ -628,12 +665,12 @@ def _lessons_system(ctx: MeetingContext, actor: Actor) -> str:
         "lessons_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
-        expertise=expertise_block(actor.role),
+        expertise=expertise_block(actor.role, ctx.config.map is not None),
         role_title=ROLE_TITLES[actor.role],
         display_name=name_of(ctx, actor.role),
         person=person_block(actor),
         realm_name=ctx.realm_name,
-        duties=ROLE_DUTIES[actor.role],
+        duties=duties_of(ctx, actor.role),
         traits=describe_traits(actor.traits),
         language=ctx.settings.language,
         max_lessons=ctx.settings.max_lessons,
@@ -708,16 +745,50 @@ def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
         square_voices=square_voices(ctx), **_people_kwargs(ctx), note_lines=_note_lines(ctx, actor),
     )
     schema = _MinisterSchema.model_json_schema()
-    reply, status = _ask(ctx, actor, _minister_system(ctx, actor), user, schema, _MinisterReply)
+    system = _minister_system(ctx, actor)
+    reply, status = _ask(ctx, actor, system, user, schema, _MinisterReply)
     if reply is None:
         report, valid, discarded = _absence_text(ctx, actor.role, status), [], []
     else:
         valid, discarded = _validate_proposals(actor.role, reply.proposals)
+        reply, valid, discarded = _retry_bad_zones(ctx, actor, system, user, reply, valid, discarded)
         report = reply.report
         _store_note(ctx, actor, reply.note)
     payload = {"proposals": valid, "discarded": discarded, "absent": reply is None, "status": status}
     insert_message(ctx, round_number, "report", actor, report, payload)
     return report, valid
+
+
+def _zones_refusal(ctx: MeetingContext, proposals: list[dict]) -> str:
+    """@brief Why the proposed town plan would be refused by the engine, or ""."""
+    for order in proposals:
+        if order["action"] == "set_zones":
+            result = check_plans(ctx.state, [parse_order(order)[0]], ctx.config).results[0]
+            if not result.accepted:
+                return result.message
+    return ""
+
+
+def _retry_bad_zones(ctx: MeetingContext, actor: Actor, system: str, user: str, reply,
+                     valid: list[dict], discarded: list[dict]) -> tuple:
+    """@brief A town plan the engine would refuse gets one more try, with the
+    reason; if the second plan fails too, only the plan is dropped and the
+    rest of the reply stays (lab/urban_probe.py: about 1 plan in 3 fails).
+    @return (reply, valid proposals, discarded proposals).
+    """
+    refusal = _zones_refusal(ctx, valid)
+    if not refusal:
+        return reply, valid, discarded
+    retry_user = user + RETRY_REMINDER.format(error=f"your town plan (set_zones) would be refused: {refusal}")
+    second, _status = _ask(ctx, actor, system, retry_user, _MinisterSchema.model_json_schema(), _MinisterReply)
+    if second is not None:
+        reply = second
+        valid, discarded = _validate_proposals(actor.role, second.proposals)
+        refusal = _zones_refusal(ctx, valid)
+    if refusal:
+        discarded = discarded + [{"order": o, "reason": "BAD_ZONES"} for o in valid if o["action"] == "set_zones"]
+        valid = [o for o in valid if o["action"] != "set_zones"]
+    return reply, valid, discarded
 
 
 def _chancellor_turn(ctx: MeetingContext, round_number: int, events: list[dict],

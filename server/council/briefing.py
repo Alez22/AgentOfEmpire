@@ -19,6 +19,7 @@ from engine.turn import (
     monthly_upkeep,
     season_of,
 )
+from server.council import map_text
 from server.council.llm import PROPOSALS_MARKER
 
 MONTHS = ("January", "February", "March", "April", "May", "June", "July",
@@ -115,6 +116,7 @@ def treasury_lines(state: GameState, config: Config, people=None) -> list[str]:
         food_outlook_line(state, config, people),
         *ration_lines(state, config),
         f"- Tax rate: {state.tax_rate}% (maximum {config.economy.max_tax_rate}%). Ration: {state.ration}.",
+        *([map_text.price_line(state, config)] if state.has_map() else []),
         # No mood number, threshold or months below it: the council, like the
         # sovereign, knows the people only from the square (see square_lines).
         # Protests and strikes are public facts, so the unrest level stays.
@@ -128,7 +130,21 @@ def _vacant(state: GameState, config: Config, sector: str) -> int:
     return max(0, jobs_in_sector(state, config, sector) - getattr(state.workers, sector))
 
 
-def works_lines(state: GameState, config: Config, people=None) -> list[str]:
+def _space_line(state: GameState, config: Config, territory_summary: bool) -> str:
+    """@brief Free space: a count without a map, the territory summary with one
+    (left out for the Architect, who gets the whole territory section)."""
+    if not state.has_map():
+        return f"- Free tiles for new buildings: {state.free_tiles}."
+    if not territory_summary:
+        return "- Territory: see \"The town and its land\" below."
+    return map_text.summary_line(state, config)
+
+
+def _clearing_part(state: GameState) -> str:
+    return f", clearing {state.workers.clearing} (no jobs: they work the clearing queue)" if state.has_map() else ""
+
+
+def works_lines(state: GameState, config: Config, people=None, territory_summary: bool = True) -> list[str]:
     active = Counter(b.kind for b in state.buildings if b.turns_left == 0)
     building = [f"{b.kind} ({b.turns_left} turns left)" for b in state.buildings if b.turns_left > 0]
     idle = state.adults - state.workers.total()
@@ -145,10 +161,10 @@ def works_lines(state: GameState, config: Config, people=None) -> list[str]:
         f"- Wood: {state.wood}. Stone: {state.stone}. Gold: {state.gold}.",
         "- Buildings in use: " + ", ".join(f"{count} {kind}" for kind, count in sorted(active.items())) + ".",
         "- Under construction: " + (", ".join(building) if building else "nothing") + ".",
-        f"- Free tiles for new buildings: {state.free_tiles}.",
+        _space_line(state, config, territory_summary),
         f"- Workers (assigned/jobs): food {state.workers.food}/{jobs_in_sector(state, config, 'food')}, "
         f"wood {state.workers.wood}/{jobs_in_sector(state, config, 'wood')}, "
-        f"stone {state.workers.stone}/{jobs_in_sector(state, config, 'stone')}. "
+        f"stone {state.workers.stone}/{jobs_in_sector(state, config, 'stone')}{_clearing_part(state)}. "
         f"Adults: {state.adults}, without work: {idle}. Workers beyond the jobs produce nothing.",
         f"- Jobs without workers: food {_vacant(state, config, 'food')}, wood {_vacant(state, config, 'wood')}, "
         f"stone {_vacant(state, config, 'stone')}.",
@@ -223,7 +239,12 @@ def minister_briefing(
     """@brief Full briefing of a minister; each role sees only its own section.
     Lessons come first: they are the lens through which the numbers are read.
     """
-    section = treasury_lines(state, config, people) if role == "treasurer" else works_lines(state, config, people)
+    if role == "treasurer":
+        section = treasury_lines(state, config, people)
+    else:
+        section = works_lines(state, config, people, territory_summary=False)
+        if state.has_map():
+            section = section + map_text.architect_lines(state, config)
     lines = (header_lines(state) + lessons_lines(lessons) + section + events_lines(events)
              + square_lines(list(square_voices)) + list(people_lines)
              + history_lines(history) + audience_lines(list(audiences)) + list(note_lines)

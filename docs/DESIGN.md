@@ -856,9 +856,13 @@ The first lab run also moved the world's forests and hills from straight below t
 - Manual: new lines from the config (footprints, terrains, price, fund, clearing, demolition).
 - The Architect's craft gets town planning (keep the quarters in order, leave reserves, grow towards the terrain that is needed). The Treasurer and the Chancellor get one summary line on the territory (tiles, price, fund), not the map. Cost: about 600–1000 more input tokens per Architect call, under $0.0002.
 
+**Built (2026-11-08)**: the Architect's briefing has "## The town and its land" (`server/council/map_text.py`): the text grid of the land and a ring of 2 tiles (tiles outside the realm in other characters), the zones with the room left per kind (counted by placing copies as the engine would), the buildings with id and place (a sawmill without forest marked NOT WORKING), the price and the land fund, the bordering tiles per side and terrain, the clearing queue, a warning when the last forest of a sawmill is queued. The Chancellor gets one summary line, the Treasurer the price line. The map orders and their formats (`prompts/order_formats_map.txt`), the town-planning craft (`prompts/expertise_architect_map.txt`), the territory rules in the manual and the Architect's wider duty appear only in games with a map. A town plan the engine would refuse is asked again once with the reason; refused twice, only the plan is dropped. The cost check warns of clearing hands with nothing queued.
+
+**First test (game 19, GLM 5.3 Flash "high", 6 months)**: the Architect built the fifth farm in the "Campi" zone, in March claimed 2 plain tiles to the south "because the Campi zone is nearly full", in April put an idle adult to clearing and drew a new fields zone over the claimed land (valid at the first try). Weak: the new zone was 2 rows deep, too narrow for a 3 × 3 farm (craft line added); once it spoke of taxes and a feast, not its orders (5 replays of the same call: all on topic).
+
 **Phone and admin**
 
-- New page **"Mappa"**: the territory and its ring in SVG, colours by terrain, buildings as shapes with a letter or a simple icon, zones as coloured outlines, tiles being cleared hatched; tapping a building or a zone shows its details. A mockup comes before the code.
+- New page **"Mappa": the territory and its ring in SVG, colours by terrain, buildings as shapes with a letter or a simple icon, zones as coloured outlines, tiles being cleared hatched; tapping a building or a zone shows its details. A mockup comes before the code.
 - Admin: the whole world and the fund.
 
 **Order of work** (one commit each, with tests)
