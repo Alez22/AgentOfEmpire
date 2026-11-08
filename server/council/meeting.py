@@ -305,8 +305,11 @@ def _ask(ctx: MeetingContext, actor: Actor, system: str, user: str,
             if reply.output_tokens >= ctx.settings.max_output_tokens:
                 # It ran up to the output cap (reasoning that never ended, or a
                 # looping string: 5 of 6 refusals in games 5-7). The model has
-                # no reasoning budget, only levels: retry without reasoning.
-                effort = "none"
+                # no reasoning budget, only levels: retry without reasoning, or
+                # at the lowest level where reasoning cannot be turned off (game
+                # 20: GLM 5.3 Flash answered "none" with HTTP 400, and the
+                # Architect missed the meeting).
+                effort = "low" if actor.model in ctx.settings.models_reasoning_required else "none"
             continue
         note = annotate(parsed) if annotate else ""
         log_call(ctx, actor, "ok", reply, error=note, prompt=(system, prompt))

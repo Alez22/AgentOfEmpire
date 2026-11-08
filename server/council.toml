@@ -23,6 +23,9 @@ max_audience_messages_per_turn = 6  # sovereign lines per council member per tur
 # - Mistral Small 3.2: no reasoning at all.
 models_without_json_schema = ["inclusionai/ling-3.1-flash"]
 models_without_reasoning = ["mistralai/mistral-small-3.2-24b-instruct"]
+# Reasoning cannot be turned off ("none" gives HTTP 400, game 20): a retry
+# after a reply that ran up to the token cap uses "low" instead.
+models_reasoning_required = ["z-ai/glm-5.3-flash"]
 
 # Model tiers of the persons (server/council/personas.toml). Since
 # 2026-11-08 every tier is GLM 5.3 Flash with reasoning "high" (set below,

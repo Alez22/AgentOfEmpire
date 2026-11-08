@@ -602,6 +602,16 @@ def test_a_reply_that_ran_up_to_the_cap_is_retried_without_reasoning(db, realm, 
     assert treasurer_calls[1]["reasoning_effort"] == "none"
 
 
+def test_a_model_that_must_reason_is_retried_at_the_lowest_level(db, realm, settings):
+    """Game 20: GLM 5.3 Flash answers reasoning "none" with HTTP 400."""
+    _, realm_id = realm
+    runaway = "{" + "x" * (settings.max_output_tokens * 4)
+    client = FakeClient({"treasurer": [runaway]})
+    meeting.hold_meeting(db, realm_id, client, replace(settings, models_reasoning_required=("mid-model",)))
+    treasurer_calls = [c for c in client.calls if c["role"] == "treasurer"]
+    assert treasurer_calls[1]["reasoning_effort"] == "low"
+
+
 def test_an_ordinary_refusal_keeps_the_reasoning_level(db, realm, settings):
     _, realm_id = realm
     client = FakeClient({"treasurer": ["not json at all"]})

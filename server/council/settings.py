@@ -34,6 +34,9 @@ class CouncilSettings:
     # sending it would leave no provider): the client leaves it out.
     models_without_json_schema: tuple[str, ...] = ()
     models_without_reasoning: tuple[str, ...] = ()
+    # Models whose reasoning cannot be turned off: a retry after a runaway
+    # reply uses "low" for them instead of "none".
+    models_reasoning_required: tuple[str, ...] = ()
 
 
 def load_settings(path: Path = DEFAULT_SETTINGS_PATH) -> CouncilSettings:
@@ -51,4 +54,5 @@ def load_settings(path: Path = DEFAULT_SETTINGS_PATH) -> CouncilSettings:
     raw.setdefault("reasoning_effort", {})
     raw["models_without_json_schema"] = tuple(raw.get("models_without_json_schema", ()))
     raw["models_without_reasoning"] = tuple(raw.get("models_without_reasoning", ()))
+    raw["models_reasoning_required"] = tuple(raw.get("models_reasoning_required", ()))
     return CouncilSettings(**raw)
