@@ -289,7 +289,12 @@ Decided 2026-11-08. The first counsellor added to the council, in the village. D
   - **the doors**: the immigration policy (below);
   - **the militia**: "keep N men on guard";
   - **news from outside**: it collects what travellers say at the gate;
-  - **in the town** (proposed): **counter-espionage**, finding spies hidden among migrants. The Marshal looks outward with the army, the Gastaldo inward.
+  - **in the town** (decided 2026-11-08): **counter-espionage**, finding spies hidden among migrants. The Marshal looks outward with the army, the Gastaldo inward. Detailed rules wait for the espionage section, still to rewrite:
+    - **vigilance**: a policy of the Gastaldo, a few men taken from the militia or the fields to watch the newcomers; more vigilance, more chance (seeded generator) to find a spy;
+    - **tied to the doors**: open doors bring more growth and let more spies in; closed doors are safer and slower;
+    - **a spy found**: the sovereign chooses to expel it, imprison it (the realm of origin will know) or turn it into a double agent that carries false news home;
+    - **the Gastaldo is a person**: an ambitious one sees spies everywhere to get more guards and power (as the Marshal inflates estimates), a dishonest one may cover a spy who pays it;
+    - **out of its reach**: leaks from unhappy ministers do not pass the gate; they stay a matter of audiences, loyalty and secret notes.
 - **No militia before the Gastaldo.** The militia is not moved between offices during a game (the duties of an office never change), so before the watchtower the realm cannot keep guards: early raids are the lesson that makes the player want the Gastaldo.
 - **Militia**: the engine takes the guards first; the Architect assigns the adults that remain. The Treasurer weighs the cost in council, the Chancellor sees the conflict in the plan ("every guard is grain less"). Few guards: part of the exposed stores is lost; enough guards: the raid is repelled. In the town the soldiers of the barracks come on top.
 - **Village sequence**: first winter → market (merchants) → the first bandits → watchtower (the Gastaldo, militia and doors) → rare resources → town hall.
