@@ -841,11 +841,11 @@ Approved on 2026-11-08. The first step of the map, with a single realm: the city
 - **Footprints**: house 1 × 1, sawmill 2 × 1 (must touch a forest tile), quarry 2 × 2 (on hill), farm 3 × 3 (on plain), square 2 × 2 (fixed). No roads: buildings stand side by side.
 - **In the engine** (`engine/territory.py`): the world rows and the ownership rows are part of the realm state, every building has an id and a position, the zones and the square are in the state; free space comes from the map. The snapshot holds the map (about 10 KB a turn instead of 1 KB), so replay stays exact. Games saved before have no `[map]` in their config: they keep counting `free_tiles` and replay unchanged, so `ENGINE_VERSION` did not need to go up (snapshot format 2 loads format 1).
 
-**Map graphics** (decided 2026-11-08, mockup in `lab/tiny_town_mockup.py`, shown on the presentation page)
+**Map graphics** (decided 2026-11-08, mockups shown on the presentation page)
 
-- **Tiles**: Kenney's Tiny Town (CC0, 16 px pixel art, `lab/assets/kenney_tiny_town`), recoloured, plus our own tiles in the same style for what it lacks: water, hills, crops, and later quarry, sawmill and the like.
-- **Scale**: one engine tile = **2 × 2 Tiny Town tiles** (32 px). A 1 × 1 house is drawn as roof above, wall and door below; a 3 × 3 farm as a 6 × 6 field. The engine's footprints do not change for the graphics. The whole 64 × 64 world is 2048 × 2048 px, so the map needs zoom and drag; the 12 × 12 core (384 px) fits on screen.
-- **Palette**: the "serious" one (mockup 2): saturation halved, greens pulled to olive, a sepia veil (`make_recolour(0.5, 0.18, 0.8)`). Land outside the realm darker, the border in gold.
+- **Chosen: hexes with icons** (`lab/hex_map_mockup.py`, SVG): a board of flat-coloured hexagons with game-icons silhouettes (CC BY 3.0, credits per author; icons vendored in `lab/assets/game_icons` with `AUTHORS.txt`). Forest pines and oaks, hills, waves on the river, wheat and a barn per field, houses, saw and log pile, pick and stone piles, the well on the square, the palace per era (long hall, civic clock tower, castle). Each building's lot is outlined, the realm's border is gold, land outside it dimmed. Two themes drawn: parchment (light, ink icons) and night (dark, gold and ivory icons). Vector, sharp at any zoom, about 90 KB for the 16 × 16 view. The same icon set serves the panels of the UI, so map and interface speak one language.
+- **Open**: the mockup draws each square engine tile as a hexagon in odd-r offset rows (look only). A real hex grid means 6 neighbours instead of 4: footprints (a 3 × 3 farm becomes e.g. a 7-hex flower), adjacency rules (sawmill by the forest, claims), the river and `world.txt` change in the engine. Theme to pick (parchment or night).
+- **Explored and set aside**: Kenney Tiny Town recoloured, at 2 × 2 tiles per engine tile, with our own pixel buildings and terrain (`lab/tiny_town_mockup.py`, `lab/pixel_buildings.py`, `lab/pixel_terrain.py`): lively, but a second visual language next to the icons.
 
 **Town plan (the Architect)**
 
