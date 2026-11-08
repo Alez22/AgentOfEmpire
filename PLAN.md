@@ -807,8 +807,8 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
 
 - **Presentation page** of the finished game: `docs/index.html`, live at https://alez22.github.io/AgentOfEmpire/ (GitHub Pages from `main` → `/docs`). Eleven chapters in Italian, click-to-open deep dives, a "where we are" section. The vision decisions it needed are in `docs/DESIGN.md` (victory paths, reputation, espionage, eras' names, seasons, battles). The game's name is **AgentOfEmpire**.
 - **Gallery of graphic proposals** at the bottom of the page (temporary, to be removed once chosen): game-icons, Fluent Emoji, Phosphor; public-domain art (Lorenzetti, Très Riches Heures, Bruegel…); Kenney tiles, Watabou, Azgaar. About 6 MB in `docs/assets/proposals/`.
-- **Map graphics decided** (DESIGN, "Territory"): Kenney Tiny Town recoloured with the "serious" palette, one engine tile = 2 × 2 Tiny Town tiles. Mockup `lab/tiny_town_mockup.py` (pure-Python PNG in `lab/pixel_png.py`) draws the real core; houses and palaces are our own pixel art (`lab/pixel_buildings.py`): pitched roofs alternating eaves/gable, grass between houses, shadows; palace per era (lord's hall, town hall with civic tower and loggia, castle).
-- **Next on the mockup**: sawmill and quarry redrawn, our own castle, forest and hills; then the palace in the engine (fixed 2 × 2 like the square at core tiles (7,3)–(8,4); spec to approve first).
+- **Map graphics decided** (DESIGN, "Territory" → "Map graphics"): **hexes with game-icons**, **night theme** (`lab/hex_map_mockup.py`, SVG, icons in `lab/assets/game_icons` with `AUTHORS.txt`). The same icon set will serve the UI panels. Explored and set aside: Kenney Tiny Town recoloured with our own pixel buildings and terrain (`lab/tiny_town_mockup.py`, `lab/pixel_*.py`).
+- **Real hex grid in the engine**: spec written in DESIGN ("Hex grid", 2026-11-08), **waiting for approval** of three points: the footprints (farm as a 7-hex flower, quarry as a 4-hex rhombus), the palace in the new core now or later, and whether old square-grid games stay playable (a `grid` key) or are dropped. Then four steps: engine, world and core with the lab, model probe of the hex text grid then briefing and prompts, the map page as an SVG board.
 
 ## Open decisions
 
@@ -821,7 +821,8 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
 | Automatic sovereigns | phase 3 | personality, models, budget |
 | Jev | phase 4 | technical details, policy schema, waiting-list sign-up |
 | Lost vision sections | before phase 4 | rewrite the parts marked [Lost] in `docs/DESIGN.md` (map, war, victory, diplomacy, espionage, progress) |
-| Palace in the engine | phase 4 | fixed 2 × 2 building east of the square (mockup approved in direction); spec, then core.toml and occupancy |
+| Hex grid | phase 4 | spec in DESIGN "Hex grid": footprints, palace now or later, keep old square games or not |
+| Palace in the engine | phase 4 | fixed building east of the square (approved in direction); with the hex core it becomes a 4-hex rhombus |
 
 ## Decisions made (the main ones)
 
