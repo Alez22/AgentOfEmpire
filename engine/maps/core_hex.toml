@@ -1,0 +1,55 @@
+# The 12 x 12 core every realm starts from, on the hex grid (docs/DESIGN.md,
+# "Hex grid"). x = column (0 west), y = row (0 north); pointy-top hexes in
+# odd-r offset rows: odd rows sit half a hex to the east. Every site starts
+# on an even row, so every core has the same shapes. Terrain: . plain,
+# ~ river, T forest, ^ hill; the same as the square core: the river column
+# zigzags through hex sides, so it joins as one stream.
+# Buildings by their anchor tile (the farm's centre, the others' first
+# tile); shapes in engine/config.toml (hex_steps). Room to grow: 2 farm
+# flowers in the fields, 14 houses (Centro, Case di ponente, Case della riva),
+# a second sawmill by the forest, a second quarry on the hills.
+
+terrain = """
+TTTT.....~^^
+TTTT.....~^^
+TTTT.....~^^
+TTTT.....~^^
+.........~^^
+.........~~.
+..........~.
+..........~.
+..........~.
+..........~.
+..........~.
+..........~.
+"""
+
+# Anchor of the town square (a 4-hex rhombus, [map] square_hex_steps):
+# (5,2) (6,2) (5,3) (6,3).
+square = { x = 5, y = 2 }
+
+# Same order as the counted start (farms, sawmill, quarry, houses): ids 1-12.
+# Farms are flowers centred on odd rows, packed in the 9 x 6 fields (6 fit).
+buildings = [
+  { kind = "farm", x = 1, y = 7 }, { kind = "farm", x = 4, y = 7 }, { kind = "farm", x = 7, y = 7 },
+  { kind = "farm", x = 1, y = 10 },
+  { kind = "sawmill", x = 4, y = 0 },
+  { kind = "quarry", x = 10, y = 0 },
+  { kind = "house", x = 4, y = 2 }, { kind = "house", x = 4, y = 3 }, { kind = "house", x = 4, y = 4 },
+  { kind = "house", x = 5, y = 4 }, { kind = "house", x = 6, y = 4 }, { kind = "house", x = 4, y = 5 },
+]
+
+# Starting town plan; rectangles with corners included. "Riserva del palazzo"
+# keeps the palace's rhombus (7,2) (8,2) (7,3) (8,3) free, east of the square
+# (DESIGN: the palace comes later, without a redraw).
+zones = [
+  { name = "Centro", purpose = "center", x1 = 4, y1 = 2, x2 = 6, y2 = 5 },
+  { name = "Riserva del palazzo", purpose = "reserve", x1 = 7, y1 = 2, x2 = 8, y2 = 3 },
+  { name = "Case della riva", purpose = "houses", x1 = 7, y1 = 4, x2 = 8, y2 = 5 },
+  { name = "Case di ponente", purpose = "houses", x1 = 0, y1 = 4, x2 = 3, y2 = 5 },
+  { name = "Campi", purpose = "fields", x1 = 0, y1 = 6, x2 = 8, y2 = 11 },
+  { name = "Botteghe del bosco", purpose = "workshops", x1 = 4, y1 = 0, x2 = 8, y2 = 1 },
+  { name = "Cava dei colli", purpose = "workshops", x1 = 10, y1 = 0, x2 = 11, y2 = 4 },
+  { name = "Riserva della riva", purpose = "reserve", x1 = 9, y1 = 6, x2 = 9, y2 = 11 },
+  { name = "Riserva di levante", purpose = "reserve", x1 = 11, y1 = 5, x2 = 11, y2 = 11 },
+]

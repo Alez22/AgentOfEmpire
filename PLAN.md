@@ -810,9 +810,10 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
 - **Map graphics decided** (DESIGN, "Territory" → "Map graphics"): **hexes with game-icons**, **night theme** (`lab/hex_map_mockup.py`, SVG, icons in `lab/assets/game_icons` with `AUTHORS.txt`). The same icon set will serve the UI panels. Explored and set aside: Kenney Tiny Town recoloured with our own pixel buildings and terrain (`lab/tiny_town_mockup.py`, `lab/pixel_*.py`).
 - **Real hex grid in the engine**: spec in DESIGN ("Hex grid"), **approved 2026-11-08**: farm a 7-hex flower, quarry and square 4-hex rhombi; the palace later (its rhombus left free in the new core); old square games kept for replay and reading only (briefing and map page hex only). Footprints as steps in `config.toml` (`hex_steps`), new world files `world_hex.txt` / `core_hex.toml`, text grid with 4-character cells.
   - [x] Step 1, engine (2026-11-08): `[map] grid` ("square" when missing; still "square" in `config.toml` until step 2), `neighbours()`, `hex_distance()`, footprints walked from the anchor, packing in `find_place`, nudge to the 6 neighbours, directions on the 7/4 scale (`engine/territory.py`, `tests/test_hex_grid.py`). Square games unchanged (all old tests pass).
-  - [ ] Step 2: `world_hex.txt` and `core_hex.toml` with `lab/draw_world.py`, `grid = "hex"` for new games, `lab/territory_balance.py` again (a farm is now 7 tiles: about 20% cheaper growth)
+  - [x] Step 2, world and core (2026-11-08): `engine/maps/core_hex.toml`, `engine/maps/world_hex.txt` (`lab/draw_world.py --hex`), the palace's rhombus left free; room for 2 farms, 1 sawmill, 1 quarry, 14 houses; lab: same growth pace as on squares (first farm on new land in month 10). `config.toml` still square: new games go hex at the end of step 4
+  - [ ] `lab/territory_balance.py` predates the needs: with firewood and stone upkeep its grower revolts in month 8 on both grids; to update if the lab is needed again
   - [ ] Step 3: probe of the hex text grid, then briefing (`map_text.py` still has its own 4-neighbour loops at the frontier and the forest warning), manual, prompts
-  - [ ] Step 4: map page as SVG board, night theme, icon sprite, credits
+  - [ ] Step 4: map page as SVG board, night theme, icon sprite, credits; then `config.toml` to `grid = "hex"`, `world_hex.txt`, `core_hex.toml` for new games
 
 ## Open decisions
 

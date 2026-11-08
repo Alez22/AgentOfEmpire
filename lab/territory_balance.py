@@ -2,6 +2,9 @@
 
 Usage: docker compose run --rm -T tests python lab/territory_balance.py
 
+Runs on the square grid and on the hex grid (world_hex.txt, core_hex.toml;
+docs/DESIGN.md "Hex grid"): a farm takes 9 tiles on squares, 7 on hexes.
+
 Three fixed policies play 36 months on the real engine under a few
 variants of the [map] values:
 - still: no claim, no felling (the old game on the new map);
@@ -22,7 +25,7 @@ import copy
 import dataclasses
 
 from engine import load_config, new_game, parse_order, resolve_turn
-from engine.territory import claim_price, find_place, owned_count
+from engine.territory import claim_price, find_place, is_hex, owned_count
 from engine.turn import food_needed, housing_capacity, jobs_in_sector
 
 MONTHS = 36
@@ -41,9 +44,16 @@ def _order(raw):
     return order
 
 
-def _southern_fields(state):
-    """@brief A fields zone just south of the core, on land still to claim."""
-    sx, sy = state.square[0] - 5, state.square[1] - 3
+def _core_origin(state, config):
+    """@brief Top-left tile of the core: the square is at core (5, 3) on
+    squares, (5, 2) on hexes."""
+    return state.square[0] - 5, state.square[1] - (2 if is_hex(config) else 3)
+
+
+def _southern_fields(state, config):
+    """@brief A fields zone just south of the core, on land still to claim.
+    On hexes a 3-wide zone also holds a flower (3 columns, 3 rows)."""
+    sx, sy = _core_origin(state, config)
     zones = [dataclasses.asdict(zone) for zone in state.zones]
     # As wide as a farm (the craft's advice): claimed by rows, a 9-wide zone
     # needs 27 tiles before its first 3 x 3 block; a 3-wide one needs 9.
@@ -73,7 +83,7 @@ def steward(state, config):
 def grower_orders(state, config):
     month = (state.turn - 1) % 12
     # The tax that covers upkeep and salaries (game 21), set in the first month.
-    first = [_southern_fields(state), _order({"action": "set_tax", "rate": 8})] if state.turn == 1 else []
+    first = [_southern_fields(state, config), _order({"action": "set_tax", "rate": 8})] if state.turn == 1 else []
     orders = first + steward(state, config)
     winter = month in WINTER
     clearing = 0 if winter or not state.clearing_queue else 6
@@ -104,7 +114,7 @@ def still_orders(state, config):
 def play(policy, config, salary=6):
     state = new_game(config, SEED)
     state.council_salary = salary  # a council of three after the halving (10 before, games 20-21)
-    core_x, core_y = state.square[0] - 5, state.square[1] - 3
+    core_x, core_y = _core_origin(state, config)
     lowest_food, no_room, sawmill_stopped = state.food, None, None
     for _ in range(MONTHS):
         result = resolve_turn(state, policy(state, config), config)
@@ -127,8 +137,11 @@ def play(policy, config, salary=6):
 
 def main():
     base = load_config()
+    hex_base = dataclasses.replace(base, map=dataclasses.replace(
+        base.map, grid="hex", world_file="world_hex.txt", core_file="core_hex.toml"))
     variants = {
         "today (claim 10, salaries 6)": base,
+        "hex (claim 10, salaries 6)": hex_base,
     }
     salary_runs = {"before (claim 20, salaries 10)": (_variant(base, claim_base_gold=20), 10)}
     for name, policy in (("grower", grower_orders),):

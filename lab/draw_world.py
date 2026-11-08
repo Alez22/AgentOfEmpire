@@ -2,17 +2,26 @@
 from the core template (engine/maps/core.toml) and a few hand-placed
 features, and prints a preview with the starting buildings.
 
-Usage: docker compose run --rm -T tests python lab/draw_world.py [--write]
+Usage: docker compose run --rm -T tests python lab/draw_world.py [--hex] [--write]
+
+--hex draws the hex world (engine/maps/world_hex.txt from core_hex.toml,
+docs/DESIGN.md "Hex grid"): blobs measured in hex steps, the preview with
+odd rows shifted by half a cell. The terrain of the hex core is the same as
+the square one, so only the blobs outside the cores differ.
 
 The output file is the source of truth and may be edited by hand
 afterwards; this script is not part of the game. Deterministic: the
 blobs use a fixed random seed, so the same script draws the same map.
 """
 
+import dataclasses
 import random
 import sys
 import tomllib
 from pathlib import Path
+
+from engine import load_config
+from engine.territory import footprint, hex_distance
 
 MAPS_DIR = Path(__file__).resolve().parent.parent / "engine" / "maps"
 SIZE = 64
@@ -38,8 +47,8 @@ LETTERS = {"farm": "F", "sawmill": "S", "quarry": "Q", "house": "H", "square": "
 FOOTPRINTS = {"farm": (3, 3), "sawmill": (2, 1), "quarry": (2, 2), "house": (1, 1), "square": (2, 2)}
 
 
-def load_core() -> dict:
-    with open(MAPS_DIR / "core.toml", "rb") as core_file:
+def load_core(core_name: str) -> dict:
+    with open(MAPS_DIR / core_name, "rb") as core_file:
         core = tomllib.load(core_file)
     core["rows"] = [row.strip() for row in core["terrain"].strip().splitlines()]
     assert len(core["rows"]) == CORE and all(len(row) == CORE for row in core["rows"])
@@ -50,15 +59,18 @@ def in_core(x: int, y: int) -> bool:
     return any(sx <= x < sx + CORE and sy <= y < sy + CORE for sx, sy in SITES)
 
 
-def draw_blobs(grid: list[list[str]]) -> None:
-    """@brief Rounded patches with a ragged edge, never inside a core."""
+def draw_blobs(grid: list[list[str]], hex_grid: bool) -> None:
+    """@brief Rounded patches with a ragged edge, never inside a core. The
+    random calls are the same on both grids, so the square world is drawn
+    exactly as before."""
     rng = random.Random(2026_11_08)
     for cx, cy, radius, terrain in BLOBS:
         for y in range(cy - radius - 1, cy + radius + 2):
             for x in range(cx - radius - 1, cx + radius + 2):
                 if not (0 <= x < SIZE and 0 <= y < SIZE) or in_core(x, y):
                     continue
-                distance_sq = (x - cx) ** 2 + (y - cy) ** 2
+                distance_sq = (hex_distance(x, y, cx, cy) ** 2 if hex_grid
+                               else (x - cx) ** 2 + (y - cy) ** 2)
                 if distance_sq <= radius * radius + rng.randint(-2, 2):
                     grid[y][x] = terrain
 
@@ -93,42 +105,61 @@ def paste_cores(grid: list[list[str]], core: dict) -> None:
                 grid[sy + y][sx + x] = terrain
 
 
-def preview(grid: list[list[str]], core: dict) -> str:
-    """@brief The world with the starting buildings and the site numbers."""
+def _tiles(kind: str, x: int, y: int, hex_config) -> list[tuple[int, int]]:
+    """@brief A building's tiles: the engine's hex shapes, or width x height."""
+    if hex_config is not None:
+        if kind == "square":
+            return footprint(hex_config, "quarry", x, y)  # the same rhombus as [map] square_hex_steps
+        return footprint(hex_config, kind, x, y)
+    width, height = FOOTPRINTS[kind]
+    return [(x + dx, y + dy) for dy in range(height) for dx in range(width)]
+
+
+def preview(grid: list[list[str]], core: dict, hex_config) -> str:
+    """@brief The world with the starting buildings and the site numbers;
+    on hexes odd rows are printed half a cell (one character of two) east."""
     shown = [row[:] for row in grid]
     for index, (sx, sy) in enumerate(SITES):
         for building in core["buildings"] + [{"kind": "square", **core["square"]}]:
-            width, height = FOOTPRINTS[building["kind"]]
-            for dy in range(height):
-                for dx in range(width):
-                    shown[sy + building["y"] + dy][sx + building["x"] + dx] = LETTERS[building["kind"]]
+            for x, y in _tiles(building["kind"], sx + building["x"], sy + building["y"], hex_config):
+                shown[y][x] = LETTERS[building["kind"]]
         shown[sy][sx] = str(index + 1)  # site number on the core's top-left tile
-    header = "    " + "".join(str(x // 10) if x % 10 == 0 else " " for x in range(SIZE))
-    return "\n".join([header] + [f"{y:>3} " + "".join(row) for y, row in enumerate(shown)])
+    if hex_config is None:
+        header = "    " + "".join(str(x // 10) if x % 10 == 0 else " " for x in range(SIZE))
+        return "\n".join([header] + [f"{y:>3} " + "".join(row) for y, row in enumerate(shown)])
+    header = "    " + "".join((str(x // 10) if x % 10 == 0 else " ") + " " for x in range(SIZE))
+    return "\n".join([header] + [f"{y:>3} " + (" " if y & 1 else "") + " ".join(row)
+                                  for y, row in enumerate(shown)])
 
 
-def core_report(core: dict) -> str:
+def core_report(core: dict, hex_config) -> str:
     counts = {}
     for row in core["rows"]:
         for terrain in row:
             counts[terrain] = counts.get(terrain, 0) + 1
-    built = sum(FOOTPRINTS[b["kind"]][0] * FOOTPRINTS[b["kind"]][1] for b in core["buildings"]) + 4  # + square
+    built = sum(len(_tiles(b["kind"], b["x"], b["y"], hex_config)) for b in core["buildings"]) + 4  # + square
     return (f"core 12 x 12: plain {counts.get('.', 0)}, river {counts.get('~', 0)}, forest {counts.get('T', 0)},"
             f" hill {counts.get('^', 0)}; built {built} tiles; plain left free {counts.get('.', 0) - built + 4}"
             " (the quarry stands on hill)")
 
 
 def main(argv: list[str]) -> None:
-    core = load_core()
+    hex_grid = "--hex" in argv
+    hex_config = None
+    if hex_grid:
+        config = load_config()
+        hex_config = dataclasses.replace(config, map=dataclasses.replace(config.map, grid="hex"))
+    core = load_core("core_hex.toml" if hex_grid else "core.toml")
     grid = [["."] * SIZE for _ in range(SIZE)]
-    draw_blobs(grid)
+    draw_blobs(grid, hex_grid)
     draw_rivers(grid, core)
     paste_cores(grid, core)
-    print(core_report(core))
-    print(preview(grid, core))
+    print(core_report(core, hex_config))
+    print(preview(grid, core, hex_config))
     if "--write" in argv:
-        (MAPS_DIR / "world.txt").write_text("\n".join("".join(row) for row in grid) + "\n", encoding="utf-8")
-        print(f"written {MAPS_DIR / 'world.txt'}")
+        world_path = MAPS_DIR / ("world_hex.txt" if hex_grid else "world.txt")
+        world_path.write_text("\n".join("".join(row) for row in grid) + "\n", encoding="utf-8")
+        print(f"written {world_path}")
 
 
 if __name__ == "__main__":

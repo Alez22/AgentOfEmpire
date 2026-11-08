@@ -10,7 +10,7 @@ from engine import new_game
 from engine.config import config_from_dict, load_raw_config
 from engine.state import Building, Zone
 from engine.territory import (OWNED, find_place, footprint, hex_distance, neighbours, next_claim, nudge,
-                              place_error, square_tiles, _in_direction)
+                              occupancy, place_error, square_tiles, zone_at, zones_error, _in_direction)
 
 SIZE = 20
 
@@ -112,3 +112,59 @@ def test_games_saved_before_have_no_grid_key_and_stay_square():
     raw = load_raw_config()
     del raw["map"]["grid"]
     assert config_from_dict(raw).map.grid == "square"
+
+
+# The hex world and core (step 2). config.toml stays square until the
+# briefing and the map page speak hexes (steps 3 and 4).
+
+@pytest.fixture
+def hex_world_config(config):
+    return replace(config, map=replace(config.map, grid="hex", world_file="world_hex.txt",
+                                       core_file="core_hex.toml"))
+
+
+def _room(state, config, kind, zone_name=None):
+    """How many more buildings of this kind fit, placed one after the other."""
+    count = 0
+    while (place := find_place(state, config, kind, zone_name)) is not None:
+        count += 1
+        state.buildings.append(Building(kind, 0, 1000 + count, *place))
+    return count
+
+
+def test_every_site_of_the_hex_world_holds_the_hex_core(hex_world_config):
+    squares = set()
+    for seed in range(len(hex_world_config.map.sites)):
+        state = new_game(hex_world_config, seed)  # raises if the world does not match the core
+        squares.add(tuple(state.square))
+        assert state.square[1] % 2 == 0  # every core starts on an even row: the same shapes
+    assert len(squares) == len(hex_world_config.map.sites)
+
+
+def test_the_hex_core_starts_valid(hex_world_config):
+    state = new_game(hex_world_config, seed=42)
+    assert zones_error(state, hex_world_config, state.zones) is None
+    buildings = list(state.buildings)
+    for building in buildings:  # each building would be accepted where it stands
+        state.buildings = [b for b in buildings if b is not building]
+        assert place_error(state, hex_world_config, building.kind, building.x, building.y) is None, building
+    state.buildings = buildings
+    tiles = [t for b in buildings for t in footprint(hex_world_config, b.kind, b.x, b.y)]
+    assert len(tiles) + len(square_tiles(state, hex_world_config)) == 44
+
+
+def test_the_hex_core_leaves_room_to_grow(hex_world_config):
+    state = new_game(hex_world_config, seed=42)
+    assert _room(state, hex_world_config, "farm") == 2
+    assert _room(state, hex_world_config, "sawmill") == 1
+    assert _room(state, hex_world_config, "quarry") == 1
+    assert _room(state, hex_world_config, "house") == 14
+
+
+def test_the_palace_rhombus_is_left_free(hex_world_config):
+    state = new_game(hex_world_config, seed=42)
+    sx, sy = state.square
+    taken = occupancy(state, hex_world_config)
+    palace = footprint(hex_world_config, "quarry", sx + 2, sy)  # the same rhombus, east of the square
+    assert not any(tile in taken for tile in palace)
+    assert {zone_at(state.zones, x, y).name for x, y in palace} == {"Riserva del palazzo"}
