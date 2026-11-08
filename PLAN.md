@@ -140,7 +140,8 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] A game with R5b (game 26): **no**, R5b never fired: it kept 4 months of gross eating (~3,600 food), Aurelia peaked at 2,626. **Now 2 months** (checked on game 26's states: Aurelia would sell 2 lots in November and 4 in December, the poor realms never; 1 month sold in January in the poor realms too)
 - [ ] **The village, implementation** (decided 2026-11-08): block **A** the market as a building, merchants as a class with their own mood (needed: every class flees by its own discontent), no prices without the market until the travellers exist; then block **B+C** together: bandits (stage 1), watchtower, Gastaldo, militia. Values from a lab before each block.
   - [x] A: spec approved 2026-11-08 in `docs/DESIGN.md`, "The market as a building, merchants and their mood" (unrest ladder per class, trade tax as a share of the margin)
-  - [x] A1. Lab `lab/village_market.py` (see "Lab: the village market, block A"): market 80 wood, no stone, 2 months; 6 jobs x 2 lots. Open: trade tax (tiny), where the market stands, the merchants' shocks
+  - [x] A1. Lab `lab/village_market.py` (see "Lab: the village market, block A"): market 80 wood, no stone, 2 months; 6 merchants x 3 lots; merchants' own tax on the trades' value (10 %); a reserved market zone; shocks at half; idle malus only for the crown's fault
+  - [ ] A2. Engine: the building, its zone and the core, the `trade` sector, capacity, the merchants' tax
   - [ ] B+C: spec, multi-realm lab, engine, council, UI
 - [ ] Travellers, bandits and migration (designed 2026-11-08, `docs/DESIGN.md` Part 1): travellers carry public news late and distorted (in the village a public fact of another realm arrives only through them); families flee long discontent into a world pool of bandits (adults and some children, elders stay) that raids exposed stores; flight by class (clergy never), class lost in the pool, arrivals enter as peasants; a small pool from the start so rare raids teach the need for a militia; the **Gastaldo** (first council expansion, in the village, brought by the watchtower): doors (closed / normal / open), militia (none before it), news from outside, counter-espionage in the town; with open doors a raid becomes immigration; stages: 1 flight, raids, Gastaldo and militia, 2 doors and acceptance (needs a multi-realm lab for spirals), 3 spies among migrants, offended origin, remembered trade, funded bandits
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
@@ -841,6 +842,14 @@ Same lab, with the decisions taken after the first run: the merchants' own tax o
 5. Halving the shocks changed nothing in the idle test (the realms that fall are the same, poor in wood).
 6. One realm more or less fallen moves with any small change: the falls (2-3 of 8, always poor in wood or food) are near the edge with this policy.
 
+### Lab: the village market, third run (2026-11-08)
+
+Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with no complaint up to 10 %, idle malus -250 only when goods were on sale and the realm traded nothing, -80 when the warehouse was empty for everyone, shocks at half.
+
+- At 10 %: 3 of 8 fall (poor in wood or food, as in every run), 122 lots filled, 128 gold of merchants' tax in two years, 11 strike months: in the realms poor in food (the reduced ration weighs on everyone) and in one poor in wood.
+- Realms 1-4 kept idle in months 12-18: two of them strike 6-9 months, one does not.
+- 80 wood + 10 stone: 2 fall instead of 3 (inside the noise); kept at wood only.
+
 ### Game 25: three automatic sovereigns (2026-11-08, 12 months, $0.21)
 
 `lab/auto_game.py new 0 12`, seed 0 as game 24: Aurelia F+ W= S-, Brenna F- W+ S=, Corvara F= W- S+. Every realm played by the rules R1–R9.
@@ -883,6 +892,7 @@ Same lab, with the decisions taken after the first run: the merchants' own tax o
 | --- | --- | --- |
 | Models per tier and spending cap for a long game | before a long game | since 2026-11-08 every counsellor and the people use GLM 5.3 Flash "high", the Voice DeepSeek V4.1 Flash "none". Game 18 measured about $0.0032 per turn: 120 turns about $0.40 per realm, about $3 with 8 realms |
 | What the admin sees in games with others | phase 3, before the first game with friends | either the admin does not play, or in running games the view hides the other players' secrets |
+| Thin trade | before the town | lab 2026-11-08 (village market): about 1 lot a realm a month changes hands even with the market open from month 1, because the warehouse is empty most months (the world short of food and stone). Any income from trade stays small; to look at with the rare resources and the town |
 | Use of gold | phase 4 | the market lab (2026-11-08) shows a merchant with a stock and a dynamic price absorbs the gold; rules still to decide (stock size, margin, seasons, speculation). Other options considered: concessions during unrest, higher recurring costs, expensive goals |
 | Tiles and workers | decided 2026-11-08 | answered by the territory (claiming, clearing, demolition; see `docs/DESIGN.md`); idle adults still open. Was: game 7: overbuilding with no staff and a housing dead end once tiles run out. Options: show the Architect unstaffed jobs, allow demolition, a way to gain tiles; also idle adults (extend the fixed rule to wood and stone, or leave them to the Architect) |
 | Automatic sovereigns | phase 3 | personality, models, budget |

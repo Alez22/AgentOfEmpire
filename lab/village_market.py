@@ -70,18 +70,19 @@ class Rules:
     market_gold: int = 0
     build_turns: int = 2
     jobs: int = 6
-    lots_per_merchant: int = 2
+    lots_per_merchant: int = 3  # second run: x 2 cut a quarter of the lots asked
     # The merchants' own tax (decided 2026-11-08), on the gold value of the
     # month's trades; they no longer pay the ordinary tax.
     merchant_tax_pct: int = 10
-    merchant_tax_free: int = 5  # like the peasants' tax_free_rate
+    merchant_tax_free: int = 10  # no complaint up to the start rate (second run: 5)
     merchant_tax_per_point: int = -10
     shock_pct: int = 50  # famine and cold shocks on the merchants (deaths in full)
     # Merchants' mood (per mille, like the engine's)
     approach_pct: int = 10  # peasants: 25; merchants remember longer
     busy_bonus: int = 100  # recent use of the capacity at least busy_use_pct
     busy_use_pct: int = 40
-    idle_malus: int = -250  # no lot traded in the recent months (first run: -150)
+    idle_malus: int = -250  # goods on sale, no lot traded in the recent months (first run: -150)
+    empty_malus: int = -80  # no lot traded, but the warehouse was empty
     recent_months: int = 3
     effort_loss_pct: int = 50  # capacity lost by discontented merchants
     strike_months: int = 1  # months without trade after the ladder reaches the strike
@@ -270,12 +271,12 @@ def month_orders(realm, config, market, rules):
         capped = cap_trades(wanted, lots_left)
         realm.lots_wanted += sum(abs(n) for n in wanted.values())
         realm.lots_cut += sum(abs(n) for n in wanted.values()) - sum(abs(n) for n in capped.values())
-        _note_use(realm, sum(abs(n) for n in capped.values()), lots_left)
+        _note_use(realm, sum(abs(n) for n in capped.values()), lots_left, _goods_on_sale(market, config))
         for good, lots in capped.items():
             side = "buy" if lots > 0 else "sell"
             orders.append(_order({"action": "trade", "good": good, "side": side, "lots": abs(lots)}))
     elif market_active(state):
-        _note_use(realm, 0, capacity(realm, rules))
+        _note_use(realm, 0, capacity(realm, rules), _goods_on_sale(market, config))
     orders += ration_orders(state, config)
     orders += gold_orders(state)
     orders.append(worker_order(realm, config, rules))
@@ -283,10 +284,15 @@ def month_orders(realm, config, market, rules):
     return orders
 
 
-def _note_use(realm, lots, cap):
+def _goods_on_sale(market, config):
+    """@brief True if the warehouse holds at least one lot of some good."""
+    return any(stock(market.goods[g]) >= config.market.lot_units for g in GOODS)
+
+
+def _note_use(realm, lots, cap, goods_on_sale):
     realm.lots_traded += lots
     realm.max_lots = max(realm.max_lots, lots)
-    realm.merchants.used.append((lots, cap))
+    realm.merchants.used.append((lots, cap, goods_on_sale))
 
 
 def ration_orders(state, config):
@@ -388,11 +394,16 @@ def update_merchants(realm, config, rules, events):
 
 
 def trade_factor(m, rules):
+    """@brief The crown's fault weighs more than an empty warehouse (decided
+    2026-11-08): idle_malus when goods were on sale and the realm traded
+    nothing, empty_malus when the warehouse was empty for everyone."""
     recent = m.used[-rules.recent_months:]
-    lots = sum(n for n, _ in recent)
-    cap = sum(c for _, c in recent)
+    lots = sum(n for n, _, _ in recent)
+    cap = sum(c for _, c, _ in recent)
     if lots == 0:
-        return rules.idle_malus
+        if any(on_sale for _, _, on_sale in recent):
+            return rules.idle_malus
+        return rules.empty_malus
     if cap and lots * 100 // cap >= rules.busy_use_pct:
         return rules.busy_bonus
     return 0
