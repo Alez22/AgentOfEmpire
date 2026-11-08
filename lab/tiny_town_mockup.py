@@ -11,7 +11,8 @@ character grids or by simple rules, using colours of the Kenney palette,
 so the recolouring treats them like the rest.
 
 Usage: python3 lab/tiny_town_mockup.py OUT_DIR
-Writes OUT_DIR/core_original.png, core_serious.png and core_dark.png. Not part
+Writes OUT_DIR/core_original.png, core_serious.png, core_dark.png and,
+with the proposed palace, core_era1.png .. core_era3.png (serious palette). Not part
 of the game; reads engine/maps directly and needs no database.
 
 Resources: the view is 16 x 16 engine tiles = 32 x 32 sub-tiles = 512 x 512
@@ -226,9 +227,44 @@ def draw_patch(canvas: Canvas, sheet, pieces: dict, sub_x: int, sub_y: int, widt
             canvas.put_sheet_tile(sheet, pieces[edge_piece(inside, x, y)], x, y)
 
 
-def draw_house(canvas: Canvas, sheet, building_id: int, sub_x: int, sub_y: int) -> None:
-    roof = SLATE_ROOF if building_id % 2 else RED_ROOF
-    walls = WOOD_WALL if building_id % 3 else STONE_WALL
+# The palace, proposed 2026-11-08: a fixed 2 x 2 building east of the square
+# (core tiles (7,3)-(8,4), free plain in the centre zone). Mockup only: the
+# engine does not know it yet. One 4 x 4 drawing per era, rows top to bottom.
+PALACE_CORE_TILE = (7, 3)
+PALACE_BY_ERA = {
+    1: ((52, 53, 53, 54),          # village: the lord's hall, wood and red tiles
+        (64, 65, 65, 66),
+        (72, 73, 73, 75),
+        (84, 86, 87, 84)),
+    2: ((48, 51, 49, 50),          # town: the town hall, stone, slate, a dormer
+        (60, 61, 61, 62),
+        (76, 77, 77, 79),
+        (88, 90, 91, 88)),
+    3: ((99, 100, 100, 101),       # kingdom: the castle, battlements and gate
+        (125, 126, 126, 125),
+        (126, 111, 112, 126),
+        (126, 123, 124, 126)),
+}
+
+
+def draw_palace(canvas: Canvas, sheet, era: int, sub_x: int, sub_y: int) -> None:
+    for dy, row in enumerate(PALACE_BY_ERA[era]):
+        for dx, index in enumerate(row):
+            canvas.put_sheet_tile(sheet, index, sub_x + dx, sub_y + dy)
+
+
+def house_style(building_id: int, era: int | None) -> tuple[tuple, dict]:
+    """@brief Roof and walls of a house: the village builds in wood, the
+    town mixes wood and stone, the kingdom builds in stone and slate."""
+    if era == 1:
+        return (RED_ROOF if building_id % 2 else SLATE_ROOF), WOOD_WALL
+    if era == 3:
+        return SLATE_ROOF, STONE_WALL
+    return (SLATE_ROOF if building_id % 2 else RED_ROOF), (WOOD_WALL if building_id % 3 else STONE_WALL)
+
+
+def draw_house(canvas: Canvas, sheet, building_id: int, sub_x: int, sub_y: int, era: int | None = None) -> None:
+    roof, walls = house_style(building_id, era)
     canvas.put_sheet_tile(sheet, roof[0], sub_x, sub_y)
     canvas.put_sheet_tile(sheet, roof[2], sub_x + 1, sub_y)
     canvas.put_sheet_tile(sheet, walls["window"], sub_x, sub_y + 1)
@@ -261,21 +297,25 @@ def draw_quarry(canvas: Canvas, sheet, sub_x: int, sub_y: int) -> None:
     canvas.put_hand_tile(palette, parse_hand_tile(SMALL_ROCKS), sub_x + 2, sub_y + 2)
 
 
-def draw_square(canvas: Canvas, sheet, sub_x: int, sub_y: int) -> None:
-    draw_patch(canvas, sheet, PAVING, sub_x, sub_y, 4, 4)
+def draw_square(canvas: Canvas, sheet, sub_x: int, sub_y: int, era: int | None = None) -> None:
+    """@brief The square: beaten earth in the village, paved from the town on."""
+    draw_patch(canvas, sheet, DIRT if era == 1 else PAVING, sub_x, sub_y, 4, 4)
     canvas.put_sheet_tile(sheet, WELL_TOP, sub_x + 1, sub_y + 1)
     canvas.put_sheet_tile(sheet, WELL_BOTTOM, sub_x + 1, sub_y + 2)
     canvas.put_sheet_tile(sheet, SIGN, sub_x + 2, sub_y + 2)
 
 
-def draw_buildings(canvas: Canvas, sheet, core: dict) -> None:
+def draw_buildings(canvas: Canvas, sheet, core: dict, era: int | None = None) -> None:
+    """@brief Square, buildings and, when an era is given, the proposed palace."""
     site_x, site_y = SITE
-    draw_square(canvas, sheet, *view_sub(site_x + core["square"]["x"], site_y + core["square"]["y"]))
+    draw_square(canvas, sheet, *view_sub(site_x + core["square"]["x"], site_y + core["square"]["y"]), era)
+    if era is not None:
+        draw_palace(canvas, sheet, era, *view_sub(site_x + PALACE_CORE_TILE[0], site_y + PALACE_CORE_TILE[1]))
     drawers = {"farm": draw_farm, "sawmill": draw_sawmill, "quarry": draw_quarry}
     for building_id, item in enumerate(core["buildings"], start=1):
         sub_x, sub_y = view_sub(site_x + item["x"], site_y + item["y"])
         if item["kind"] == "house":
-            draw_house(canvas, sheet, building_id, sub_x, sub_y)
+            draw_house(canvas, sheet, building_id, sub_x, sub_y, era)
         else:
             drawers[item["kind"]](canvas, sheet, sub_x, sub_y)
 
@@ -297,6 +337,9 @@ def tone_colour(rgb, saturation_kept: float, sepia_mix: float, darken: float) ->
     sepia = (0.42, 0.35, 0.26)
     mix = sepia_mix
     return tuple(int(255 * ((1 - mix) * c + mix * s)) for c, s in zip((red, green, blue), sepia))
+
+
+SERIOUS = make_recolour(0.5, 0.18, 0.8)  # the chosen palette (mockup 2, 2026-11-08)
 
 
 def finish(canvas: Canvas, world_owned, recolour) -> list[list[tuple[int, int, int]]]:
@@ -349,8 +392,13 @@ def main() -> None:
     draw_terrain(canvas, sheet, world)
     draw_buildings(canvas, sheet, core)
     write_rgb(str(out_dir / "core_original.png"), finish(canvas, owned, lambda c: c))
-    write_rgb(str(out_dir / "core_serious.png"), finish(canvas, owned, make_recolour(0.5, 0.18, 0.8)))
+    write_rgb(str(out_dir / "core_serious.png"), finish(canvas, owned, SERIOUS))
     write_rgb(str(out_dir / "core_dark.png"), finish(canvas, owned, make_recolour(0.35, 0.3, 0.68)))
+    for era in PALACE_BY_ERA:
+        canvas = Canvas(VIEW[2] * 2 * TILE, VIEW[3] * 2 * TILE)
+        draw_terrain(canvas, sheet, world)
+        draw_buildings(canvas, sheet, core, era)
+        write_rgb(str(out_dir / f"core_era{era}.png"), finish(canvas, owned, SERIOUS))
 
 
 if __name__ == "__main__":
