@@ -20,19 +20,19 @@ CORE = 12
 # Top-left tile of the 8 starting sites: a ring of 3 + 2 + 3, the centre left free.
 SITES = [(4, 4), (26, 4), (48, 4), (4, 26), (48, 26), (4, 48), (26, 48), (48, 48)]
 # Hand-placed features outside the cores: (centre x, centre y, radius, terrain).
+# Plain is left in front of every core (north, south, east, west: room for
+# fields); forest and hill stand in the corners between the cores (lab
+# 2026-11-08: blobs straight below the cores left no room for a 3 x 3 farm).
 BLOBS = [
-    # between the cores of the top row
-    (20, 6, 3, "T"), (42, 10, 3, "^"), (20, 14, 2, "^"), (42, 3, 2, "T"),
-    # between the top row and the middle
-    (9, 20, 3, "T"), (31, 20, 3, "T"), (54, 20, 3, "^"), (21, 21, 2, "^"), (43, 21, 3, "T"),
+    # corners between the top row and the middle
+    (20, 20, 3, "T"), (42, 20, 3, "^"),
     # the free centre: forest, hill and plain along the river
     (28, 29, 3, "T"), (34, 34, 2, "^"), (38, 28, 2, "T"),
-    # between the middle and the bottom row
-    (9, 43, 3, "^"), (31, 43, 3, "T"), (54, 43, 3, "T"), (21, 42, 2, "T"), (43, 42, 2, "^"),
-    # between the cores of the bottom row
-    (20, 53, 3, "^"), (42, 57, 3, "T"), (20, 61, 2, "T"), (42, 50, 2, "^"),
-    # along the edges
-    (1, 32, 2, "T"), (62, 32, 2, "^"), (32, 1, 2, "^"), (32, 62, 2, "^"),
+    # corners between the middle and the bottom row
+    (20, 42, 3, "^"), (42, 42, 3, "T"),
+    # between the cores of a row, far from the cores' fronts
+    (20, 2, 2, "T"), (42, 2, 2, "^"), (20, 61, 2, "^"), (42, 61, 2, "T"),
+    (1, 20, 2, "^"), (62, 20, 2, "T"), (1, 42, 2, "T"), (62, 42, 2, "^"),
 ]
 LETTERS = {"farm": "F", "sawmill": "S", "quarry": "Q", "house": "H", "square": "P"}
 FOOTPRINTS = {"farm": (3, 3), "sawmill": (2, 1), "quarry": (2, 2), "house": (1, 1), "square": (2, 2)}

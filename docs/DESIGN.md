@@ -829,14 +829,24 @@ Approved on 2026-11-08. The first step of the map, with a single realm: the city
 
 - **`claim_tiles`** `{direction: north/south/east/west, terrain, count}`, at most 4 tiles an order: the engine picks bordering tiles of that terrain in that direction, nearest the centre (deterministic).
 - **Price** per tile grows with the territory, e.g. `10 + 1 gold every 8 tiles owned beyond the core` (to tune in the lab).
-- **The land fund**: the gold paid goes into a fund at game level, the first data shared by all realms. In December the fund is split **equally among the other states** (the payer gets no share of its own payments); the remainder stays in the fund. It is public: everyone sees what they received, so they can guess how much the others grew. With a single realm the fund only grows, shown in the briefing and in the admin. The fund is summed after every realm of the turn is resolved, so replay stays exact.
+- **The land fund**: the gold paid goes into a fund at game level, the first data shared by all realms. In December the fund is split **equally among the other states** (the payer gets no share of its own payments); the remainder stays in the fund. It is public: everyone sees what they received, so they can guess how much the others grew. With a single realm the fund only grows, shown in the briefing and in the admin. **Built so far (step 1)**: each realm keeps the gold it paid (`land_paid_total` in its state), so the fund is the sum over the realms and replay stays exact. The December split is left to step 2: it moves gold between realms, so the replay must read it as an input of each realm (like the people's decisions), and with one realm there is nobody to pay.
 - **Who**: the Architect proposes; the Treasurer sees price and fund in its briefing; the Chancellor's cost check adds the gold.
 
 **Expansion: clearing tiles (labour)**
 
-- A claimed tile arrives **wild**: nothing is built on it until it is cleared.
+- A claimed plain or hill tile arrives **wild**: nothing is built on it until it is cleared. A claimed **forest stands** and belongs to the realm at once: a sawmill works only while it touches a forest **of the realm**.
 - **`assign_workers`** gets a `clearing` sector. Work needed in worker-months (in `config.toml`): plain 6, hill 10, forest 12. The tiles are cleared in the order they were claimed.
-- **Felling the forest**: a cleared forest tile becomes plain and gives wood while it is cut. A standing forest is wood for ever (a sawmill touching it works), a felled one is wood once. The engine does not forbid felling the last forest tile next to a sawmill, but the briefing warns ("ultimo bosco della segheria 1"), like the idle-adults warning. No regrowth for now; a replanting order later if games show the need. The lab measures how many years a greedy realm takes to run out of nearby forest, to tune the wood of felling and the months of work.
+- **Felling the forest** is its own order, `fell_forest {count, direction?}`: it queues the realm's forest tiles nearest the square. A felled tile becomes plain and gives wood for every worker-month spent on it. Clearing has no strike or effort modifier (plain labour, kept simple); hands with nothing in the queue are idle. A standing forest is wood for ever (a sawmill touching it works), a felled one is wood once. The engine does not forbid felling the last forest tile next to a sawmill, but the briefing warns ("ultimo bosco della segheria 1"), like the idle-adults warning. No regrowth for now; a replanting order later if games show the need. The lab measures how many years a greedy realm takes to run out of nearby forest, to tune the wood of felling and the months of work.
+
+**Balance lab** (`lab/territory_balance.py`, 2026-11-08, scripted sovereigns on the real engine, 36 months; they manage the ration but build few houses, so every run ends in revolt within three years, read up to that month):
+
+| Policy | Today's values (claim 10, plain 6, felling 5) | What changes it |
+| --- | --- | --- |
+| Still (no claims) | the core's two free farm places are the only growth | — |
+| Grower (4 plain tiles south when gold allows, 6 hands clearing outside winter) | 24 tiles claimed in two years, **no farm on the new land**: clearing is the bottleneck (a farm is 9 tiles = 54 worker-months); gold is not (250 left) | plain 3: the first farm on new land; claim 20: 16 tiles instead of 24, gold still left |
+| Feller (10 hands felling the core's forest) | the sawmill stops in month 9; felling gives 5 wood a worker-month, less than a sawmill worker (6): no temptation | felling 10: +650 wood in 14 months |
+
+The first lab run also moved the world's forests and hills from straight below the cores to the corners between them: they left one or two rows of plain, never room for a 3 × 3 farm.
 - Clearing takes hands from the fields: in winter it is a real decision.
 
 **Council, manual, prompts**

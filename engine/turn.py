@@ -3,8 +3,8 @@
 The step sequence is part of the specification: changing it changes the
 results, so any change must be versioned. Integer arithmetic only.
 Step order: orders -> fixed rules -> construction -> taxes and upkeep ->
-production -> food consumption -> spoilage -> demography -> worker rescale -> mood
--> unrest -> closing.
+production -> clearing (territory) -> food consumption -> spoilage -> demography
+-> worker rescale -> mood -> unrest -> closing.
 
 Taxes and upkeep run BEFORE production (the design doc listed them
 after): unpaid upkeep halves the output of the same month, so it must be
@@ -14,6 +14,7 @@ known before production is computed.
 import copy
 from dataclasses import dataclass
 
+from engine import territory
 from engine.config import Config
 from engine.orders import Order
 from engine.people import PeopleChoice
@@ -37,11 +38,13 @@ def season_of(turn: int) -> str:
 
 
 def jobs_in_sector(state: GameState, config: Config, sector: str) -> int:
-    """@brief Jobs offered by the active buildings of one sector."""
+    """@brief Jobs offered by the active buildings of one sector. A sawmill
+    that no longer touches a forest of the realm offers none."""
     return sum(
         config.buildings[b.kind].jobs
         for b in state.buildings
         if b.turns_left == 0 and config.buildings[b.kind].sector == sector
+        and territory.building_works(state, config, b)
     )
 
 
@@ -272,12 +275,14 @@ def _rescale_workers(state: GameState, events: list[Event]) -> None:
     assigned = state.workers.total()
     if assigned <= state.adults:
         return
-    counts = [state.workers.food, state.workers.wood, state.workers.stone]
+    # Clearing last: with no clearing workers (games without a map) the
+    # result is the same as with the three sectors alone.
+    counts = [state.workers.food, state.workers.wood, state.workers.stone, state.workers.clearing]
     shares = [count * state.adults for count in counts]
     new_counts = [share // assigned for share in shares]
     remainders = [share % assigned for share in shares]
     leftover = state.adults - sum(new_counts)
-    by_remainder = sorted(range(3), key=lambda i: -remainders[i])  # stable sort
+    by_remainder = sorted(range(4), key=lambda i: -remainders[i])  # stable sort
     for index in by_remainder[:leftover]:
         new_counts[index] += 1
     state.workers = Workers(*new_counts)
@@ -447,6 +452,7 @@ def resolve_turn(state: GameState, orders: list[Order], config: Config,
     upkeep_paid = _collect_taxes_and_upkeep(new_state, config, events)
     effort_pct, birth_pct, petition_mood = _people_effects(config, people)
     _produce(new_state, config, upkeep_paid, effort_pct)
+    territory.clear_land(new_state, config, events)
     needed, missing_pct = _consume_food(new_state, config, events)
     _spoil_food(new_state, config, events)
     deaths = _update_demography(new_state, config, missing_pct, events, birth_pct)

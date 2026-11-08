@@ -152,3 +152,107 @@ def test_a_snapshot_saved_before_the_map_still_loads(start_state):
         del building["id"], building["x"], building["y"]
     state = state_from_dict(old)
     assert not state.has_map() and state.zones == [] and state.buildings[0].id == 0
+
+
+# --- Claiming (gold) and clearing (labour) ---
+
+from engine import resolve_turn  # noqa: E402
+from engine.territory import WILD, claim_price, next_claim, owned_count  # noqa: E402
+from engine.turn import jobs_in_sector  # noqa: E402
+
+
+def _claim(state, config, **order):
+    return apply_orders(state, _orders({"action": "claim_tiles", **order}), config)[0]
+
+
+def test_claiming_pays_the_fund_and_the_tiles_wait_for_clearing(start_state, config):
+    gold = start_state.gold
+    result = _claim(start_state, config, direction="south", terrain="plain", count=4)
+    assert result.accepted
+    assert start_state.gold == gold - 4 * config.map.claim_base_gold
+    assert start_state.land_paid_total == 4 * config.map.claim_base_gold
+    assert owned_count(start_state) == 144 + 4
+    assert [entry[2] for entry in start_state.clearing_queue] == [config.map.clear_work_plain] * 4
+    for x, y, _ in start_state.clearing_queue:
+        assert start_state.owned[y][x] == WILD and y > start_state.square[1]  # south of the square
+
+
+def test_the_price_grows_with_the_land(start_state, config):
+    start_state.gold = 1000
+    _claim(start_state, config, direction="south", terrain="plain", count=4)
+    _claim(start_state, config, direction="north", terrain="plain", count=4)
+    assert claim_price(start_state, config) == config.map.claim_base_gold + 1  # 8 tiles beyond the core
+
+
+def test_a_claim_is_all_or_nothing(start_state, config):
+    start_state.gold = 15
+    assert _claim(start_state, config, direction="south", terrain="plain", count=2).code == "INSUFFICIENT_RESOURCES"
+    assert _claim(start_state, config, direction="south", terrain="plain", count=9).code == "INVALID_PARAM"
+    sx, sy = _site(start_state)
+    # No hill left outside the core: nothing to claim.
+    start_state.terrain = [row if sy <= y < sy + 12 else row.replace("^", ".")
+                           for y, row in enumerate(start_state.terrain)]
+    start_state.terrain = [row[:sx].replace("^", ".") + row[sx:sx + 12] + row[sx + 12:].replace("^", ".")
+                           for row in start_state.terrain]
+    assert next_claim(start_state, config, "hill", "west") is None
+    assert _claim(start_state, config, direction="west", terrain="hill", count=1).code == "NO_LAND"
+    assert start_state.gold == 15 and start_state.land_paid_total == 0 and start_state.clearing_queue == []
+
+
+def test_a_claimed_forest_stands_and_is_not_queued(start_state, config):
+    sx, sy = _site(start_state)
+    row = start_state.terrain[sy + 5]
+    start_state.terrain[sy + 5] = row[:sx - 1] + "T" + row[sx:]  # a forest on the western border
+    tile = next_claim(start_state, config, "forest", "west")
+    assert tile == (sx - 1, sy + 5)
+    assert _claim(start_state, config, direction="west", terrain="forest", count=1).accepted
+    x, y = tile
+    assert start_state.owned[y][x] == OWNED and start_state.clearing_queue == []
+
+
+def test_clearing_workers_make_the_land_usable(start_state, config):
+    _claim(start_state, config, direction="south", terrain="plain", count=2)
+    first, second = [tuple(entry[:2]) for entry in start_state.clearing_queue]
+    apply_orders(start_state, _orders({"action": "assign_workers", "food": 54, "wood": 4, "stone": 0,
+                                       "clearing": 2}), config)
+    state = resolve_turn(start_state, [], config).state
+    assert state.clearing_queue[0][:2] == list(first) and state.clearing_queue[0][2] == 4
+    state.workers.clearing = 10
+    result = resolve_turn(state, [], config)
+    assert result.state.owned[first[1]][first[0]] == OWNED
+    assert result.state.owned[second[1]][second[0]] == OWNED
+    assert result.state.clearing_queue == []
+    assert sum(1 for e in result.events if e.kind == "tile_cleared") == 2
+
+
+def test_felling_gives_wood_and_leaves_a_plain(start_state, config):
+    result = apply_orders(start_state, _orders({"action": "fell_forest", "count": 1}), config)[0]
+    assert result.accepted
+    x, y, work = start_state.clearing_queue[0]
+    assert work == config.map.clear_work_forest
+    start_state.workers.food -= work
+    start_state.workers.clearing = work
+    before = start_state.wood
+    state = resolve_turn(start_state, [], config).state
+    assert state.terrain[y][x] == "." and state.owned[y][x] == OWNED
+    produced_by_sawmill = state.workers.wood * config.buildings["sawmill"].output_per_worker
+    assert state.wood >= before + work * config.map.fell_wood_per_work + produced_by_sawmill - 1
+
+
+def test_a_sawmill_without_its_forest_stops(start_state, config):
+    sx, sy = _site(start_state)
+    assert jobs_in_sector(start_state, config, "wood") == config.buildings["sawmill"].jobs
+    row = start_state.terrain[sy]
+    start_state.terrain[sy] = row[:sx + 3] + "." + row[sx + 4:]  # the only forest tile it touches
+    assert jobs_in_sector(start_state, config, "wood") == 0
+
+
+def test_clearing_needs_a_map(start_state, config):
+    start_state.terrain = []
+    raw = {"action": "assign_workers", "food": 53, "wood": 4, "stone": 2, "clearing": 1}
+    assert apply_orders(start_state, _orders(raw), config)[0].code == "NO_MAP"
+
+
+def test_the_clearing_queue_survives_a_snapshot(start_state, config):
+    _claim(start_state, config, direction="south", terrain="plain", count=1)
+    assert state_from_json(state_to_json(start_state)).clearing_queue == start_state.clearing_queue

@@ -41,9 +41,10 @@ class Workers:
     food: int
     wood: int
     stone: int
+    clearing: int = 0  # clearing claimed land (territory); 0 for games without a map
 
     def total(self) -> int:
-        return self.food + self.wood + self.stone
+        return self.food + self.wood + self.stone + self.clearing
 
 
 @dataclass
@@ -83,12 +84,17 @@ class GameState:
     # The territory (engine/territory.py). Empty for games without a map,
     # which count free_tiles instead. terrain and owned are rows of the
     # whole world, one character per tile: terrain ". ~ T ^" (plain,
-    # river, forest, hill); owned "-" not owned, "o" owned and cleared.
+    # river, forest, hill); owned "-" not owned, "o" owned and usable
+    # (cleared land, or a standing forest), "w" owned but still wild.
     terrain: list[str] = field(default_factory=list)
     owned: list[str] = field(default_factory=list)
     zones: list[Zone] = field(default_factory=list)
     square: list[int] = field(default_factory=list)  # [x, y] top-left tile
     next_building_id: int = 1
+    # Tiles being cleared or felled, in the order they were queued:
+    # [x, y, worker-months left].
+    clearing_queue: list[list[int]] = field(default_factory=list)
+    land_paid_total: int = 0  # gold paid for claimed tiles, into the land fund
 
     def has_map(self) -> bool:
         return bool(self.terrain)

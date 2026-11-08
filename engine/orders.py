@@ -33,6 +33,7 @@ class AssignWorkersOrder(BaseOrder):
     food: int = Field(ge=0)
     wood: int = Field(ge=0)
     stone: int = Field(ge=0)
+    clearing: int = Field(default=0, ge=0)  # totals like the others: missing = 0
 
 
 class SetTaxOrder(BaseOrder):
@@ -65,6 +66,21 @@ class SetZonesOrder(BaseOrder):
     zones: list[ZoneSpec]
 
 
+class ClaimTilesOrder(BaseOrder):
+    """Bordering tiles of one terrain, on one side of the square."""
+    action: Literal["claim_tiles"]
+    direction: Literal["north", "south", "east", "west"]
+    terrain: Literal["plain", "forest", "hill"]
+    count: int = Field(ge=1)
+
+
+class FellForestOrder(BaseOrder):
+    """Queue owned forest tiles for felling (wood now, plain afterwards)."""
+    action: Literal["fell_forest"]
+    count: int = Field(ge=1)
+    direction: Literal["north", "south", "east", "west"] | None = None
+
+
 class DemolishOrder(BaseOrder):
     action: Literal["demolish"]
     building_id: int = Field(ge=1)
@@ -72,7 +88,7 @@ class DemolishOrder(BaseOrder):
 
 Order = Annotated[
     BuildOrder | AssignWorkersOrder | SetTaxOrder | SetRationOrder | HoldFeastOrder
-    | SetZonesOrder | DemolishOrder,
+    | SetZonesOrder | DemolishOrder | ClaimTilesOrder | FellForestOrder,
     Field(discriminator="action"),
 ]
 

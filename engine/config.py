@@ -152,6 +152,13 @@ class MapConfig:
     max_zones: int
     demolish_gold: int
     demolish_refund_pct: int  # of the building's wood and stone
+    claim_base_gold: int
+    claim_step_tiles: int
+    claim_max_per_order: int
+    clear_work_plain: int  # worker-months to clear one tile
+    clear_work_hill: int
+    clear_work_forest: int
+    fell_wood_per_work: int  # wood for each worker-month spent felling
 
 
 @dataclass(frozen=True)

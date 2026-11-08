@@ -39,7 +39,7 @@ def order_text(order: dict) -> str:
 def _metric(state: dict, name: str) -> int:
     if name == "idle":
         workers = state["workers"]
-        return state["adults"] - workers["food"] - workers["wood"] - workers["stone"]
+        return state["adults"] - workers["food"] - workers["wood"] - workers["stone"] - workers.get("clearing", 0)
     return state[name]
 
 

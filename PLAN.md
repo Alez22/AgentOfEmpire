@@ -105,7 +105,9 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] Feasibility: the Architect plans zones on a text map (`lab/urban_probe.py`: 7 of 11 fully valid, plans sensible)
   - [x] Draw the world (64 × 64, 8 sites) and the 12 × 12 core (`engine/maps/`)
   - [x] Engine: map, footprints, zones, placement, demolition (`engine/territory.py`; no migration needed: the map lives in the snapshot)
-  - [ ] Claiming (gold, land fund split in December) and clearing (labour, felling the forest), with the balance lab
+  - [x] Claiming (gold into the land fund), clearing and felling (labour), sawmills need the realm's forest; balance lab (`lab/territory_balance.py`)
+  - [ ] Decide the values from the lab (proposed: clearing plain 3, felling 10 wood, claim 20 gold)
+  - Step 2: the land fund split in December among the other states (needs them, and a cross-realm input for the replay)
   - [ ] Council: orders, briefings, manual, prompts; the probe again on the real map
   - [ ] The map page on the phone (mockup first)
   - [ ] A 12-month test game

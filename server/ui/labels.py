@@ -6,6 +6,8 @@ new engine value shows up (ugly but visible) instead of crashing the page.
 """
 
 BUILDINGS = {"farm": "fattoria", "sawmill": "segheria", "quarry": "cava", "house": "casa"}
+TERRAINS = {"plain": "pianura", "forest": "bosco", "hill": "collina"}
+DIRECTIONS = {"north": "nord", "south": "sud", "east": "est", "west": "ovest"}
 RATIONS = {"reduced": "ridotta", "normal": "normale", "abundant": "abbondante"}
 UNREST = {"calm": "calma", "protests": "proteste", "strike": "sciopero", "revolt": "rivolta"}
 SEASONS = {"winter": "inverno", "spring": "primavera", "summer": "estate", "autumn": "autunno"}
@@ -33,6 +35,7 @@ REJECTIONS = {
     "BAD_ZONES": "piano delle zone non valido",
     "UNKNOWN_BUILDING": "edificio sconosciuto",
     "NO_MAP": "questo regno non ha una mappa",
+    "NO_LAND": "non ci sono abbastanza caselle adatte",
     # Reasons the council module gives for discarded proposals.
     "NOT_ROLE_ACTION": "fuori dalle sue competenze",
     "TOO_MANY_PROPOSALS": "troppe proposte",
@@ -62,6 +65,12 @@ def order_label(order: dict) -> str:
         return f"Costruire: {BUILDINGS.get(order.get('building'), order.get('building'))}{where}"
     if action == "set_zones":
         return f"Nuovo piano della città: {len(order.get('zones') or [])} zone"
+    if action == "claim_tiles":
+        return (f"Annettere {order.get('count')} caselle di {TERRAINS.get(order.get('terrain'), order.get('terrain'))}"
+                f" a {DIRECTIONS.get(order.get('direction'), order.get('direction'))}")
+    if action == "fell_forest":
+        where = f" a {DIRECTIONS.get(order['direction'], order['direction'])}" if order.get("direction") else ""
+        return f"Abbattere {order.get('count')} caselle di bosco{where}"
     if action == "demolish":
         return f"Abbattere l'edificio n. {order.get('building_id')}"
     if action == "set_tax":
@@ -71,8 +80,9 @@ def order_label(order: dict) -> str:
     if action == "hold_feast":
         return f"Festa per il popolo: {order.get('gold')} oro"
     if action == "assign_workers":
+        clearing = f", {order['clearing']} a dissodare" if order.get("clearing") else ""
         return (f"Lavoratori: {order.get('food')} nei campi, {order.get('wood')} nei boschi, "
-                f"{order.get('stone')} nelle cave")
+                f"{order.get('stone')} nelle cave{clearing}")
     return str(order)
 
 
@@ -106,6 +116,8 @@ def event_label(kind: str, data: dict) -> str:
         return f"Hai ricevuto in privato {name}."
     if kind == "workers_rescaled":
         return "Meno adulti di prima: i lavoratori sono stati ridistribuiti."
+    if kind == "tile_cleared":
+        return "Abbattuto un bosco: ora è pianura." if data.get("felled") else "Dissodata una nuova casella."
     if kind == "salaries_unpaid":
         return f"L'oro non bastava: i consiglieri non hanno ricevuto il salario ({data.get('salaries')} oro)."
     return f"{kind}: {data}"

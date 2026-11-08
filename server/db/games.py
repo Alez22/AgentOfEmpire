@@ -36,6 +36,7 @@ EVENT_VISIBILITY = {
     "rule_workers_to_food": "council",
     "workers_rescaled": "council",
     "salaries_unpaid": "council",  # the counsellors know they were not paid
+    "tile_cleared": "court",  # the people clear the land: everyone sees the town grow
 }
 
 

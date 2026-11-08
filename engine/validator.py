@@ -13,7 +13,9 @@ from engine import territory
 from engine.orders import (
     AssignWorkersOrder,
     BuildOrder,
+    ClaimTilesOrder,
     DemolishOrder,
+    FellForestOrder,
     HoldFeastOrder,
     Order,
     SetRationOrder,
@@ -24,7 +26,7 @@ from engine.state import Building, GameState, Workers, Zone
 
 # Orders that change the map run before the others of the same priority,
 # so a build can use the new town plan and the tiles a demolition frees.
-MAP_FIRST_ACTIONS = ("set_zones", "demolish")
+MAP_FIRST_ACTIONS = ("set_zones", "demolish", "claim_tiles", "fell_forest")
 
 
 @dataclass
@@ -108,6 +110,49 @@ def _apply_zones(state: GameState, order: SetZonesOrder, config: Config) -> Orde
     return OrderResult(order, True)
 
 
+def _apply_claim(state: GameState, order: ClaimTilesOrder, config: Config) -> OrderResult:
+    """@brief All or nothing: every tile must be found and paid. Tiles are
+    taken one by one, so the border moves and the price grows inside the
+    same order. The gold goes to the land fund (land_paid_total)."""
+    if not state.has_map():
+        return _reject(order, "NO_MAP", "this realm has no map")
+    if order.count > config.map.claim_max_per_order:
+        return _reject(order, "INVALID_PARAM", f"at most {config.map.claim_max_per_order} tiles an order")
+    trial = copy.deepcopy(state)  # find the tiles and the price before paying anything
+    tiles, total = [], 0
+    for _ in range(order.count):
+        tile = territory.next_claim(trial, config, order.terrain, order.direction)
+        if tile is None:
+            return _reject(order, "NO_LAND",
+                           f"only {len(tiles)} {order.terrain} tiles border the realm to the {order.direction}")
+        total += territory.claim_price(trial, config)
+        territory.claim_tile(trial, config, *tile)
+        tiles.append(tile)
+    if state.gold < total:
+        return _reject(order, "INSUFFICIENT_RESOURCES", f"{order.count} tiles cost {total} gold")
+    state.gold -= total
+    state.land_paid_total += total
+    for tile in tiles:
+        territory.claim_tile(state, config, *tile)
+    return OrderResult(order, True)
+
+
+def _apply_fell(state: GameState, order: FellForestOrder, config: Config) -> OrderResult:
+    if not state.has_map():
+        return _reject(order, "NO_MAP", "this realm has no map")
+    trial = copy.deepcopy(state)
+    tiles = []
+    for _ in range(order.count):
+        tile = territory.forest_to_fell(trial, config, order.direction)
+        if tile is None:
+            return _reject(order, "NO_LAND", f"only {len(tiles)} forest tiles of the realm can be felled there")
+        trial.clearing_queue.append([*tile, 0])  # placeholder, so the next search skips it
+        tiles.append(tile)
+    for x, y in tiles:
+        state.clearing_queue.append([x, y, config.map.clear_work_forest])
+    return OrderResult(order, True)
+
+
 def _apply_demolish(state: GameState, order: DemolishOrder, config: Config) -> OrderResult:
     """@brief Pull a building down at once: its tiles are free for the
     orders after it, it produces nothing this month and costs no more upkeep.
@@ -129,12 +174,14 @@ def _apply_demolish(state: GameState, order: DemolishOrder, config: Config) -> O
 
 
 def _apply_assign(state: GameState, order: AssignWorkersOrder) -> OrderResult:
-    requested = order.food + order.wood + order.stone
+    requested = order.food + order.wood + order.stone + order.clearing
     if requested > state.adults:
         return _reject(
             order, "NOT_ENOUGH_WORKERS", f"{requested} requested, {state.adults} adults"
         )
-    state.workers = Workers(order.food, order.wood, order.stone)
+    if order.clearing and not state.has_map():
+        return _reject(order, "NO_MAP", "this realm has no map: no land to clear")
+    state.workers = Workers(order.food, order.wood, order.stone, order.clearing)
     return OrderResult(order, True)
 
 
@@ -189,6 +236,10 @@ def _apply_one(
         return _apply_zones(state, order, config)
     if isinstance(order, DemolishOrder):
         return _apply_demolish(state, order, config)
+    if isinstance(order, ClaimTilesOrder):
+        return _apply_claim(state, order, config)
+    if isinstance(order, FellForestOrder):
+        return _apply_fell(state, order, config)
     return _apply_policy(state, order, config, policies_set)
 
 

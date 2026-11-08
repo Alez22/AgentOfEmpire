@@ -16,11 +16,11 @@ import tomllib
 from pathlib import Path
 
 from engine.config import Config
-from engine.state import Building, GameState, Zone
+from engine.state import Building, Event, GameState, Zone
 
 MAPS_DIR = Path(__file__).with_name("maps")
 TERRAIN_CHARS = {"plain": ".", "river": "~", "forest": "T", "hill": "^"}
-NOT_OWNED, OWNED = "-", "o"
+NOT_OWNED, OWNED, WILD = "-", "o", "w"
 ZONE_PURPOSES = ("fields", "center", "houses", "workshops", "reserve")
 # Zone purposes each building kind may stand in (houses also around the square).
 KIND_PURPOSES = {"farm": ("fields",), "sawmill": ("workshops",), "quarry": ("workshops",),
@@ -116,13 +116,25 @@ def _in_map(state: GameState, x: int, y: int) -> bool:
     return 0 <= y < len(state.terrain) and 0 <= x < len(state.terrain[0])
 
 
-def _touches(state: GameState, tiles: list[tuple[int, int]], terrain: str) -> bool:
+def _touches_owned(state: GameState, tiles: list[tuple[int, int]], terrain: str) -> bool:
+    """@brief True if a tile next to these (north, south, east or west) is of
+    this terrain and belongs to the realm: a sawmill needs its own forest."""
     char = TERRAIN_CHARS[terrain]
     for x, y in tiles:
         for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
-            if _in_map(state, nx, ny) and state.terrain[ny][nx] == char:
+            if _in_map(state, nx, ny) and state.terrain[ny][nx] == char and state.owned[ny][nx] != NOT_OWNED:
                 return True
     return False
+
+
+def building_works(state: GameState, config: Config, building: Building) -> bool:
+    """@brief False for a building whose terrain need is gone: a sawmill that
+    no longer touches a forest of the realm (felled) produces nothing.
+    Always True without a map."""
+    spec = config.buildings[building.kind]
+    if not state.has_map() or not spec.needs_forest:
+        return True
+    return _touches_owned(state, footprint(config, building.kind, building.x, building.y), "forest")
 
 
 def place_error(state: GameState, config: Config, kind: str, x: int, y: int,
@@ -142,7 +154,7 @@ def place_error(state: GameState, config: Config, kind: str, x: int, y: int,
     spec = config.buildings[kind]
     if any(state.terrain[ty][tx] != TERRAIN_CHARS[spec.terrain] for tx, ty in tiles):
         return "WRONG_TERRAIN", f"{kind} at ({x},{y}) must stand on {spec.terrain} only"
-    if spec.needs_forest and not _touches(state, tiles, "forest"):
+    if spec.needs_forest and not _touches_owned(state, tiles, "forest"):
         return "NO_FOREST", f"{kind} at ({x},{y}) must touch a forest tile"
     taken = occupancy(state, config) if taken is None else taken
     if any(tile in taken for tile in tiles):
@@ -237,3 +249,111 @@ def _buildings_outside(state: GameState, config: Config, zones: list[Zone]) -> s
     if zone is None or zone.purpose != "center":
         return "the square would not be inside a center zone"
     return None
+
+
+def _set_tile(rows: list[str], x: int, y: int, char: str) -> None:
+    rows[y] = rows[y][:x] + char + rows[y][x + 1:]
+
+
+def _in_direction(state: GameState, config: Config, x: int, y: int, direction: str | None) -> bool:
+    """@brief True if the tile lies on that side of the square: within the
+    quarter of the plane around the direction (diagonals count for both)."""
+    if direction is None:
+        return True
+    size = config.map.square_size
+    dx = (2 * x + 1) - (2 * state.square[0] + size)
+    dy = (2 * y + 1) - (2 * state.square[1] + size)
+    return {"north": -dy >= abs(dx), "south": dy >= abs(dx),
+            "east": dx >= abs(dy), "west": -dx >= abs(dy)}[direction]
+
+
+def _tile_distance(state: GameState, config: Config, x: int, y: int) -> int:
+    size = config.map.square_size
+    dx = (2 * x + 1) - (2 * state.square[0] + size)
+    dy = (2 * y + 1) - (2 * state.square[1] + size)
+    return dx * dx + dy * dy
+
+
+def _borders_the_realm(state: GameState, x: int, y: int) -> bool:
+    return any(_in_map(state, nx, ny) and state.owned[ny][nx] != NOT_OWNED
+               for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
+
+
+def owned_count(state: GameState) -> int:
+    return sum(row.count(OWNED) + row.count(WILD) for row in state.owned)
+
+
+def claim_price(state: GameState, config: Config) -> int:
+    """@brief Gold for the next tile: it grows with the land beyond the core."""
+    beyond = max(0, owned_count(state) - config.map.core_size ** 2)
+    return config.map.claim_base_gold + beyond // config.map.claim_step_tiles
+
+
+def next_claim(state: GameState, config: Config, terrain: str, direction: str) -> tuple[int, int] | None:
+    """@brief The tile a claim would take: not owned, of this terrain,
+    bordering the realm, on that side; nearest the square, then row, column."""
+    char = TERRAIN_CHARS[terrain]
+    best = None
+    for y, row in enumerate(state.terrain):
+        for x, tile in enumerate(row):
+            if tile != char or state.owned[y][x] != NOT_OWNED:
+                continue
+            if not _in_direction(state, config, x, y, direction) or not _borders_the_realm(state, x, y):
+                continue
+            key = (_tile_distance(state, config, x, y), y, x)
+            best = key if best is None or key < best else best
+    return None if best is None else (best[2], best[1])
+
+
+def clearing_work(config: Config, terrain_char: str) -> int:
+    return {".": config.map.clear_work_plain, "^": config.map.clear_work_hill,
+            "T": config.map.clear_work_forest}[terrain_char]
+
+
+def claim_tile(state: GameState, config: Config, x: int, y: int) -> None:
+    """@brief Own one tile. A forest stands and is usable at once (it feeds
+    the sawmills); plain and hill arrive wild and wait for clearing."""
+    if state.terrain[y][x] == TERRAIN_CHARS["forest"]:
+        _set_tile(state.owned, x, y, OWNED)
+        return
+    _set_tile(state.owned, x, y, WILD)
+    state.clearing_queue.append([x, y, clearing_work(config, state.terrain[y][x])])
+
+
+def forest_to_fell(state: GameState, config: Config, direction: str | None) -> tuple[int, int] | None:
+    """@brief The owned forest tile a felling order would take: not queued
+    yet, on that side; the one nearest the square first."""
+    queued = {(x, y) for x, y, _ in state.clearing_queue}
+    best = None
+    for y, row in enumerate(state.terrain):
+        for x, tile in enumerate(row):
+            if tile != TERRAIN_CHARS["forest"] or state.owned[y][x] != OWNED or (x, y) in queued:
+                continue
+            if not _in_direction(state, config, x, y, direction):
+                continue
+            key = (_tile_distance(state, config, x, y), y, x)
+            best = key if best is None or key < best else best
+    return None if best is None else (best[2], best[1])
+
+
+def clear_land(state: GameState, config: Config, events: list[Event]) -> None:
+    """@brief This month's clearing work, one worker-month per worker, on the
+    queue in order. Felling gives wood for each worker-month and leaves a
+    plain; a finished tile becomes usable. Workers with no queue are idle.
+    No strike or effort modifier: clearing is plain labour, kept simple."""
+    work = state.workers.clearing
+    while work > 0 and state.clearing_queue:
+        x, y, left = state.clearing_queue[0]
+        spent = min(work, left)
+        work -= spent
+        felling = state.terrain[y][x] == TERRAIN_CHARS["forest"]
+        if felling:
+            state.wood += spent * config.map.fell_wood_per_work
+        if spent < left:
+            state.clearing_queue[0][2] = left - spent
+            continue
+        state.clearing_queue.pop(0)
+        if felling:
+            _set_tile(state.terrain, x, y, TERRAIN_CHARS["plain"])
+        _set_tile(state.owned, x, y, OWNED)
+        events.append(Event("tile_cleared", {"x": x, "y": y, "felled": felling}))
