@@ -93,14 +93,54 @@ def _room_text(state: GameState, config: Config, zone) -> str:
     return ("room for " + ", ".join(parts)) if parts else "full"
 
 
-def _unclaimed_text(state: GameState, zone) -> str:
+def _zone_fully_owned(state: GameState, zone) -> GameState:
+    """@brief A scratch copy where every land tile of the zone is owned and cleared."""
+    scratch = copy.deepcopy(state)
+    river = TERRAIN_CHARS["river"]
+    size = len(scratch.terrain)
+    for y in range(max(0, zone.y1), min(size, zone.y2 + 1)):
+        row = scratch.owned[y]
+        for x in range(max(0, zone.x1), min(size, zone.x2 + 1)):
+            if scratch.terrain[y][x] != river:
+                row = row[:x] + OWNED + row[x + 1:]
+        scratch.owned[y] = row
+    return scratch
+
+
+def _potential_text(state: GameState, config: Config, zone) -> str:
+    """@brief What the zone would hold once all its land is claimed and cleared.
+
+    Why: game 22, the Architect stretched the fields zone by 2 rows and
+    claimed 11 tiles into it while the briefing said "full"; nothing said
+    that no farm (3 x 3) could ever fit there.
+    """
+    kinds = [kind for kind, purposes in KIND_PURPOSES.items() if zone.purpose in purposes]
+    if not kinds:
+        return ""
+    scratch = _zone_fully_owned(state, zone)
+    gains = {kind: room_in_zone(scratch, config, kind, zone.name) - room_in_zone(state, config, kind, zone.name)
+             for kind in kinds}
+    if not any(gains.values()):
+        sizes = ", ".join(f"a {k} needs {config.buildings[k].width} x {config.buildings[k].height} tiles" for k in kinds)
+        return f"; its land still to claim adds no room ({sizes})"
+    return "; once all its land is claimed and cleared: room for " + ", ".join(
+        f"{gain} more {kind}" for kind, gain in gains.items() if gain)
+
+
+def _unclaimed_text(state: GameState, config: Config, zone) -> str:
     unclaimed = unclaimed_in_zone(state, zone)
-    return f"; {unclaimed} tiles still to claim" if unclaimed else ""
+    wild = sum(1 for x, y, _ in state.clearing_queue if zone.x1 <= x <= zone.x2 and zone.y1 <= y <= zone.y2)
+    if not unclaimed and not wild:
+        return ""
+    text = f"; {unclaimed} tiles still to claim" if unclaimed else ""
+    if wild:
+        text += f"; {wild} tiles being cleared"
+    return text + _potential_text(state, config, zone)
 
 
 def zone_lines(state: GameState, config: Config) -> list[str]:
     return [f"- {zone.name} ({zone.purpose}), from ({zone.x1},{zone.y1}) to ({zone.x2},{zone.y2}): "
-            f"{_room_text(state, config, zone)}{_unclaimed_text(state, zone)}" for zone in state.zones]
+            f"{_room_text(state, config, zone)}{_unclaimed_text(state, config, zone)}" for zone in state.zones]
 
 
 def _status(state: GameState, config: Config, building: Building) -> str:
