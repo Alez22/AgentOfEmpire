@@ -916,6 +916,58 @@ The first lab run also moved the world's forests and hills from straight below t
 4. The map page on the phone.
 5. A 12-month test game.
 
+## Hex grid (phase 4, spec 2026-11-08, to approve)
+
+The map becomes a real hex grid, drawn as in the "night" mockup (`lab/hex_map_mockup.py`): flat hexes, game-icons silhouettes, gold border. Why real and not only drawn: on a drawn-only hex map the screen shows 6 neighbours while the rules count 4, and the Architect, the player and the engine would disagree on what touches what.
+
+**Geometry**
+
+- **Pointy-top hexes, "odd-r" offset coordinates**: a tile keeps its (x, y) = (column, row); odd rows sit half a hex to the east. The state keeps its rows of characters (`terrain`, `owned`), `world.txt` and `core.toml` keep their format; only the meaning of "neighbour" changes. So the snapshot format stays as it is.
+- **Six neighbours**, in a fixed order E, SE, SW, W, NW, NE; the step depends on the row's parity (even rows: (+1,0) (0,+1) (−1,+1) (−1,0) (−1,−1) (0,−1); odd rows: (+1,0) (+1,+1) (0,+1) (−1,0) (0,−1) (+1,−1)). One function in the engine gives them; everything else asks it.
+- **Distance**: hex steps (through cube coordinates), integers only. "Nearest the square" uses it, with the same tie-break as today (row, then column).
+- **Directions** (north, south, east, west, for claims and felling): by the angle between the tile's centre and the square's, on integer doubled coordinates (column doubled plus parity; row scaled by 7/4, an integer stand-in for √3); diagonals still count for both sides, as today.
+
+**Footprints**: a building is its **anchor** tile plus fixed steps from it (the old "top-left tile" becomes the anchor).
+
+| Building | Today | Hex | Shape |
+| --- | --- | --- | --- |
+| House | 1 | 1 | the anchor |
+| Sawmill | 2 × 1 | 2 | anchor + E; must touch an owned forest (any of the 6 sides) |
+| Quarry | 2 × 2 | 4 | rhombus: anchor, E, SE, and the SE of the E; on hill |
+| Farm | 3 × 3 | 7 | flower: the anchor and its 6 neighbours; on plain |
+| Square | 2 × 2 | 4 | rhombus, fixed |
+
+Land taken by the start: 4 farms × 7 + 2 + 4 + 6 + 4 = 44 tiles instead of 52; the core keeps a little more room, to be checked in the lab (below). Output and jobs do not depend on the size, so the economy does not change.
+
+**Zones**: still rectangles in (x, y), corners included; on hexes a rectangle is a slightly jagged block, which is enough for a town plan. Checks unchanged (inside the map, no overlap, buildings wholly inside one zone of their purpose).
+
+**Placement**: `find_place` keeps "valid place nearest the square". The "aligned on the zone's grid" preference (made for 3 × 3 farms) is replaced by **packing**: among valid places, prefer the one whose footprint touches the most tiles already taken or outside the zone, so buildings stand close and leave no lone hexes; then distance, row, column. To be tuned in the lab. `nudge` tries the 6 neighbours of the anchor in the fixed order.
+
+**World and core**: `world.txt` redrawn with `lab/draw_world.py` on the hex grid (blobs by hex distance; the river joined through hex sides). The 8 sites stay where they are, all on even rows so every core has the same parity and the same shape (symmetric starts). `core.toml` redrawn: 4 farm flowers in the fields, sawmill by the forest, quarry rhombus on the hills, the square, 6 houses. **The palace** (fixed 4-hex rhombus east of the square, approved in direction) can come with this redraw at almost no cost, or later: to decide.
+
+**Old games**: a new `[map] grid = "hex"` key. Games saved before have no key and stay on the square grid, so their replay is exact and `ENGINE_VERSION` does not need to change; the engine keeps both neighbour tables and both footprint tables, chosen in one place.
+
+**Counsellors**
+
+- **Text grid** (`server/council/map_text.py`): odd rows printed shifted by half a cell; the legend says the map is made of hexes, each with 6 neighbours, odd rows half a cell to the east. Room per zone, "the next at (x,y)", the frontier in words: unchanged, still counted by the engine.
+- **Words**: manual, order formats and the Architect's craft speak of "anchor tile" and of shapes in hexes ("a farm takes 7 hexes: a centre and its ring") instead of "3 x 3" and "top-left".
+- **Probe first**: `lab/urban_probe.py` rerun on a hex text grid (a few cents) before the briefing changes: the models must still draw sensible zones; they place buildings mostly by zone, with the engine choosing the tile.
+
+**Interface**
+
+- The map page (`server/ui/map_view.py`, today a CSS grid of SVG tiles) becomes one server-built **SVG board**: hexes, icons as `<symbol>`s, building lots outlined, the realm's border in gold, land outside dimmed; clicks stay plain links (`<a>` inside the SVG), still no JavaScript. **Night theme**: the page's dark ground, icons in gold and ivory.
+- **Icons**: one SVG sprite of the game-icons used, vendored in `server/ui/static/icons/` (no CDN, no icon font); colours from CSS (`currentColor`). The same sprite serves the other pages later (resources, counsellors, orders).
+- **Credits**: a "Crediti" page in the game and a line on the presentation page, listing each icon's author (CC BY 3.0), generated from the sprite's list.
+
+**Steps** (each one tested and committed on its own)
+
+1. Engine: neighbours, distance, directions, footprints by grid; `grid` key; tests for both grids (old square games replay unchanged).
+2. World and core redrawn; `lab/territory_balance.py` and `lab/draw_world.py` on hexes: the core should still push the realm to grow within the first year or two.
+3. Probe of the hex text grid with a model; then briefing, manual, prompts.
+4. Map page as SVG board, night theme, icon sprite, credits.
+
+**Out of this step**: hexes for war and borders between realms (they will use the same neighbours and distance), seasons on the map, the presentation page's mockups (they stay as they are).
+
 ## Market, needs and land levels (phase 4, spec approved 2026-11-08)
 
 The vision is in Part 1, "Economy and trade" (closed market, land levels unknown at the start, the expert of the land later). The values come from `lab/market_closed.py` (numbers in `PLAN.md`, "Lab: eight realms, third tuning"). Every new rule lives in its own config section: a game saved before has none of them and replays unchanged, as with `[people]`.
