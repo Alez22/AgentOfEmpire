@@ -70,6 +70,7 @@ def _make_llm_client(settings: CouncilSettings):
         settings.max_output_tokens,
         settings.models_without_json_schema,
         settings.models_without_reasoning,
+        settings.max_output_tokens_by_role,
     )
 
 

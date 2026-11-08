@@ -44,7 +44,8 @@ def _estimated_cost(price: ModelPrice | None, input_tokens: int, output_tokens: 
 class OpenRouterClient:
     def __init__(self, base_url: str, api_key: str, timeout_seconds: int, prices: dict[str, ModelPrice],
                  max_output_tokens: int, models_without_json_schema: tuple[str, ...] = (),
-                 models_without_reasoning: tuple[str, ...] = ()):
+                 models_without_reasoning: tuple[str, ...] = (),
+                 max_output_tokens_by_role: dict[str, int] | None = None):
         if not api_key:
             raise ValueError("OPENROUTER_API_KEY is empty: set it in .env or use provider 'fake'")
         self._url = base_url.rstrip("/") + "/chat/completions"
@@ -52,6 +53,7 @@ class OpenRouterClient:
         self._timeout = timeout_seconds
         self._prices = prices
         self._max_output_tokens = max_output_tokens
+        self._max_output_tokens_by_role = max_output_tokens_by_role or {}
         self._models_without_json_schema = set(models_without_json_schema)
         self._models_without_reasoning = set(models_without_reasoning)
 
@@ -96,7 +98,7 @@ class OpenRouterClient:
             # Reasoning included. Without a cap a model once looped up to
             # 131,072 tokens ($0.074, 31 % of a whole game). A reply cut here
             # is incomplete JSON, refused and retried like any invalid reply.
-            "max_tokens": self._max_output_tokens,
+            "max_tokens": self._max_output_tokens_by_role.get(role, self._max_output_tokens),
             # Route only to providers that accept every parameter we send:
             # some providers reject response_format with HTTP 400 (Novita for
             # Ling 3.1 Flash) while another provider of the same model takes it.

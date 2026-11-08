@@ -117,12 +117,6 @@ def test_games_saved_before_have_no_grid_key_and_stay_square():
 # The hex world and core (step 2). config.toml stays square until the
 # briefing and the map page speak hexes (steps 3 and 4).
 
-@pytest.fixture
-def hex_world_config(config):
-    return replace(config, map=replace(config.map, grid="hex", world_file="world_hex.txt",
-                                       core_file="core_hex.toml"))
-
-
 def _room(state, config, kind, zone_name=None):
     """How many more buildings of this kind fit, placed one after the other."""
     count = 0

@@ -2,7 +2,7 @@
 
 import os
 import tomllib
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 DEFAULT_SETTINGS_PATH = Path(__file__).resolve().parents[1] / "council.toml"
@@ -37,6 +37,13 @@ class CouncilSettings:
     # Models whose reasoning cannot be turned off: a retry after a runaway
     # reply uses "low" for them instead of "none".
     models_reasoning_required: tuple[str, ...] = ()
+    # Output caps that differ from max_output_tokens, by role (the Architect
+    # reads the hex map: up to about 7,000 tokens in the probes, 2026-11-08).
+    max_output_tokens_by_role: dict[str, int] = field(default_factory=dict)
+
+    def output_cap(self, role: str) -> int:
+        """@brief Output tokens a call of this role may use, reasoning included."""
+        return self.max_output_tokens_by_role.get(role, self.max_output_tokens)
 
 
 def load_settings(path: Path = DEFAULT_SETTINGS_PATH) -> CouncilSettings:
@@ -52,6 +59,7 @@ def load_settings(path: Path = DEFAULT_SETTINGS_PATH) -> CouncilSettings:
         raise ValueError(f"unknown council provider '{raw['provider']}'")
     raw["prices"] = {model: ModelPrice(**price) for model, price in raw.get("prices", {}).items()}
     raw.setdefault("reasoning_effort", {})
+    raw.setdefault("max_output_tokens_by_role", {})
     raw["models_without_json_schema"] = tuple(raw.get("models_without_json_schema", ()))
     raw["models_without_reasoning"] = tuple(raw.get("models_without_reasoning", ()))
     raw["models_reasoning_required"] = tuple(raw.get("models_reasoning_required", ()))

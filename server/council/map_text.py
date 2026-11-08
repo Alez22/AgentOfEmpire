@@ -9,6 +9,13 @@ map is about a tenth of the prompt, game 20) and make the model count.
 Cost: the grid covers the realm's land plus a ring of RING tiles, about
 14 x 14 cells at the start (about 300 tokens); room_in_zone places copies
 of a building on a scratch state, a few hundred tile checks per zone.
+
+On the hex grid (docs/DESIGN.md, "Hex grid") each row is written as runs of
+equal hexes with their columns ("x4-5 F | x6-12 ."), with a ring of
+HEX_RING: the shifted grid made the model recount cells again and again
+(lab/hex_probe.py: about 9,000 output tokens a reply; with runs and the
+room per zone 600-4,700), and a ring of 2 left no room for a fields zone
+3 rows deep beyond the border. About 450 tokens at the start.
 """
 
 import copy
@@ -16,13 +23,14 @@ import copy
 from engine.config import Config
 from engine.state import Building, GameState
 from engine.territory import (KIND_PURPOSES, NOT_OWNED, OWNED, TERRAIN_CHARS, WILD, building_works,
-                              claim_price, find_place, footprint, owned_count, square_tiles, unclaimed_in_zone,
-                              _in_direction)
+                              claim_price, find_place, footprint, is_hex, neighbours, owned_count, square_tiles,
+                              unclaimed_in_zone, _in_direction)
 
 # Tiles shown around the realm's land: 1 in the Architect's briefing (the
 # bordering tiles are also counted in words, frontier_line), 2 on the
 # sovereign's map page, where the view is the point.
 RING = 1
+HEX_RING = 4
 MAX_ROOM = 20  # room counts stop here: "20 or more" is enough to plan
 LETTERS = {"farm": "F", "sawmill": "S", "quarry": "Q", "house": "H"}
 # Tiles outside the realm: the same terrain, another character.
@@ -31,6 +39,21 @@ DIRECTIONS = ("north", "south", "east", "west")
 LEGEND = ("Legend: realm's land: . plain, T forest, ^ hill, ~ river, w claimed but still wild; "
           "outside the realm: , plain, t forest, n hill; P square; buildings F farm, S sawmill, Q quarry, "
           "H house (lower case while under construction). x is the column, y the row; north is up.")
+HEX_LEGEND = ("The map is made of hexes, as on a honeycomb: odd rows sit half a hex to the east, so every hex "
+              "has 6 neighbours (east, west, two above, two below). Each row lists runs of equal hexes with "
+              "their columns.")
+# Shapes in words, for the briefing and the manual (hex_steps in engine/config.toml).
+HEX_SHAPES = {"farm": "7 hexes, a centre and its 6 neighbours (3 rows, 3 columns)",
+              "sawmill": "2 hexes side by side, the anchor and its east neighbour",
+              "quarry": "4 hexes over 2 rows, a rhombus", "house": "1 hex"}
+
+
+def shape_text(config: Config, kind: str) -> str:
+    """@brief A building's footprint in words, on either grid."""
+    if is_hex(config):
+        return HEX_SHAPES.get(kind, f"{len(config.buildings[kind].hex_steps) + 1} hexes")
+    spec = config.buildings[kind]
+    return f"{spec.width} x {spec.height} tiles"
 
 
 def _bounds(state: GameState, ring: int = RING) -> tuple[int, int, int, int]:
@@ -49,8 +72,41 @@ def _cell(state: GameState, x: int, y: int) -> str:
     return terrain if owned == OWNED else NOT_OWNED_CHARS[terrain]
 
 
+def _map_cells(state: GameState, config: Config, ring: int) -> dict[tuple[int, int], str]:
+    """@brief Character of every tile in view: terrain, square, buildings."""
+    x1, y1, x2, y2 = _bounds(state, ring)
+    cells = {(x, y): _cell(state, x, y) for y in range(y1, y2 + 1) for x in range(x1, x2 + 1)}
+    for tile in square_tiles(state, config):
+        cells[tile] = "P"
+    for building in state.buildings:
+        letter = LETTERS[building.kind]
+        for tile in footprint(config, building.kind, building.x, building.y):
+            cells[tile] = letter if building.turns_left == 0 else letter.lower()
+    return cells
+
+
+def run_lines(state: GameState, config: Config) -> list[str]:
+    """@brief The hex map of the realm and its ring, one line per row as runs
+    of equal hexes: "y=13 (odd): x2-3 , | x4-5 F | x6-12 .". Nothing to count."""
+    x1, y1, x2, y2 = _bounds(state, HEX_RING)
+    cells = _map_cells(state, config, HEX_RING)
+    lines = []
+    for y in range(y1, y2 + 1):
+        runs, start = [], x1
+        for x in range(x1 + 1, x2 + 2):
+            if x <= x2 and cells[(x, y)] == cells[(start, y)]:
+                continue
+            span = f"x{start}" if start == x - 1 else f"x{start}-{x - 1}"
+            runs.append(f"{span} {cells[(start, y)]}")
+            start = x
+        lines.append(f"y={y} ({'odd' if y & 1 else 'even'}): " + " | ".join(runs))
+    return lines
+
+
 def grid_lines(state: GameState, config: Config) -> list[str]:
     """@brief The text map of the realm and its ring, with world coordinates."""
+    if is_hex(config):
+        return run_lines(state, config)
     x1, y1, x2, y2 = _bounds(state)
     cells = {(x, y): _cell(state, x, y) for y in range(y1, y2 + 1) for x in range(x1, x2 + 1)}
     for tile in square_tiles(state, config):
@@ -121,7 +177,7 @@ def _potential_text(state: GameState, config: Config, zone) -> str:
     gains = {kind: room_in_zone(scratch, config, kind, zone.name) - room_in_zone(state, config, kind, zone.name)
              for kind in kinds}
     if not any(gains.values()):
-        sizes = ", ".join(f"a {k} needs {config.buildings[k].width} x {config.buildings[k].height} tiles" for k in kinds)
+        sizes = ", ".join(f"a {k} needs {shape_text(config, k)}" for k in kinds)
         return f"; its land still to claim adds no room ({sizes})"
     return "; once all its land is claimed and cleared: room for " + ", ".join(
         f"{gain} more {kind}" for kind, gain in gains.items() if gain)
@@ -167,7 +223,7 @@ def _frontier_counts(state: GameState, config: Config) -> dict[str, dict[str, in
             if terrain is None or state.owned[y][x] != NOT_OWNED:
                 continue
             if not any(0 <= nx < size and 0 <= ny < size and state.owned[ny][nx] != NOT_OWNED
-                       for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1))):
+                       for nx, ny in neighbours(config, x, y)):
                 continue
             for direction in DIRECTIONS:
                 if _in_direction(state, config, x, y, direction):
@@ -190,7 +246,7 @@ def _forest_warnings(state: GameState, config: Config) -> list[str]:
         if not config.buildings[building.kind].needs_forest or not building_works(state, config, building):
             continue
         touching = {(nx, ny) for x, y in footprint(config, building.kind, building.x, building.y)
-                    for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1))
+                    for nx, ny in neighbours(config, x, y)
                     if 0 <= ny < len(state.terrain) and 0 <= nx < len(state.terrain)
                     and state.terrain[ny][nx] == forest and state.owned[ny][nx] != NOT_OWNED}
         if touching and touching <= queued:
@@ -218,10 +274,13 @@ def price_line(state: GameState, config: Config) -> str:
 
 def architect_lines(state: GameState, config: Config) -> list[str]:
     """@brief The Architect's view of the territory: map, zones, buildings, land."""
-    return (["## The town and its land", LEGEND] + grid_lines(state, config)
+    hex_map = is_hex(config)
+    legend = [LEGEND, HEX_LEGEND] if hex_map else [LEGEND]
+    return (["## The town and its land"] + legend + grid_lines(state, config)
             + ["- Zones of the town plan (a building goes where it fits, nearest the square):"]
             + zone_lines(state, config)
-            + ["- Buildings (kind, id, top-left tile):"] + building_lines(state, config)
+            + [f"- Buildings (kind, id, {'anchor hex' if hex_map else 'top-left tile'}):"]
+            + building_lines(state, config)
             + [price_line(state, config), frontier_line(state, config), clearing_line(state)]
             + _forest_warnings(state, config))
 

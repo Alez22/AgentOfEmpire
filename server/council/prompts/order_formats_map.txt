@@ -1,5 +1,5 @@
 On the map (the zone names and the numbers are in your briefing):
-- "build" also takes "zone": "<zone name>" (the building goes where it fits nearest the square) and, only if you want a precise place, "x" and "y" of its top-left tile: {{"action": "build", "building": "farm", "zone": "Campi"}}
+- "build" also takes "zone": "<zone name>" (the building goes where it fits nearest the square) and, only if you want a precise place, "x" and "y" of its anchor (see the shapes in the manual): {{"action": "build", "building": "farm", "zone": "Campi"}}
 - "assign_workers" also takes "clearing": <int>, the adults clearing the claimed land (a total like the others; missing means 0)
 - {{"action": "set_zones", "zones": [{{"name": "<name>", "purpose": "fields" | "center" | "houses" | "workshops" | "reserve", "x1": <int>, "y1": <int>, "x2": <int>, "y2": <int>}}, ...]}}   the WHOLE town plan, replacing the one in force: rectangles with corners included, no overlaps, every building inside a zone of its kind (houses may stand in the center); a zone may reach beyond the realm's land to plan for tiles to claim
 - {{"action": "claim_tiles", "zone": "<zone name>", "count": <integer 1-{max_claim}>}}   bordering tiles inside a zone you drew beyond the border, filling it nearest the square first: the way to get a whole block for a farm

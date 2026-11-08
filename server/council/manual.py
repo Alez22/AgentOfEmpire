@@ -12,6 +12,8 @@ feast brings food"); each guess had been patched with a prompt rule.
 """
 
 from engine.config import Config
+from engine.territory import is_hex
+from server.council.map_text import shape_text
 
 SEASONS = ("winter", "spring", "summer", "autumn")
 SEASONS_IT = {"winter": "inverno", "spring": "primavera", "summer": "estate", "autumn": "autunno"}
@@ -148,18 +150,27 @@ def _market_lines(config: Config) -> list[str]:
 
 
 def _footprints(config: Config) -> str:
-    return ", ".join(f"{kind} {spec.width} x {spec.height} on {spec.terrain}"
+    return ", ".join(f"{kind} {shape_text(config, kind)} on {spec.terrain}"
                      + (" touching a forest of the realm" if spec.needs_forest else "")
                      for kind, spec in config.buildings.items())
+
+
+def _shape_rule(config: Config) -> str:
+    """@brief How a building's place is given, and the square's shape."""
+    if is_hex(config):
+        return ("The map is made of hexes (odd rows half a hex to the east, 6 neighbours each). A building is "
+                "given by its anchor hex: the farm's centre, the first hex of the others; the square is a "
+                "rhombus of 4 hexes.")
+    return (f"A building is given by its anchor, its top-left tile; the square is {config.map.square_size} x "
+            f"{config.map.square_size}.")
 
 
 def _territory_lines(config: Config) -> list[str]:
     """@brief The territory rules (docs/DESIGN.md, "Territory"), for the prompts."""
     m = config.map
     return [
-        f"Territory: the realm owns tiles of plain, forest, hill and river. Footprints: {_footprints(config)}; "
-        f"the square is {m.square_size} x {m.square_size}. Nothing is built on river or forest, and buildings "
-        "never overlap.",
+        f"Territory: the realm owns tiles of plain, forest, hill and river. Footprints: {_footprints(config)}. "
+        f"{_shape_rule(config)} Nothing is built on river or forest, and buildings never overlap.",
         "- The town plan divides the land into zones (fields, center, houses, workshops, reserve); a building "
         "stands only inside a zone of its kind, houses also in the center. The plan can be redrawn.",
         f"- Claiming: a bordering tile costs {m.claim_base_gold} gold, one more for every {m.claim_step_tiles} "
@@ -279,15 +290,30 @@ def _market_section(config: Config) -> dict:
 TERRAIN_IT = {"plain": "pianura", "hill": "collina", "forest": "bosco"}
 
 
+# Footprints in Italian on the hex grid (engine/config.toml hex_steps).
+HEX_SIZES_IT = {"farm": "7 esagoni (un centro e i suoi 6 vicini)", "sawmill": "2 esagoni affiancati",
+                "quarry": "4 esagoni a rombo", "house": "1 esagono"}
+
+
+def _size_it(config: Config, kind: str) -> str:
+    if is_hex(config):
+        return HEX_SIZES_IT.get(kind, f"{len(config.buildings[kind].hex_steps) + 1} esagoni")
+    spec = config.buildings[kind]
+    return f"{spec.width}×{spec.height}"
+
+
 def _territory_section(config: Config) -> dict:
     """@brief The territory rules for the sovereign's page (Italian)."""
     m = config.map
-    sizes = ", ".join(f"{BUILDING_IT.get(kind, kind).lower()} {spec.width}×{spec.height} in "
+    hex_map = is_hex(config)
+    sizes = ", ".join(f"{BUILDING_IT.get(kind, kind).lower()} {_size_it(config, kind)} in "
                       f"{TERRAIN_IT.get(spec.terrain, spec.terrain)}" + (" accanto al bosco" if spec.needs_forest else "")
                       for kind, spec in config.buildings.items())
+    square = "un rombo di 4 esagoni" if hex_map else f"{m.square_size}×{m.square_size}"
+    grid = "La mappa è fatta di esagoni: ognuno ha 6 vicini. " if hex_map else ""
     return {"title": "Territorio", "entries": [], "notes": [
-        f"Il regno possiede caselle di pianura, bosco, collina e fiume. Ingombri: {sizes}; la piazza "
-        f"{m.square_size}×{m.square_size}. Sul fiume e sul bosco non si costruisce.",
+        f"{grid}Il regno possiede caselle di pianura, bosco, collina e fiume. Ingombri: {sizes}; la piazza "
+        f"{square}. Sul fiume e sul bosco non si costruisce.",
         "Il piano della città divide la terra in zone (campi, centro, case, botteghe, riserva): un edificio "
         "sta solo in una zona del suo tipo, le case anche nel centro. Lo disegna l'Architetta.",
         f"Annettere una casella confinante costa {m.claim_base_gold} oro, uno in più ogni {m.claim_step_tiles} "

@@ -313,7 +313,7 @@ def _ask(ctx: MeetingContext, actor: Actor, system: str, user: str,
             log_call(ctx, actor, "invalid_reply", reply, error=refusal, keep_reply=True,
                      prompt=(system, prompt))
             prompt = user + RETRY_REMINDER.format(error=refusal)
-            if reply.output_tokens >= ctx.settings.max_output_tokens:
+            if reply.output_tokens >= ctx.settings.output_cap(actor.role):
                 # It ran up to the output cap (reasoning that never ended, or a
                 # looping string: 5 of 6 refusals in games 5-7). The model has
                 # no reasoning budget, only levels: retry without reasoning, or

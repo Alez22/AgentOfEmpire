@@ -34,6 +34,12 @@ models_reasoning_required = ["z-ai/glm-5.3-flash"]
 # per role): the best of the bench (PLAN.md, "Lab: bench of the council
 # models"), at about $0.001 a call. Later the player chooses these on a
 # settings page.
+# Roles with another output cap than max_output_tokens. The Architect reads
+# the hex map: 600-4,700 output tokens in the third probe, one control reply
+# 6,850 (lab/hex_probe.py, 2026-11-08); 10,000 keeps the runaway guard.
+[max_output_tokens_by_role]
+architect = 10000
+
 [model_tiers]
 low = "z-ai/glm-5.3-flash"
 medium = "z-ai/glm-5.3-flash"

@@ -83,3 +83,19 @@ def test_listed_models_get_no_schema_and_no_reasoning(server):
     assert "response_format" not in plain and "reasoning" not in plain
     assert "response_format" in other and other["reasoning"] == {"effort": "low"}
     assert plain["provider"] == {"require_parameters": True}
+
+
+def test_a_role_can_have_its_own_output_cap(server):
+    _Handler.byte_delay = 0.0
+    url = f"http://127.0.0.1:{server.server_address[1]}"
+    client = OpenRouterClient(url, "test-key", 1, prices={}, max_output_tokens=6000,
+                              max_output_tokens_by_role={"architect": 10000})
+    client.complete("architect", "some/model", "s", "u", schema=None)
+    client.complete("treasurer", "some/model", "s", "u", schema=None)
+    assert [body["max_tokens"] for body in _Handler.bodies] == [10000, 6000]
+
+
+def test_settings_give_the_architect_a_higher_cap():
+    from server.council.settings import load_settings
+    settings = load_settings()
+    assert settings.output_cap("architect") > settings.output_cap("treasurer") == settings.max_output_tokens
