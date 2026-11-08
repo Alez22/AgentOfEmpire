@@ -803,6 +803,13 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
 3. **Aurelia, rich in food, piled up 1858 food and never sold it**: R5 sells only when gold is short, and Aurelia's 67 gold covered 3 months of costs. Brenna, poor in food, ended on the reduced ration. Open: a rule to sell a surplus anyway.
 4. **Two defects of the rules, fixed**: R4b counted the next 4 months of firewood, so from April to July every wood purchase was "useless" (wood now counts to the end of the next winter); R5 told Brenna to sell the wood its own plan was buying (a good the plan buys is no longer sold). Brenna's Treasurer refused that directive on its own, with the right reason.
 
+### Presentation page and map graphics (2026-11-08)
+
+- **Presentation page** of the finished game: `docs/index.html`, live at https://alez22.github.io/AgentOfEmpire/ (GitHub Pages from `main` → `/docs`). Eleven chapters in Italian, click-to-open deep dives, a "where we are" section. The vision decisions it needed are in `docs/DESIGN.md` (victory paths, reputation, espionage, eras' names, seasons, battles). The game's name is **AgentOfEmpire**.
+- **Gallery of graphic proposals** at the bottom of the page (temporary, to be removed once chosen): game-icons, Fluent Emoji, Phosphor; public-domain art (Lorenzetti, Très Riches Heures, Bruegel…); Kenney tiles, Watabou, Azgaar. About 6 MB in `docs/assets/proposals/`.
+- **Map graphics decided** (DESIGN, "Territory"): Kenney Tiny Town recoloured with the "serious" palette, one engine tile = 2 × 2 Tiny Town tiles. Mockup `lab/tiny_town_mockup.py` (pure-Python PNG in `lab/pixel_png.py`) draws the real core; houses and palaces are our own pixel art (`lab/pixel_buildings.py`): pitched roofs alternating eaves/gable, grass between houses, shadows; palace per era (lord's hall, town hall with civic tower and loggia, castle).
+- **Next on the mockup**: sawmill and quarry redrawn, our own castle, forest and hills; then the palace in the engine (fixed 2 × 2 like the square at core tiles (7,3)–(8,4); spec to approve first).
+
 ## Open decisions
 
 | Decision | Needed by | Notes |
@@ -814,6 +821,7 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
 | Automatic sovereigns | phase 3 | personality, models, budget |
 | Jev | phase 4 | technical details, policy schema, waiting-list sign-up |
 | Lost vision sections | before phase 4 | rewrite the parts marked [Lost] in `docs/DESIGN.md` (map, war, victory, diplomacy, espionage, progress) |
+| Palace in the engine | phase 4 | fixed 2 × 2 building east of the square (mockup approved in direction); spec, then core.toml and occupancy |
 
 ## Decisions made (the main ones)
 
