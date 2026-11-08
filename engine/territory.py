@@ -289,20 +289,39 @@ def claim_price(state: GameState, config: Config) -> int:
     return config.map.claim_base_gold + beyond // config.map.claim_step_tiles
 
 
-def next_claim(state: GameState, config: Config, terrain: str, direction: str) -> tuple[int, int] | None:
-    """@brief The tile a claim would take: not owned, of this terrain,
-    bordering the realm, on that side; nearest the square, then row, column."""
-    char = TERRAIN_CHARS[terrain]
+def next_claim(state: GameState, config: Config, terrain: str | None, direction: str | None,
+               zone: Zone | None = None) -> tuple[int, int] | None:
+    """@brief The tile a claim would take: not owned, bordering the realm,
+    inside the zone (any land but river, or of the terrain if given) or of
+    the terrain on that side; nearest the square, then row, column.
+
+    Why the zone: claiming by side took the tiles nearest the square all
+    along the border, so the realm grew in thin strips and never held the
+    3 x 3 block of a farm (lab 2026-11-08: 24 tiles in three years, no farm).
+    """
+    chars = ({TERRAIN_CHARS[terrain]} if terrain else
+             {c for name, c in TERRAIN_CHARS.items() if name != "river"})
     best = None
     for y, row in enumerate(state.terrain):
         for x, tile in enumerate(row):
-            if tile != char or state.owned[y][x] != NOT_OWNED:
+            if tile not in chars or state.owned[y][x] != NOT_OWNED:
+                continue
+            if zone is not None and not (zone.x1 <= x <= zone.x2 and zone.y1 <= y <= zone.y2):
                 continue
             if not _in_direction(state, config, x, y, direction) or not _borders_the_realm(state, x, y):
                 continue
             key = (_tile_distance(state, config, x, y), y, x)
             best = key if best is None or key < best else best
     return None if best is None else (best[2], best[1])
+
+
+def unclaimed_in_zone(state: GameState, zone: Zone) -> int:
+    """@brief Land tiles (not river) of the zone the realm does not own yet."""
+    river = TERRAIN_CHARS["river"]
+    size = len(state.terrain)
+    return sum(1 for y in range(max(0, zone.y1), min(size, zone.y2 + 1))
+               for x in range(max(0, zone.x1), min(size, zone.x2 + 1))
+               if state.owned[y][x] == NOT_OWNED and state.terrain[y][x] != river)
 
 
 def clearing_work(config: Config, terrain_char: str) -> int:

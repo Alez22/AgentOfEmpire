@@ -66,6 +66,8 @@ def order_label(order: dict) -> str:
     if action == "set_zones":
         return f"Nuovo piano della città: {len(order.get('zones') or [])} zone"
     if action == "claim_tiles":
+        if order.get("zone"):
+            return f"Annettere {order.get('count')} caselle nella zona {order['zone']}"
         return (f"Annettere {order.get('count')} caselle di {TERRAINS.get(order.get('terrain'), order.get('terrain'))}"
                 f" a {DIRECTIONS.get(order.get('direction'), order.get('direction'))}")
     if action == "fell_forest":

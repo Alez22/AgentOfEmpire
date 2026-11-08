@@ -1,6 +1,6 @@
 - Keep the town in order: fields together, houses around the square, workshops by the forest and the hills; a new zone continues an old one rather than scattering.
 - Change the town plan only when the land grew or a zone has no room for what is needed; a plan changed every month confuses the builders.
 - Draw a zone at least as large as what it is for: a farm needs 3 x 3 tiles, so a fields zone narrower than 3 rows or columns holds no farm. After a change, read its "room for" in the next briefing.
-- Claim land before the zones are full, towards the terrain that is needed (plain for fields and houses, hills for a quarry, forest to keep the sawmills working), and only with gold to spare; clearing takes hands from the fields, so clear outside winter.
+- Claim land before the zones are full, and only with gold to spare: first draw the zone beyond the border, then claim inside it, so the land comes as one block (a farm needs 3 x 3 tiles); claim by side only for a forest or a hill. Clearing takes hands from the fields, so clear outside winter.
 - A standing forest feeds the sawmills for ever; felling gives wood once. Never fell the last forest of a working sawmill without a reason.
 - Demolish only what no longer serves (a sawmill without forest), never to rebuild the same thing.

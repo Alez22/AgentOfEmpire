@@ -67,11 +67,14 @@ class SetZonesOrder(BaseOrder):
 
 
 class ClaimTilesOrder(BaseOrder):
-    """Bordering tiles of one terrain, on one side of the square."""
+    """Bordering tiles inside a zone of the town plan, or of one terrain on one
+    side of the square. Exactly one of zone and direction (checked in the
+    validator); terrain is required with a direction, optional with a zone."""
     action: Literal["claim_tiles"]
-    direction: Literal["north", "south", "east", "west"]
-    terrain: Literal["plain", "forest", "hill"]
     count: int = Field(ge=1)
+    zone: str | None = None
+    direction: Literal["north", "south", "east", "west"] | None = None
+    terrain: Literal["plain", "forest", "hill"] | None = None
 
 
 class FellForestOrder(BaseOrder):

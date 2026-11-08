@@ -118,13 +118,20 @@ def _apply_claim(state: GameState, order: ClaimTilesOrder, config: Config) -> Or
         return _reject(order, "NO_MAP", "this realm has no map")
     if order.count > config.map.claim_max_per_order:
         return _reject(order, "INVALID_PARAM", f"at most {config.map.claim_max_per_order} tiles an order")
+    if (order.zone is None) == (order.direction is None):
+        return _reject(order, "INVALID_PARAM", "give a zone or a direction, not both")
+    if order.direction is not None and order.terrain is None:
+        return _reject(order, "INVALID_PARAM", "a claim by direction needs a terrain")
+    zone = next((z for z in state.zones if z.name == order.zone), None)
+    if order.zone is not None and zone is None:
+        return _reject(order, "UNKNOWN_ZONE", f"no zone named '{order.zone}'")
+    where = f"in zone '{order.zone}'" if zone else f"to the {order.direction}"
     trial = copy.deepcopy(state)  # find the tiles and the price before paying anything
     tiles, total = [], 0
     for _ in range(order.count):
-        tile = territory.next_claim(trial, config, order.terrain, order.direction)
+        tile = territory.next_claim(trial, config, order.terrain, order.direction, zone)
         if tile is None:
-            return _reject(order, "NO_LAND",
-                           f"only {len(tiles)} {order.terrain} tiles border the realm to the {order.direction}")
+            return _reject(order, "NO_LAND", f"only {len(tiles)} {order.terrain or 'land'} tiles border the realm {where}")
         total += territory.claim_price(trial, config)
         territory.claim_tile(trial, config, *tile)
         tiles.append(tile)

@@ -16,7 +16,8 @@ import copy
 from engine.config import Config
 from engine.state import Building, GameState
 from engine.territory import (KIND_PURPOSES, NOT_OWNED, OWNED, TERRAIN_CHARS, WILD, building_works,
-                              claim_price, find_place, footprint, owned_count, square_tiles, _in_direction)
+                              claim_price, find_place, footprint, owned_count, square_tiles, unclaimed_in_zone,
+                              _in_direction)
 
 # Tiles shown around the realm's land: 1 in the Architect's briefing (the
 # bordering tiles are also counted in words, frontier_line), 2 on the
@@ -92,9 +93,14 @@ def _room_text(state: GameState, config: Config, zone) -> str:
     return ("room for " + ", ".join(parts)) if parts else "full"
 
 
+def _unclaimed_text(state: GameState, zone) -> str:
+    unclaimed = unclaimed_in_zone(state, zone)
+    return f"; {unclaimed} tiles still to claim" if unclaimed else ""
+
+
 def zone_lines(state: GameState, config: Config) -> list[str]:
     return [f"- {zone.name} ({zone.purpose}), from ({zone.x1},{zone.y1}) to ({zone.x2},{zone.y2}): "
-            f"{_room_text(state, config, zone)}" for zone in state.zones]
+            f"{_room_text(state, config, zone)}{_unclaimed_text(state, zone)}" for zone in state.zones]
 
 
 def _status(state: GameState, config: Config, building: Building) -> str:

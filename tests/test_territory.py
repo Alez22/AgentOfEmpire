@@ -257,3 +257,25 @@ def test_clearing_needs_a_map(start_state, config):
 def test_the_clearing_queue_survives_a_snapshot(start_state, config):
     _claim(start_state, config, direction="south", terrain="plain", count=1)
     assert state_from_json(state_to_json(start_state)).clearing_queue == start_state.clearing_queue
+
+
+def test_a_claim_inside_a_zone_fills_it_as_a_block(start_state, config):
+    """Claiming by side spread thin along the border; inside a zone the land comes as a block."""
+    sx, sy = _site(start_state)
+    zones = [{"name": z.name, "purpose": z.purpose, "x1": z.x1, "y1": z.y1, "x2": z.x2, "y2": z.y2}
+             for z in start_state.zones]
+    zones.append({"name": "Campi del sud", "purpose": "fields", "x1": sx, "y1": sy + 12, "x2": sx + 2, "y2": sy + 14})
+    start_state.gold = 1000
+    apply_orders(start_state, _orders({"action": "set_zones", "zones": zones}), config)
+    for _ in range(3):  # 9 tiles, 3 orders of 3 (the border moves after each tile)
+        assert _claim(start_state, config, zone="Campi del sud", count=3).accepted
+    block = {(sx + dx, sy + 12 + dy) for dx in range(3) for dy in range(3)}
+    assert {(x, y) for x, y, _ in start_state.clearing_queue} == block
+    assert _claim(start_state, config, zone="Campi del sud", count=1).code == "NO_LAND"
+
+
+def test_a_claim_needs_a_zone_or_a_direction(start_state, config):
+    assert _claim(start_state, config, count=1).code == "INVALID_PARAM"
+    assert _claim(start_state, config, zone="Campi", direction="south", terrain="plain", count=1).code == "INVALID_PARAM"
+    assert _claim(start_state, config, direction="south", count=1).code == "INVALID_PARAM"
+    assert _claim(start_state, config, zone="Nowhere", count=1).code == "UNKNOWN_ZONE"

@@ -45,7 +45,9 @@ def _southern_fields(state):
     """@brief A fields zone just south of the core, on land still to claim."""
     sx, sy = state.square[0] - 5, state.square[1] - 3
     zones = [dataclasses.asdict(zone) for zone in state.zones]
-    zones.append({"name": "Campi del sud", "purpose": "fields", "x1": sx, "y1": sy + 12, "x2": sx + 8, "y2": sy + 17})
+    # As wide as a farm (the craft's advice): claimed by rows, a 9-wide zone
+    # needs 27 tiles before its first 3 x 3 block; a 3-wide one needs 9.
+    zones.append({"name": "Campi del sud", "purpose": "fields", "x1": sx + 3, "y1": sy + 12, "x2": sx + 5, "y2": sy + 17})
     return _order({"action": "set_zones", "zones": zones})
 
 
@@ -70,12 +72,15 @@ def steward(state, config):
 
 def grower_orders(state, config):
     month = (state.turn - 1) % 12
-    orders = ([_southern_fields(state)] if state.turn == 1 else []) + steward(state, config)
+    # The tax that covers upkeep and salaries (game 21), set in the first month.
+    first = [_southern_fields(state), _order({"action": "set_tax", "rate": 8})] if state.turn == 1 else []
+    orders = first + steward(state, config)
     winter = month in WINTER
     clearing = 0 if winter or not state.clearing_queue else 6
     orders.append(_workers(state, config, clearing))
-    if not winter and len(state.clearing_queue) < 8 and state.gold >= 4 * claim_price(state, config) + GOLD_RESERVE:
-        orders.append(_order({"action": "claim_tiles", "direction": "south", "terrain": "plain", "count": 4}))
+    # Two tiles at a time with a small reserve, as the Architect claimed in games 20-21.
+    if not winter and len(state.clearing_queue) < 8 and state.gold >= 2 * claim_price(state, config) + 30:
+        orders.append(_order({"action": "claim_tiles", "zone": "Campi del sud", "count": 2}))
     if find_place(state, config, "farm") and state.wood >= 40 and state.stone >= 10:
         orders.append(_order({"action": "build", "building": "farm"}))
     elif housing_capacity(state, config) - state.population() < 10 and state.wood >= 30 and state.stone >= 30 \
@@ -96,8 +101,10 @@ def still_orders(state, config):
     return steward(state, config)
 
 
-def play(policy, config):
+def play(policy, config, salary=10):
     state = new_game(config, SEED)
+    state.council_salary = salary  # 10 as in the played games (three counsellors)
+    core_x, core_y = state.square[0] - 5, state.square[1] - 3
     lowest_food, no_room, sawmill_stopped = state.food, None, None
     for _ in range(MONTHS):
         result = resolve_turn(state, policy(state, config), config)
@@ -110,7 +117,9 @@ def play(policy, config):
         if state.game_over:
             break
     farms = sum(1 for b in state.buildings if b.kind == "farm")
-    return (f"tiles {owned_count(state):>3} | farms {farms} | lowest food {lowest_food:>5} | gold {state.gold:>4}"
+    outside = sum(1 for b in state.buildings if b.kind == "farm"
+                  and not (core_x <= b.x < core_x + 12 and core_y <= b.y < core_y + 12))
+    return (f"tiles {owned_count(state):>3} | farms {farms} ({outside} on new land) | lowest food {lowest_food:>5} | gold {state.gold:>4}"
             f" | wood {state.wood:>4} | adults {state.adults:>3} | fields full at month {no_room}"
             f" | sawmill stopped at month {sawmill_stopped} | paid {state.land_paid_total}"
             f"{f' | {state.game_over} at month {state.turn - 1}' if state.game_over else ''}")
@@ -119,16 +128,19 @@ def play(policy, config):
 def main():
     base = load_config()
     variants = {
-        "today (claim 20, plain 3, fell 10)": base,
-        "older values (claim 10, plain 6, fell 5)": _variant(base, claim_base_gold=10, clear_work_plain=6,
-                                                             fell_wood_per_work=5),
-        "cheap land (claim 10)": _variant(base, claim_base_gold=10),
-        "slow clearing (plain 6)": _variant(base, clear_work_plain=6),
+        "today (claim 20)": base,
+        "claim 15": _variant(base, claim_base_gold=15),
+        "claim 10": _variant(base, claim_base_gold=10),
+        "claim 8": _variant(base, claim_base_gold=8),
+        "claim 5": _variant(base, claim_base_gold=5),
     }
-    for name, policy in (("still", still_orders), ("grower", grower_orders), ("feller", feller_orders)):
+    salary_runs = {"claim 20, salaries 5": (base, 5), "claim 10, salaries 5": (_variant(base, claim_base_gold=10), 5)}
+    for name, policy in (("grower", grower_orders),):
         print(f"\n== {name}")
         for label, config in variants.items():
             print(f"{label:<36} {play(policy, copy.deepcopy(config))}")
+        for label, (config, salary) in salary_runs.items():
+            print(f"{label:<36} {play(policy, copy.deepcopy(config), salary)}")
 
 
 if __name__ == "__main__":
