@@ -192,7 +192,7 @@ Replaces the lost items of this section. Values in brackets are starting points 
 
 **Moving up: the era's building site**
 
-- The passage is the **building site of the era's palace** (village hall → town hall → castle), the same for every realm, [6–8 months], public. During it the realm is weaker (hands off the fields, an emptied treasury), the neighbours see it (a chance to raid, or to hurry their own site), the square splits between pride and fatigue, the council argues.
+- The passage is the **building site of the era's palace** (village hall → town hall → castle), the same for every realm, [6–8 months], public. During it the realm is weaker (hands off the fields, an emptied treasury), the neighbours see it (a reason to hurry their own site; in the town → kingdom passage also a chance to attack, since there is no war in the village), the square splits between pride and fatigue, the council argues.
 - **Requirements to open it** (village → town): a minimum population [about 200], a winter without hunger, the market built, no revolt in course, and the rare resources of the recipe (below). Town → kingdom: more of everything, the walls, perhaps a year of stability.
 - **An era is never lost.** If a siege or a revolt damages the palace, its functions stop until it is repaired (e.g. no communiqués): a suspension, not a downgrade.
 
@@ -250,6 +250,54 @@ Replaces the lost items of this section. Values in brackets are starting points 
   - **Third era, journalism**: besides the government's press an **independent channel** appears, which publishes what it finds out (leaks, spies, unhappy ministers), including what the sovereign would rather hide.
   - Fits the existing pieces: visibility levels (a communiqué moves a fact to public or foreign), leaks, reputation and diplomacy. Open: cost of a journalist agent (one more call per turn, cheap tier), how credibility is measured, how much the sovereign has to read.
 - **The expert of the land** (idea, 2026-11-08): hired in a later era, maps the hidden land levels of the own realm and of the neighbours (see "Land levels" in "Economy and trade").
+
+## Travellers, bandits and migration (decided 2026-11-08)
+
+### Travellers
+
+In the village there is no press and no Ambassador: news of other realms arrives only with those who pass by (merchants, pilgrims, minstrels). Travellers are **the slow, noisy channel of public news**.
+
+- **Only public facts**: a neighbour opened its palace's building site, a strike, a famine (many deaths), a big feast, a proclaimed mobilisation, much stone sold at the market. Never secrets (granaries, council plans, the real army): those belong to spies, later.
+- **Late**: 1 to 3 months, by distance.
+- **Distorted**: the engine picks a true fact (seeded generator, replay exact); the Voice of the square tells it as a wayfarer would, possibly overstated ("they say in the north people die of hunger" when three died).
+- **Variable amount**: more travellers with the market built (merchants carry most news), with close neighbours and in summer; almost none in winter.
+- **Where they are heard**: in the square (the Voice: "a merchant from the north says…") and in a "Voci da fuori" section of the council briefings, marked as rumours, not facts.
+- **Both ways**: what a realm does in public reaches the others the same way. The first possible deception: a mobilisation proclaimed in the square that does not exist, carried abroad by the travellers.
+- **Cost**: no extra model call; the engine picks the facts, the Voice tells them inside its usual call.
+- **Visibility change**: today "public" means visible at once to other realms. With travellers, in the village a public fact of another realm reaches you only through them, late and noisy. Later eras shorten the channel: press and Ambassador in the town, journalism in the kingdom.
+- **Left out**: paying travellers to spread a (false) rumour. Too much for the first era; it may come back in the town with the press and propaganda.
+
+### Bandits born from discontent
+
+In the village realms do not attack each other: the threat from outside is **bandits**, and bandits are **people who left a realm**. Discontent costs something even before revolt, and a neighbour's misrule becomes your problem.
+
+- **Flight**: after long, deep discontent, every month a small share of a realm's people leaves and joins the **world's pool of bandits** (a game-level state, like the market's warehouse and the land fund). Families leave: **adults and a smaller share of children**; elders stay. Once gone they no longer belong to the realm.
+- **The pool**: adults and children counted apart. Only adults raid; children are mouths to feed. Children in the pool age at the realms' pace, so a bandit's child grows up a bandit.
+- **Raids**: every month the pool raids. The raids are shared among the realms by **how much lies exposed** (full granaries, wood piles, market caravans) and **how weak the militia is**. Deterministic shares, seeded generator, replay exact.
+- **Natural decline**: the pool shrinks by itself (winter in the woods, people who scatter).
+- **A world full of discontent is full of bandits; a serene world has almost none.**
+- **Information**: the size of the pool is never shown. It is heard in the square ("the Rossi are gone, they say to the woods"), from travellers ("in the south people flee to the forests") and felt in the raids suffered.
+
+### Militia (the Treasurer)
+
+- A **policy of the Treasurer**, like taxes and ration: "keep N men on guard". The Treasurer weighs costs and benefits: less food, more safety.
+- The engine takes the guards first; the Architect assigns the adults that remain. The Chancellor sees the conflict in the plan ("every guard is grain less").
+- Few guards: part of the exposed stores is lost; enough guards: the raid is repelled.
+- In the town the militia becomes the barracks with the soldiers (see "The eras").
+
+### Migration (acceptance)
+
+- A realm that is content, with **free houses and jobs**, attracts people from the pool, who become its citizens again: adults become peasants, **children arrive as children** (they need houses and food at once and give hands only years later). Accepting families is an investment, not a gift.
+
+### Stages
+
+1. **Flight and raids**: the pool, the militia, natural decline. A complete lesson on its own: discontent costs.
+2. **Acceptance**: people from the pool become citizens where life is good; real migration.
+3. **Later**: refugees who remember their realm of origin, open or closed doors as a political choice, and in the town realms that secretly fund bandits against a neighbour.
+
+**Risk: spirals.** A realm in crisis loses adults, produces less and grows more discontent, while a rich realm absorbs them and grows. Brakes: bandits raid those with much to take, not the weakest; acceptance is limited by free houses; flight is slow and starts only after several months of deep discontent; children cost before they give. To be tried in a multi-realm lab (like the 8-realm market lab) before stage 2 enters the engine.
+
+**Order of the month**: the realms are resolved one by one, then a world step (flight, raids, acceptance), with deterministic shares.
 
 ## Revolt and coup
 
@@ -894,7 +942,7 @@ Approved on 2026-11-07, after game 4: the square's opinion must turn into what t
 
 **Games saved before** have no `[people]` section in their config: the people decide nothing and their results do not change.
 
-**Next behaviours** (after a played test): tax evasion (part of the taxes not collected), emigration (families leave after long, deep discontent), voluntary work (a site finishes a month early when the mood is high). The strike stays as the fixed extreme of the unrest ladder.
+**Next behaviours** (after a played test): tax evasion (part of the taxes not collected), emigration (families leave after long, deep discontent; decided 2026-11-08: they join the world's pool of bandits, see "Travellers, bandits and migration" in Part 1), voluntary work (a site finishes a month early when the mood is high). The strike stays as the fixed extreme of the unrest ladder.
 
 ## Territory: map, town plan, expansion (phase 4, step 1)
 
