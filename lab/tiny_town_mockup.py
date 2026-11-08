@@ -26,6 +26,7 @@ import tomllib
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+import pixel_buildings  # noqa: E402
 from pixel_png import read_indexed, write_rgb  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -248,9 +249,20 @@ PALACE_BY_ERA = {
 
 
 def draw_palace(canvas: Canvas, sheet, era: int, sub_x: int, sub_y: int) -> None:
+    """@brief Eras 1 and 2 are our own drawings (pixel_buildings); the castle
+    keeps Tiny Town's walls and gate, with the gold banner on top."""
+    palette = sheet[1]
+    px, py = sub_x * TILE, sub_y * TILE
+    if era == 1:
+        pixel_buildings.draw_lord_hall(canvas, palette, px, py)
+        return
+    if era == 2:
+        pixel_buildings.draw_town_hall(canvas, palette, px, py)
+        return
     for dy, row in enumerate(PALACE_BY_ERA[era]):
         for dx, index in enumerate(row):
             canvas.put_sheet_tile(sheet, index, sub_x + dx, sub_y + dy)
+    pixel_buildings.draw_banner(canvas, palette, px + 33, py + 2, 12, flag_left=False)
 
 
 def house_style(building_id: int, era: int | None) -> tuple[tuple, dict]:
@@ -264,6 +276,13 @@ def house_style(building_id: int, era: int | None) -> tuple[tuple, dict]:
 
 
 def draw_house(canvas: Canvas, sheet, building_id: int, sub_x: int, sub_y: int, era: int | None = None) -> None:
+    """@brief Houses are our own drawings (pitched roofs, apart from each
+    other); without an era they take the town's style."""
+    pixel_buildings.draw_house(canvas, sheet[1], sub_x * TILE, sub_y * TILE, building_id, era or 2)
+
+
+def draw_house_kenney(canvas: Canvas, sheet, building_id: int, sub_x: int, sub_y: int, era: int | None = None) -> None:
+    """@brief The first version, with Tiny Town's flat roofs (kept to compare)."""
     roof, walls = house_style(building_id, era)
     canvas.put_sheet_tile(sheet, roof[0], sub_x, sub_y)
     canvas.put_sheet_tile(sheet, roof[2], sub_x + 1, sub_y)
