@@ -10,7 +10,7 @@ it may exaggerate after a shock and miss a slow change).
 import psycopg
 from psycopg.types.json import Jsonb
 
-from engine.turn import food_needed, mood_factors
+from engine.turn import class_factors, food_needed, mood_factors
 from server.council.briefing import MONTHS
 from server.council.memory import order_text
 from server.council.meeting import (
@@ -34,7 +34,7 @@ SEASON_RULE = ("A season has just ended: tell how the people lived it, month aft
 # workers) never reaches the square even if listed here.
 # Cold, worn buildings and carts of bought goods are seen by everyone ([needs], market).
 TOLD_EVENTS = ("famine", "unrest_changed", "building_completed", "demography", "game_over", "audience",
-               "firewood_short", "stone_upkeep_short", "trade_bought")
+               "firewood_short", "stone_upkeep_short", "trade_bought", "class_unrest_changed")
 # How far back the peasants remember (mood and events). One value while the
 # peasants are the only class; later each class gets its own horizon
 # (e.g. merchants and clergy a year or more): see docs/DESIGN.md.
@@ -160,6 +160,49 @@ def feelings_line(ctx: MeetingContext) -> str:
             + ". What cheers them: " + ("; ".join(joys) or "nothing in particular") + ".")
 
 
+# What the merchants feel (village block A). Their trade factor is told by
+# its cause, so the square blames the crown only when the crown is to blame.
+MERCHANT_FELT = {
+    "taxes": ("the merchants' tax", "the merchants' tax"),
+    "ration": ("the short ration", "the generous ration"),
+    "hunger": ("hunger", "hunger"),
+    "housing": ("crowded houses", "crowded houses"),
+    "deaths": ("mourning for the dead", "mourning"),
+}
+
+
+def _trade_words(value: int, rules) -> str:
+    if value == rules.idle_malus:
+        return "a market kept idle while goods wait in the warehouse"
+    if value == rules.empty_malus:
+        return "an empty warehouse, nothing to trade"
+    return "a busy market"
+
+
+def merchants_lines(ctx: MeetingContext) -> list[str]:
+    """@brief The merchants' part of the square: their own mood band, unrest
+    and burdens, from the engine's class factors. [] without merchants."""
+    cls = ctx.state.classes.get("merchants")
+    if cls is None:
+        return []
+    rules = ctx.config.classes["merchants"]
+    missing_pct, deaths = _last_month(ctx) if ctx.turn > 1 else (0, 0)
+    factors = class_factors(ctx.state, ctx.config, "merchants", food_needed(ctx.state, ctx.config), missing_pct,
+                            deaths)
+    felt = sorted(((n, v) for n, v in factors.items() if v), key=lambda item: -abs(item[1]))
+    burdens, joys = [], []
+    for name, value in felt:
+        words = _trade_words(value, rules) if name == "trade" else MERCHANT_FELT[name][0 if value < 0 else 1]
+        (burdens if value < 0 else joys).append(f"{words} ({_weight_words(value)})")
+    return [
+        "## The merchants (the few families at the market; give them a sentence or two of their own, "
+        "\"at the market they say...\", after the peasants)",
+        f"- Mood of the merchants (0-1000; NEVER say it): {cls.mood}. Unrest: {cls.unrest}.",
+        "- What weighs on them, heaviest first: " + ("; ".join(burdens) or "nothing in particular")
+        + ". What cheers them: " + ("; ".join(joys) or "nothing in particular") + ".",
+    ]
+
+
 def _own_words(ctx: MeetingContext) -> list[str]:
     rows = ctx.conn.execute(
         "SELECT turn, content FROM council_messages WHERE realm_id = %s AND kind = 'voice'"
@@ -187,6 +230,7 @@ def facts_for_the_square(ctx: MeetingContext, season: bool) -> str:
         # they can only guess it from the ration, hunger and feasts.
         f"- Ration: {state.ration}. Taxes: {state.tax_rate}%.",
         f"- People: {state.children} children, {state.adults} adults, {state.elders} elders.",
+        *merchants_lines(ctx),
     ]
     events = _told_events(ctx, first_turn, ctx.turn - 1)
     lines.append("- What happened: " + ("; ".join(events) if events else "nothing remarkable") + ".")

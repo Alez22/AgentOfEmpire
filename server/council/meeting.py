@@ -18,7 +18,7 @@ from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ValidationError
 
 from engine import check_plans, parse_order
-from engine.market import MarketState, check_month_plan
+from engine.market import MarketState, check_month_plan, market_status
 from engine.turn import jobs_at_harvest
 from engine.config import Config
 from engine.orders import Order
@@ -33,14 +33,15 @@ from server.db.access import Clearance
 PROMPTS_DIR = Path(__file__).with_name("prompts")
 MINISTERS = ("treasurer", "architect")
 ROLE_ACTIONS = {
-    "treasurer": ("set_tax", "set_ration", "hold_feast", "trade"),
+    "treasurer": ("set_tax", "set_ration", "hold_feast", "trade", "set_merchant_tax"),
     "architect": ("build", "assign_workers", "set_zones", "claim_tiles", "fell_forest", "demolish"),
 }
 # Orders that exist only on the map: left out of the prompts of games
 # without one (the engine would refuse them with NO_MAP anyway).
 MAP_ACTIONS = ("set_zones", "claim_tiles", "fell_forest", "demolish")
-# Likewise trade exists only in games with a market (else NO_MARKET).
-MARKET_ACTIONS = ("trade",)
+# Likewise trade exists only where the realm can trade (a game with a market
+# and, in village block A, a finished market building).
+MARKET_ACTIONS = ("trade", "set_merchant_tax")
 ROLE_TITLES = {"treasurer": "Treasurer", "architect": "Architect", "chancellor": "Chancellor"}
 ROLE_DUTIES = {
     "treasurer": "the treasury, taxes, food rations and feasts for the people.",
@@ -460,48 +461,87 @@ def render_prompt(name: str, **values) -> str:
 
 
 # The rule about trade in every prompt: games without a market keep the
-# rule of the playtests (game 2: the council believed gold buys food).
+# rule of the playtests (game 2: the council believed gold buys food); in
+# village block A a realm without its market building is told so.
 MARKET_RULES = {
-    "council": (
-        "- There is no market and no trade yet: gold cannot buy food, wood or stone. Food comes only from the "
-        "farms. A feast costs gold and only lifts the people's mood for a while; it brings no food.",
-        "- There is a common market shared with the other realms: only the Treasurer buys and sells food, wood "
-        "and stone there, at the prices in the briefing (see Market in the manual). A feast costs gold and only "
-        "lifts the people's mood for a while; it brings no food."),
-    "lessons": (
-        "- There is no market yet: gold cannot buy food, and a feast brings no food; do not learn otherwise.",
-        "- Gold buys at the market only what the other realms put on sale, and a feast brings no food; do not "
-        "learn otherwise."),
-    "mandate": (
-        "there is no market or trade, gold cannot buy food",
-        "trade happens only through the Treasurer's trade orders at the common market"),
+    "council": {
+        "none": "- There is no market and no trade yet: gold cannot buy food, wood or stone. Food comes only from "
+                "the farms. A feast costs gold and only lifts the people's mood for a while; it brings no food.",
+        "unbuilt": "- The realm has no market yet: until its market building is finished (the Architect builds "
+                   "it, see market in the manual), gold cannot buy food, wood or stone and nobody here knows the "
+                   "prices. Food comes only from the farms. A feast costs gold and only lifts the people's mood "
+                   "for a while; it brings no food.",
+        "open": "- There is a common market shared with the other realms: only the Treasurer buys and sells food, "
+                "wood and stone there, at the prices in the briefing, within the lots the merchants can handle "
+                "(see Market in the manual). A feast costs gold and only lifts the people's mood for a while; it "
+                "brings no food.",
+    },
+    "lessons": {
+        "none": "- There is no market yet: gold cannot buy food, and a feast brings no food; do not learn otherwise.",
+        "unbuilt": "- The realm has no market until its market building is finished: gold cannot buy food before "
+                   "then, and a feast brings no food; do not learn otherwise.",
+        "open": "- Gold buys at the market only what the other realms put on sale, and a feast brings no food; do "
+                "not learn otherwise.",
+    },
+    "mandate": {
+        "none": "there is no market or trade, gold cannot buy food",
+        "unbuilt": "the realm has no market yet: no trade until the Architect's market building is finished",
+        "open": "trade happens only through the Treasurer's trade orders at the common market",
+    },
 }
 
 
-def market_rule(config: Config, kind: str) -> str:
-    """@brief The trade rule of a prompt kind ("council", "lessons", "mandate")."""
-    return MARKET_RULES[kind][config.market is not None]
+def market_rule(config: Config, kind: str, state: GameState | None = None) -> str:
+    """@brief The trade rule of a prompt kind ("council", "lessons", "mandate").
+    @param state The realm's state; None reads the game alone (open if it has a market)."""
+    if state is None:
+        status = "open" if config.market is not None else "none"
+    else:
+        status = market_status(state, config)
+    return MARKET_RULES[kind][status]
+
+
+def _village_market(config: Config) -> bool:
+    """@brief True in games where the market is a building (village block A)."""
+    return config.market is not None and config.market.needs_building
 
 
 def _order_formats(ctx: MeetingContext) -> str:
     text = render_prompt("order_formats.txt", max_tax_rate=ctx.config.economy.max_tax_rate)
-    if ctx.config.market is not None:
+    status = market_status(ctx.state, ctx.config)
+    if status == "open":
         text += render_prompt("order_formats_market.txt", lot=ctx.config.market.lot_units)
+    if _village_market(ctx.config):
+        text += render_prompt("order_formats_village.txt")
+        if status == "open":
+            text += render_prompt("order_formats_merchant_tax.txt", max_rate=ctx.config.market.max_merchant_tax)
     if ctx.config.map is not None:
         text += render_prompt("order_formats_map.txt", max_claim=ctx.config.map.claim_max_per_order)
     return text
 
 
 def allowed_actions(ctx: MeetingContext, role: str) -> str:
+    status = market_status(ctx.state, ctx.config)
     actions = [a for a in ROLE_ACTIONS[role] if (ctx.config.map is not None or a not in MAP_ACTIONS)
-               and (ctx.config.market is not None or a not in MARKET_ACTIONS)]
+               and (status == "open" or a not in MARKET_ACTIONS)
+               and (a != "set_merchant_tax" or _village_market(ctx.config))]
     return ", ".join(actions)
 
 
 def duties_of(ctx: MeetingContext, role: str) -> str:
+    duties = ROLE_DUTIES[role]
     if role == "architect" and ctx.config.map is not None:
-        return ROLE_DUTIES["architect_map"]
-    return ROLE_DUTIES[role]
+        duties = ROLE_DUTIES["architect_map"]
+    if _village_market(ctx.config) and role in VILLAGE_DUTIES:
+        duties += VILLAGE_DUTIES[role]
+    return duties
+
+
+# Village block A: the market is a building, its merchants pay their own tax.
+VILLAGE_DUTIES = {
+    "architect": " Also the realm's market building and the merchants who work in it.",
+    "treasurer": " Also the merchants' tax, once the realm has a market.",
+}
 
 
 EXPERTISE_INTRO = (
@@ -512,7 +552,14 @@ EXPERTISE_INTRO = (
 )
 
 
-def expertise_block(role: str, with_map: bool = False, with_market: bool = False) -> str:
+def role_expertise(ctx: MeetingContext, role: str) -> str:
+    """@brief The craft of a role in this realm: town planning on the map,
+    trading once the realm can trade, the village market where it is a building."""
+    return expertise_block(role, ctx.config.map is not None, market_status(ctx.state, ctx.config) == "open",
+                           _village_market(ctx.config))
+
+
+def expertise_block(role: str, with_map: bool = False, with_market: bool = False, with_village: bool = False) -> str:
     """@brief What the office's training teaches (a role's craft, the same
     for every holder today; later it can differ by person, in a résumé).
     On the map the Architect's craft adds town planning (expertise_<role>_map.txt);
@@ -521,7 +568,7 @@ def expertise_block(role: str, with_map: bool = False, with_market: bool = False
     if not path.exists():
         return ""
     text = path.read_text()
-    for wanted, suffix in ((with_map, "map"), (with_market, "market")):
+    for wanted, suffix in ((with_map, "map"), (with_market, "market"), (with_village, "village")):
         extra = PROMPTS_DIR / f"expertise_{role}_{suffix}.txt"
         if wanted and extra.exists():
             text += extra.read_text()
@@ -562,7 +609,7 @@ def _minister_system(ctx: MeetingContext, actor: Actor) -> str:
         "minister_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
-        expertise=expertise_block(actor.role, ctx.config.map is not None, ctx.config.market is not None),
+        expertise=role_expertise(ctx, actor.role),
         role_title=ROLE_TITLES[actor.role],
         display_name=name_of(ctx, actor.role),
         person=person_block(actor),
@@ -572,7 +619,7 @@ def _minister_system(ctx: MeetingContext, actor: Actor) -> str:
         allowed_actions=allowed_actions(ctx, actor.role),
         language=ctx.settings.language,
         order_formats=_order_formats(ctx),
-        market_rule=market_rule(ctx.config, "council"),
+        market_rule=market_rule(ctx.config, "council", ctx.state),
     )
 
 
@@ -581,7 +628,7 @@ def _chancellor_system(ctx: MeetingContext, actor: Actor) -> str:
         "chancellor_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
-        expertise=expertise_block(actor.role, ctx.config.map is not None, ctx.config.market is not None),
+        expertise=role_expertise(ctx, actor.role),
         realm_name=ctx.realm_name,
         traits=describe_traits(actor.traits),
         treasurer_name=name_of(ctx, "treasurer"),
@@ -593,7 +640,7 @@ def _chancellor_system(ctx: MeetingContext, actor: Actor) -> str:
         architect_actions=allowed_actions(ctx, "architect"),
         language=ctx.settings.language,
         order_formats=_order_formats(ctx),
-        market_rule=market_rule(ctx.config, "council"),
+        market_rule=market_rule(ctx.config, "council", ctx.state),
     )
 
 
@@ -711,7 +758,7 @@ def _lessons_system(ctx: MeetingContext, actor: Actor) -> str:
         "lessons_system.txt",
         mandate=mandate_block(ctx, actor),
         manual=manual.prompt_text(ctx.config),
-        expertise=expertise_block(actor.role, ctx.config.map is not None, ctx.config.market is not None),
+        expertise=role_expertise(ctx, actor.role),
         role_title=ROLE_TITLES[actor.role],
         display_name=name_of(ctx, actor.role),
         person=person_block(actor),
@@ -721,7 +768,7 @@ def _lessons_system(ctx: MeetingContext, actor: Actor) -> str:
         language=ctx.settings.language,
         max_lessons=ctx.settings.max_lessons,
         role_hint=LESSON_HINTS.get(actor.role, ""),
-        market_rule=market_rule(ctx.config, "lessons"),
+        market_rule=market_rule(ctx.config, "lessons", ctx.state),
     )
 
 
@@ -870,7 +917,7 @@ def _chancellor_turn(ctx: MeetingContext, round_number: int, events: list[dict],
             ctx.state, ctx.config, events, directives, reports, proposals,
             _check_lines(ctx, proposals, check), lessons, *_audience_memory(ctx, actor),
             square_voices=square_voices(ctx), **_people_kwargs(ctx), note_lines=_note_lines(ctx, actor),
-            market=briefing.market_summary_line(ctx.config, ctx.market),
+            market=briefing.market_summary_line(ctx.config, ctx.market, ctx.state),
         )
         schema = _ChancellorSchema.model_json_schema()
         reply, status = _ask(ctx, actor, _chancellor_system(ctx, actor), user, schema, _ChancellorReply,

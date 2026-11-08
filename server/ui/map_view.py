@@ -23,12 +23,13 @@ from server.council.manual import HEX_SIZES_IT
 from server.ui.hex_board import KIND_ICON, SPRITE, hex_board
 
 TILE_PX = {False: 22, True: 34}  # zoom off / on
-PURPOSE_IT = {"fields": "Campi", "center": "Centro", "houses": "Case", "workshops": "Botteghe", "reserve": "Riserva"}
+PURPOSE_IT = {"fields": "Campi", "center": "Centro", "houses": "Case", "workshops": "Botteghe", "reserve": "Riserva",
+              "market": "Mercato"}
 PURPOSE_COLOR = {"fields": "#F2D27A", "center": "#FFF6E0", "houses": "#F2A08A", "workshops": "#E0B98F",
-                 "reserve": "#A9CBE0"}
-KIND_IT = {"farm": "Fattoria", "house": "Casa", "sawmill": "Segheria", "quarry": "Cava"}
+                 "reserve": "#A9CBE0", "market": "#C9A3E0"}
+KIND_IT = {"farm": "Fattoria", "house": "Casa", "sawmill": "Segheria", "quarry": "Cava", "market": "Mercato"}
 PLURAL_IT = {"farm": ("fattoria", "fattorie"), "house": ("casa", "case"), "sawmill": ("segheria", "segherie"),
-             "quarry": ("cava", "cave")}
+             "quarry": ("cava", "cave"), "market": ("mercato", "mercati")}
 TERRAIN_IT = {"plain": "pianura", "hill": "collina", "forest": "bosco"}
 BORDER_GOLD = "#E8C778"
 

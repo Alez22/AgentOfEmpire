@@ -145,7 +145,7 @@ def test_finishing_the_market_brings_the_merchants(start_state, config):
     for _ in range(config.buildings["market"].build_turns):
         assert "merchants" not in state.classes
         state = resolve_turn(state, [], config).state
-    assert state.classes["merchants"].mood == state.mood  # they come from the peasants
+    assert state.classes["merchants"].mood == config.mood.base  # a fresh start, as in the lab
 
 
 def test_the_trade_factor_blames_the_crown_more_than_an_empty_warehouse(start_state, config):

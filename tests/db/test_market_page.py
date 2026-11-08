@@ -70,3 +70,17 @@ def test_a_world_without_a_market_says_so(ui, database_url):
     del raw["market"]
     _, (realm_id,) = _game(database_url, raw)
     assert "In questo mondo non c'è mercato" in _page(ui, realm_id)
+
+
+def test_pages_hold_with_a_market_building_on_the_map(ui, database_url):
+    """Village block A: a realm that built its market; the pages must not break
+    (the market's own look on the map and its page come with the UI step)."""
+    game_id, (realm_id,) = _game(database_url, load_raw_config())
+    with psycopg.connect(database_url, autocommit=True) as conn:
+        submit_order(conn, realm_id, {"action": "build", "building": "market"})
+        resolve_open_turn(conn, game_id)
+        resolve_open_turn(conn, game_id)
+    for page in ("", "/kingdom", "/map", "/market", "/chronicle", "/manual"):
+        response = ui.get(f"/ui/realms/{realm_id}{page}")
+        assert response.status_code == 200, page
+    assert "Completato un mercato" in html.unescape(ui.get(f"/ui/realms/{realm_id}/chronicle").text)

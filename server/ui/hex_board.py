@@ -26,11 +26,11 @@ HEX_WIDTH = math.sqrt(3) * RADIUS
 PAD = 12
 TERRAIN_CLASS = {".": "h-plain", "T": "h-forest", "^": "h-hill", "~": "h-river"}
 LOT_CLASS = {"farm": "h-field", "quarry": "h-quarry", "square": "h-square", "sawmill": "h-sawmill",
-             "house": "h-plain"}
+             "house": "h-plain", "market": "h-square"}  # market: its own look comes with the UI step
 SPRITE = "/static/icons/sprite.svg"
 # Icon of each building kind for the detail card and the legend.
 KIND_ICON = {"farm": "barn", "house": "family-house", "sawmill": "circular-saw", "quarry": "mining",
-             "square": "well"}
+             "square": "well", "market": "viking-longhouse"}  # market: placeholder until the UI step
 
 
 def centre(x: int, y: int, x1: int, y1: int) -> tuple[float, float]:

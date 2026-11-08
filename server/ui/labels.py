@@ -35,6 +35,9 @@ REJECTIONS = {
     "NO_MARKET": "in questo mondo non c'è mercato",
     "BOTH_SIDES": "questo mese il bene si compra o si vende, non entrambe le cose",
     "OWN_GOODS_ON_SALE": "hai già questo bene in vendita al mercato: lo ricompreresti pagando due volte il margine",
+    "NO_MARKET_BUILDING": "il regno non ha ancora un mercato finito",
+    "TRADE_CAPACITY": "i mercanti non possono trattare tanti lotti questo mese",
+    "ONE_PER_REALM": "il regno ha già un mercato (o il suo cantiere)",
     # The territory (engine/territory.py).
     "NO_SPACE": "non c'è posto nella zona",
     "UNKNOWN_ZONE": "zona sconosciuta",
@@ -95,8 +98,11 @@ def order_label(order: dict) -> str:
         return f"Festa per il popolo: {order.get('gold')} oro"
     if action == "assign_workers":
         clearing = f", {order['clearing']} a dissodare" if order.get("clearing") else ""
+        trade = f", {order['trade']} al mercato" if order.get("trade") else ""
         return (f"Lavoratori: {order.get('food')} nei campi, {order.get('wood')} nei boschi, "
-                f"{order.get('stone')} nelle cave{clearing}")
+                f"{order.get('stone')} nelle cave{clearing}{trade}")
+    if action == "set_merchant_tax":
+        return f"Tassa dei mercanti al {order.get('rate')}%"
     if action == "trade":
         verb = "Comprare" if order.get("side") == "buy" else "Vendere"
         return f"{verb} al mercato {lots_of(order.get('lots'), order.get('good'))}"

@@ -32,20 +32,21 @@ from engine.territory import (KIND_PURPOSES, NOT_OWNED, OWNED, TERRAIN_CHARS, WI
 RING = 1
 HEX_RING = 4
 MAX_ROOM = 20  # room counts stop here: "20 or more" is enough to plan
-LETTERS = {"farm": "F", "sawmill": "S", "quarry": "Q", "house": "H"}
+LETTERS = {"farm": "F", "sawmill": "S", "quarry": "Q", "house": "H", "market": "M"}
 # Tiles outside the realm: the same terrain, another character.
 NOT_OWNED_CHARS = {".": ",", "T": "t", "^": "n", "~": "~"}
 DIRECTIONS = ("north", "south", "east", "west")
 LEGEND = ("Legend: realm's land: . plain, T forest, ^ hill, ~ river, w claimed but still wild; "
           "outside the realm: , plain, t forest, n hill; P square; buildings F farm, S sawmill, Q quarry, "
-          "H house (lower case while under construction). x is the column, y the row; north is up.")
+          "H house, M market (lower case while under construction). x is the column, y the row; north is up.")
 HEX_LEGEND = ("The map is made of hexes, as on a honeycomb: odd rows sit half a hex to the east, so every hex "
               "has 6 neighbours (east, west, two above, two below). Each row lists runs of equal hexes with "
               "their columns.")
 # Shapes in words, for the briefing and the manual (hex_steps in engine/config.toml).
 HEX_SHAPES = {"farm": "7 hexes, a centre and its 6 neighbours (3 rows, 3 columns)",
               "sawmill": "2 hexes side by side, the anchor and its east neighbour",
-              "quarry": "4 hexes over 2 rows, a rhombus", "house": "1 hex"}
+              "quarry": "4 hexes over 2 rows, a rhombus", "house": "1 hex",
+              "market": "2 hexes side by side, the anchor and its east neighbour"}
 
 
 def shape_text(config: Config, kind: str) -> str:

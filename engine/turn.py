@@ -466,13 +466,15 @@ def _update_unrest(state: GameState, config: Config, events: list[Event]) -> Non
 
 def _found_classes(state: GameState, config: Config) -> None:
     """@brief A finished building brings its class (the market its merchants).
-    They come from the peasants, so they start with the peasants' mood."""
+    They start at the mood base, as in the lab the values come from: with the
+    peasants' mood after the first winter (below 400) a new market started
+    with discontented merchants and half its lots (found building step 4)."""
     if not config.classes:
         return
     for building in state.buildings:
         name = CLASS_OF_BUILDING.get(building.kind)
         if building.turns_left == 0 and name in config.classes and name not in state.classes:
-            state.classes[name] = ClassState(mood=state.mood)
+            state.classes[name] = ClassState(mood=config.mood.base)
 
 
 def trade_factor(cls: ClassState, rules: ClassConfig) -> int:

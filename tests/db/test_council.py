@@ -43,6 +43,14 @@ def _open_market_raw() -> dict:
     return raw
 
 
+@pytest.fixture
+def open_realm(db):
+    """A realm that can trade from the first month (the market before village block A)."""
+    game_id = create_game(db, _open_market_raw(), seed=3, realm_names=["Nord"], council_models=COUNCIL)
+    realm_id = db.execute("SELECT id FROM realms WHERE game_id = %s", (game_id,)).fetchone()[0]
+    return game_id, realm_id
+
+
 def _messages(db, realm_id, turn=1):
     return meeting.list_messages(db, realm_id, turn)
 
@@ -510,7 +518,7 @@ def test_briefings_show_the_harvest_and_the_empty_jobs(db, realm, settings):
     assert ("Harvest expected this month if nothing changes: 397 food (winter: farms yield 50%). "
             "After eating and rot the store would go from 1600 to about 1115: it shrinks.") in treasurer
     assert "Without any harvest it would last about 1.8 months." in treasurer
-    assert "Jobs without workers: food 7, wood 6, stone 7." in architect
+    assert "Jobs without workers: food 7, wood 6, stone 7, trade 0." in architect  # no market yet: no places
     assert "Expected this month if nothing changes: food +397, wood +24, stone +12." in architect
 
 
@@ -529,8 +537,8 @@ def test_orders_that_change_nothing_leave_the_plan(db, realm, settings):
     assert [d["reason"] for d in payload["discarded"]] == ["NO_CHANGE"] * 3
 
 
-def test_prompts_tell_the_market_and_a_feast_brings_no_food(db, realm, settings):
-    _, realm_id = realm
+def test_prompts_tell_the_market_and_a_feast_brings_no_food(db, open_realm, settings):
+    _, realm_id = open_realm
     client = FakeClient()
     meeting.hold_meeting(db, realm_id, client, settings)
     for call in client.calls:
@@ -550,8 +558,8 @@ def test_prompts_without_a_market_keep_the_old_rule(db, settings):
     assert "## The market" not in client.calls[0]["user"]
 
 
-def test_only_the_treasurer_trades(db, realm, settings):
-    _, realm_id = realm
+def test_only_the_treasurer_trades(db, open_realm, settings):
+    _, realm_id = open_realm
     client = FakeClient()
     meeting.hold_meeting(db, realm_id, client, settings)
     treasurer, architect, chancellor = (call["system"] for call in client.calls[:3])
@@ -561,8 +569,8 @@ def test_only_the_treasurer_trades(db, realm, settings):
     assert '"action": "trade"' in treasurer
 
 
-def test_the_treasurer_reads_the_market(db, realm, settings):
-    _, realm_id = realm
+def test_the_treasurer_reads_the_market(db, open_realm, settings):
+    _, realm_id = open_realm
     client = FakeClient()
     meeting.hold_meeting(db, realm_id, client, settings)
     treasurer, chancellor = client.calls[0]["user"], client.calls[2]["user"]
@@ -728,3 +736,46 @@ def test_a_summary_of_three_dots_is_asked_again(db, realm, settings):
     meeting.hold_meeting(db, realm_id, client, settings)
     assert _summary(db, realm_id)["content"] == "Maestà, ecco il piano del consiglio."
     assert len(_summary(db, realm_id)["payload"]["plan"]) == 2
+
+
+# ---- Village block A: the market as a building (docs/DESIGN.md, step 4) ----
+
+def test_a_realm_without_its_market_is_told_so_and_cannot_trade(db, realm, settings):
+    _, realm_id = realm
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)
+    by_role = {c["role"]: c for c in client.calls if c["role"] in ("treasurer", "architect", "chancellor")}
+    treasurer, architect, chancellor = by_role["treasurer"], by_role["architect"], by_role["chancellor"]
+    assert "The realm has no market yet" in treasurer["system"]
+    assert '"action": "trade"' not in treasurer["system"] and '"action": "set_merchant_tax"' not in treasurer["system"]
+    assert "You may only propose these orders: set_tax, set_ration, hold_feast. Any" in treasurer["system"]
+    assert "## The market\n- The realm has no market yet: no trade, and no news of the prices" in treasurer["user"]
+    assert "buy 11" not in treasurer["user"]  # no prices without the market
+    assert '"building": "market"' in architect["system"] and '"trade": <int>' in architect["system"]
+    assert "What your training taught you about the market building" in architect["system"]
+    assert "The realm has no market yet: any trade would be refused." in chancellor["user"]
+
+
+def _play(db, game_id, realm_id, orders_by_turn):
+    for orders in orders_by_turn:
+        for order in orders:
+            games.submit_order(db, realm_id, order)
+        resolve_open_turn(db, game_id)
+
+
+def test_a_finished_market_with_merchants_reaches_the_council_and_the_square(db, realm, settings):
+    game_id, realm_id = realm
+    staff = {"action": "assign_workers", "food": 50, "wood": 4, "stone": 3, "trade": 3}
+    _play(db, game_id, realm_id, [[{"action": "build", "building": "market"}], [], [staff]])
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)
+    treasurer = next(c for c in client.calls if c["role"] == "treasurer")
+    assert '"action": "trade"' in treasurer["system"] and '"action": "set_merchant_tax"' in treasurer["system"]
+    assert "What your training taught you about the merchants" in treasurer["system"]
+    assert "- Your merchants: 3 at the market (6 places); this month they can handle 9 lots in all" in treasurer["user"]
+    assert "- Merchants' tax: 10% of the gold value of the month's trades" in treasurer["user"]
+    assert "buy 11" in treasurer["user"]
+    # The council's test settings have no Voice: read its facts directly.
+    from server.council import voice
+    facts = voice.facts_for_the_square(meeting.load_context(db, realm_id, None, None), season=False)
+    assert "## The merchants" in facts and "Mood of the merchants (0-1000; NEVER say it): " in facts

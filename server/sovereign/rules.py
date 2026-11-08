@@ -7,6 +7,7 @@ Pure functions: state, config and market in, decisions with their reasons
 Rule names follow the draft of game 24: R1 petitions, R2 winter food,
 R3 no claims in winter, R4b useless purchases, R5 sell when gold is short,
 R6 tax cuts, R7 buy what runs short, R8 empty buildings, R9 feasts.
+R10 (village block A, 2026-11-08): build the market, then staff it.
 """
 
 import copy
@@ -14,8 +15,9 @@ from dataclasses import dataclass
 
 from engine import parse_order
 from engine.config import Config
-from engine.market import MarketState, buy_price, check_month_plan, sell_price, state_after_trades, stock
-from engine.orders import Order, TradeOrder
+from engine.market import (MarketState, buy_price, check_month_plan, market_status, sell_price, state_after_trades,
+                           stock)
+from engine.orders import AssignWorkersOrder, BuildOrder, Order, TradeOrder
 from engine.state import GameState
 from engine.turn import (firewood_needed, food_needed, monthly_tax_income, monthly_upkeep, resolve_turn,
                          season_of, stone_upkeep)
@@ -34,6 +36,7 @@ GOLD_SHORT_MONTHS = 3  # R5: gold is short below this many months of costs
 # 1 sold in January in the poor realms too. food_lasts still guards the winter.
 SURPLUS_FOOD_KEEP_MONTHS = 2
 MAX_SELL_LOTS = 4
+MERCHANTS_WANTED = 3  # R10: merchants asked for a new market (3 x 3 lots a month)
 
 
 @dataclass
@@ -204,13 +207,47 @@ def _sell_directive(month: Month, items: list[Item], left: dict[str, int]) -> tu
             f"spese ({monthly_costs} al mese) (R5).")
 
 
+def _market_directive(month: Month, items: list[Item], left: dict[str, int]) -> tuple[str, str] | None:
+    """@brief R10: no market yet: build it once the wood also covers the
+    firewood until spring (the start wood is just the first winter's firewood)."""
+    if any(b.kind == "market" for b in month.state.buildings):
+        return None
+    if any(isinstance(i.order, BuildOrder) and i.order.building == "market" for i in items):
+        return None
+    cost = month.config.buildings["market"].wood
+    firewood = need_ahead(month.state, month.config, "wood", months_to_spring(month.state.turn))
+    if left["wood"] < cost + firewood:
+        return None
+    return ("Architetta, costruisci il mercato nella sua zona: senza mercato il regno non può commerciare.",
+            f"Direttiva: costruire il mercato: il legno ({left['wood']}) basta per il cantiere ({cost}) e per la "
+            f"legna fino a primavera ({firewood}) (R10).")
+
+
+def _merchants_directive(month: Month, items: list[Item]) -> tuple[str, str] | None:
+    """@brief R10: a market without merchants trades nothing."""
+    if month.state.workers.trade > 0:
+        return None
+    if any(isinstance(i.order, AssignWorkersOrder) and i.order.trade > 0 for i in items):
+        return None
+    return (f"Architetta, metti {MERCHANTS_WANTED} adulti al mercato: senza mercanti non si commercia.",
+            f"Direttiva: {MERCHANTS_WANTED} mercanti al mercato: è finito ma nessuno ci lavora (R10).")
+
+
 def directive(month: Month, items: list[Item]) -> tuple[str, str] | None:
     """@brief At most one directive: (text for the council, reason) or None.
-    R7 before R5: a need first."""
-    if month.market is None or month.config.market is None:
+    R10 first where the market is a building (no trade without it), then R7
+    before R5: a need first."""
+    status = market_status(month.state, month.config)
+    if month.market is None or status == "none":
         return None
     accepted = [i for i in items if i.accepted]
     left = _remaining(month, [i.order for i in accepted])
+    if status == "unbuilt":
+        return _market_directive(month, accepted, left)
+    if month.config.market.needs_building:
+        staff = _merchants_directive(month, accepted)
+        if staff:
+            return staff
     return _buy_directive(month, accepted, left) or _sell_directive(month, accepted, left)
 
 
@@ -260,7 +297,9 @@ def _claim_in_winter(month: Month, item: Item) -> str:
 def _tax_cut(month: Month, item: Item) -> str:
     if item.raw.get("action") != "set_tax" or item.order.rate >= month.state.tax_rate:
         return ""
-    income = month.state.adults * item.order.rate // month.config.economy.tax_divisor
+    # The merchants pay their own tax, not this one (workers.trade is 0 elsewhere).
+    taxed_adults = month.state.adults - month.state.workers.trade
+    income = taxed_adults * item.order.rate // month.config.economy.tax_divisor
     monthly_costs = costs(month.state, month.config)
     if income >= monthly_costs:
         return ""

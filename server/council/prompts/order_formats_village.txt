@@ -1,0 +1,3 @@
+The market building (the realm trades only once it is finished):
+- {{"action": "build", "building": "market"}}   only one per realm, only in a zone of purpose "market" (the start plan has one, "Mercato", by the square); until it is finished the realm cannot trade
+- "assign_workers" also takes "trade": <int>, the merchants at the market (a total like the others; missing means 0); they produce no goods, they handle the lots the realm trades, so without merchants the Treasurer cannot trade

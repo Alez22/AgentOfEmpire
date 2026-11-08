@@ -125,7 +125,7 @@ def review(conn: psycopg.Connection, realm_id: int, role: str, request: str, cli
     system = render_prompt("mandate_review_system.txt", realm_name=ctx.realm_name,
                            traits=describe_traits(chancellor.traits), language=settings.language,
                            manual=manual.prompt_text(ctx.config),
-                           market_rule=market_rule(ctx.config, "mandate"))
+                           market_rule=market_rule(ctx.config, "mandate", ctx.state))
     reply, _status = _ask(ctx, chancellor, system, _review_user(ctx, role, request),
                           _ReviewSchema.model_json_schema(), _ReviewReply)
     decision, mandate, words = "rejected", None, NO_ANSWER

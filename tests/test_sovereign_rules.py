@@ -14,6 +14,16 @@ def _items(*raw_orders):
     return [rules.Item(index, parse_order(raw)[0], raw, True) for index, raw in enumerate(raw_orders)]
 
 
+def _open_market(state, config, merchants=3):
+    """@brief A finished market with merchants: R7 and R5 apply only then (R10 before)."""
+    from engine.state import Building
+    from engine.territory import find_place
+    state.buildings.append(Building("market", 0, state.next_building_id, *find_place(state, config, "market")))
+    state.next_building_id += 1
+    state.workers.food -= merchants
+    state.workers.trade = merchants
+
+
 def _excluded(state, config, *raw_orders, granted=None):
     return [index for index, _ in rules.exclusions(_month(state, config), _items(*raw_orders), granted)]
 
@@ -86,12 +96,14 @@ def test_petitions_on_taxes_and_rations(start_state, config):
 
 
 def test_a_directive_buys_the_stone_that_runs_short(start_state, config):
+    _open_market(start_state, config)
     start_state.stone, start_state.gold = 0, 500
     text, reason = rules.directive(_month(start_state, config), [])
     assert "compra" in text and "pietra" in text and "(R7)" in reason
 
 
 def test_a_directive_sells_a_surplus_when_gold_is_short(start_state, config):
+    _open_market(start_state, config)
     start_state.gold, start_state.wood, start_state.stone = 0, 2000, 1000
     text, reason = rules.directive(_month(start_state, config), [])
     assert text == "Tesoriere, vendi al mercato 4 lotti di pietra." and "(R5)" in reason  # stone pays most
@@ -126,6 +138,7 @@ def test_a_good_the_plan_buys_is_not_sold(start_state, config):
 
 def test_a_large_surplus_is_sold_even_with_gold_enough(start_state, config):
     """R5b, game 25: Aurelia kept 1858 food with gold enough."""
+    _open_market(start_state, config)
     start_state.turn, start_state.gold = 8, 1000  # August
     start_state.food, start_state.wood, start_state.stone = 50_000, 100, 1000
     month = _month(start_state, config)
@@ -134,3 +147,21 @@ def test_a_large_surplus_is_sold_even_with_gold_enough(start_state, config):
     assert text == "Tesoriere, vendi al mercato 4 lotti di cibo." and "(R5b)" in reason
     start_state.food = rules.SURPLUS_FOOD_KEEP_MONTHS * rules.food_needed(start_state, config)  # only what it keeps
     assert rules.directive(month, []) is None
+
+
+def test_r10_builds_the_market_once_the_wood_covers_the_winter(start_state, config):
+    month = _month(start_state, config)
+    assert rules.directive(month, []) is None  # January: 150 wood is the firewood until March
+    start_state.wood = 300
+    text, reason = rules.directive(month, [])
+    assert "costruisci il mercato" in text and "(R10)" in reason
+    planned = _items({"action": "build", "building": "market"})
+    assert rules.directive(month, planned) is None
+
+
+def test_r10_staffs_a_market_without_merchants(start_state, config):
+    _open_market(start_state, config, merchants=0)
+    text, reason = rules.directive(_month(start_state, config), [])
+    assert "adulti al mercato" in text and "(R10)" in reason
+    staffed = _items({"action": "assign_workers", "food": 50, "wood": 4, "stone": 3, "trade": 3})
+    assert "(R10)" not in (rules.directive(_month(start_state, config), staffed) or ("", ""))[1]

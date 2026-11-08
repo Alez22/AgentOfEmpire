@@ -113,6 +113,17 @@ def has_active_market(state: GameState) -> bool:
     return any(b.kind == "market" and b.turns_left == 0 for b in state.buildings)
 
 
+def market_status(state: GameState, config: Config) -> str:
+    """@brief Where a realm stands with the market, for the council and the
+    sovereign: "none" (a game without a market), "unbuilt" (village block A:
+    no finished market building yet), "open" (it can trade)."""
+    if config.market is None:
+        return "none"
+    if config.market.needs_building and not has_active_market(state):
+        return "unbuilt"
+    return "open"
+
+
 def trade_capacity(state: GameState, config: Config) -> int | None:
     """@brief Lots the realm may trade this month: its merchants at the start of
     the month (trades run before this month's assign_workers) times

@@ -52,6 +52,19 @@ def _buildings(config: Config) -> list:
     return [(kind, spec) for kind, spec in config.buildings.items() if spec.sector != "trade" or needs_market]
 
 
+def _taxed_adults(config: Config) -> str:
+    """@brief Who pays the ordinary tax: every adult, or all but the merchants."""
+    if config.market is not None and config.market.needs_building:
+        return "adults who are not merchants"
+    return "adults"
+
+
+def _taxed_adults_it(config: Config) -> str:
+    if config.market is not None and config.market.needs_building:
+        return "adulti che non sono mercanti"
+    return "adulti"
+
+
 def _gold_text(config: Config) -> str:
     if config.market is not None:
         return ("Gold also buys food, wood and stone at the common market, and selling them there brings gold "
@@ -97,7 +110,7 @@ def prompt_text(config: Config) -> str:
         f"the abundant {economy.ration_abundant_pct}%. After eating, {economy.food_spoilage_pct}% of the stored "
         "food rots. If the food runs out there is hunger: people die, and the people suffer at once.",
         "Births need food and free places in the houses: none while houses are full or there is hunger.",
-        f"Taxes and gold: gold a month = adults x tax rate / {economy.tax_divisor} (maximum rate "
+        f"Taxes and gold: gold a month = {_taxed_adults(config)} x tax rate / {economy.tax_divisor} (maximum rate "
         f"{economy.max_tax_rate}%). {_gold_text(config)} Gold pays for houses, feasts and upkeep.",
         "Feast: it costs the gold given and lifts the people's spirits at once, for a while; repeated the "
         "month after it is worth half. It brings no food.",
@@ -158,6 +171,19 @@ def _market_lines(config: Config) -> list[str]:
     if m.short_last_lot:
         lines.append(f"- When the warehouse holds less than {m.lot_units} of a good (food lost to rot), it sells "
                      "as one short lot, paid only for what it holds.")
+    if m.needs_building:
+        spec = config.buildings["market"]
+        lines += [
+            f"- A realm trades only once its market building is finished ({spec.wood} wood, {spec.build_turns} "
+            "months, one per realm, in a market zone). Before that it knows nothing of the prices.",
+            f"- The merchants (adults assigned to the market, up to its {spec.jobs} places) handle the lots: "
+            f"{m.lots_per_merchant} lots a month each, buying and selling together. Discontented "
+            "merchants handle fewer, and on strike none.",
+            f"- The merchants pay their own tax, set by the Treasurer (0-{m.max_merchant_tax}%), on the gold value "
+            "of the month's trades, instead of the ordinary tax. Like the peasants, they feel their own burdens and "
+            "have their own unrest: the merchants' tax, an idle market while goods wait in the warehouse, hunger and a short "
+            "ration weigh on them; a busy market cheers them. Their unrest stops at the strike.",
+        ]
     return lines
 
 
@@ -240,7 +266,8 @@ def page_sections(config: Config) -> list[dict]:
             "Le nascite vogliono cibo e posti liberi nelle case: con le case piene o con la fame non nasce nessuno.",
         ]},
         {"title": "Tasse e oro", "entries": [], "notes": [
-            f"Oro al mese = adulti × aliquota / {economy.tax_divisor} (aliquota massima {economy.max_tax_rate}%).",
+            f"Oro al mese = {_taxed_adults_it(config)} × aliquota / {economy.tax_divisor} (aliquota massima "
+            f"{economy.max_tax_rate}%).",
             ("L'oro compra anche cibo, legno e pietra al mercato, e venderli lì porta oro (vedi Mercato)."
              if config.market is not None else
              "Non c'è mercato né commercio: l'oro non compra cibo, legno o pietra.")
@@ -300,6 +327,19 @@ def _market_section(config: Config) -> dict:
     if m.short_last_lot:
         notes.append(f"Se nel magazzino resta meno di {m.lot_units} di un bene (il cibo marcisce), si vende come "
                      "un lotto incompleto e si paga solo ciò che contiene.")
+    if m.needs_building:
+        spec = config.buildings["market"]
+        notes += [
+            f"Il regno commercia solo quando il suo mercato è finito ({spec.wood} legno, {spec.build_turns} mesi, "
+            "uno per regno, nella zona del mercato). Prima non conosce nemmeno i prezzi.",
+            f"I mercanti (adulti assegnati al mercato, fino ai suoi {spec.jobs} posti) trattano i lotti: "
+            f"{m.lots_per_merchant} al mese ciascuno, tra acquisti e vendite. Se sono scontenti ne trattano di "
+            "meno, in sciopero nessuno.",
+            f"I mercanti pagano una tassa loro, decisa dal Tesoriere (0-{m.max_merchant_tax}%), sul valore in oro "
+            "degli scambi del mese, al posto della tassa ordinaria. Come i contadini hanno un loro umore e i loro "
+            "disordini: pesano la loro tassa, un mercato fermo mentre c'è merce in vendita, la fame e la razione "
+            "ridotta; un mercato che lavora li rallegra. I loro disordini si fermano allo sciopero.",
+        ]
     return {"title": "Mercato", "entries": [], "notes": notes}
 
 
@@ -308,7 +348,7 @@ TERRAIN_IT = {"plain": "pianura", "hill": "collina", "forest": "bosco"}
 
 # Footprints in Italian on the hex grid (engine/config.toml hex_steps).
 HEX_SIZES_IT = {"farm": "7 esagoni (un centro e i suoi 6 vicini)", "sawmill": "2 esagoni affiancati",
-                "quarry": "4 esagoni a rombo", "house": "1 esagono"}
+                "quarry": "4 esagoni a rombo", "house": "1 esagono", "market": "2 esagoni affiancati"}
 
 
 def _size_it(config: Config, kind: str) -> str:

@@ -1,0 +1,1 @@
+- {{"action": "set_merchant_tax", "rate": <integer 0-{max_rate}>}}   the merchants' own tax, in percent of the gold value of the month's trades; they pay it instead of the ordinary tax

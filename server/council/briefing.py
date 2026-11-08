@@ -9,7 +9,7 @@ import json
 from collections import Counter
 
 from engine.config import Config
-from engine.market import GOODS, MarketState, buy_price, sell_price, stock
+from engine.market import GOODS, MarketState, buy_price, market_status, sell_price, stock, trade_capacity
 from engine.state import GameState
 from engine.turn import (
     expected_output,
@@ -145,6 +145,8 @@ def market_lines(state: GameState, config: Config, market: MarketState | None, r
     and this realm's own goods still on sale (never another realm's)."""
     if market is None or config.market is None:
         return []
+    if market_status(state, config) == "unbuilt":
+        return _no_market_lines(state, config)
     lot = config.market.lot_units
     lines = [f"## The market (shared with the other realms; lots of {lot})"]
     for good in GOODS:
@@ -156,20 +158,58 @@ def market_lines(state: GameState, config: Config, market: MarketState | None, r
     waiting = ", ".join(f"{good} {units}" for good, units in own.items() if units)
     lines.append("- Your goods waiting in the warehouse: "
                  + (f"{waiting} (paid when someone buys them)." if waiting else "none."))
+    lines += merchants_lines(state, config)
     lines.append(f"- Your stores: food {state.food}, wood {state.wood}, stone {state.stone}, gold {state.gold}.")
     if config.needs is not None:
         lines.append(needs_line(state, config))
     return lines
 
 
-def market_summary_line(config: Config, market: MarketState | None) -> list[str]:
-    """@brief One line of prices for the Chancellor's cost check."""
+def _no_market_lines(state: GameState, config: Config) -> list[str]:
+    """@brief Village block A: no market building finished, so no prices
+    either (decided 2026-11-08: they come only with the travellers, later)."""
+    site = next((b for b in state.buildings if b.kind == "market"), None)
+    spec = config.buildings["market"]
+    if site is not None:
+        where = f"its building site is finished in {site.turns_left} months."
+    else:
+        where = (f"the Architect can build one ({spec.wood} wood, {spec.build_turns} months, in the market "
+                 "zone).")
+    return ["## The market",
+            "- The realm has no market yet: no trade, and no news of the prices of the other realms; " + where]
+
+
+def merchants_lines(state: GameState, config: Config) -> list[str]:
+    """@brief The merchants and their tax (village block A); [] elsewhere.
+    Their unrest is public, their mood is not."""
+    if not config.market.needs_building:
+        return []
+    lots = trade_capacity(state, config)
+    cls = state.classes.get("merchants")
+    unrest = f" The merchants are in {cls.unrest}." if cls is not None and cls.unrest != "calm" else ""
+    return [f"- Your merchants: {state.workers.trade} at the market ({jobs_in_sector(state, config, 'trade')} "
+            f"places); this month they can handle {lots} lots in all, buying and selling "
+            f"({config.market.lots_per_merchant} each; fewer when they are discontented, none on strike).{unrest}",
+            f"- Merchants' tax: {state.merchant_tax_rate}% of the gold value of the month's trades, paid with "
+            "the trades; they pay no ordinary tax."]
+
+
+def market_summary_line(config: Config, market: MarketState | None, state: GameState | None = None) -> list[str]:
+    """@brief One line of prices for the Chancellor's cost check (none for a
+    realm that cannot trade yet: it does not know the prices)."""
     if market is None or config.market is None:
         return []
+    if state is not None and market_status(state, config) == "unbuilt":
+        return ["- The realm has no market yet: any trade would be refused."]
     prices = ", ".join(f"{good} {buy_price(market, config, good)}/{sell_price(market, config, good)}"
                        for good in GOODS)
     return [f"- Market prices (buy/sell a lot of {config.market.lot_units}): {prices}. "
             "Trades run first; the cost check assumes every purchase is filled in full."]
+
+
+def _village(config: Config) -> bool:
+    """@brief True where the market is a building (village block A)."""
+    return config.market is not None and config.market.needs_building
 
 
 def _vacant(state: GameState, config: Config, sector: str) -> int:
@@ -201,7 +241,11 @@ def works_lines(state: GameState, config: Config, people=None, territory_summary
         f"{kind}: wood {spec.wood}, stone {spec.stone}, gold {spec.gold}, {spec.build_turns} turns, "
         + (f"{spec.jobs} jobs" if spec.jobs else f"houses {spec.housing} people")
         for kind, spec in config.buildings.items()
+        if spec.sector != "trade" or _village(config)
     ]
+    trade_part = (f", trade {state.workers.trade}/{jobs_in_sector(state, config, 'trade')} (merchants)"
+                  if _village(config) else "")
+    trade_vacant = f", trade {_vacant(state, config, 'trade')}" if _village(config) else ""
     return [
         "## Works and workers",
         f"- Wood: {state.wood}. Stone: {state.stone}. Gold: {state.gold}.",
@@ -210,10 +254,10 @@ def works_lines(state: GameState, config: Config, people=None, territory_summary
         _space_line(state, config, territory_summary),
         f"- Workers (assigned/jobs): food {state.workers.food}/{jobs_in_sector(state, config, 'food')}, "
         f"wood {state.workers.wood}/{jobs_in_sector(state, config, 'wood')}, "
-        f"stone {state.workers.stone}/{jobs_in_sector(state, config, 'stone')}{_clearing_part(state)}. "
+        f"stone {state.workers.stone}/{jobs_in_sector(state, config, 'stone')}{trade_part}{_clearing_part(state)}. "
         f"Adults: {state.adults}, without work: {idle}. Workers beyond the jobs produce nothing.",
         f"- Jobs without workers: food {_vacant(state, config, 'food')}, wood {_vacant(state, config, 'wood')}, "
-        f"stone {_vacant(state, config, 'stone')}.",
+        f"stone {_vacant(state, config, 'stone')}{trade_vacant}.",
         f"- Expected this month if nothing changes: food +{output['food']}, wood +{output['wood']}, "
         f"stone +{output['stone']}.",
         f"- Housing: {state.population()} people, {housing_capacity(state, config)} places.",
