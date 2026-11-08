@@ -916,7 +916,7 @@ The first lab run also moved the world's forests and hills from straight below t
 4. The map page on the phone.
 5. A 12-month test game.
 
-## Hex grid (phase 4, spec 2026-11-08, to approve)
+## Hex grid (phase 4, spec approved 2026-11-08)
 
 The map becomes a real hex grid, drawn as in the "night" mockup (`lab/hex_map_mockup.py`): flat hexes, game-icons silhouettes, gold border. Why real and not only drawn: on a drawn-only hex map the screen shows 6 neighbours while the rules count 4, and the Architect, the player and the engine would disagree on what touches what.
 
@@ -927,7 +927,7 @@ The map becomes a real hex grid, drawn as in the "night" mockup (`lab/hex_map_mo
 - **Distance**: hex steps (through cube coordinates), integers only. "Nearest the square" uses it, with the same tie-break as today (row, then column).
 - **Directions** (north, south, east, west, for claims and felling): by the angle between the tile's centre and the square's, on integer doubled coordinates (column doubled plus parity; row scaled by 7/4, an integer stand-in for √3); diagonals still count for both sides, as today.
 
-**Footprints**: a building is its **anchor** tile plus fixed steps from it (the old "top-left tile" becomes the anchor).
+**Footprints**: a building is its **anchor** tile plus fixed steps from it (the old "top-left tile" becomes the anchor; for the farm it is the centre). A step is a direction (E, SE, …) walked through the neighbour function, never a fixed (dx, dy): the offset of SE depends on the row's parity, so the same shape has different offsets on even and odd rows. The steps live in `config.toml` (`hex_steps` per building, `square_hex_steps` in `[map]`), so they are stored with each game and a later change cannot break an old game's replay.
 
 | Building | Today | Hex | Shape |
 | --- | --- | --- | --- |
@@ -943,13 +943,13 @@ Land taken by the start: 4 farms × 7 + 2 + 4 + 6 + 4 = 44 tiles instead of 52; 
 
 **Placement**: `find_place` keeps "valid place nearest the square". The "aligned on the zone's grid" preference (made for 3 × 3 farms) is replaced by **packing**: among valid places, prefer the one whose footprint touches the most tiles already taken or outside the zone, so buildings stand close and leave no lone hexes; then distance, row, column. To be tuned in the lab. `nudge` tries the 6 neighbours of the anchor in the fixed order.
 
-**World and core**: `world.txt` redrawn with `lab/draw_world.py` on the hex grid (blobs by hex distance; the river joined through hex sides). The 8 sites stay where they are, all on even rows so every core has the same parity and the same shape (symmetric starts). `core.toml` redrawn: 4 farm flowers in the fields, sawmill by the forest, quarry rhombus on the hills, the square, 6 houses. **The palace** (fixed 4-hex rhombus east of the square, approved in direction) can come with this redraw at almost no cost, or later: to decide.
+**World and core**: a new world file, `world_hex.txt` (and `core_hex.toml`), named by `[map] world_file` / `core_file`; the square files stay as they are, so tests and old games keep theirs. The world is drawn with `lab/draw_world.py` on the hex grid (blobs by hex distance; the river joined through hex sides). The 8 sites stay where they are, all on even rows so every core has the same parity and the same shape (symmetric starts). `core_hex.toml`: 4 farm flowers in the fields, sawmill by the forest, quarry rhombus on the hills, the square, 6 houses. The current core is not valid on hexes (the quarry at core (10, 1) is on an odd row: its rhombus would leave the hill and the core), so the redraw is required. **The palace** comes later (decided 2026-11-08: it is a building with its own rules, not only a drawing); the new core leaves its 4-hex rhombus east of the square free, in a reserve zone, so it needs no redraw.
 
-**Old games**: a new `[map] grid = "hex"` key. Games saved before have no key and stay on the square grid, so their replay is exact and `ENGINE_VERSION` does not need to change; the engine keeps both neighbour tables and both footprint tables, chosen in one place.
+**Old games**: a new `[map] grid` key, `"square"` when missing. Games saved before have no key and stay on the square grid, so their replay is exact and `ENGINE_VERSION` does not need to change; the engine keeps both neighbour tables and both footprint tables, chosen in one place. **Decided 2026-11-08**: old square games are kept for replay and reading only; the briefing and the map page are written for hexes only (no second renderer).
 
 **Counsellors**
 
-- **Text grid** (`server/council/map_text.py`): odd rows printed shifted by half a cell; the legend says the map is made of hexes, each with 6 neighbours, odd rows half a cell to the east. Room per zone, "the next at (x,y)", the frontier in words: unchanged, still counted by the engine.
+- **Text grid** (`server/council/map_text.py`): cells of 4 characters (3 cannot shift by half a cell; about a third more tokens), odd rows printed shifted by 2; the legend says the map is made of hexes, each with 6 neighbours, odd rows half a cell to the east. Room per zone, "the next at (x,y)", the frontier in words: unchanged, still counted by the engine.
 - **Words**: manual, order formats and the Architect's craft speak of "anchor tile" and of shapes in hexes ("a farm takes 7 hexes: a centre and its ring") instead of "3 x 3" and "top-left".
 - **Probe first**: `lab/urban_probe.py` rerun on a hex text grid (a few cents) before the briefing changes: the models must still draw sensible zones; they place buildings mostly by zone, with the engine choosing the tile.
 

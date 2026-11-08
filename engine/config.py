@@ -49,6 +49,10 @@ class BuildingConfig:
     height: int = 1
     terrain: str = "plain"
     needs_forest: bool = False
+    # Footprint on a hex grid: the anchor plus one tile per path of steps
+    # ("E", "SE", "SW", "W", "NW", "NE") walked from it. None for games saved
+    # before the hex grid (they use width x height).
+    hex_steps: list[list[str]] | None = None
 
 
 @dataclass(frozen=True)
@@ -163,6 +167,10 @@ class MapConfig:
     # each "poor", "fair" or "rich" (docs/DESIGN.md, "Market, needs and land
     # levels"). None for games saved before: every realm yields the same.
     site_levels: list[list[str]] | None = None
+    # "square" (4 neighbours, width x height footprints) or "hex" (pointy-top,
+    # odd-r offset rows, 6 neighbours). Games saved before have no key: square.
+    grid: str = "square"
+    square_hex_steps: list[list[str]] | None = None  # the square's shape on hexes
 
 
 @dataclass(frozen=True)

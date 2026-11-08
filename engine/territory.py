@@ -10,6 +10,13 @@ in the state (about 8 KB per snapshot with the ownership rows). The
 occupancy map is rebuilt on each call, a few hundred tiles at most; a
 search for a place tries every top-left tile of the zones (at most the
 whole territory) and is cheap at this size.
+
+Two grids ([map] grid, docs/DESIGN.md "Hex grid"): "square", 4 neighbours
+and width x height footprints (games saved before), or "hex", pointy-top
+hexes in odd-r offset rows (odd rows sit half a hex to the east), 6
+neighbours and footprints walked from an anchor. The rows of the state keep
+the same format on both; only what "neighbour" means changes, and every
+rule asks neighbours() or footprint() for it.
 """
 
 import tomllib
@@ -29,6 +36,58 @@ SQUARE = "square"
 # Shifts tried, in this order, when a building given by coordinates does
 # not fit: one tile north, east, south, west, then the diagonals.
 NUDGES = ((0, -1), (1, 0), (0, 1), (-1, 0), (1, -1), (1, 1), (-1, 1), (-1, -1))
+SQUARE_STEPS = ((1, 0), (-1, 0), (0, 1), (0, -1))
+# Hex neighbours in the fixed order E, SE, SW, W, NW, NE; the step depends on
+# the row's parity (odd-r offset coordinates).
+HEX_DIRECTIONS = ("E", "SE", "SW", "W", "NW", "NE")
+HEX_STEPS_EVEN = ((1, 0), (0, 1), (-1, 1), (-1, 0), (-1, -1), (0, -1))
+HEX_STEPS_ODD = ((1, 0), (1, 1), (0, 1), (-1, 0), (0, -1), (1, -1))
+
+
+def is_hex(config: Config) -> bool:
+    return config.map.grid == "hex"
+
+
+def _hex_steps(y: int) -> tuple[tuple[int, int], ...]:
+    # y & 1 is also right for negative rows (-1 & 1 == 1): row -1 is odd.
+    return HEX_STEPS_ODD if y & 1 else HEX_STEPS_EVEN
+
+
+def neighbours(config: Config, x: int, y: int) -> list[tuple[int, int]]:
+    """@brief The tiles next to (x, y), in a fixed order; they may lie
+    outside the map. Square: east, west, south, north. Hex: E, SE, SW, W,
+    NW, NE."""
+    steps = _hex_steps(y) if is_hex(config) else SQUARE_STEPS
+    return [(x + dx, y + dy) for dx, dy in steps]
+
+
+def hex_step(x: int, y: int, direction: str) -> tuple[int, int]:
+    dx, dy = _hex_steps(y)[HEX_DIRECTIONS.index(direction)]
+    return x + dx, y + dy
+
+
+def _walk(x: int, y: int, paths: list[list[str]]) -> list[tuple[int, int]]:
+    """@brief The anchor (x, y) and the tile at the end of each path of steps.
+    Steps, not fixed offsets: the offset of SE changes with the row's parity."""
+    tiles = [(x, y)]
+    for path in paths:
+        tx, ty = x, y
+        for direction in path:
+            tx, ty = hex_step(tx, ty, direction)
+        tiles.append((tx, ty))
+    return tiles
+
+
+def hex_distance(x1: int, y1: int, x2: int, y2: int) -> int:
+    """@brief Steps between two hexes, through axial coordinates (integers)."""
+    q1, q2 = x1 - (y1 - (y1 & 1)) // 2, x2 - (y2 - (y2 & 1)) // 2
+    dq, dr = q1 - q2, y1 - y2
+    return max(abs(dq), abs(dr), abs(dq + dr))
+
+
+def _hex_to_square(state: GameState, config: Config, x: int, y: int) -> int:
+    """@brief Hex steps from (x, y) to the nearest tile of the square."""
+    return min(hex_distance(x, y, sx, sy) for sx, sy in square_tiles(state, config))
 
 
 def _load_core(config: Config) -> dict:
@@ -82,12 +141,18 @@ def start_territory(state: GameState, config: Config, seed: int, site_index: int
 
 
 def footprint(config: Config, kind: str, x: int, y: int) -> list[tuple[int, int]]:
+    """@brief The tiles of a building whose anchor (top-left tile on the
+    square grid) is (x, y)."""
     spec = config.buildings[kind]
+    if is_hex(config):
+        return _walk(x, y, spec.hex_steps)
     return [(x + dx, y + dy) for dy in range(spec.height) for dx in range(spec.width)]
 
 
 def square_tiles(state: GameState, config: Config) -> list[tuple[int, int]]:
     sx, sy = state.square
+    if is_hex(config):
+        return _walk(sx, sy, config.map.square_hex_steps)
     size = config.map.square_size
     return [(sx + dx, sy + dy) for dy in range(size) for dx in range(size)]
 
@@ -122,12 +187,12 @@ def _in_map(state: GameState, x: int, y: int) -> bool:
     return 0 <= y < len(state.terrain) and 0 <= x < len(state.terrain[0])
 
 
-def _touches_owned(state: GameState, tiles: list[tuple[int, int]], terrain: str) -> bool:
-    """@brief True if a tile next to these (north, south, east or west) is of
-    this terrain and belongs to the realm: a sawmill needs its own forest."""
+def _touches_owned(state: GameState, config: Config, tiles: list[tuple[int, int]], terrain: str) -> bool:
+    """@brief True if a tile next to these is of this terrain and belongs to
+    the realm: a sawmill needs its own forest."""
     char = TERRAIN_CHARS[terrain]
     for x, y in tiles:
-        for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
+        for nx, ny in neighbours(config, x, y):
             if _in_map(state, nx, ny) and state.terrain[ny][nx] == char and state.owned[ny][nx] != NOT_OWNED:
                 return True
     return False
@@ -140,7 +205,7 @@ def building_works(state: GameState, config: Config, building: Building) -> bool
     spec = config.buildings[building.kind]
     if not state.has_map() or not spec.needs_forest:
         return True
-    return _touches_owned(state, footprint(config, building.kind, building.x, building.y), "forest")
+    return _touches_owned(state, config, footprint(config, building.kind, building.x, building.y), "forest")
 
 
 def place_error(state: GameState, config: Config, kind: str, x: int, y: int,
@@ -160,7 +225,7 @@ def place_error(state: GameState, config: Config, kind: str, x: int, y: int,
     spec = config.buildings[kind]
     if any(state.terrain[ty][tx] != TERRAIN_CHARS[spec.terrain] for tx, ty in tiles):
         return "WRONG_TERRAIN", f"{kind} at ({x},{y}) must stand on {spec.terrain} only"
-    if spec.needs_forest and not _touches_owned(state, tiles, "forest"):
+    if spec.needs_forest and not _touches_owned(state, config, tiles, "forest"):
         return "NO_FOREST", f"{kind} at ({x},{y}) must touch a forest tile"
     taken = occupancy(state, config) if taken is None else taken
     if any(tile in taken for tile in tiles):
@@ -182,14 +247,34 @@ def _distance_to_square(state: GameState, config: Config, kind: str, x: int, y: 
     return dx * dx + dy * dy
 
 
+def _packing(config: Config, tiles: list[tuple[int, int]], zone: Zone,
+             taken: dict[tuple[int, int], str]) -> int:
+    """@brief Tiles around a footprint that are taken or outside the zone (or
+    the map): the more, the tighter the building packs against the others."""
+    inside = set(tiles)
+    ring = {tile for x, y in tiles for tile in neighbours(config, x, y) if tile not in inside}
+    return sum(1 for x, y in ring
+               if (x, y) in taken or not (zone.x1 <= x <= zone.x2 and zone.y1 <= y <= zone.y2))
+
+
+def _hex_place_key(state: GameState, config: Config, kind: str, x: int, y: int, zone: Zone,
+                   taken: dict[tuple[int, int], str]) -> tuple:
+    """@brief Sort key of a valid hex place: tightest packing first (no lone
+    hexes left in the zone; lab: 6 farm flowers in a 9 x 6 zone, 5 by
+    distance alone), then nearest the square, then row, column."""
+    tiles = footprint(config, kind, x, y)
+    return -_packing(config, tiles, zone, taken), _hex_to_square(state, config, x, y), y, x
+
+
 def find_place(state: GameState, config: Config, kind: str, zone_name: str | None = None) -> tuple[int, int] | None:
     """@brief The valid place nearest the square, in the named zone or in any
     zone that allows this kind; ties broken by row, then column.
 
     Places aligned on the zone's grid (whole footprints from its top-left
     corner) come first: buildings then stand in tidy rows and leave room
-    for the next one; a farm placed half-way would waste the zone.
-    @return (x, y) top-left tile, or None if nothing fits.
+    for the next one; a farm placed half-way would waste the zone. On hexes
+    packing replaces the alignment (see _hex_place_key).
+    @return (x, y) anchor tile, or None if nothing fits.
     """
     taken = occupancy(state, config)
     spec = config.buildings[kind]
@@ -199,23 +284,30 @@ def find_place(state: GameState, config: Config, kind: str, zone_name: str | Non
     for zone in zones:
         for y in range(zone.y1, zone.y2 + 1):
             for x in range(zone.x1, zone.x2 + 1):
-                if place_error(state, config, kind, x, y, zone.name, taken) is None:
-                    aligned = (x - zone.x1) % spec.width == 0 and (y - zone.y1) % spec.height == 0
-                    candidates.append((not aligned, _distance_to_square(state, config, kind, x, y), y, x))
+                if place_error(state, config, kind, x, y, zone.name, taken) is not None:
+                    continue
+                if is_hex(config):
+                    candidates.append(_hex_place_key(state, config, kind, x, y, zone, taken))
+                    continue
+                aligned = (x - zone.x1) % spec.width == 0 and (y - zone.y1) % spec.height == 0
+                candidates.append((not aligned, _distance_to_square(state, config, kind, x, y), y, x))
     if not candidates:
         return None
-    _, _, y, x = min(candidates)
+    *_, y, x = min(candidates)
     return x, y
 
 
 def nudge(state: GameState, config: Config, kind: str, x: int, y: int,
           zone_name: str | None = None) -> tuple[int, int] | None:
     """@brief A place one tile away when (x, y) itself does not fit (a model
-    off by one), in the fixed order of NUDGES; None if none fits."""
+    off by one), in the fixed order of NUDGES (hex: the 6 neighbours of the
+    anchor, E first); None if none fits."""
     taken = occupancy(state, config)
-    for dx, dy in NUDGES:
-        if place_error(state, config, kind, x + dx, y + dy, zone_name, taken) is None:
-            return x + dx, y + dy
+    shifted = (neighbours(config, x, y) if is_hex(config)
+               else [(x + dx, y + dy) for dx, dy in NUDGES])
+    for nx, ny in shifted:
+        if place_error(state, config, kind, nx, ny, zone_name, taken) is None:
+            return nx, ny
     return None
 
 
@@ -266,23 +358,42 @@ def _in_direction(state: GameState, config: Config, x: int, y: int, direction: s
     quarter of the plane around the direction (diagonals count for both)."""
     if direction is None:
         return True
-    size = config.map.square_size
-    dx = (2 * x + 1) - (2 * state.square[0] + size)
-    dy = (2 * y + 1) - (2 * state.square[1] + size)
+    dx, dy = _hex_offset(state, config, x, y) if is_hex(config) else _square_offset(state, config, x, y)
     return {"north": -dy >= abs(dx), "south": dy >= abs(dx),
             "east": dx >= abs(dy), "west": -dx >= abs(dy)}[direction]
 
 
+def _square_offset(state: GameState, config: Config, x: int, y: int) -> tuple[int, int]:
+    """@brief (dx, dy) from the square's centre to the tile's, in half tiles."""
+    size = config.map.square_size
+    return (2 * x + 1) - (2 * state.square[0] + size), (2 * y + 1) - (2 * state.square[1] + size)
+
+
+def _hex_offset(state: GameState, config: Config, x: int, y: int) -> tuple[int, int]:
+    """@brief (dx, dy) from the square's centre to the hex's, on an integer
+    scale that keeps the angles: columns in half hex widths times 4 (odd rows
+    shifted by one half), rows times 7 (7/4 stands in for sqrt(3), the row
+    height in half widths). The square's centre is the mean of its tiles,
+    so the tile is weighted by their count (integers only)."""
+    tiles = square_tiles(state, config)
+    count = len(tiles)
+    dx = 4 * (count * (2 * x + (y & 1)) - sum(2 * sx + (sy & 1) for sx, sy in tiles))
+    dy = 7 * (count * y - sum(sy for _, sy in tiles))
+    return dx, dy
+
+
 def _tile_distance(state: GameState, config: Config, x: int, y: int) -> int:
+    if is_hex(config):
+        return _hex_to_square(state, config, x, y)
     size = config.map.square_size
     dx = (2 * x + 1) - (2 * state.square[0] + size)
     dy = (2 * y + 1) - (2 * state.square[1] + size)
     return dx * dx + dy * dy
 
 
-def _borders_the_realm(state: GameState, x: int, y: int) -> bool:
+def _borders_the_realm(state: GameState, config: Config, x: int, y: int) -> bool:
     return any(_in_map(state, nx, ny) and state.owned[ny][nx] != NOT_OWNED
-               for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)))
+               for nx, ny in neighbours(config, x, y))
 
 
 def owned_count(state: GameState) -> int:
@@ -314,7 +425,7 @@ def next_claim(state: GameState, config: Config, terrain: str | None, direction:
                 continue
             if zone is not None and not (zone.x1 <= x <= zone.x2 and zone.y1 <= y <= zone.y2):
                 continue
-            if not _in_direction(state, config, x, y, direction) or not _borders_the_realm(state, x, y):
+            if not _in_direction(state, config, x, y, direction) or not _borders_the_realm(state, config, x, y):
                 continue
             key = (_tile_distance(state, config, x, y), y, x)
             best = key if best is None or key < best else best

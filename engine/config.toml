@@ -26,6 +26,8 @@ houses = 6
 # sector = which resource the workers produce ("" for houses).
 # width x height = footprint in tiles; terrain = what every tile must be;
 # needs_forest = at least one tile must touch a forest tile.
+# hex_steps = the footprint on a hex grid: the anchor plus one tile per path of
+# steps from it (docs/DESIGN.md, "Hex grid").
 [buildings.farm]
 wood = 40
 stone = 10
@@ -38,6 +40,7 @@ housing = 0
 width = 3
 height = 3
 terrain = "plain"
+hex_steps = [["E"], ["SE"], ["SW"], ["W"], ["NW"], ["NE"]]  # a flower of 7
 
 [buildings.sawmill]
 wood = 30
@@ -52,6 +55,7 @@ width = 2
 height = 1
 terrain = "plain"
 needs_forest = true
+hex_steps = [["E"]]
 
 [buildings.quarry]
 wood = 40
@@ -65,6 +69,7 @@ housing = 0
 width = 2
 height = 2
 terrain = "hill"
+hex_steps = [["E"], ["SE"], ["E", "SE"]]  # a rhombus of 4
 
 [buildings.house]
 wood = 30
@@ -78,6 +83,7 @@ housing = 20
 width = 1
 height = 1
 terrain = "plain"
+hex_steps = []
 
 # The territory (docs/DESIGN.md, "Territory"). Without this section (games
 # saved before) a realm has no map and counts free_tiles instead.
@@ -96,6 +102,9 @@ site_levels = [
 ]
 core_size = 12
 square_size = 2
+# "square" or "hex"; square until the hex world and core are drawn (DESIGN, "Hex grid", step 2).
+grid = "square"
+square_hex_steps = [["E"], ["SE"], ["E", "SE"]]  # a rhombus of 4
 max_zones = 12
 demolish_gold = 10
 demolish_refund_pct = 25  # of the wood and stone the building cost
