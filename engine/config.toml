@@ -93,7 +93,7 @@ demolish_gold = 10
 demolish_refund_pct = 25  # of the wood and stone the building cost
 # Claiming a bordering tile: gold per tile = base + 1 for every claim_step_tiles
 # tiles already owned beyond the core. The gold goes to the land fund.
-claim_base_gold = 20  # lab 2026-11-08: at 10 gold was no brake
+claim_base_gold = 10  # 20 was out of reach with real salaries (lab 2026-11-08, games 20-21)
 claim_step_tiles = 8
 claim_max_per_order = 4
 # Clearing a claimed tile, in worker-months. A claimed forest stays standing

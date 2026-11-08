@@ -554,6 +554,8 @@ Same models; after the game 20 fixes (memory, Chancellor rules, ring 1, cap 6,00
 
 **Good**: the Architect claimed in March "before the Campi zone runs out", cleared with 1 to 3 hands outside winter, stretched the fields zone over the new land, kept no claims while gold was short ("la cassa è corta"); the new memory works ("riproporre il campo o la terra negati il mese scorso non è saggio"); the Chancellor's summaries matched the plans and no note leaked.
 
+**After the game**: texts far over or under their length are asked again; the room per zone says where the next building stands; claims inside a zone (the land comes as a block); price 10 and salaries halved (lab: two farms on new land in three years instead of none).
+
 **The economy of land (point E)**: with the tax covering the costs the treasury grows by 1-3 gold a month, so a 20-gold tile takes about ten months of surplus; a farm needs a 3 × 3 block, 9 tiles, about 180 gold and 27 worker-months. In a year the realm claimed 4 tiles and built **no farm on new land** (the sixth farm took the core's last place). Growth by land is out of reach at these prices, with or without petitions.
 
 **Weak**

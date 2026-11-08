@@ -101,9 +101,9 @@ def still_orders(state, config):
     return steward(state, config)
 
 
-def play(policy, config, salary=10):
+def play(policy, config, salary=6):
     state = new_game(config, SEED)
-    state.council_salary = salary  # 10 as in the played games (three counsellors)
+    state.council_salary = salary  # a council of three after the halving (10 before, games 20-21)
     core_x, core_y = state.square[0] - 5, state.square[1] - 3
     lowest_food, no_room, sawmill_stopped = state.food, None, None
     for _ in range(MONTHS):
@@ -128,13 +128,9 @@ def play(policy, config, salary=10):
 def main():
     base = load_config()
     variants = {
-        "today (claim 20)": base,
-        "claim 15": _variant(base, claim_base_gold=15),
-        "claim 10": _variant(base, claim_base_gold=10),
-        "claim 8": _variant(base, claim_base_gold=8),
-        "claim 5": _variant(base, claim_base_gold=5),
+        "today (claim 10, salaries 6)": base,
     }
-    salary_runs = {"claim 20, salaries 5": (base, 5), "claim 10, salaries 5": (_variant(base, claim_base_gold=10), 5)}
+    salary_runs = {"before (claim 20, salaries 10)": (_variant(base, claim_base_gold=20), 10)}
     for name, policy in (("grower", grower_orders),):
         print(f"\n== {name}")
         for label, config in variants.items():

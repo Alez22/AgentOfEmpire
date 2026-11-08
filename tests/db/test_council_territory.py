@@ -59,7 +59,7 @@ def test_each_counsellor_sees_the_territory_at_its_own_depth(db, realm, settings
     assert "- Territory: 144 tiles owned" in chancellor["user"]
     assert "## The town and its land" not in chancellor["user"]
     treasurer = _calls(client, "treasurer")[0]
-    assert "The next tile costs 20 gold" in treasurer["user"]
+    assert f"The next tile costs {load_raw_config()['map']['claim_base_gold']} gold" in treasurer["user"]
 
 
 def test_games_without_a_map_keep_the_old_prompts(db, settings):

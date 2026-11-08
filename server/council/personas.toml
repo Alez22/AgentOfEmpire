@@ -8,6 +8,8 @@
 # tier: "low" | "medium" | "high"; which model each tier means is set in
 # server/council.toml [model_tiers] (later on a settings page), never here.
 # salary: gold a month, paid by the engine after the buildings' upkeep.
+# Halved on 2026-11-08 (rounded up): with 10 gold a month for a council and
+# taxes at 8%, the treasury kept about 4 gold a month and land was out of reach.
 # Small test set (2026-11-07): 2 moderate + 2 extreme per role.
 
 # ------------------------------------------------------------ treasurers
@@ -20,7 +22,7 @@ gender = "m"
 group = "moderate"
 traits = { prudence = 600, loyalty = 560, ambition = 430, honesty = 580, competence = 540 }
 tier = "medium"
-salary = 3
+salary = 2
 resume = "Già scrivano di un mercante di lana, ha imparato a far quadrare i conti in anni magri. Diffida delle spese che non si vedono subito."
 
 [[persona]]
@@ -31,7 +33,7 @@ gender = "f"
 group = "moderate"
 traits = { prudence = 520, loyalty = 600, ambition = 480, honesty = 620, competence = 520 }
 tier = "medium"
-salary = 3
+salary = 2
 resume = "Figlia di un mugnaio, ha tenuto per dieci anni i registri del granaio del monastero. Conosce le famiglie del borgo una per una."
 
 [[persona]]
@@ -42,7 +44,7 @@ gender = "m"
 group = "extreme"
 traits = { prudence = 300, loyalty = 400, ambition = 830, honesty = 380, competence = 860 }
 tier = "high"
-salary = 9
+salary = 5
 resume = "Banchiere cresciuto nelle città del fiume, abile con i numeri come pochi. Si dice che abbia lasciato il suo ultimo signore con le casse piene: le sue."
 
 [[persona]]
@@ -53,7 +55,7 @@ gender = "f"
 group = "extreme"
 traits = { prudence = 900, loyalty = 860, ambition = 200, honesty = 700, competence = 440 }
 tier = "medium"
-salary = 2
+salary = 1
 resume = "Vedova di un fattore, ha attraversato tre carestie senza perdere un sacco di grano. Per lei ogni moneta spesa è una moneta perduta."
 
 # ------------------------------------------------------------ architects
@@ -66,7 +68,7 @@ gender = "f"
 group = "moderate"
 traits = { prudence = 560, loyalty = 600, ambition = 420, honesty = 640, competence = 520 }
 tier = "medium"
-salary = 3
+salary = 2
 resume = "Figlia di un capomastro, ha costruito granai per i monasteri della valle. Misura due volte prima di tagliare."
 
 [[persona]]
@@ -77,7 +79,7 @@ gender = "m"
 group = "moderate"
 traits = { prudence = 470, loyalty = 540, ambition = 560, honesty = 560, competence = 560 }
 tier = "medium"
-salary = 3
+salary = 2
 resume = "Ha guidato i muratori del ponte vecchio e ne va fiero. Preferisce un lavoro fatto presto a uno fatto perfetto."
 
 [[persona]]
@@ -88,7 +90,7 @@ gender = "f"
 group = "extreme"
 traits = { prudence = 180, loyalty = 460, ambition = 820, honesty = 560, competence = 870 }
 tier = "high"
-salary = 9
+salary = 5
 resume = "Ha studiato le opere delle grandi città e sogna mura, mulini e piazze. Ogni scorta di legno le sembra un cantiere che aspetta."
 
 [[persona]]
@@ -99,7 +101,7 @@ gender = "m"
 group = "extreme"
 traits = { prudence = 880, loyalty = 800, ambition = 220, honesty = 760, competence = 400 }
 tier = "medium"
-salary = 2
+salary = 1
 resume = "Vecchio carpentiere, ha visto crollare un fienile costruito in fretta e non l'ha mai dimenticato. Costruisce poco, ma ciò che costruisce resta."
 
 # ------------------------------------------------------------ chancellors
@@ -112,7 +114,7 @@ gender = "m"
 group = "moderate"
 traits = { prudence = 560, loyalty = 620, ambition = 440, honesty = 600, competence = 560 }
 tier = "medium"
-salary = 4
+salary = 2
 resume = "Notaio del borgo, ha messo d'accordo più eredi litigiosi di chiunque altro. Ascolta tutti prima di parlare."
 
 [[persona]]
@@ -123,7 +125,7 @@ gender = "f"
 group = "moderate"
 traits = { prudence = 500, loyalty = 580, ambition = 520, honesty = 560, competence = 580 }
 tier = "medium"
-salary = 4
+salary = 2
 resume = "Segretaria del vescovo per molti anni, conosce le parole che calmano e quelle che dividono. Tiene a mente ogni promessa fatta."
 
 [[persona]]
@@ -134,7 +136,7 @@ gender = "m"
 group = "extreme"
 traits = { prudence = 420, loyalty = 300, ambition = 900, honesty = 250, competence = 820 }
 tier = "high"
-salary = 10
+salary = 5
 resume = "Ha servito tre signori e sopravvissuto a tutti. Sa tessere accordi come nessuno, e nessuno sa mai per chi li tesse davvero."
 
 [[persona]]
@@ -145,5 +147,5 @@ gender = "f"
 group = "extreme"
 traits = { prudence = 760, loyalty = 920, ambition = 300, honesty = 880, competence = 520 }
 tier = "medium"
-salary = 4
+salary = 2
 resume = "Cresciuta alla corte, crede nella parola data più che nel buon senso. Non tradirebbe il sovrano nemmeno per salvarlo da se stesso."
