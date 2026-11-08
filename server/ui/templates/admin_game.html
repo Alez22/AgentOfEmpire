@@ -13,7 +13,7 @@
     {% if replay.ok %}
     <div class="banner info" role="status">Il replay coincide con tutti gli snapshot salvati.</div>
     {% else %}
-    <div class="banner error" role="alert">Il regno {{ replay.mismatch.realm_id }} non coincide al turno {{ replay.mismatch.turn }}.</div>
+    <div class="banner error" role="alert">{% if replay.mismatch.realm_id is none %}Il mercato{% else %}Il regno {{ replay.mismatch.realm_id }}{% endif %} non coincide al turno {{ replay.mismatch.turn }}.</div>
     <details><summary>Salvato</summary><pre class="code">{{ replay.mismatch.stored }}</pre></details>
     <details><summary>Rigiocato</summary><pre class="code">{{ replay.mismatch.replayed }}</pre></details>
     {% endif %}

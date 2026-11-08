@@ -944,7 +944,7 @@ The vision is in Part 1, "Economy and trade" (closed market, land levels unknown
 
 1. Engine: needs A and B, land levels, a site per realm. **Built 2026-11-08** (`[needs]`, `[levels]`, `[map] site_levels` in `engine/config.toml`; `engine/turn.py`; snapshot format 3; `tests/test_needs.py`). The manual still gives the buildings' yields until step 4.
 2. Engine: the market and the `trade` order. **Built 2026-11-08** (`engine/market.py`, `[market]` in `engine/config.toml`, `tests/test_market.py`). The council cannot issue trades yet (step 4).
-3. Database: market states, game-level resolution and replay.
+3. Database: market states, game-level resolution and replay. **Built 2026-11-08** (migration `012_market_states.sql`, no grant to `agent_reader`; `resolve_open_turn` calls `resolve_month`; the replay runs the whole game month by month and also compares the market; a market mismatch shows as "Il mercato non coincide" in the admin).
 4. Council: briefing, manual, prompts, the Voice; the market page on the phone.
 5. A 12-month test game with three realms.
 

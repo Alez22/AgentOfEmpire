@@ -10,8 +10,9 @@ from dataclasses import dataclass
 import psycopg
 from psycopg.types.json import Jsonb
 
-from engine import ENGINE_VERSION, parse_order, resolve_turn
+from engine import ENGINE_VERSION, parse_order
 from engine.config import Config, config_from_dict
+from engine.market import MarketState, RealmMonth, market_from_dict, market_to_dict, new_market, resolve_month
 from engine.people import PeopleChoice
 from engine.snapshot import FORMAT_VERSION, state_from_dict, state_to_dict
 from engine.state import GameState, new_game
@@ -151,8 +152,22 @@ def create_game(
                     (realm_id, role, model, Jsonb(personality)),
                 )
             _insert_snapshot(conn, game_id, realm_id, state)
+        if config.market is not None:
+            _insert_market(conn, game_id, 1, new_market(config, len(realm_names)))
         conn.execute("INSERT INTO turns (game_id, number) VALUES (%s, 1)", (game_id,))
     return game_id
+
+
+def _insert_market(conn: psycopg.Connection, game_id: int, turn: int, market: MarketState) -> None:
+    conn.execute("INSERT INTO market_states (game_id, turn, state) VALUES (%s, %s, %s)",
+                 (game_id, turn, Jsonb(market_to_dict(market))))
+
+
+def load_market(conn: psycopg.Connection, game_id: int, turn: int) -> MarketState | None:
+    """@brief The warehouse at the start of a turn; None for a game without a market."""
+    row = conn.execute("SELECT state FROM market_states WHERE game_id = %s AND turn = %s",
+                       (game_id, turn)).fetchone()
+    return market_from_dict(row[0]) if row else None
 
 
 def submit_order(
@@ -333,22 +348,29 @@ def load_people_choice(conn: psycopg.Connection, realm_id: int, turn: int) -> Pe
     return PeopleChoice(effort_pct, birth_pct, petition, weight)
 
 
-def _resolve_realm(conn, game_id: int, realm_id: int, turn: int, config) -> bool:
-    """@brief Resolve one realm and store everything it produced.
-    @return True if this realm's game is over (now or already before).
+def _load_realm_month(conn, realm_id: int, turn: int) -> tuple[RealmMonth, list] | None:
+    """@brief A realm's input to the month, with its parsed orders' ids; the
+    orders the parser refused are stored as refused at once.
+    @return None if this realm's game is already over.
     """
     state = load_latest_state(conn, realm_id)
     if state.game_over:
-        return True  # nothing left to simulate for this realm
+        return None  # nothing left to simulate for this realm
     if state.turn != turn:
         raise RuntimeError(f"realm {realm_id}: latest snapshot is turn {state.turn}, not {turn}")
     parsed, rejected = load_parsed_orders(conn, realm_id, turn)
     for order_id, code, message in rejected:
         _insert_order_result(conn, order_id, False, code, message)
-    result = resolve_turn(state, [order for _, order in parsed], config,
-                          load_people_choice(conn, realm_id, turn))
-    # The engine returns verdicts in its own evaluation order (by priority);
-    # match them back to the stored rows through the order objects themselves.
+    month = RealmMonth(state, [order for _, order in parsed], load_people_choice(conn, realm_id, turn))
+    return month, parsed
+
+
+def _store_realm_result(conn, game_id: int, realm_id: int, turn: int, parsed: list, result) -> bool:
+    """@brief Store what one realm's month produced.
+    @return True if this realm's game is now over.
+    """
+    # The engine returns verdicts in its own evaluation order (trades, then by
+    # priority); match them back to the stored rows through the order objects.
     order_id_by_object = {id(order): order_id for order_id, order in parsed}
     for verdict in result.order_results:
         _insert_order_result(
@@ -390,7 +412,19 @@ def resolve_open_turn(conn: psycopg.Connection, game_id: int) -> TurnSummary:
         realm_ids = [r[0] for r in conn.execute(
             "SELECT id FROM realms WHERE game_id = %s ORDER BY id", (game_id,)
         )]
-        realms_over = [_resolve_realm(conn, game_id, realm_id, turn, config) for realm_id in realm_ids]
+        months, parsed_by_realm = {}, {}
+        for realm_id in realm_ids:
+            loaded = _load_realm_month(conn, realm_id, turn)
+            if loaded is not None:
+                months[str(realm_id)], parsed_by_realm[str(realm_id)] = loaded
+        # The market and every realm together (engine/market.py); a game
+        # without a market resolves each realm alone, as before.
+        market, results = resolve_month(load_market(conn, game_id, turn), months, config)
+        realms_over = [True] * (len(realm_ids) - len(months))  # those already over
+        for key, result in results.items():
+            realms_over.append(_store_realm_result(conn, game_id, int(key), turn, parsed_by_realm[key], result))
+        if market is not None:
+            _insert_market(conn, game_id, turn + 1, market)
 
         conn.execute(
             "UPDATE turns SET status = 'resolved', resolved_at = now()"

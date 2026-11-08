@@ -184,3 +184,68 @@ def test_each_realm_of_a_game_starts_on_its_own_site(db):
     assert [s.square for s in states] == [new_game(config, 6, site_index=i).square for i in (6, 7, 8)]
     assert len({tuple(s.land_levels.values()) for s in states}) == 3
     assert states[0].square == new_game(config, 6).square  # the first realm keeps the seed's site
+
+
+def _three_realm_game(db):
+    game_id = create_game(db, load_raw_config(), seed=0, realm_names=["Nord", "Est", "Sud"], council_models=COUNCIL)
+    realm_ids = [r[0] for r in db.execute("SELECT id FROM realms WHERE game_id = %s ORDER BY id", (game_id,))]
+    return game_id, realm_ids
+
+
+def _market_rows(db, game_id):
+    return dict(db.execute("SELECT turn, state FROM market_states WHERE game_id = %s", (game_id,)).fetchall())
+
+
+def test_a_game_with_three_realms_trades_at_one_market(db):
+    game_id, (nord, est, sud) = _three_realm_game(db)
+    assert list(_market_rows(db, game_id)) == [1]  # the warehouse at game start
+    submit_order(db, nord, {"action": "trade", "good": "food", "side": "sell", "lots": 4})
+    submit_order(db, est, {"action": "trade", "good": "food", "side": "buy", "lots": 9})  # 6 lots of start stock + 4
+    submit_order(db, sud, {"action": "trade", "good": "stone", "side": "buy", "lots": 1})
+    resolve_open_turn(db, game_id)
+    markets = _market_rows(db, game_id)
+    assert sorted(markets) == [1, 2]
+    food = markets[2]["goods"]["food"]
+    assert food["last_sold"] == 200 and food["last_bought"] == 450
+    sellers = {c["seller"] for c in food["queue"]}
+    assert sellers == {str(nord)}  # the start stock went first, the rest of Nord's food waits
+    est_result = db.execute(
+        "SELECT r.accepted, r.message FROM order_results r JOIN orders o ON o.id = r.order_id"
+        " WHERE o.realm_id = %s", (est,)).fetchone()
+    assert est_result == (True, "filled 9 of 9 lots of food asked this month")
+    kinds = {row[0] for row in db.execute("SELECT kind FROM events WHERE realm_id = %s", (nord,))}
+    assert {"trade_on_sale", "trade_paid"} <= kinds  # Nord's first lots were bought at once
+
+
+def test_a_game_with_a_market_replays_exactly(db):
+    game_id, (nord, est, sud) = _three_realm_game(db)
+    for turn in range(1, 7):
+        submit_order(db, nord, {"action": "trade", "good": "food", "side": "sell", "lots": 2})
+        submit_order(db, est, {"action": "trade", "good": "food", "side": "buy", "lots": 3})
+        submit_order(db, sud, {"action": "trade", "good": "wood", "side": "buy", "lots": 1})
+        resolve_open_turn(db, game_id)
+    assert replay_game(db, game_id) is None
+
+
+def test_the_replay_notices_an_altered_market(db):
+    game_id, (nord, _, _) = _three_realm_game(db)
+    for turn in range(1, 4):
+        submit_order(db, nord, {"action": "trade", "good": "food", "side": "sell", "lots": 2})
+        resolve_open_turn(db, game_id)
+    db.execute("ALTER TABLE market_states DISABLE TRIGGER market_states_append_only")
+    db.execute("UPDATE market_states SET state = jsonb_set(state, '{goods,food,price}', '99')"
+               " WHERE game_id = %s AND turn = 3", (game_id,))
+    mismatch = replay_game(db, game_id)
+    assert mismatch is not None and mismatch.realm_id is None and mismatch.turn == 3
+
+
+def test_a_game_without_a_market_refuses_trades(db):
+    raw = load_raw_config()
+    del raw["market"]
+    game_id = create_game(db, raw, seed=1, realm_names=["Nord"], council_models=COUNCIL)
+    realm_id = db.execute("SELECT id FROM realms WHERE game_id = %s", (game_id,)).fetchone()[0]
+    submit_order(db, realm_id, {"action": "trade", "good": "food", "side": "sell", "lots": 1})
+    resolve_open_turn(db, game_id)
+    assert _market_rows(db, game_id) == {}
+    assert _results_by_order(db, realm_id).popitem()[1] == (False, "NO_MARKET")
+    assert replay_game(db, game_id) is None
