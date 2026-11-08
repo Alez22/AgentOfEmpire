@@ -187,7 +187,9 @@ def _unclaimed_text(state: GameState, config: Config, zone) -> str:
     unclaimed = unclaimed_in_zone(state, zone)
     wild = sum(1 for x, y, _ in state.clearing_queue if zone.x1 <= x <= zone.x2 and zone.y1 <= y <= zone.y2)
     if not unclaimed and not wild:
-        return ""
+        # Game 26: an Architect claimed tiles "in Campi", a zone already all
+        # owned (NO_LAND); new land comes from a zone drawn beyond the border.
+        return "; all its land is the realm's: nothing to claim here"
     text = f"; {unclaimed} tiles still to claim" if unclaimed else ""
     if wild:
         text += f"; {wild} tiles being cleared"

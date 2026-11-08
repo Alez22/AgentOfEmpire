@@ -29,7 +29,10 @@ SELL_KEEP_MONTHS = 6  # R5: wood and stone kept before selling
 SELL_KEEP_LOTS = 2  # R5: and this many lots more
 SELL_FOOD_KEEP_MONTHS = 3  # R5: months of eating kept before selling food
 GOLD_SHORT_MONTHS = 3  # R5: gold is short below this many months of costs
-SURPLUS_FOOD_KEEP_MONTHS = 4  # R5b: months of eating kept before selling food when gold is not short
+# R5b: months of eating kept before selling food when gold is not short. Was 4:
+# in game 26 it never fired (eating about 900 a month, Aurelia peaked at 2,626);
+# 1 sold in January in the poor realms too. food_lasts still guards the winter.
+SURPLUS_FOOD_KEEP_MONTHS = 2
 MAX_SELL_LOTS = 4
 
 
@@ -162,8 +165,8 @@ def _food_lots_to_sell(month: Month, orders: list[Order], left_food: int, keep_m
 
 def _sell_directive(month: Month, items: list[Item], left: dict[str, int]) -> tuple[str, str] | None:
     """@brief R5: gold short and a good above its needs: sell the one that
-    brings the most gold. R5b: gold not short, the same but food keeps 4
-    months of eating and a good sells only at its start price or above (no
+    brings the most gold. R5b: gold not short, the same but food keeps
+    SURPLUS_FOOD_KEEP_MONTHS of eating and a good sells only at its start price or above (no
     selling off into a full warehouse).
     Why R5b: in game 25 Aurelia, rich in food, piled up 1858 food with enough
     gold, while Brenna, poor in food, ended on the reduced ration."""

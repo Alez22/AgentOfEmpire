@@ -132,5 +132,5 @@ def test_a_large_surplus_is_sold_even_with_gold_enough(start_state, config):
     month.market.goods["stone"].price = 1  # stone is cheap: not sold off
     text, reason = rules.directive(month, [])
     assert text == "Tesoriere, vendi al mercato 4 lotti di cibo." and "(R5b)" in reason
-    start_state.food = 4 * rules.food_needed(start_state, config)  # only what it keeps
+    start_state.food = rules.SURPLUS_FOOD_KEEP_MONTHS * rules.food_needed(start_state, config)  # only what it keeps
     assert rules.directive(month, []) is None

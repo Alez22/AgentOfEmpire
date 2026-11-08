@@ -46,3 +46,16 @@ def test_the_manual_gives_shapes_in_hexes(hex_world_config, square_config):
     assert "farm 3 x 3 tiles" in manual.prompt_text(square_config)
     notes = next(s for s in manual.page_sections(hex_world_config) if s["title"] == "Territorio")["notes"]
     assert "esagoni" in notes[0] and "7 esagoni" in notes[0]
+
+
+def test_a_zone_all_owned_says_there_is_nothing_to_claim(hex_world_config):
+    """Game 26: an Architect claimed tiles in "Campi", all owned already (NO_LAND)."""
+    from engine.state import Zone
+    from server.council.map_text import zone_lines
+    state = new_game(hex_world_config, seed=0)
+    campi = next(z for z in state.zones if z.name == "Campi")
+    assert "nothing to claim here" in next(l for l in zone_lines(state, hex_world_config) if "- Campi " in l)
+    state.zones = [z for z in state.zones if z.name != "Campi"] + [
+        Zone("Campi", "fields", campi.x1, campi.y1, campi.x2, campi.y2 + 3)]
+    line = next(l for l in zone_lines(state, hex_world_config) if "- Campi " in l)
+    assert "nothing to claim here" not in line and "still to claim" in line

@@ -137,7 +137,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] Automatic sovereign, first version (spec approved 2026-11-08, `docs/DESIGN.md`): fixed rules R1–R9 from game 24, no model for the sovereign (`server/sovereign/`), `POST /realms/{id}/sovereign/auto`, reasons in a council message `sovereign` (migration 013), `lab/auto_game.py`
   - [x] Game 25: three automatic realms, 12 months, real models, $0.21 (see "Game 25")
   - [x] R5b: the sovereign sells a surplus also when gold is not short (decided and built 2026-11-08)
-  - [x] A game with R5b (game 26): **no**, R5b never fired: it keeps 4 months of gross eating (~3,600 food), Aurelia peaked at 2,626. To decide: net need or fewer months
+  - [x] A game with R5b (game 26): **no**, R5b never fired: it kept 4 months of gross eating (~3,600 food), Aurelia peaked at 2,626. **Now 2 months** (checked on game 26's states: Aurelia would sell 2 lots in November and 4 in December, the poor realms never; 1 month sold in January in the poor realms too)
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
 - [ ] Eras, variable trust and loyalty, leaks
 - [ ] Press by era: rumours only, then government communiqués (propaganda, also to other states), then independent journalism (see Progress in `docs/DESIGN.md`)
@@ -827,7 +827,7 @@ Food 14 / 15 / 16, wood 3 / 6 / 9, stone 2 / 4 / 6, firewood November to March, 
   - [x] Step 3, briefing (2026-11-08): runs and ring 4 in `map_text.py`, `neighbours()` for frontier and forest warning, shapes in words, manual on both grids, prompts in words true on both grids; Architect output cap 10,000 (`[max_output_tokens_by_role]`), others 6,000 (`tests/test_hex_briefing.py`) (`map_text.py` still has its own 4-neighbour loops at the frontier and the forest warning), manual, prompts
   - [x] Step 4, map page (2026-11-08): SVG board for hex games (`server/ui/hex_board.py`), night theme, icon sprite (`lab/build_icon_sprite.py` → `server/ui/static/icons/`), credits page `/ui/credits`; the square view stays for old games. **New games are hex** (`config.toml`: `grid = "hex"`, `world_hex.txt`, `core_hex.toml`); square-grid tests use `square_config`
   - [x] Game 26, 12 months on the hex grid, three automatic realms ($0.22): the Architect's hex briefing works (output ≤ 4,394 tokens, ≤ 40 s, 1 timeout in 48 calls); see "Game 26"
-  - [ ] The briefing could say when a zone has no land left to claim (Aurelia's `NO_LAND`, game 26)
+  - [x] The briefing says when a zone has no land left to claim ("all its land is the realm's: nothing to claim here"; Aurelia's `NO_LAND`, game 26)
   - [ ] Map page: the lit zone's colour (fields #F2D27A) is close to the realm's gold border; pick zone colours for the night board
 
 ## Open decisions
