@@ -123,7 +123,7 @@ def _needs_lines(config: Config) -> list[str]:
 def _market_lines(config: Config) -> list[str]:
     """@brief The market rules (engine/market.py), for the prompts."""
     m = config.market
-    return [
+    lines = [
         f"Market: one warehouse shared by every realm of the world. Food, wood and stone are traded in lots of "
         f"{m.lot_units}, only by the Treasurer's trade orders. Trades run at the start of the month, before every "
         "other order, so what is bought can be used the same month.",
@@ -138,6 +138,13 @@ def _market_lines(config: Config) -> list[str]:
         "pile up unsold.",
         "- Everyone sees the prices, the stock and the month's totals; nobody sees who sold or bought.",
     ]
+    if m.no_buying_own_goods:
+        lines.append("- A realm that has a good waiting on sale cannot buy that good: it would buy back its own "
+                     "goods and pay the margin twice.")
+    if m.short_last_lot:
+        lines.append(f"- When the warehouse holds less than {m.lot_units} of a good (food lost to rot), it sells "
+                     "as one short lot, paid only for what it holds.")
+    return lines
 
 
 def _footprints(config: Config) -> str:
@@ -245,7 +252,7 @@ def _needs_section(config: Config) -> dict:
 
 def _market_section(config: Config) -> dict:
     m = config.market
-    return {"title": "Mercato", "entries": [], "notes": [
+    notes = [
         f"Un solo magazzino per tutti i regni del mondo. Cibo, legno e pietra si scambiano a lotti di "
         f"{m.lot_units}, solo con gli ordini del Tesoriere. Gli scambi avvengono all'inizio del mese, prima di "
         "ogni altro ordine: ciò che si compra si usa subito.",
@@ -259,7 +266,14 @@ def _market_section(config: Config) -> dict:
         f"I prezzi si muovono del {m.step_pct}% al mese: salgono se si è chiesto più di quanto c'era, scendono "
         "se la merce resta invenduta.",
         "Tutti vedono prezzi, scorte e totali del mese; nessuno vede chi ha venduto o comprato.",
-    ]}
+    ]
+    if m.no_buying_own_goods:
+        notes.append("Chi ha un bene in vendita non può comprarne: ricomprerebbe la propria merce pagando due "
+                     "volte il margine.")
+    if m.short_last_lot:
+        notes.append(f"Se nel magazzino resta meno di {m.lot_units} di un bene (il cibo marcisce), si vende come "
+                     "un lotto incompleto e si paga solo ciò che contiene.")
+    return {"title": "Mercato", "entries": [], "notes": notes}
 
 
 TERRAIN_IT = {"plain": "pianura", "hill": "collina", "forest": "bosco"}

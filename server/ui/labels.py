@@ -32,6 +32,7 @@ REJECTIONS = {
     # The market (engine/market.py).
     "NO_MARKET": "in questo mondo non c'è mercato",
     "BOTH_SIDES": "questo mese il bene si compra o si vende, non entrambe le cose",
+    "OWN_GOODS_ON_SALE": "hai già questo bene in vendita al mercato: lo ricompreresti pagando due volte il margine",
     # The territory (engine/territory.py).
     "NO_SPACE": "non c'è posto nella zona",
     "UNKNOWN_ZONE": "zona sconosciuta",
@@ -137,6 +138,9 @@ def event_label(kind: str, data: dict) -> str:
     if kind == "stone_upkeep_short":
         return (f"Mancava la pietra per la manutenzione ({data.get('missing')} su {data.get('needed')}): "
                 "gli edifici si sono consumati e hanno reso meno.")
+    if kind == "trade_bought" and data.get("units"):
+        return (f"Comprati al mercato {data['units']} di {GOODS_IT.get(data.get('good'), data.get('good'))}"
+                f" (l'ultimo lotto era incompleto) per {data.get('gold')} oro.")
     if kind == "trade_bought":
         return f"Comprati al mercato {lots_of(data.get('lots'), data.get('good'))} per {data.get('gold')} oro."
     if kind == "trade_on_sale":

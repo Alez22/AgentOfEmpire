@@ -186,6 +186,10 @@ class MarketConfig:
     max_price_pct: int
     cover_months: int  # the price falls when goods on sale exceed this many months of asked lots
     start_stock_per_realm: dict[str, int]  # units, nobody's goods; never counted as too much
+    # Rules added after game 24 (2026-11-08); False keeps older games replaying
+    # as they were played.
+    short_last_lot: bool = False  # less than a lot in the warehouse sells as one short lot
+    no_buying_own_goods: bool = False  # a realm with a good on sale cannot buy that good
 
 
 @dataclass(frozen=True)

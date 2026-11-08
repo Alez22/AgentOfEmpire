@@ -15,7 +15,7 @@ This file is the starting point of every work session: read it at the start and 
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (GLM 5.3 Flash "high"; the Voice on DeepSeek V4.1 Flash); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
 | UI | phone pages: games, turn, kingdom, map, market, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
-| Tests | 296 tests: engine, database, council with fake models, UI | `tests/` |
+| Tests | 301 tests: engine, database, council with fake models, UI | `tests/` |
 
 ### How to use it
 
@@ -133,7 +133,8 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] 4b. The market page on the phone, after a mockup (`server/ui/market_view.py`)
   - [x] 5. Game 24, 12 months, three realms played by Claude (notes and draft sovereign rules: `docs/game24_notes.md`). No realm fell. Findings: nobody has food to sell (levels 14/15/16 too narrow, winter halves every harvest); wood is short in the whole world; Treasurers rarely think of selling their surplus without a directive; a realm may buy back its own goods (margin paid twice); remnants under a lot cannot be sold; a pro-rata rounding defect fixed (dbdaca4)
   - [x] Food levels 14 / 15 / 18 (decided 2026-11-08, see "Lab: food levels")
-  - [ ] Decide: buying back own goods, remnants, then write the automatic sovereign from the draft rules
+  - [x] No buying a good one has on sale (`OWN_GOODS_ON_SALE`); units under a lot sell as one short lot, paid by the unit (decided and built 2026-11-08; flags in `[market]`, game 24 replays unchanged)
+  - [ ] Spec of the automatic sovereign from the draft rules (`docs/game24_notes.md`)
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
 - [ ] Eras, variable trust and loyalty, leaks
 - [ ] Press by era: rumours only, then government communiqués (propaganda, also to other states), then independent journalism (see Progress in `docs/DESIGN.md`)

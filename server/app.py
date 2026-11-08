@@ -155,7 +155,7 @@ def _add_routes(app: FastAPI) -> None:
         game_id = _require_realm_game(conn, realm_id)
         state = games.load_latest_state(conn, realm_id)
         report = check_month_plan(state, orders, games.load_market(conn, game_id, state.turn),
-                                  games.load_game_config(conn, game_id))
+                                  games.load_game_config(conn, game_id), str(realm_id))
         return {
             "results": [
                 {

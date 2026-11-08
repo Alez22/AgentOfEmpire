@@ -4,7 +4,8 @@ docs/DESIGN.md, "Market, needs and land levels"; values from
 lab/market_closed.py. Pure and integer-only, like the turn.
 
 - A sale hands the goods over at once; the seller is paid when a buyer takes
-  them, oldest sale first. Goods on sale cannot be taken back.
+  them, oldest sale first. Goods on sale cannot be taken back, and (with
+  no_buying_own_goods) a realm cannot buy a good it has on sale.
 - The warehouse owns nothing but a start stock, nobody's goods (MERCHANT):
   the only goods from outside, once. Its gold leaves the game.
 - One price per good, gold per lot. Buyers pay price + margin, sellers get
@@ -13,6 +14,8 @@ lab/market_closed.py. Pure and integer-only, like the turn.
   sales first, then purchases, split pro rata when the warehouse is short.
   Then the price moves: up if more lots were asked than there were, down if
   the realms' goods on sale exceed cover_months of recently asked lots.
+- With short_last_lot, units under a whole lot (left by spoilage) sell as
+  one short lot, paid by the unit.
 - Food in the warehouse spoils like the granaries.
 
 A month of the whole game (resolve_month): check every realm's trades,
@@ -100,10 +103,15 @@ def stock(book: GoodBook, include_start_stock: bool = True) -> int:
     return sum(c.units for c in book.queue if include_start_stock or c.seller != MERCHANT)
 
 
+def _has_on_sale(market: MarketState, good: str, realm_key: str) -> bool:
+    return any(c.seller == realm_key for c in market.goods[good].queue)
+
+
 def check_trades(state: GameState, orders: list[TradeOrder], market: MarketState,
-                 config: Config) -> tuple[dict[str, int], list[OrderResult]]:
+                 config: Config, realm_key: str) -> tuple[dict[str, int], list[OrderResult]]:
     """@brief Validate a realm's trades against its stock and gold, in priority
     order; each accepted trade commits its goods or gold before the next.
+    @param realm_key The realm's key in the market (its goods on sale).
     @return ({good: lots, > 0 buy, < 0 sell}, one result per order). An
             accepted trade may still be filled only in part (pro rata).
     """
@@ -116,6 +124,11 @@ def check_trades(state: GameState, orders: list[TradeOrder], market: MarketState
         signed = order.lots if order.side == "buy" else -order.lots
         if requests.get(order.good, 0) * signed < 0:
             results.append(OrderResult(order, False, "BOTH_SIDES", f"already trading {order.good} the other way"))
+            continue
+        if (order.side == "buy" and config.market.no_buying_own_goods
+                and _has_on_sale(market, order.good, realm_key)):
+            # Why: it would take back its own goods and pay the margin twice.
+            results.append(OrderResult(order, False, "OWN_GOODS_ON_SALE", f"own {order.good} already on sale"))
             continue
         if order.side == "sell":
             if goods_left[order.good] < order.lots * lot:
@@ -135,7 +148,7 @@ def check_trades(state: GameState, orders: list[TradeOrder], market: MarketState
 
 
 def check_month_plan(state: GameState, orders: list[Order], market: MarketState | None,
-                     config: Config) -> PlanReport:
+                     config: Config, realm_key: str) -> PlanReport:
     """@brief Dry run of a realm's month as resolve_month runs it: trades first,
     then the other orders on the state the trades leave. For the council's cost
     check and the sovereign's preview; the state is NOT modified.
@@ -150,7 +163,7 @@ def check_month_plan(state: GameState, orders: list[Order], market: MarketState 
     trades = [o for o in orders if isinstance(o, TradeOrder)]
     trial, trade_results, others = state, [], orders
     if market is not None and config.market is not None and trades:
-        _, trade_results = check_trades(state, trades, market, config)
+        _, trade_results = check_trades(state, trades, market, config, realm_key)
         trial = _after_full_fills(state, trade_results, market, config)
         others = [o for o in orders if not isinstance(o, TradeOrder)]
     report = check_plans(trial, others, config)
@@ -232,13 +245,15 @@ def resolve_market(market: MarketState, requests: dict[str, dict[str, int]],
     @param market State at the start of the month; NOT modified.
     @param requests {realm: {good: lots}} from check_trades.
     @return (new market, fills {realm: {good: lots, same signs}}, gold paid to
-            each seller {realm: gold}). Buyers pay at the month's price.
+            each seller {realm: gold}, short {realm: {good: units missing from
+            the last lot bought}}). Buyers pay at the month's price, by the unit.
     """
     lot = config.market.lot_units
     new = copy.deepcopy(market)
     realms = sorted(requests)  # a fixed order: the result never depends on the caller's
     fills: dict[str, dict[str, int]] = {realm: {} for realm in realms}
     paid: dict[str, int] = {}
+    short: dict[str, dict[str, int]] = {realm: {} for realm in realms}
     for good, book in new.goods.items():
         unit_pay = sell_price(market, config, good)
         book.last_sold = 0
@@ -250,17 +265,46 @@ def resolve_market(market: MarketState, requests: dict[str, dict[str, int]],
                 fills[realm][good] = lots
         asked = {realm: requests[realm][good] for realm in realms if requests[realm].get(good, 0) > 0}
         total = sum(asked.values())
-        available = stock(book) // lot
+        available = _lots_available(book, config)
+        granted_lots = _share(asked, available)
+        short_realm, short_units = _short_lot(book, config, granted_lots, available)
         book.last_bought = 0
-        for realm, granted in _share(asked, available).items():
+        for realm, granted in granted_lots.items():
             fills[realm][good] = granted
-            book.last_bought += granted * lot
-            for seller, units in _take_oldest(book, granted * lot).items():
+            units_bought = granted * lot
+            if realm == short_realm:
+                short[realm][good] = short_units
+                units_bought -= short_units
+            book.last_bought += units_bought
+            for seller, units in _take_oldest(book, units_bought).items():
                 if seller != MERCHANT:
                     paid[seller] = paid.get(seller, 0) + units * unit_pay // lot
         _move_price(book, good, config, total, available)
     _spoil(new, config)
-    return new, fills, paid
+    return new, fills, paid, short
+
+
+def _lots_available(book: GoodBook, config: Config) -> int:
+    """@brief Whole lots in the warehouse, plus one short lot for the units
+    under a lot when short_last_lot is on."""
+    lot = config.market.lot_units
+    units = stock(book)
+    if config.market.short_last_lot and units % lot:
+        return units // lot + 1
+    return units // lot
+
+
+def _short_lot(book: GoodBook, config: Config, granted: dict[str, int],
+               available: int) -> tuple[str | None, int]:
+    """@brief Who takes the short lot and how many units it lacks.
+    Only when every lot is taken (otherwise whole lots are left for everyone);
+    it goes to the last buyer in the realms' fixed order.
+    @return (realm, units missing) or (None, 0)."""
+    missing = available * config.market.lot_units - stock(book)
+    buyers = [realm for realm, lots in granted.items() if lots > 0]
+    if missing <= 0 or not buyers or sum(granted.values()) < available:
+        return None, 0
+    return buyers[-1], missing
 
 
 def _spoil(market: MarketState, config: Config) -> None:
@@ -272,20 +316,26 @@ def _spoil(market: MarketState, config: Config) -> None:
 
 
 def apply_trade(state: GameState, fills: dict[str, int], gold_paid: int, market: MarketState,
-                config: Config) -> list[Event]:
+                config: Config, short: dict[str, int] | None = None) -> list[Event]:
     """@brief Give a realm what the market filled: goods in, the price of its
     purchases out, the gold of its goods sold (this month or earlier) in.
     @param market The market at the start of the month (its prices).
+    @param short {good: units missing from the last lot bought} (short_last_lot).
     @return The realm's trade events.
     """
     lot = config.market.lot_units
+    short = short or {}
     events = []
     for good, lots in fills.items():
         if lots > 0:
-            gold = lots * buy_price(market, config, good)
-            setattr(state, good, getattr(state, good) + lots * lot)
+            units = lots * lot - short.get(good, 0)
+            gold = -(-units * buy_price(market, config, good) // lot)  # by the unit, rounded up like the price
+            setattr(state, good, getattr(state, good) + units)
             state.gold -= gold
-            events.append(Event("trade_bought", {"good": good, "lots": lots, "gold": gold}))
+            data = {"good": good, "lots": lots, "gold": gold}
+            if short.get(good):
+                data["units"] = units  # only for a short lot: older events stay as they were
+            events.append(Event("trade_bought", data))
         elif lots < 0:
             setattr(state, good, getattr(state, good) + lots * lot)
             events.append(Event("trade_on_sale", {"good": good, "lots": -lots}))
@@ -309,8 +359,8 @@ def resolve_month(market: MarketState | None, realms: dict[str, RealmMonth],
     requests, trade_results = {}, {}
     for key, realm in realms.items():
         trades = [o for o in realm.orders if isinstance(o, TradeOrder)]
-        requests[key], trade_results[key] = check_trades(realm.state, trades, market, config)
-    new_market, fills, paid = resolve_market(market, requests, config)
+        requests[key], trade_results[key] = check_trades(realm.state, trades, market, config, key)
+    new_market, fills, paid, short = resolve_market(market, requests, config)
     for key, verdicts in trade_results.items():
         for verdict in verdicts:  # an accepted purchase may get fewer lots (pro rata)
             good = verdict.order.good
@@ -319,7 +369,7 @@ def resolve_month(market: MarketState | None, realms: dict[str, RealmMonth],
     results = {}
     for key, realm in realms.items():
         state = copy.deepcopy(realm.state)
-        events = apply_trade(state, fills[key], paid.get(key, 0), market, config)
+        events = apply_trade(state, fills[key], paid.get(key, 0), market, config, short[key])
         others = [o for o in realm.orders if not isinstance(o, TradeOrder)]
         turn = resolve_turn(state, others, config, realm.people)
         results[key] = TurnResult(turn.state, trade_results[key] + turn.order_results, events + turn.events)

@@ -402,7 +402,7 @@ def _run_check(ctx: MeetingContext, items: list[dict]) -> dict:
     """@brief Engine dry run of a list of {proposer, order}: trades first, as
     the month runs them, then the rest in list order; one verdict per item."""
     orders = [parse_order(item["order"])[0] for item in items]
-    report = check_month_plan(ctx.state, orders, ctx.market, ctx.config)
+    report = check_month_plan(ctx.state, orders, ctx.market, ctx.config, str(ctx.realm_id))
     verdicts = [
         {"accepted": result.accepted, "code": result.code, "message": result.message}
         for result in report.results
