@@ -2,10 +2,12 @@
 
 Pure functions over the engine state; every number is counted here, so
 the models never count tiles themselves (lab/urban_probe.py: they place
-rectangles well, but miscount footprints).
+rectangles well, but miscount footprints). The grid keeps 3 characters a
+cell under numbered columns: one character a cell would save little (the
+map is about a tenth of the prompt, game 20) and make the model count.
 
 Cost: the grid covers the realm's land plus a ring of RING tiles, about
-16 x 16 cells at the start (about 350 tokens); room_in_zone places copies
+14 x 14 cells at the start (about 300 tokens); room_in_zone places copies
 of a building on a scratch state, a few hundred tile checks per zone.
 """
 
@@ -16,7 +18,10 @@ from engine.state import Building, GameState
 from engine.territory import (KIND_PURPOSES, NOT_OWNED, OWNED, TERRAIN_CHARS, WILD, building_works,
                               claim_price, find_place, footprint, owned_count, square_tiles, _in_direction)
 
-RING = 2  # tiles shown around the realm's land
+# Tiles shown around the realm's land: 1 in the Architect's briefing (the
+# bordering tiles are also counted in words, frontier_line), 2 on the
+# sovereign's map page, where the view is the point.
+RING = 1
 MAX_ROOM = 20  # room counts stop here: "20 or more" is enough to plan
 LETTERS = {"farm": "F", "sawmill": "S", "quarry": "Q", "house": "H"}
 # Tiles outside the realm: the same terrain, another character.
@@ -27,12 +32,12 @@ LEGEND = ("Legend: realm's land: . plain, T forest, ^ hill, ~ river, w claimed b
           "H house (lower case while under construction). x is the column, y the row; north is up.")
 
 
-def _bounds(state: GameState) -> tuple[int, int, int, int]:
+def _bounds(state: GameState, ring: int = RING) -> tuple[int, int, int, int]:
     """@brief (x1, y1, x2, y2) of the realm's land plus the ring, inside the map."""
     tiles = [(x, y) for y, row in enumerate(state.owned) for x, char in enumerate(row) if char != NOT_OWNED]
     size = len(state.terrain)
-    return (max(0, min(x for x, _ in tiles) - RING), max(0, min(y for _, y in tiles) - RING),
-            min(size - 1, max(x for x, _ in tiles) + RING), min(size - 1, max(y for _, y in tiles) + RING))
+    return (max(0, min(x for x, _ in tiles) - ring), max(0, min(y for _, y in tiles) - ring),
+            min(size - 1, max(x for x, _ in tiles) + ring), min(size - 1, max(y for _, y in tiles) + ring))
 
 
 def _cell(state: GameState, x: int, y: int) -> str:

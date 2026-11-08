@@ -128,7 +128,7 @@ def map_page(state: GameState, config: Config, realm_id: int, selected: int | No
     @param selected Building id chosen by the sovereign (0 = the square; None = the newest building).
     @param zone_name Zone to light up on the map, or None.
     """
-    bounds = map_text._bounds(state)
+    bounds = map_text._bounds(state, ring=2)
     x1, y1, x2, y2 = bounds
     tiles, edges = _tiles(state, bounds)
     tile_px = TILE_PX[zoom]

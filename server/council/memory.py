@@ -33,7 +33,11 @@ def order_text(order: dict) -> str:
     """@brief Compact wording of an order: 'set_tax 12', 'build farm'."""
     if order.get("action") == "set_zones":  # the full plan would fill the memory
         return "set_zones (" + ", ".join(str(z.get("name")) for z in order.get("zones", [])) + ")"
-    values = [f"{key} {value}" if key in ("food", "wood", "stone") else str(value)
+    if order.get("action") == "build":  # "build farm in Campi", whatever the key order
+        place = f" in {order['zone']}" if order.get("zone") else ""
+        tile = f" at ({order['x']},{order['y']})" if order.get("x") is not None else ""
+        return f"build {order.get('building')}{place}{tile}"
+    values = [f"{key} {value}" if key in ("food", "wood", "stone", "clearing") else str(value)
               for key, value in order.items() if key not in ("action", "priority")]
     return " ".join([order["action"], *values])
 
@@ -54,6 +58,19 @@ def _proposals_by_turn(conn, actor_id: int, first_turn: int, last_turn: int) -> 
     ):
         proposed[turn] = payload.get("proposals", [])  # the last round of a turn wins
     return proposed
+
+
+def _plans_by_turn(conn, realm_id: int, role: str, first_turn: int, last_turn: int) -> dict[int, list]:
+    """@brief The orders of the Chancellor's last plan of each turn that carry
+    this minister's name (the plan the sovereign was shown)."""
+    plans = {}
+    for turn, payload in conn.execute(
+        "SELECT turn, payload FROM council_messages WHERE realm_id = %s AND kind = 'summary'"
+        " AND turn >= %s AND turn < %s ORDER BY turn, round, id",
+        (realm_id, first_turn, last_turn),
+    ):
+        plans[turn] = [item["order"] for item in payload.get("plan", []) if item.get("proposer") == role]
+    return plans
 
 
 def _orders_by_turn(conn, realm_id: int, first_turn: int, last_turn: int) -> dict[int, list]:
@@ -93,14 +110,20 @@ def _notable_events(conn, game_id: int, realm_id: int, first_turn: int, last_tur
     return events
 
 
-def _outcome_text(own_orders: list[dict], proposals: list[dict]) -> str:
+def _outcome_text(own_orders: list[dict], proposals: list[dict], planned: list[dict] | None = None) -> str:
     """@brief What became of the minister's proposals of one turn.
 
     Proposals left out are named ("Not approved..."): with only the approved
     ones listed, weaker models took the missing ones as built (game 17: "il
     segherio rende" for a sawmill the sovereign had refused). Matched by
-    wording, so a proposal the Chancellor changed counts as not approved.
+    wording, so a proposal the Chancellor changed counts as left out.
+    @param planned This minister's orders in the Chancellor's plan, or None
+           when unknown. With it, what the Chancellor left out and what the
+           sovereign removed are told apart (game 20: the Architect believed
+           the sovereign had refused a house the Chancellor never showed).
     """
+    if planned is not None:
+        return _outcome_with_plan(own_orders, proposals, planned)
     if not own_orders:
         return "None approved by the sovereign."
     parts = []
@@ -114,6 +137,39 @@ def _outcome_text(own_orders: list[dict], proposals: list[dict]) -> str:
     left_out = [order_text(p) for p in proposals if order_text(p) not in approved]
     if left_out:
         text += " Not approved by the sovereign: " + ", ".join(left_out) + "."
+    return text
+
+
+def _same_kind(first: dict, second: dict) -> bool:
+    """@brief Same action (and the same building for builds)."""
+    return first.get("action") == second.get("action") and first.get("building") == second.get("building")
+
+
+def _outcome_with_plan(own_orders: list[dict], proposals: list[dict], planned: list[dict]) -> str:
+    parts = [f"{order_text(o['raw'])} carried out" if o["accepted"] else f"{order_text(o['raw'])} failed ({o['code']})"
+             for o in own_orders]
+    text = ("Approved: " + "; ".join(parts) + ".") if parts else "None approved by the sovereign."
+    in_plan = {order_text(order) for order in planned}
+    issued = {order_text(o["raw"]) for o in own_orders}
+    proposed = {order_text(p) for p in proposals}
+    left_out = [p for p in proposals if order_text(p) not in in_plan]
+    # A proposal whose kind is in the plan with other values was changed, not left out.
+    new_in_plan = [o for o in planned if order_text(o) not in proposed]
+    changed = []
+    for proposal in list(left_out):
+        match = next((o for o in new_in_plan if _same_kind(o, proposal)), None)
+        if match is not None:
+            changed.append(f"{order_text(proposal)} → {order_text(match)}")
+            left_out.remove(proposal)
+            new_in_plan.remove(match)
+    left_out = [order_text(p) for p in left_out]
+    removed = [order_text(o) for o in planned if order_text(o) not in issued]
+    if changed:
+        text += " Changed by the Chancellor: " + "; ".join(changed) + "."
+    if left_out:
+        text += " Left out of the plan by the Chancellor (the sovereign never saw them): " + ", ".join(left_out) + "."
+    if removed:
+        text += " Removed from the plan by the sovereign: " + ", ".join(removed) + "."
     return text
 
 
@@ -140,6 +196,7 @@ def consequence_lines(
     """
     proposed = _proposals_by_turn(conn, actor_id, first_turn, current_turn)
     orders = _orders_by_turn(conn, realm_id, first_turn, current_turn)
+    plans = _plans_by_turn(conn, realm_id, role, first_turn, current_turn)
     snapshots = _snapshots(conn, realm_id, first_turn, current_turn)
     events = _notable_events(conn, game_id, realm_id, first_turn, current_turn)
     entries = []
@@ -149,7 +206,7 @@ def consequence_lines(
         others = [o for o in turn_orders if o["issued_by"] != actor_id]
         month = MONTHS[(turn - 1) % 12]
         proposals = ", ".join(order_text(p) for p in proposed[turn]) or "nothing"
-        lines = [f"turn {turn} ({month}): you proposed {proposals}. {_outcome_text(own, proposed[turn])}"]
+        lines = [f"turn {turn} ({month}): you proposed {proposals}. {_outcome_text(own, proposed[turn], plans.get(turn))}"]
         if others:
             decided = ", ".join(
                 f"{order_text(o['raw'])} ({names_by_actor.get(o['issued_by'], 'the sovereign')})"

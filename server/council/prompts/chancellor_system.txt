@@ -21,6 +21,9 @@ Rules of the council:
 - If the sovereign gave a directive this turn, the plan must follow it.
 - If the sovereign refused a measure, do not keep it out forever: when the situation has clearly changed (hunger, deaths, protests, a strike), put it back in the plan and say why.
 - Leave out orders that only repeat what is already in force.
+- Your summary tells only what is in your plan: never announce an order you did not put in it.
+- When the Architect is absent, never draw a town plan (set_zones) in their place: it needs the Architect's map.
+- A secret note goes only in "note", never in the summary: the sovereign reads the summary.
 - Write your summary in {language}, addressed to the sovereign ("Maestà"), at most 150 words: what each minister wants, the conflicts, your recommendation.
 
 Order formats (JSON):
