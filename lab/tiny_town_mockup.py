@@ -27,6 +27,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import pixel_buildings  # noqa: E402
+import pixel_terrain  # noqa: E402
 from pixel_png import read_indexed, write_rgb  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -170,12 +171,24 @@ def draw_terrain(canvas: Canvas, sheet, world: list[str]) -> None:
             char = terrain_at(world, sub_x, sub_y)
             canvas.put_sheet_tile(sheet, GRASS[spot_hash(sub_x, sub_y, len(GRASS))], sub_x, sub_y)
             if char == "T":
-                canvas.put_sheet_tile(sheet, FOREST[edge_piece(is_forest, sub_x, sub_y)], sub_x, sub_y)
+                shade_tile(canvas, sub_x, sub_y, 0.82)
             elif char == "^":
-                shade_tile(canvas, sub_x, sub_y, 0.8)
-                canvas.put_hand_tile(palette, mound if spot_hash(sub_x, sub_y, 2) == 0 else rocks, sub_x, sub_y)
+                shade_tile(canvas, sub_x, sub_y, 0.88)
             elif char == "~":
                 draw_water(canvas, palette, world, sub_x, sub_y)
+    # Trees and rocks are drawn per engine tile, after the ground, so they
+    # can overlap the tile behind them (pixel_terrain).
+    forest, hills = [], []
+    for tile_y in range(VIEW[3]):
+        for tile_x in range(VIEW[2]):
+            origin = (tile_x * 2 * TILE, tile_y * 2 * TILE)
+            char = terrain_at(world, tile_x * 2, tile_y * 2)
+            if char == "T":
+                forest.append(origin)
+            elif char == "^":
+                hills.append(origin)
+    pixel_terrain.draw_hills(canvas, palette, hills)
+    pixel_terrain.draw_forest(canvas, palette, forest)
 
 
 def shade_tile(canvas: Canvas, sub_x: int, sub_y: int, factor: float) -> None:
@@ -259,6 +272,9 @@ def draw_palace(canvas: Canvas, sheet, era: int, sub_x: int, sub_y: int) -> None
     if era == 2:
         pixel_buildings.draw_town_hall(canvas, palette, px, py)
         return
+    if era == 3:
+        pixel_buildings.draw_castle(canvas, palette, px, py)
+        return
     for dy, row in enumerate(PALACE_BY_ERA[era]):
         for dx, index in enumerate(row):
             canvas.put_sheet_tile(sheet, index, sub_x + dx, sub_y + dy)
@@ -301,6 +317,11 @@ def draw_farm(canvas: Canvas, sheet, sub_x: int, sub_y: int) -> None:
 
 
 def draw_sawmill(canvas: Canvas, sheet, sub_x: int, sub_y: int) -> None:
+    pixel_buildings.draw_sawmill(canvas, sheet[1], sub_x * TILE, sub_y * TILE)
+
+
+def draw_sawmill_kenney(canvas: Canvas, sheet, sub_x: int, sub_y: int) -> None:
+    """@brief First version with Tiny Town's flat roof (kept to compare)."""
     for i, index in enumerate((SLATE_ROOF[0], SLATE_ROOF[1], SLATE_ROOF[1], SLATE_ROOF[2])):
         canvas.put_sheet_tile(sheet, index, sub_x + i, sub_y)
     for i, index in enumerate((WOOD_WALL["left"], WOOD_WALL["door_open"], WOOD_WALL["mid"], WOOD_WALL["right"])):
@@ -308,6 +329,12 @@ def draw_sawmill(canvas: Canvas, sheet, sub_x: int, sub_y: int) -> None:
 
 
 def draw_quarry(canvas: Canvas, sheet, sub_x: int, sub_y: int) -> None:
+    draw_patch(canvas, sheet, DIRT, sub_x, sub_y, 4, 4)   # covers the hill's rocks under the pit
+    pixel_buildings.draw_quarry(canvas, sheet[1], sub_x * TILE, sub_y * TILE)
+
+
+def draw_quarry_kenney(canvas: Canvas, sheet, sub_x: int, sub_y: int) -> None:
+    """@brief First version, a dirt patch with Tiny Town props (kept to compare)."""
     rows, palette, alpha = sheet
     draw_patch(canvas, sheet, DIRT, sub_x, sub_y, 4, 4)
     canvas.put_hand_tile(palette, parse_hand_tile(ROCK_MOUND), sub_x + 1, sub_y + 1)

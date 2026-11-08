@@ -248,3 +248,117 @@ def draw_town_hall(canvas, palette, px: int, py: int) -> None:
     draw_window(canvas, palette, px + 8, py + 30, 4, 4)
     shade(canvas, px + 4, py + 59, 12)
     draw_banner(canvas, palette, px + 58, py + 3, 13)
+
+
+def draw_log_end(canvas, palette, x0: int, y0: int) -> None:
+    """@brief The cut end of a log, 6 x 6: bark ring, light wood, a dark heart."""
+    for dy in range(6):
+        for dx in range(6):
+            if (dx in (0, 5)) and (dy in (0, 5)):
+                continue
+            edge = dx in (0, 5) or dy in (0, 5)
+            put(canvas, palette, x0 + dx, y0 + dy, INK if edge else WALLS["planks"][0])
+    put(canvas, palette, x0 + 2, y0 + 2, WALLS["planks"][1])
+    put(canvas, palette, x0 + 3, y0 + 3, WALLS["planks"][2])
+
+
+def draw_sawmill(canvas, palette, px: int, py: int) -> None:
+    """@brief The sawmill on its 64 x 32 block (2 x 1 engine tiles): an open
+    shed (roof on two posts, a log on the sawing trestle inside) and a
+    pyramid of logs beside it."""
+    draw_roof(canvas, palette, px + 2, py + 3, 38, 11, "tiles", 5)
+    fill(canvas, palette, px + 5, py + 14, 32, 14, DOOR_DARK)
+    for post_x in (px + 5, px + 35):
+        fill(canvas, palette, post_x, py + 14, 2, 14, WALLS["planks"][2])
+    # The sawing trestle with a log on it, light wood against the dark shed.
+    for leg_x in (px + 11, px + 29):
+        fill(canvas, palette, leg_x, py + 22, 2, 6, WALLS["planks"][0])
+    fill(canvas, palette, px + 9, py + 17, 24, 5, WALLS["planks"][0])
+    frame(canvas, palette, px + 9, py + 17, 24, 5)
+    for x in range(px + 10, px + 32, 4):
+        put(canvas, palette, x, py + 19, WALLS["planks"][1])
+    draw_log_end(canvas, palette, px + 27, py + 16)
+    shade(canvas, px + 4, py + 28, 34)
+    for row, count in enumerate((4, 3, 2)):
+        for i in range(count):
+            draw_log_end(canvas, palette, px + 42 + row * 3 + i * 5, py + 22 - row * 5)
+    shade(canvas, px + 42, py + 28, 20)
+
+
+def draw_quarry(canvas, palette, px: int, py: int) -> None:
+    """@brief The quarry on its 64 x 64 block: three benches cut into the
+    rock, stepping down to the front, cut blocks and a wooden crane."""
+    stone_light, stone, stone_dark = WALLS["stone"]
+    # The pit: a sunken floor of broken stone, then the benches as terraces
+    # whose fronts are cut faces, each one wider than the one above.
+    fill(canvas, palette, px + 2, py + 2, 60, 58, stone_dark)
+    frame(canvas, palette, px + 2, py + 2, 60, 58)
+    for i in range(40):
+        put(canvas, palette, px + 4 + (i * 37) % 56, py + 44 + (i * 11) % 14, stone)
+    for step, (x0, y0, width) in enumerate(((4, 4, 56), (4, 16, 56), (4, 28, 56))):
+        fill(canvas, palette, px + x0, py + y0, width, 4, stone_light)
+        fill(canvas, palette, px + x0, py + y0 + 4, width, 8, stone)
+        for x in range(px + x0, px + x0 + width):
+            put(canvas, palette, x, py + y0 + 11, INK)
+        for x in range(px + x0 + 4 + step * 3, px + x0 + width - 2, 9):
+            for y in range(py + y0 + 4, py + y0 + 9):
+                put(canvas, palette, x, y, stone_dark)
+    for bx, by in ((8, 48), (17, 50), (12, 43)):
+        fill(canvas, palette, px + bx, py + by, 8, 6, stone_light)
+        fill(canvas, palette, px + bx, py + by + 4, 8, 2, stone_dark)
+        frame(canvas, palette, px + bx, py + by, 8, 6)
+    # The crane: a post, an arm, a rope and a block in the air.
+    wood_light, wood, wood_dark = WALLS["planks"]
+    fill(canvas, palette, px + 50, py + 30, 3, 28, wood)
+    frame(canvas, palette, px + 50, py + 30, 3, 28)
+    fill(canvas, palette, px + 36, py + 29, 17, 3, wood_light)
+    frame(canvas, palette, px + 36, py + 29, 17, 3)
+    for y in range(py + 32, py + 44):
+        put(canvas, palette, px + 39, y, INK)
+    fill(canvas, palette, px + 36, py + 44, 7, 5, stone_light)
+    frame(canvas, palette, px + 36, py + 44, 7, 5)
+    shade(canvas, px + 50, py + 58, 6)
+
+
+def draw_crenellations(canvas, palette, x0: int, y0: int, width: int) -> None:
+    """@brief Merlons along a wall top: 3 px wide, 3 px tall, 3 px apart."""
+    light = WALLS["stone"][0]
+    for x in range(x0, x0 + width):
+        if (x - x0) // 3 % 2 == 0:
+            for y in range(y0, y0 + 3):
+                put(canvas, palette, x, y, light)
+            put(canvas, palette, x, y0 - 1, INK)
+    for x in range(x0, x0 + width):
+        put(canvas, palette, x, y0 + 3, INK)
+
+
+def draw_arrow_slit(canvas, palette, x: int, y: int) -> None:
+    for dy in range(5):
+        put(canvas, palette, x, y + dy, INK)
+    put(canvas, palette, x - 1, y + 2, INK)
+    put(canvas, palette, x + 1, y + 2, INK)
+
+
+def draw_castle(canvas, palette, px: int, py: int) -> None:
+    """@brief Era 3: the castle on its 64 x 64 block: a keep at the back,
+    two corner towers, a curtain wall with the gate and its portcullis,
+    the gold banner on the keep."""
+    draw_wall(canvas, palette, px + 18, py + 9, 28, 22, "stone", 7)
+    draw_crenellations(canvas, palette, px + 18, py + 5, 28)
+    draw_window(canvas, palette, px + 30, py + 15, 4, 5)
+    draw_wall(canvas, palette, px + 14, py + 34, 36, 25, "stone", 8)
+    draw_crenellations(canvas, palette, px + 14, py + 30, 36)
+    draw_arch(canvas, palette, px + 26, py + 42, 12, 17, WALLS["stone"][1])
+    for x in range(px + 28, px + 37, 2):
+        for y in range(py + 44, py + 54):
+            put(canvas, palette, x, y, WALLS["stone"][2])
+    for y in range(py + 46, py + 54, 3):
+        for x in range(px + 27, px + 37):
+            put(canvas, palette, x, y, WALLS["stone"][2])
+    for tower_x in (px + 2, px + 48):
+        draw_wall(canvas, palette, tower_x, py + 20, 14, 39, "stone", 9)
+        draw_crenellations(canvas, palette, tower_x, py + 16, 14)
+        draw_arrow_slit(canvas, palette, tower_x + 7, py + 27)
+        draw_arrow_slit(canvas, palette, tower_x + 7, py + 42)
+    shade(canvas, px + 2, py + 59, 60)
+    draw_banner(canvas, palette, px + 32, py + 0, 6, flag_left=False)
