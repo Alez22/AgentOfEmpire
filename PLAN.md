@@ -152,7 +152,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] Game 29 (see "Game 29"): Aurelia sold food, Brenna stood; a defect of the food sale fixed (a reduced ration in the plan made room for a sale)
   - [x] After game 29 (decided 2026-11-09): Corvara's fall from the cold stays as it is, no new aid: a bad choice the player could see coming (the briefing gives the firewood a month, the craft says to build the market once the winter's firewood is safe, the cold is reported). No briefing line that does the sum for the council, no R4c
   - [x] B+C: spec approved 2026-11-09 in `docs/DESIGN.md`, "Bandits, the watchtower, the Gastaldo and the militia" (stage 1: flight, pool, raids, watchtower from the first month, Gastaldo with the militia only; the loot feeds the pool)
-  - [ ] B1. Lab (8 realms, 24 months): values and spirals
+  - [x] B1. Lab (8 realms, 24 months): values and spirals (see "Lab: bandits, block B+C")
   - [ ] B2. Engine: flight, pool, raids, watchtower, militia
   - [ ] B3. Council: the Gastaldo, briefings, manual, Voice, automatic sovereign
   - [ ] B4. UI after a mockup
@@ -894,6 +894,18 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 6. **Merchants' mood**: Aurelia's and Corvara's 450-510, calm; Brenna's followed the famine down to the strike (month 11).
 7. **Two defects, fixed**: the automatic sovereign played a fallen realm (meeting paid, then a 500 from the petition check): now it skips it. R7 told Brenna to buy wood the month its market opened, with no merchant yet (`TRADE_CAPACITY`): R7 and R5 now ask no more lots than the merchants can handle.
 8. To decide: the food of the world (nobody sells food: R5b, or the Treasurer's craft, or a start stock of food that lasts longer), the abundant ration with no food outside winter (an R2 for every month?), the merchants' tax that Treasurers cut to 0 for no reason.
+
+### Lab: bandits, block B+C (2026-11-09)
+
+`lab/village_bandits.py`: 8 realms on the 8 sites, 24 months on the real engine with block A; flight, the pool, raids and the militia run on top after each month. Fixed policy of `lab/village_market.py` (ration, gold, trades), the market first, then the watchtower, 3 merchants.
+
+1. **The baseline had to be fixed first**: with 4 woodcutters the realms poor or fair in wood froze in the second winter and 3 of 8 fell with no bandits at all. Now 6 woodcutters, twice the hands on a poor resource: no realm falls, no cold. Still a fragile world: realms spend 4-12 months of 24 on the reduced ration, mood 300-350 in the second spring, so a small push tips them.
+2. **Flight below 300 came too late**: the ladder starts at 350 (protests after 2 months, revolt after 6), so a realm in crisis (25 % tax) revolted at month 8 with 2 adults gone. Now **below 350 for 3 months, 2 % of the adults and 1 % of the children a month**: 3 adults leave a crisis realm before its revolt, and calm realms lose a few in a bad spring.
+3. **Spirals: at 3 % after 2 months the world spirals** (pool 10 -> 33, 5 realms of 8 fall); at 5 % pool 59, 7 fall. At 2 % after 3 months the pool stays 6-16.
+4. **The start pool (5-15)**: about 1 raid a realm a year, about 200 food each (a quarter of a month's eating); the pool shrinks slowly to 2-7 in a serene world (seed 1: 7 -> 1). 10-25 felt heavy (41 raids, 8,300 food). The decline needed an accumulator (5 % of 10 rounds to 0).
+5. **The militia works and costs**: 4 guards (repel 2 raiders each) repel half the raids or more, the loot falls from 7,250 to 2,100 food and the pool starves (13 -> 2-7); 2 guards repel nothing (parties of about 10) but cut the loot by 40 %. The guards' food (4 farmers, about 64 food a month) costs as much as the raids they stop in a quiet world: the tension the design wants.
+6. **Bandits tip fragile realms**: with 2 realms in crisis and no guards, 4 realms fall instead of 2 (the others in the second spring, mood about 300, after 700-1,000 food lost); a rich realm with no guards is raided most (14 raids, 2,700 food).
+7. Values for the engine: flight below 350 for 3 months, 2 % adults, 1 % children; start pool 5-15; decline 5 % a month, 10 % in winter, +30 % of the food missing; parties of 8, 25 units a raider, 2 raiders stopped by a guard, each guard 10 % less attractive (max 80 %); watchtower 40 wood 20 stone, 2 months.
 
 ### Game 29: the food sale down to the next spring (2026-11-09, 12 months)
 
