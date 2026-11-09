@@ -146,7 +146,8 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] A4. Council: briefings, manual, prompts, craft, the Voice, R10 (per-realm market status; merchants start at the mood base)
   - [x] A6. Game 27, 12 months, three automatic realms (see "Game 27"); two defects of the automatic sovereign fixed
   - [x] A5. UI after a mockup ("Pagina Mercato" canvas): the market page without a market (no prices), "I mercanti", the market on the map (icon "shop"), the kingdom page; two leaks closed in the sovereign's state (merchants' mood, land levels)
-  - [ ] Open after game 27: nobody sells food; the abundant ration with no food outside winter (R2 only October-March); Treasurers cut the merchants' tax to 0 for no reason
+  - [x] After game 27 (decided 2026-11-09): R2b (no richer ration when the food does not last); the Treasurer's craft on the merchants' tax (free up to a tenth) and on selling food; food yields 15/16/19, farms 16 (lab `lab/food_balance.py`, see "Lab: the village's food balance")
+  - [ ] Game 28: check R2b, the craft lines and the new yields
   - [ ] B+C: spec, multi-realm lab, engine, council, UI
 - [ ] Travellers, bandits and migration (designed 2026-11-08, `docs/DESIGN.md` Part 1): travellers carry public news late and distorted (in the village a public fact of another realm arrives only through them); families flee long discontent into a world pool of bandits (adults and some children, elders stay) that raids exposed stores; flight by class (clergy never), class lost in the pool, arrivals enter as peasants; a small pool from the start so rare raids teach the need for a militia; the **Gastaldo** (first council expansion, in the village, brought by the watchtower): doors (closed / normal / open), militia (none before it), news from outside, counter-espionage in the town; with open doors a raid becomes immigration; stages: 1 flight, raids, Gastaldo and militia, 2 doors and acceptance (needs a multi-realm lab for spirals), 3 spies among migrants, offended origin, remembered trade, funded bandits
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
@@ -885,6 +886,15 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 6. **Merchants' mood**: Aurelia's and Corvara's 450-510, calm; Brenna's followed the famine down to the strike (month 11).
 7. **Two defects, fixed**: the automatic sovereign played a fallen realm (meeting paid, then a 500 from the petition check): now it skips it. R7 told Brenna to buy wood the month its market opened, with no merchant yet (`TRADE_CAPACITY`): R7 and R5 now ask no more lots than the merchants can handle.
 8. To decide: the food of the world (nobody sells food: R5b, or the Treasurer's craft, or a start stock of food that lasts longer), the abundant ration with no food outside winter (an R2 for every month?), the merchants' tax that Treasurers cut to 0 for no reason.
+
+### Lab: the village's food balance (2026-11-09)
+
+`lab/food_balance.py`: each of the 8 sites alone for 24 months on the real engine, no market, a fixed sensible policy (reduced ration below 1 month of food, every free adult on the fields, a farm when the fields are full). Why: in game 27 no realm ever held a month of eating in summer, so nobody could sell food.
+
+1. **Aurelia's missing surplus was the abundant ration, not the land.** Seasons: winter (January-March) at 50 %, spring about even for a rich realm (+50 a month), the surplus comes in summer (120 %) and autumn (130 %), about +300 a month. Aurelia set the abundant ration in July and ate it; the lab's site 0 at the normal ration reached 3,500 food in autumn. R2b would have blocked that ration (578 food against 898 a month).
+2. **The world ate more than it grew.** At 14/15/18 a year: rich +1,100, fair -800 (5 months on the reduced ration), poor -1,450; the 8 sites together -3,900. A fair realm: 53 farmers x 15 = 795 a month against 860 eaten. Trade could cover a third of the gap at most.
+3. **Levers, one at a time** (first-year balance, fair / poor / rich): yields +1 (15/16/19) -190 / -800 / +1,730, world +1,100; yields +2 -> +460 / -190 / +2,400; adults eating 9 -> -90 / -740 / +1,840; autumn at 150 % -> -290 / -975 / +1,730. **Chosen: +1** (a fair realm about breaks even, a poor one buys about 16 lots a year, a rich one sells 30+); farms 16 per worker so the fair land still equals the farm's value.
+4. Limit: two fair sites with poor wood or poor stone revolt in year 2 with no market to buy firewood and stone: a limit of the lab, not a result.
 
 ### Presentation page and map graphics (2026-11-08)
 
