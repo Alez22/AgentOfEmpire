@@ -553,7 +553,7 @@ The values live in `engine/config.toml`, read with the standard library's `tomll
 
 | Building | Cost (wood / stone / gold) | Build turns | Jobs | Output per worker per month |
 | --- | --- | --- | --- | --- |
-| Farm | 40 / 10 / 0 | 2 | 15 | 15 food |
+| Farm | 40 / 10 / 0 | 2 | 15 | 16 food (15 until 2026-11-09) |
 | Sawmill | 30 / 20 / 0 | 2 | 10 | 6 wood |
 | Quarry | 40 / 10 / 0 | 2 | 10 | 4 stone |
 | House | 30 / 30 / 20 | 3 | — | houses 20 people |
@@ -1145,7 +1145,7 @@ The vision is in Part 1, "Economy and trade" (closed market, land levels unknown
 **Land levels (engine and world map, `[levels]`)**
 
 - Every site of `[map] sites` carries a level per resource: poor, fair or rich (`[map] site_levels`, next to the sites: the world's description, stored with each game's config). A zero-sum spread: one rich, one fair, one poor resource in any order, and two sites all fair. The order puts different profiles side by side, because a game of N realms takes N sites in a row from the one the seed picks.
-- Output per worker by level: food 14 / 15 / 18 (rich was 16 until game 24: nobody had food to sell), wood 3 / 6 / 9, stone 2 / 4 / 6. They replace the building's `output_per_worker` for realms on a map with levels.
+- Output per worker by level: food 15 / 16 / 19 (14 / 15 / 18 until 2026-11-09, `lab/food_balance.py`: the world ate 3,900 food a year more than it grew; rich was 16 until game 24: nobody had food to sell), wood 3 / 6 / 9, stone 2 / 4 / 6. They replace the building's `output_per_worker` for realms on a map with levels.
 - The realm keeps its levels in the state (`land_levels`), so a replay needs nothing else. **Each realm of a game gets its own site** (by realm order, not by the seed: today every realm of a game would start on the same site).
 - **Hidden**: no page, briefing or manual names a level. The manual says that yields depend on the land and gives no number per worker; the briefings keep the realm's own output and expected output (that is how a council finds out).
 
