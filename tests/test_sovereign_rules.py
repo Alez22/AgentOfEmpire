@@ -160,8 +160,41 @@ def test_a_large_surplus_is_sold_even_with_gold_enough(start_state, config):
     month.market.goods["stone"].price = 1  # stone is cheap: not sold off
     text, reason = rules.directive(month, [])
     assert text == "Tesoriere, vendi al mercato 4 lotti di cibo." and "(R5b)" in reason
-    start_state.food = rules.SURPLUS_FOOD_KEEP_MONTHS * rules.food_needed(start_state, config)  # only what it keeps
+    start_state.food = 0  # nothing that would still reach the spring
     assert rules.directive(month, []) is None
+
+
+def test_food_sells_down_to_what_reaches_the_spring(start_state, config):
+    """Game 28: Aurelia kept 1,400-2,000 food from August and never sold;
+    the rule now sells what the realm does not need to reach the next March."""
+    _open_market(start_state, config)
+    start_state.turn, start_state.gold = 10, 1000  # October, gold enough (R5b)
+    start_state.wood, start_state.stone = 1000, 1000
+    month = _month(start_state, config)
+    for good in ("wood", "stone"):
+        month.market.goods[good].price = 1  # cheap: not sold off, only the food is in play
+    lot = config.market.lot_units
+    start_state.food = 0
+    while not rules.food_lasts(month, [], to_spring=True):  # the least food that reaches March
+        start_state.food += lot
+    start_state.food += 2 * lot  # two lots more than the spring needs
+    text, reason = rules.directive(month, [])
+    assert text == "Tesoriere, vendi al mercato 2 lotti di cibo." and "(R5b)" in reason
+    start_state.ration = "reduced"  # the sale is weighed on the normal ration
+    assert rules.directive(month, []) == (text, reason)
+
+
+
+def test_a_food_sale_in_march_looks_to_the_next_spring(start_state, config):
+    """In March the end of March is this month: the check must reach the next one."""
+    import dataclasses
+    # Land too poor to feed the realm (a fair realm, 16 a farmer, reaches the next March).
+    config = dataclasses.replace(config, levels=dataclasses.replace(config.levels, food={"poor": 12, "fair": 12, "rich": 12}))
+    start_state.turn = 3
+    start_state.food = rules.food_needed(start_state, config)  # enough for March only
+    month = _month(start_state, config)
+    assert rules.food_lasts(month, [])  # the winter check: March is covered
+    assert not rules.food_lasts(month, [], to_spring=True)
 
 
 def test_r10_builds_the_market_once_the_wood_covers_the_winter(start_state, config):

@@ -30,12 +30,7 @@ BUY_COVER_MONTHS = 3  # R7: buy below this many months of need
 USELESS_BUY_MONTHS = 4  # R4b: a stone purchase is useless above this many months of need
 SELL_KEEP_MONTHS = 6  # R5: wood and stone kept before selling
 SELL_KEEP_LOTS = 2  # R5: and this many lots more
-SELL_FOOD_KEEP_MONTHS = 3  # R5: months of eating kept before selling food
 GOLD_SHORT_MONTHS = 3  # R5: gold is short below this many months of costs
-# R5b: months of eating kept before selling food when gold is not short. Was 4:
-# in game 26 it never fired (eating about 900 a month, Aurelia peaked at 2,626);
-# 1 sold in January in the poor realms too. food_lasts still guards the winter.
-SURPLUS_FOOD_KEEP_MONTHS = 2
 MAX_SELL_LOTS = 4
 MERCHANTS_WANTED = 3  # R10: merchants asked for a new market (3 x 3 lots a month)
 
@@ -98,11 +93,13 @@ def _famine(result) -> bool:
     return any(e.kind in ("famine", "game_over") for e in result.events)
 
 
-def food_lasts(month: Month, orders: list[Order]) -> bool:
+def food_lasts(month: Month, orders: list[Order], to_spring: bool = False) -> bool:
     """@brief The winter check: the month runs on a copy (trades filled in
     full, then the plan), then month after month with no orders.
     October to March: no famine until the end of March. Other months: no
-    famine this month and one month of eating left."""
+    famine this month and one month of eating left.
+    @param to_spring True: until the end of the next March in any month (a
+           food sale, which cannot be undone in winter)."""
     trades = [o for o in orders if isinstance(o, TradeOrder)]
     others = [o for o in orders if not isinstance(o, TradeOrder)]
     trial = state_after_trades(month.state, trades, month.market, month.config, month.realm_key)
@@ -110,9 +107,14 @@ def food_lasts(month: Month, orders: list[Order]) -> bool:
     if _famine(result):
         return False
     now = month_of(month.state.turn)
-    if now not in FOOD_WATCH_MONTHS:
+    if now not in FOOD_WATCH_MONTHS and not to_spring:
         return result.state.food >= food_needed(result.state, month.config)
     months_left = (LAST_WINTER_MONTH - now) % 12
+    if to_spring and months_left == 0:
+        # Why: in March "the end of March" is this very month; a sale must look
+        # to the next one (game 28's states: Brenna, poor in food, would have
+        # sold 4 lots in March and then starved in spring).
+        months_left = 12
     later = result.state
     for _ in range(months_left):
         if later.game_over:
@@ -169,21 +171,30 @@ def _buy_directive(month: Month, items: list[Item], left: dict[str, int]) -> tup
     return None
 
 
-def _food_lots_to_sell(month: Month, orders: list[Order], left_food: int, keep_months: int) -> int:
+def _food_lots_to_sell(month: Month, orders: list[Order], left_food: int) -> int:
+    """@brief Food lots the realm can sell and still reach the end of the next
+    March on at least the normal ration (the engine's seasons, month by month).
+    Why: game 28, Aurelia kept 1,400-2,000 food from August and never sold:
+    the old rule kept 2-3 months of gross eating (about 2,800), though about
+    1,425 took it to spring, while Brenna fell on the reduced ration."""
     lot = month.config.market.lot_units
-    keep = keep_months * food_needed(month.state, month.config)
-    for lots in range(min(MAX_SELL_LOTS, (left_food - keep) // lot), 0, -1):
+    trial = month
+    if month.state.ration == "reduced":
+        normal = copy.deepcopy(month.state)
+        normal.ration = "normal"
+        trial = Month(normal, month.config, month.market, month.realm_key)
+    for lots in range(min(MAX_SELL_LOTS, left_food // lot), 0, -1):
         sale = parse_order({"action": "trade", "good": "food", "side": "sell", "lots": lots})[0]
-        if food_lasts(month, orders + [sale]):
+        if food_lasts(trial, orders + [sale], to_spring=True):
             return lots
     return 0
 
 
 def _sell_directive(month: Month, items: list[Item], left: dict[str, int]) -> tuple[str, str] | None:
     """@brief R5: gold short and a good above its needs: sell the one that
-    brings the most gold. R5b: gold not short, the same but food keeps
-    SURPLUS_FOOD_KEEP_MONTHS of eating and a good sells only at its start price or above (no
-    selling off into a full warehouse).
+    brings the most gold. R5b: gold not short, the same but a good sells only
+    at its start price or above (no selling off into a full warehouse).
+    Food, both: only what still takes the realm to the next spring.
     Why R5b: in game 25 Aurelia, rich in food, piled up 1858 food with enough
     gold, while Brenna, poor in food, ended on the reduced ration."""
     monthly_costs = costs(month.state, month.config)
@@ -200,8 +211,7 @@ def _sell_directive(month: Month, items: list[Item], left: dict[str, int]) -> tu
         if not gold_short and book.price < month.config.market.start_price[good]:
             continue
         if good == "food":
-            keep_months = SELL_FOOD_KEEP_MONTHS if gold_short else SURPLUS_FOOD_KEEP_MONTHS
-            lots = _food_lots_to_sell(month, orders, left["food"], keep_months)
+            lots = _food_lots_to_sell(month, orders, left["food"])
         else:
             keep = need_ahead(month.state, month.config, good, SELL_KEEP_MONTHS) + SELL_KEEP_LOTS * lot
             lots = min(MAX_SELL_LOTS, max(0, (left[good] - keep) // lot))
