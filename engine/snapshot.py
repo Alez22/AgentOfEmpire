@@ -14,7 +14,9 @@ from engine.state import Building, ClassState, GameState, Workers, Zone
 # 3: land_levels (hidden levels of the site). Older snapshots load with none.
 # 4: workers.trade, merchant_tax_rate and classes (village block A). Older
 # snapshots load with 0 and no classes.
-FORMAT_VERSION = 4
+# 5: militia, flight accumulators (village block B+C). Older snapshots load with
+# no militia and empty accumulators.
+FORMAT_VERSION = 5
 
 
 def state_to_dict(state: GameState) -> dict:

@@ -104,6 +104,23 @@ height = 1
 terrain = "plain"
 hex_steps = [["E"]]
 
+# The watchtower (village block B+C, lab/village_bandits.py): it brings the
+# Gastaldo, who may keep a militia. One per realm, in a zone of purpose "watch"
+# at the village's gate; it can be built from the first month.
+[buildings.watchtower]
+wood = 40
+stone = 20
+gold = 0
+build_turns = 2
+jobs = 0
+output_per_worker = 0
+sector = ""
+housing = 0
+width = 1
+height = 1
+terrain = "plain"
+hex_steps = []
+
 # The territory (docs/DESIGN.md, "Territory"). Without this section (games
 # saved before) a realm has no map and counts free_tiles instead.
 [map]
@@ -124,7 +141,7 @@ square_size = 2
 # "square" (games saved before 2026-11-08, with world.txt and core.toml) or "hex" (DESIGN, "Hex grid").
 grid = "hex"
 square_hex_steps = [["E"], ["SE"], ["E", "SE"]]  # a rhombus of 4
-max_zones = 12
+max_zones = 14  # was 12: the core has 12 zones since the watchtower's (2026-11-09)
 demolish_gold = 10
 demolish_refund_pct = 25  # of the wood and stone the building cost
 # Claiming a bordering tile: gold per tile = base + 1 for every claim_step_tiles
@@ -189,6 +206,25 @@ busy_use_pct = 40
 busy_bonus = 100
 idle_malus = -250  # the crown's fault: goods on sale, nothing traded
 empty_malus = -80  # the warehouse empty for everyone
+
+# Bandits born from discontent (docs/DESIGN.md, "Bandits, the watchtower, the
+# Gastaldo and the militia"; values from lab/village_bandits.py, 2026-11-09).
+# Without this section (games saved before) nobody flees and nobody raids.
+[bandits]
+flee_turns = 3  # lab: below 300 nobody fled before the revolt; now from the protests on
+flee_adult_pct = 2  # lab: 3 % after 2 months made the world spiral (pool 10 -> 33, 5 realms of 8 fell)
+flee_child_pct = 1
+start_min = 5  # lab: about a raid a realm a year; 10-25 felt heavy
+start_max = 15
+start_realms = 8  # start_min and start_max are for a world of this many realms; scaled to the game's
+decline_pct = 5
+winter_decline_pct = 10  # December to February
+starve_pct = 30  # a pool fed half loses 15 % more
+party_size = 8
+carry = 25  # about 200 food a raid: a quarter of a month's eating
+repel_per_guard = 2  # lab: 4 guards repel half the raids or more; 2 cut the loot by 40 %
+guard_weight_pct = 10
+max_guard_weight_pct = 80
 
 # Output per worker by land level; it replaces output_per_worker for realms
 # on a site with levels. Fair equals the buildings' values above.

@@ -20,7 +20,7 @@ class BaseOrder(BaseModel):
 
 class BuildOrder(BaseOrder):
     action: Literal["build"]
-    building: Literal["farm", "sawmill", "quarry", "house", "market"]
+    building: Literal["farm", "sawmill", "quarry", "house", "market", "watchtower"]
     # On the map: the zone to build in and, optionally, the top-left tile.
     # Without them the engine picks the place nearest the square.
     zone: str | None = None
@@ -53,6 +53,13 @@ class SetMerchantTaxOrder(BaseOrder):
     rate: int = Field(ge=0)
 
 
+class SetMilitiaOrder(BaseOrder):
+    """The Gastaldo's guards (village block B+C): adults kept on guard, taken
+    before the Architect's workers. Only with a finished watchtower."""
+    action: Literal["set_militia"]
+    guards: int = Field(ge=0)
+
+
 class HoldFeastOrder(BaseOrder):
     action: Literal["hold_feast"]
     gold: int = Field(gt=0)
@@ -60,7 +67,7 @@ class HoldFeastOrder(BaseOrder):
 
 class ZoneSpec(BaseModel):
     name: str = Field(min_length=1, max_length=40)
-    purpose: Literal["fields", "center", "houses", "workshops", "reserve", "market"]
+    purpose: Literal["fields", "center", "houses", "workshops", "reserve", "market", "watch"]
     x1: int
     y1: int
     x2: int
@@ -108,7 +115,7 @@ class TradeOrder(BaseOrder):
 Order = Annotated[
     BuildOrder | AssignWorkersOrder | SetTaxOrder | SetRationOrder | HoldFeastOrder
     | SetZonesOrder | DemolishOrder | ClaimTilesOrder | FellForestOrder | TradeOrder
-    | SetMerchantTaxOrder,
+    | SetMerchantTaxOrder | SetMilitiaOrder,
     Field(discriminator="action"),
 ]
 

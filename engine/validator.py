@@ -19,6 +19,7 @@ from engine.orders import (
     HoldFeastOrder,
     Order,
     SetMerchantTaxOrder,
+    SetMilitiaOrder,
     SetRationOrder,
     SetTaxOrder,
     SetZonesOrder,
@@ -29,6 +30,10 @@ from engine.state import Building, GameState, Workers, Zone
 # Orders that change the map run before the others of the same priority,
 # so a build can use the new town plan and the tiles a demolition frees.
 MAP_FIRST_ACTIONS = ("set_zones", "demolish", "claim_tiles", "fell_forest")
+# Then the militia, before the workers: the engine takes the guards first
+# (village block B+C), so assign_workers is checked on the adults left.
+GUARDS_FIRST_ACTIONS = ("set_militia",)
+ONE_PER_REALM_KINDS = ("market", "watchtower")
 
 
 @dataclass
@@ -78,8 +83,8 @@ def _apply_build(state: GameState, order: BuildOrder, config: Config) -> OrderRe
     if order.building not in config.buildings:
         # A game saved before the market building has none in its config.
         return _reject(order, "UNKNOWN_BUILDING", f"no {order.building} in this game")
-    if order.building == "market" and any(b.kind == "market" for b in state.buildings):
-        return _reject(order, "ONE_PER_REALM", "the realm already has a market (or its site)")
+    if order.building in ONE_PER_REALM_KINDS and any(b.kind == order.building for b in state.buildings):
+        return _reject(order, "ONE_PER_REALM", f"the realm already has a {order.building} (or its site)")
     spec = config.buildings[order.building]
     place = None
     if state.has_map():
@@ -184,14 +189,17 @@ def _apply_demolish(state: GameState, order: DemolishOrder, config: Config) -> O
     state.wood += spec.wood * config.map.demolish_refund_pct // 100
     state.stone += spec.stone * config.map.demolish_refund_pct // 100
     state.buildings.remove(building)
+    if building.kind == "watchtower":
+        state.militia = 0  # no militia without the watchtower (village block B+C)
     return OrderResult(order, True)
 
 
 def _apply_assign(state: GameState, order: AssignWorkersOrder) -> OrderResult:
     requested = order.food + order.wood + order.stone + order.clearing + order.trade
-    if requested > state.adults:
+    if requested > state.free_adults():
+        on_guard = f" ({state.guards()} on guard)" if state.guards() else ""
         return _reject(
-            order, "NOT_ENOUGH_WORKERS", f"{requested} requested, {state.adults} adults"
+            order, "NOT_ENOUGH_WORKERS", f"{requested} requested, {state.free_adults()} adults{on_guard}"
         )
     if order.clearing and not state.has_map():
         return _reject(order, "NO_MAP", "this realm has no map: no land to clear")
@@ -218,6 +226,17 @@ def _apply_merchant_tax(state: GameState, order: SetMerchantTaxOrder, config: Co
     return OrderResult(order, True)
 
 
+def _apply_militia(state: GameState, order: SetMilitiaOrder) -> OrderResult:
+    """@brief The Gastaldo's guards: only with a finished watchtower (no militia
+    before the Gastaldo, docs/DESIGN.md)."""
+    if not any(b.kind == "watchtower" and b.turns_left == 0 for b in state.buildings):
+        return _reject(order, "NO_WATCHTOWER", "no militia without a finished watchtower")
+    if order.guards > state.adults:
+        return _reject(order, "INVALID_PARAM", f"{order.guards} guards, {state.adults} adults")
+    state.militia = order.guards
+    return OrderResult(order, True)
+
+
 def _apply_feast(state: GameState, order: HoldFeastOrder) -> OrderResult:
     if state.gold < order.gold:
         return _reject(order, "INSUFFICIENT_RESOURCES", f"only {state.gold} gold")
@@ -234,7 +253,7 @@ def _apply_ration(state: GameState, order: SetRationOrder) -> OrderResult:
 
 
 def _apply_policy(
-    state: GameState, order: SetTaxOrder | SetRationOrder | SetMerchantTaxOrder, config: Config,
+    state: GameState, order: SetTaxOrder | SetRationOrder | SetMerchantTaxOrder | SetMilitiaOrder, config: Config,
     policies_set: set[str],
 ) -> OrderResult:
     if order.action in policies_set:
@@ -243,6 +262,8 @@ def _apply_policy(
         result = _apply_tax(state, order, config)
     elif isinstance(order, SetMerchantTaxOrder):
         result = _apply_merchant_tax(state, order, config)
+    elif isinstance(order, SetMilitiaOrder):
+        result = _apply_militia(state, order)
     else:
         result = _apply_ration(state, order)
     if result.accepted:
@@ -274,6 +295,16 @@ def _apply_one(
     return _apply_policy(state, order, config, policies_set)
 
 
+def _sequence(order: Order) -> tuple[int, int]:
+    """@brief Sort key: priority, then map orders, the militia, the rest
+    (submission order within each, the sort is stable)."""
+    if order.action in MAP_FIRST_ACTIONS:
+        return order.priority, 0
+    if order.action in GUARDS_FIRST_ACTIONS:
+        return order.priority, 1
+    return order.priority, 2
+
+
 def apply_orders(state: GameState, orders: list[Order], config: Config) -> list[OrderResult]:
     """@brief Validate and apply orders in place, in their fixed sequence.
     @param state State to modify (the caller passes a copy if needed).
@@ -282,7 +313,7 @@ def apply_orders(state: GameState, orders: list[Order], config: Config) -> list[
     @return One result per order, in the sequence they were evaluated.
     """
     policies_set: set[str] = set()
-    ordered = sorted(orders, key=lambda order: (order.priority, order.action not in MAP_FIRST_ACTIONS))
+    ordered = sorted(orders, key=_sequence)
     return [_apply_one(state, order, config, policies_set) for order in ordered]
 
 

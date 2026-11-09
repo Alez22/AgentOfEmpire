@@ -59,6 +59,9 @@ class ClassState:
     # merchants could handle, 1 if others' goods were on sale]; a strike month
     # is [-1, 0, 0] and does not count (a strike vents the anger, see turn.py).
     recent_trade: list[list[int]] = field(default_factory=list)
+    # Flight (village block B+C): hundredths of a person, as the births'
+    # accumulator, so a small class loses someone too.
+    flight_acc: int = 0
 
 
 @dataclass
@@ -119,12 +122,25 @@ class GameState:
     # Classes born from buildings, by name ("merchants"); empty until their
     # building is finished, and in games saved before village block A.
     classes: dict[str, ClassState] = field(default_factory=dict)
+    # Village block B+C: guards the Gastaldo keeps (set_militia; 0 without a
+    # watchtower), and the peasants' flight accumulators in hundredths of a
+    # person, [adults, children]. 0 for games saved before.
+    militia: int = 0
+    flight_acc: list[int] = field(default_factory=lambda: [0, 0])
 
     def has_map(self) -> bool:
         return bool(self.terrain)
 
     def population(self) -> int:
         return self.children + self.adults + self.elders
+
+    def guards(self) -> int:
+        """@brief Guards on duty: the militia, never more than the adults."""
+        return min(self.militia, self.adults)
+
+    def free_adults(self) -> int:
+        """@brief Adults the Architect may assign: the engine takes the guards first."""
+        return self.adults - self.guards()
 
 
 def new_game(config: Config, seed: int, site_index: int | None = None) -> GameState:

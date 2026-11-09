@@ -5,7 +5,8 @@ here, in one place. An unknown key falls back to the raw identifier, so a
 new engine value shows up (ugly but visible) instead of crashing the page.
 """
 
-BUILDINGS = {"farm": "fattoria", "sawmill": "segheria", "quarry": "cava", "house": "casa", "market": "mercato"}
+BUILDINGS = {"farm": "fattoria", "sawmill": "segheria", "quarry": "cava", "house": "casa", "market": "mercato",
+             "watchtower": "torre di guardia"}
 MASCULINE_BUILDINGS = ("market",)  # "Completato un mercato", the others "Completata una ..."
 CLASSES_IT = {"merchants": "I mercanti"}
 GOODS_IT = {"food": "cibo", "wood": "legno", "stone": "pietra"}

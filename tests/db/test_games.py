@@ -253,3 +253,31 @@ def test_a_game_without_a_market_refuses_trades(db):
     assert _market_rows(db, game_id) == {}
     assert _results_by_order(db, realm_id).popitem()[1] == (False, "NO_MARKET")
     assert replay_game(db, game_id) is None
+
+
+def test_the_bandits_are_stored_every_month_and_replayed(db):
+    """Village block B+C: the pool is a world state, like the market's warehouse."""
+    raw = load_raw_config()
+    raw["bandits"]["start_min"] = raw["bandits"]["start_max"] = 40  # raids every month
+    game_id = create_game(db, raw, seed=0, realm_names=["Nord", "Est", "Sud"], council_models=COUNCIL)
+    for _ in range(4):
+        resolve_open_turn(db, game_id)
+    pools = dict(db.execute("SELECT turn, state FROM bandit_pools WHERE game_id = %s", (game_id,)).fetchall())
+    assert sorted(pools) == [1, 2, 3, 4, 5]
+    raids = db.execute("SELECT count(*) FROM events WHERE game_id = %s AND kind = 'raid'", (game_id,)).fetchone()[0]
+    assert raids > 0
+    assert replay_game(db, game_id) is None
+    db.execute("ALTER TABLE bandit_pools DISABLE TRIGGER bandit_pools_append_only")
+    db.execute("UPDATE bandit_pools SET state = jsonb_set(state, '{adults}', '999')"
+               " WHERE game_id = %s AND turn = 3", (game_id,))
+    mismatch = replay_game(db, game_id)
+    assert mismatch is not None and mismatch.realm_id is None and mismatch.turn == 3
+
+
+def test_a_game_saved_before_the_bandits_has_none(db):
+    raw = load_raw_config()
+    del raw["bandits"]
+    game_id = create_game(db, raw, seed=0, realm_names=["Nord"], council_models=COUNCIL)
+    resolve_open_turn(db, game_id)
+    assert db.execute("SELECT count(*) FROM bandit_pools WHERE game_id = %s", (game_id,)).fetchone()[0] == 0
+    assert replay_game(db, game_id) is None

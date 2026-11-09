@@ -104,7 +104,7 @@ def _apply_fixed_rules(state: GameState, config: Config, events: list[Event]) ->
     alert_level = config.economy.reserve_alert_months * food_needed(state, config)
     if state.food >= alert_level:
         return
-    idle_adults = state.adults - state.workers.total()
+    idle_adults = state.free_adults() - state.workers.total()
     free_farm_jobs = jobs_in_sector(state, config, "food") - state.workers.food
     moved = min(idle_adults, free_farm_jobs)
     if moved <= 0:
@@ -340,18 +340,20 @@ def _rescale_workers(state: GameState, events: list[Event]) -> None:
     """@brief If deaths or aging left fewer adults than assigned workers,
     shrink every sector proportionally (largest remainder method, ties
     broken by the fixed SECTORS order, so the result is deterministic).
+    The guards are taken first (free_adults; all the adults without a militia).
     """
     assigned = state.workers.total()
-    if assigned <= state.adults:
+    available = state.free_adults()
+    if assigned <= available:
         return
     # Clearing and trade last: with none of them (games without a map or a
     # market) the result is the same as with the three sectors alone.
     counts = [state.workers.food, state.workers.wood, state.workers.stone, state.workers.clearing,
               state.workers.trade]
-    shares = [count * state.adults for count in counts]
+    shares = [count * available for count in counts]
     new_counts = [share // assigned for share in shares]
     remainders = [share % assigned for share in shares]
-    leftover = state.adults - sum(new_counts)
+    leftover = available - sum(new_counts)
     by_remainder = sorted(range(5), key=lambda i: -remainders[i])  # stable sort
     for index in by_remainder[:leftover]:
         new_counts[index] += 1
@@ -603,6 +605,9 @@ def resolve_turn(state: GameState, orders: list[Order], config: Config,
     events: list[Event] = []
 
     order_results = apply_orders(new_state, orders, config)
+    # Guards called up this month leave their work at once (village block
+    # B+C). Without a militia the workers always fit the adults here: no-op.
+    _rescale_workers(new_state, events)
     _apply_fixed_rules(new_state, config, events)
     _advance_construction(new_state, events)
     upkeep_paid = _collect_taxes_and_upkeep(new_state, config, events)

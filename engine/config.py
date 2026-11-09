@@ -228,6 +228,26 @@ class ClassConfig:
 
 
 @dataclass(frozen=True)
+class BanditsConfig:
+    """Village block B+C (docs/DESIGN.md, "Bandits, the watchtower, the Gastaldo
+    and the militia"; values from lab/village_bandits.py, 2026-11-09)."""
+    flee_turns: int  # a class flees once its unrest counter (low_mood_turns) reaches this
+    flee_adult_pct: int  # share of the class's adults leaving each month
+    flee_child_pct: int  # share of the realm's children leaving with the peasants
+    start_min: int  # the world's wanderers at game start, picked by the seed
+    start_max: int
+    start_realms: int  # start_min and start_max are for this many realms
+    decline_pct: int  # the pool shrinks by itself every month
+    winter_decline_pct: int
+    starve_pct: int  # extra decline per 100 % of the pool's food missing
+    party_size: int  # raiders of one party
+    carry: int  # units a raider carries away
+    repel_per_guard: int  # raiders one guard stops
+    guard_weight_pct: int  # each guard makes the realm this much less attractive
+    max_guard_weight_pct: int
+
+
+@dataclass(frozen=True)
 class LevelsConfig:
     """Output per worker by land level: {"poor": 14, "fair": 15, "rich": 16}."""
     food: dict[str, int]
@@ -255,6 +275,8 @@ class Config:
     # Classes born from buildings (village block A); None for games saved
     # before: the peasants are the only class.
     classes: dict[str, ClassConfig] | None = None
+    # Village block B+C; None for games saved before: no bandits, no militia.
+    bandits: BanditsConfig | None = None
 
 
 def load_raw_config(path: Path = DEFAULT_CONFIG_PATH) -> dict:
@@ -295,4 +317,5 @@ def config_from_dict(raw: dict) -> Config:
         market=MarketConfig(**raw["market"]) if "market" in raw else None,
         classes=({name: ClassConfig(**values) for name, values in raw["classes"].items()}
                  if "classes" in raw else None),
+        bandits=BanditsConfig(**raw["bandits"]) if "bandits" in raw else None,
     )

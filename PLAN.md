@@ -153,7 +153,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] After game 29 (decided 2026-11-09): Corvara's fall from the cold stays as it is, no new aid: a bad choice the player could see coming (the briefing gives the firewood a month, the craft says to build the market once the winter's firewood is safe, the cold is reported). No briefing line that does the sum for the council, no R4c
   - [x] B+C: spec approved 2026-11-09 in `docs/DESIGN.md`, "Bandits, the watchtower, the Gastaldo and the militia" (stage 1: flight, pool, raids, watchtower from the first month, Gastaldo with the militia only; the loot feeds the pool)
   - [x] B1. Lab (8 realms, 24 months): values and spirals (see "Lab: bandits, block B+C")
-  - [ ] B2. Engine: flight, pool, raids, watchtower, militia
+  - [x] B2. Engine: flight, pool, raids, watchtower, militia (`engine/bandits.py`, table `bandit_pools`; games 20-29 replay unchanged)
   - [ ] B3. Council: the Gastaldo, briefings, manual, Voice, automatic sovereign
   - [ ] B4. UI after a mockup
   - [ ] B5. Game with three automatic realms

@@ -7,8 +7,9 @@
 # Buildings by their anchor tile (the farm's centre, the others' first
 # tile); shapes in engine/config.toml (hex_steps). Room to grow: 2 farm
 # flowers in the fields, 12 houses (Centro, Case di ponente, Case della riva),
-# a second sawmill by the forest, a second quarry on the hills, and the
-# market's place (2 hexes south of the square).
+# a second sawmill by the forest, a second quarry on the hills, the
+# market's place (2 hexes south of the square) and the watchtower's (by the
+# river, at the fields' edge).
 
 terrain = """
 TTTT.....~^^
@@ -55,6 +56,9 @@ zones = [
   { name = "Campi", purpose = "fields", x1 = 0, y1 = 6, x2 = 8, y2 = 11 },
   { name = "Botteghe del bosco", purpose = "workshops", x1 = 4, y1 = 0, x2 = 8, y2 = 1 },
   { name = "Cava dei colli", purpose = "workshops", x1 = 10, y1 = 0, x2 = 11, y2 = 4 },
-  { name = "Riserva della riva", purpose = "reserve", x1 = 9, y1 = 6, x2 = 9, y2 = 11 },
+  # The watchtower's reserved place (village block B+C, 2026-11-09): the plain
+  # hex between the fields and the river, taken from the river's reserve.
+  { name = "Torre di guardia", purpose = "watch", x1 = 9, y1 = 6, x2 = 9, y2 = 6 },
+  { name = "Riserva della riva", purpose = "reserve", x1 = 9, y1 = 7, x2 = 9, y2 = 11 },
   { name = "Riserva di levante", purpose = "reserve", x1 = 11, y1 = 5, x2 = 11, y2 = 11 },
 ]

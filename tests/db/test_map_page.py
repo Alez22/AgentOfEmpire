@@ -100,3 +100,18 @@ def test_credits_list_every_icon_author(ui):
     page = ui.get("/ui/credits").text
     assert "CC BY 3.0" in page and "delapouite" in page and "lorc" in page
     assert page.count("sprite.svg#i-") == 16  # 15 until the market's shop (2026-11-09)
+
+
+def test_a_watchtower_on_the_map_and_its_card(ui, database_url):
+    """Village block B+C: the page draws a finished watchtower and describes it
+    (its own look comes with the UI step; until then a plain hex)."""
+    realm_id = _realm(database_url, _hex_raw())
+    tower = {"kind": "watchtower", "turns_left": 0, "id": 13, "x": 0, "y": 0}
+    with psycopg.connect(database_url, autocommit=True) as conn:
+        state = conn.execute("SELECT state FROM snapshots WHERE realm_id = %s", (realm_id,)).fetchone()[0]
+        zone = next(z for z in state["zones"] if z["purpose"] == "watch")
+        tower.update(x=zone["x1"], y=zone["y1"])
+        conn.execute("UPDATE snapshots SET state = jsonb_set(jsonb_set(state, '{buildings}', state->'buildings' || %s::jsonb),"
+                     " '{next_building_id}', '14') WHERE realm_id = %s", (psycopg.types.json.Jsonb([tower]), realm_id))
+    page = ui.get(f"/ui/realms/{realm_id}/map", params={"b": 13}).text
+    assert "Torre di guardia n. 1" in page and "Torre di guardia" in page

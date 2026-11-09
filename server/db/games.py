@@ -11,6 +11,7 @@ import psycopg
 from psycopg.types.json import Jsonb
 
 from engine import ENGINE_VERSION, parse_order
+from engine.bandits import BanditPool, new_pool, pool_from_dict, pool_to_dict, resolve_world
 from engine.config import Config, config_from_dict
 from engine.market import MarketState, RealmMonth, market_from_dict, market_to_dict, new_market, resolve_month
 from engine.people import PeopleChoice
@@ -50,6 +51,10 @@ EVENT_VISIBILITY = {
     "merchant_tax": "court",  # the merchants' own tax, paid with the trades (village block A)
     # A class's unrest is public like the peasants'; its mood never is.
     "class_unrest_changed": "public",
+    # Village block B+C: families leaving are seen at court (the Voice tells
+    # them); a raid is public like unrest. The pool's size is never shown.
+    "flight": "court",
+    "raid": "public",
 }
 
 
@@ -157,6 +162,9 @@ def create_game(
             _insert_snapshot(conn, game_id, realm_id, state)
         if config.market is not None:
             _insert_market(conn, game_id, 1, new_market(config, len(realm_names)))
+        pool = new_pool(config, seed, len(realm_names))
+        if pool is not None:
+            _insert_pool(conn, game_id, 1, pool)
         conn.execute("INSERT INTO turns (game_id, number) VALUES (%s, 1)", (game_id,))
     return game_id
 
@@ -164,6 +172,18 @@ def create_game(
 def _insert_market(conn: psycopg.Connection, game_id: int, turn: int, market: MarketState) -> None:
     conn.execute("INSERT INTO market_states (game_id, turn, state) VALUES (%s, %s, %s)",
                  (game_id, turn, Jsonb(market_to_dict(market))))
+
+
+def _insert_pool(conn: psycopg.Connection, game_id: int, turn: int, pool: BanditPool) -> None:
+    conn.execute("INSERT INTO bandit_pools (game_id, turn, state) VALUES (%s, %s, %s)",
+                 (game_id, turn, Jsonb(pool_to_dict(pool))))
+
+
+def load_pool(conn: psycopg.Connection, game_id: int, turn: int) -> BanditPool | None:
+    """@brief The bandits at the start of a turn; None for a game without them."""
+    row = conn.execute("SELECT state FROM bandit_pools WHERE game_id = %s AND turn = %s",
+                       (game_id, turn)).fetchone()
+    return pool_from_dict(row[0]) if row else None
 
 
 def load_market_history(conn: psycopg.Connection, game_id: int, last_turn: int,
@@ -433,11 +453,16 @@ def resolve_open_turn(conn: psycopg.Connection, game_id: int) -> TurnSummary:
         # The market and every realm together (engine/market.py); a game
         # without a market resolves each realm alone, as before.
         market, results = resolve_month(load_market(conn, game_id, turn), months, config)
+        # The world step (engine/bandits.py): flight and raids change the
+        # realms' new states before they are stored.
+        pool = resolve_world(load_pool(conn, game_id, turn), results, config, turn)
         realms_over = [True] * (len(realm_ids) - len(months))  # those already over
         for key, result in results.items():
             realms_over.append(_store_realm_result(conn, game_id, int(key), turn, parsed_by_realm[key], result))
         if market is not None:
             _insert_market(conn, game_id, turn + 1, market)
+        if pool is not None:
+            _insert_pool(conn, game_id, turn + 1, pool)
 
         conn.execute(
             "UPDATE turns SET status = 'resolved', resolved_at = now()"

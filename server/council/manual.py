@@ -19,7 +19,8 @@ SEASONS = ("winter", "spring", "summer", "autumn")
 SEASONS_IT = {"winter": "inverno", "spring": "primavera", "summer": "estate", "autumn": "autunno"}
 PRODUCT = {"food": "food", "wood": "wood", "stone": "stone"}
 PRODUCT_IT = {"food": "cibo", "wood": "legno", "stone": "pietra"}
-BUILDING_IT = {"farm": "Fattoria", "sawmill": "Segheria", "quarry": "Cava", "house": "Casa", "market": "Mercato"}
+BUILDING_IT = {"farm": "Fattoria", "sawmill": "Segheria", "quarry": "Cava", "house": "Casa", "market": "Mercato",
+               "watchtower": "Torre di guardia"}
 
 
 def _season_pcts(config: Config) -> dict[str, int]:
@@ -47,9 +48,11 @@ def _yield_text_it(config: Config, spec) -> str:
 
 def _buildings(config: Config) -> list:
     """@brief The building kinds of this game. The market building only where
-    the market needs one (village block A): elsewhere it is not a rule."""
+    the market needs one (village block A), the watchtower only where there
+    are bandits (block B+C): elsewhere they are not a rule."""
     needs_market = config.market is not None and config.market.needs_building
-    return [(kind, spec) for kind, spec in config.buildings.items() if spec.sector != "trade" or needs_market]
+    return [(kind, spec) for kind, spec in config.buildings.items()
+            if (spec.sector != "trade" or needs_market) and (kind != "watchtower" or config.bandits is not None)]
 
 
 def _taxed_adults(config: Config) -> str:
@@ -87,6 +90,10 @@ def prompt_text(config: Config) -> str:
             line = (f"- {kind}: {cost}; only one per realm, in a market zone; {spec.jobs} jobs for merchants, "
                     f"each handles {config.market.lots_per_merchant} lots a month at the common market. "
                     "Without it the realm cannot trade.")
+        elif kind == "watchtower":
+            line = (f"- {kind}: {cost}; only one per realm, in a watch zone at the village's gate; no jobs. "
+                    "When it is finished the Gastaldo joins the council, and only then can the realm keep "
+                    "guards (a militia) against bandits.")
         elif spec.jobs:
             line = f"- {kind}: {cost}; {spec.jobs} jobs; {_yield_text(config, spec)}"
             if spec.sector == "food":
@@ -235,6 +242,10 @@ def page_sections(config: Config) -> list[dict]:
             text = (f"{cost} Uno solo per regno, in una zona del mercato; {spec.jobs} posti per i mercanti, ognuno "
                     f"tratta {config.market.lots_per_merchant} lotti al mese al mercato comune. Senza, il regno "
                     "non commercia.")
+        elif kind == "watchtower":
+            text = (f"{cost} Una sola per regno, in una zona di guardia alla porta del villaggio; nessun posto di "
+                    "lavoro. Quando è finita arriva il Gastaldo, e solo allora il regno può tenere delle guardie "
+                    "(una milizia) contro i briganti.")
         elif spec.jobs:
             text = f"{cost} {spec.jobs} posti di lavoro; {_yield_text_it(config, spec)}"
             text += f", secondo la stagione ({seasons})." if spec.sector == "food" else "."
@@ -348,7 +359,8 @@ TERRAIN_IT = {"plain": "pianura", "hill": "collina", "forest": "bosco"}
 
 # Footprints in Italian on the hex grid (engine/config.toml hex_steps).
 HEX_SIZES_IT = {"farm": "7 esagoni (un centro e i suoi 6 vicini)", "sawmill": "2 esagoni affiancati",
-                "quarry": "4 esagoni a rombo", "house": "1 esagono", "market": "2 esagoni affiancati"}
+                "quarry": "4 esagoni a rombo", "house": "1 esagono", "market": "2 esagoni affiancati",
+                "watchtower": "1 esagono"}
 
 
 def _size_it(config: Config, kind: str) -> str:
