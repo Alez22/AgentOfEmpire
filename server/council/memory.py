@@ -23,10 +23,11 @@ ROLE_METRICS = {
     "treasurer": ("food", "gold"),
     "architect": ("food", "wood", "stone", "idle"),
     "chancellor": ("food", "gold", "wood", "stone"),
+    "gastaldo": ("food", "wood", "adults"),  # what the bandits take, and who stays
 }
 # Events worth remembering; routine ones (demography, spoilage) would be noise.
 NOTABLE_EVENTS = ("famine", "unrest_changed", "upkeep_unpaid", "building_completed", "game_over",
-                  "firewood_short", "stone_upkeep_short", "class_unrest_changed")
+                  "firewood_short", "stone_upkeep_short", "class_unrest_changed", "raid", "flight")
 FOLLOW_UP_MONTHS = 2  # "Afterwards" shows the start of the turn and the next two months
 
 
@@ -46,7 +47,8 @@ def order_text(order: dict) -> str:
 def _metric(state: dict, name: str) -> int:
     if name == "idle":
         workers = state["workers"]
-        return state["adults"] - workers["food"] - workers["wood"] - workers["stone"] - workers.get("clearing", 0)
+        return (state["adults"] - state.get("militia", 0) - workers["food"] - workers["wood"] - workers["stone"]
+                - workers.get("clearing", 0) - workers.get("trade", 0))
     return state[name]
 
 

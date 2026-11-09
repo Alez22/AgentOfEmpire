@@ -22,6 +22,7 @@ from server.council.meeting import (
     market_rule,
     _note_lines,
     duties_of,
+    gate_lines,
     role_expertise,
     mandate_block,
     name_of,
@@ -35,7 +36,7 @@ from server.council.settings import CouncilSettings
 from server.db import games
 from server.db.access import Clearance
 
-AUDIENCE_ROLES = ("treasurer", "architect", "chancellor")
+AUDIENCE_ROLES = ("treasurer", "architect", "chancellor", "gastaldo")  # the Gastaldo once it sits
 MAX_REPLY_CHARS = 1500
 MAX_SOVEREIGN_CHARS = 500
 
@@ -115,6 +116,8 @@ def _briefing(ctx: MeetingContext, actor) -> str:
         sections = briefing.treasury_lines(ctx.state, ctx.config, choice)
     elif actor.role == "architect":
         sections = briefing.works_lines(ctx.state, ctx.config, choice)
+    elif actor.role == "gastaldo":
+        sections = gate_lines(ctx)
     else:
         sections = (briefing.treasury_lines(ctx.state, ctx.config, choice)
                     + briefing.works_lines(ctx.state, ctx.config, choice))

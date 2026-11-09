@@ -1,0 +1,2 @@
+The watchtower (only one per realm; when it is finished the Gastaldo joins the council and the realm may keep guards):
+- {{"action": "build", "building": "watchtower"}}   only in a zone of purpose "watch" (the start plan has one, "Torre di guardia", by the river at the fields' edge)

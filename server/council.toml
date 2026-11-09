@@ -50,6 +50,7 @@ high = "z-ai/glm-5.3-flash"
 chancellor = "z-ai/glm-5.3-flash"
 treasurer = "z-ai/glm-5.3-flash"
 architect = "z-ai/glm-5.3-flash"
+gastaldo = "z-ai/glm-5.3-flash"  # village block B+C: games without persons
 # The Voice stays on DeepSeek Flash without reasoning: on GLM "high" its
 # Italian had invented words (game 18), and its text reaches the sovereign as is.
 square_voice = "deepseek/deepseek-v4.1-flash"
@@ -65,6 +66,7 @@ people = "z-ai/glm-5.3-flash"
 chancellor = "high"
 treasurer = "high"
 architect = "high"
+gastaldo = "high"
 square_voice = "none"
 people = "high"
 

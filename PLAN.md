@@ -154,7 +154,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] B+C: spec approved 2026-11-09 in `docs/DESIGN.md`, "Bandits, the watchtower, the Gastaldo and the militia" (stage 1: flight, pool, raids, watchtower from the first month, Gastaldo with the militia only; the loot feeds the pool)
   - [x] B1. Lab (8 realms, 24 months): values and spirals (see "Lab: bandits, block B+C")
   - [x] B2. Engine: flight, pool, raids, watchtower, militia (`engine/bandits.py`, table `bandit_pools`; games 20-29 replay unchanged)
-  - [ ] B3. Council: the Gastaldo, briefings, manual, Voice, automatic sovereign
+  - [x] B3. Council: the Gastaldo, briefings, manual, Voice, automatic sovereign R11 (mandates and debate still for three offices)
   - [ ] B4. UI after a mockup
   - [ ] B5. Game with three automatic realms
 - [ ] Travellers, bandits and migration (designed 2026-11-08, `docs/DESIGN.md` Part 1): travellers carry public news late and distorted (in the village a public fact of another realm arrives only through them); families flee long discontent into a world pool of bandits (adults and some children, elders stay) that raids exposed stores; flight by class (clergy never), class lost in the pool, arrivals enter as peasants; a small pool from the start so rare raids teach the need for a militia; the **Gastaldo** (first council expansion, in the village, brought by the watchtower): doors (closed / normal / open), militia (none before it), news from outside, counter-espionage in the town; with open doors a raid becomes immigration; stages: 1 flight, raids, Gastaldo and militia, 2 doors and acceptance (needs a multi-realm lab for spirals), 3 spies among migrants, offended origin, remembered trade, funded bandits

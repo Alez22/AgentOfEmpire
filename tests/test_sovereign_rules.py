@@ -230,3 +230,21 @@ def test_no_trade_directive_beyond_the_merchants_lots(start_state, config):
     text, _ = rules.directive(_month(start_state, config), [])
     lots = int(re.search(r"compra al mercato (\d+) lott", text).group(1))
     assert 1 <= lots <= 3
+
+
+def test_r11_builds_the_watchtower_after_the_first_raid(start_state, config):
+    """Village block B+C: the early raids are the lesson (no directive before one)."""
+    _open_market(start_state, config)
+    start_state.turn, start_state.wood, start_state.stone, start_state.gold = 5, 500, 200, 500  # May
+    month = _month(start_state, config)
+    found = rules.directive(month, [])
+    assert found is None or "(R11)" not in found[1]  # no raid yet
+    month.raided = True
+    text, reason = rules.directive(month, [])
+    assert "torre di guardia" in text and "(R11)" in reason
+    planned = _items({"action": "build", "building": "watchtower"})
+    found = rules.directive(month, planned)
+    assert found is None or "(R11)" not in found[1]  # already in the plan
+    start_state.wood = 30  # the firewood comes first
+    found = rules.directive(month, [])
+    assert found is None or "(R11)" not in found[1]

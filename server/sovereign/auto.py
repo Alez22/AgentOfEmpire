@@ -20,7 +20,10 @@ def _latest_plan(conn: psycopg.Connection, realm_id: int, turn: int) -> dict:
 
 
 def _month(ctx: meeting.MeetingContext) -> rules.Month:
-    return rules.Month(ctx.state, ctx.config, ctx.market, str(ctx.realm_id))
+    raided = ctx.conn.execute(
+        "SELECT EXISTS (SELECT 1 FROM events WHERE realm_id = %s AND kind = 'raid')", (ctx.realm_id,)
+    ).fetchone()[0]
+    return rules.Month(ctx.state, ctx.config, ctx.market, str(ctx.realm_id), raided)
 
 
 def _give_directive(conn, realm_id: int, client, settings: CouncilSettings, ctx, lines: list[str]) -> str | None:

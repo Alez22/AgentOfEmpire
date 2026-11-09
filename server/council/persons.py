@@ -14,12 +14,13 @@ from pathlib import Path
 
 CATALOG_PATH = Path(__file__).with_name("personas.toml")
 COUNCIL_ROLES = ("treasurer", "architect", "chancellor")
-DEFAULT_GENDERS = {"treasurer": "m", "architect": "f", "chancellor": "m"}
+DEFAULT_GENDERS = {"treasurer": "m", "architect": "f", "chancellor": "m", "gastaldo": "m"}
 # Italian title with its article, by role and gender.
 TITLES = {
     ("treasurer", "m"): "il Tesoriere", ("treasurer", "f"): "la Tesoriera",
     ("architect", "m"): "l'Architetto", ("architect", "f"): "l'Architetta",
     ("chancellor", "m"): "il Cancelliere", ("chancellor", "f"): "la Cancelliera",
+    ("gastaldo", "m"): "il Gastaldo", ("gastaldo", "f"): "la Gastalda",
     ("square_voice", "f"): "la Voce della piazza", ("people", "m"): "il popolo",
 }
 GENDER_WORDS = {"m": "a man", "f": "a woman"}
@@ -46,6 +47,18 @@ def draw_council(catalog: list[dict], seed: int, realm_index: int, taken: set[st
         taken.add(person["id"])
         council[role] = person
     return council
+
+
+def draw_person(catalog: list[dict], role: str, seed: int, realm_id: int, taken: set[str]) -> dict:
+    """@brief One moderate person for an office that opens during the game (the
+    Gastaldo, village block B+C), seeded by game and realm like the council.
+    @param taken ids already sitting in this game.
+    @throws ValueError if no moderate of that role is free."""
+    rng = random.Random(f"{seed}:{role}:{realm_id}")
+    free = [p for p in catalog if p["role"] == role and p["group"] == "moderate" and p["id"] not in taken]
+    if not free:
+        raise ValueError(f"no free moderate {role} left in the catalog")
+    return rng.choice(free)
 
 
 def gender_of(role: str, person: dict) -> str:

@@ -134,7 +134,29 @@ def prompt_text(config: Config) -> str:
         lines += _market_lines(config)
     if config.map is not None:
         lines += _territory_lines(config)
+    if config.bandits is not None:
+        lines += _bandits_lines(config)
     return "\n".join(lines) + "\n"
+
+
+def _bandits_lines(config: Config) -> list[str]:
+    """@brief Flight, bandits and the militia (village block B+C), for the prompts.
+    The pool's size is never told: nobody in the game knows it."""
+    rules = config.bandits
+    return [
+        "Bandits:",
+        f"- After {rules.flee_turns} months of deep discontent (the count that leads to protests) a class starts "
+        f"to flee: every month about {rules.flee_adult_pct}% of its adults leave for the woods, the peasants with "
+        f"{rules.flee_child_pct}% of the children; the elders stay. The merchants flee by their own discontent. "
+        "Those who leave become bandits, in a world whose bandits nobody can count.",
+        f"- Bandits raid in bands of about {rules.party_size}, choosing the realms where most food and wood lie "
+        f"exposed and the guard is weakest. Each raider carries away up to {rules.carry} units, food first, "
+        "then wood. Bandits eat what they take; without loot they go hungry and scatter.",
+        f"- Guards (the militia) exist only once the watchtower is finished and the Gastaldo sits on the council: "
+        f"each guard stops {rules.repel_per_guard} raiders, enough guards drive a band off, fewer cut its loot. "
+        "Guards are adults taken from work before the Architect assigns the others, and they produce nothing. "
+        f"The Gastaldo's salary is {rules.gastaldo_salary} gold a month.",
+    ]
 
 
 def _month_names(months: list[int]) -> str:
@@ -296,7 +318,26 @@ def page_sections(config: Config) -> list[dict]:
         ]},
     ] + ([_needs_section(config)] if config.needs is not None else []) \
       + ([_market_section(config)] if config.market is not None else []) \
-      + ([_territory_section(config)] if config.map is not None else [])
+      + ([_territory_section(config)] if config.map is not None else []) \
+      + ([_bandits_section(config)] if config.bandits is not None else [])
+
+
+def _bandits_section(config: Config) -> dict:
+    """@brief Flight, bandits and the militia for the sovereign's page (Italian)."""
+    rules = config.bandits
+    return {"title": "Briganti", "entries": [], "notes": [
+        f"Dopo {rules.flee_turns} mesi di scontento profondo (lo stesso conto che porta alle proteste) una classe "
+        f"comincia a fuggire: ogni mese circa il {rules.flee_adult_pct}% dei suoi adulti parte per i boschi, i "
+        f"contadini con l'{rules.flee_child_pct}% dei bambini; gli anziani restano. I mercanti fuggono per il loro "
+        "scontento. Chi parte diventa brigante, e nessuno sa quanti briganti ci siano al mondo.",
+        f"I briganti assaltano in bande di circa {rules.party_size}, scegliendo i regni dove c'è più cibo e legno "
+        f"in vista e la guardia è più debole. Ogni brigante porta via fino a {rules.carry} unità, prima il cibo, "
+        "poi il legno. I briganti mangiano ciò che rubano; senza bottino fanno la fame e si disperdono.",
+        f"Le guardie (la milizia) esistono solo con la torre di guardia finita e il Gastaldo nel consiglio: ogni "
+        f"guardia ferma {rules.repel_per_guard} briganti; abbastanza guardie respingono la banda, meno guardie "
+        "riducono il bottino. Le guardie sono adulti tolti al lavoro prima che l'Architetta assegni gli altri, e "
+        f"non producono nulla. Il Gastaldo costa {rules.gastaldo_salary} oro al mese di salario.",
+    ]}
 
 
 MONTHS_IT = ("gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre",

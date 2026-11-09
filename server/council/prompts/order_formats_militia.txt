@@ -1,0 +1,2 @@
+The militia (the Gastaldo's order, only with a finished watchtower):
+- {{"action": "set_militia", "guards": <integer 0 to the adults>}}   adults kept on guard, taken before the Architect's workers: every guard is a farmer less; 0 sends them all back to work

@@ -12,7 +12,7 @@ import psycopg
 
 from server.council.briefing import MONTHS
 
-NOTE_ROLES = ("treasurer", "architect", "chancellor")
+NOTE_ROLES = ("treasurer", "architect", "chancellor", "gastaldo")  # the Gastaldo once it sits
 MAX_NOTE_CHARS = 400
 NOTE_HISTORY_TURNS = 3  # notes of the last turns in each briefing
 

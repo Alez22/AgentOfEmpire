@@ -58,6 +58,11 @@ EVENT_VISIBILITY = {
 }
 
 
+# Offices that open during the game with a building, not at its start: the
+# Gastaldo comes with the watchtower (server/council/meeting.py ensure_gastaldo).
+LATE_ROLES = ("gastaldo",)
+
+
 class TurnClosedError(Exception):
     """An order arrived for a game with no open turn."""
 
@@ -147,6 +152,8 @@ def create_game(
             # (a one-realm game keeps the site it had before).
             state = new_game(config, seed, site_index=seed + index)
             for role, model in council_models.items():
+                if role in LATE_ROLES:
+                    continue
                 person = council.get(role)
                 if person is None:
                     personality = {"traits": generate_traits(seed, realm_id, role)}

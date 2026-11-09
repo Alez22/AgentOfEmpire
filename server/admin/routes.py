@@ -192,7 +192,7 @@ def admin_audiences(request: Request, realm_id: int, conn=Depends(_admin_connect
 
 # ------------------------------------------------------------------ agents
 
-AGENT_ORDER = ("chancellor", "treasurer", "architect", "square_voice", "people")
+AGENT_ORDER = ("chancellor", "treasurer", "architect", "gastaldo", "square_voice", "people")
 
 
 def _prompt_context(conn: psycopg.Connection, realm_id: int, settings) -> meeting.MeetingContext:

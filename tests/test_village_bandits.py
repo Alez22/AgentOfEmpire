@@ -198,6 +198,15 @@ def test_guards_called_up_leave_their_work_at_once(start_state, config):
     assert after.workers.total() <= after.adults - 6
 
 
+def test_the_finished_watchtower_brings_the_gastaldos_salary(start_state, config):
+    _tower(start_state, config, finished=False)
+    start_state.buildings[-1].turns_left = 1
+    salary = start_state.council_salary
+    after = resolve_turn(start_state, [], config).state
+    assert after.council_salary == salary + config.bandits.gastaldo_salary
+    assert resolve_turn(after, [], config).state.council_salary == after.council_salary  # once
+
+
 def test_demolishing_the_watchtower_disbands_the_militia(start_state, config):
     _tower(start_state, config)
     start_state.militia, start_state.gold = 4, 100

@@ -9,6 +9,7 @@ R3 no claims in winter, R4b useless purchases, R5 sell when gold is short,
 R6 tax cuts, R7 buy what runs short, R8 empty buildings, R9 feasts.
 R2b (after game 27): no richer ration when the food does not last.
 R10 (village block A, 2026-11-08): build the market, then staff it.
+R11 (village block B+C, 2026-11-09): build the watchtower after the first raid.
 """
 
 import copy
@@ -51,6 +52,7 @@ class Month:
     config: Config
     market: MarketState | None
     realm_key: str
+    raided: bool = False  # the realm has suffered a raid (R11); the server reads its events
 
 
 def month_of(turn: int) -> int:
@@ -260,10 +262,33 @@ def _merchants_directive(month: Month, items: list[Item]) -> tuple[str, str] | N
             f"Direttiva: {MERCHANTS_WANTED} mercanti al mercato: è finito ma nessuno ci lavora (R10).")
 
 
+def _watchtower_directive(month: Month, items: list[Item], left: dict[str, int]) -> tuple[str, str] | None:
+    """@brief R11: after the first raid, a watchtower (no guards without it),
+    once the wood also covers the firewood until spring, as R10.
+    Why after a raid: the design wants the early raids to be the lesson that
+    makes the realm want the Gastaldo (docs/DESIGN.md)."""
+    config = month.config
+    if config.bandits is None or not month.raided:
+        return None
+    if any(b.kind == "watchtower" for b in month.state.buildings):
+        return None
+    if any(isinstance(i.order, BuildOrder) and i.order.building == "watchtower" for i in items):
+        return None
+    spec = config.buildings["watchtower"]
+    firewood = need_ahead(month.state, config, "wood", months_to_spring(month.state.turn))
+    if left["wood"] < spec.wood + firewood or left["stone"] < spec.stone:
+        return None
+    return ("Architetta, costruisci la torre di guardia nella sua zona: i briganti hanno già colpito, e senza "
+            "torre non si possono tenere guardie.",
+            f"Direttiva: costruire la torre di guardia dopo un assalto: legno ({left['wood']}) per il cantiere "
+            f"({spec.wood}) e la legna fino a primavera ({firewood}), pietra ({left['stone']}) per il cantiere "
+            f"({spec.stone}) (R11).")
+
+
 def directive(month: Month, items: list[Item]) -> tuple[str, str] | None:
     """@brief At most one directive: (text for the council, reason) or None.
-    R10 first where the market is a building (no trade without it), then R7
-    before R5: a need first."""
+    R10 first where the market is a building (no trade without it), R11 after
+    a raid, then R7 before R5: a need first."""
     status = market_status(month.state, month.config)
     if month.market is None or status == "none":
         return None
@@ -275,7 +300,8 @@ def directive(month: Month, items: list[Item]) -> tuple[str, str] | None:
         staff = _merchants_directive(month, accepted)
         if staff:
             return staff
-    return _buy_directive(month, accepted, left) or _sell_directive(month, accepted, left)
+    return (_watchtower_directive(month, accepted, left) or _buy_directive(month, accepted, left)
+            or _sell_directive(month, accepted, left))
 
 
 # ------------------------------------------------------------ petition

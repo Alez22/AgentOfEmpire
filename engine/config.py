@@ -245,6 +245,7 @@ class BanditsConfig:
     repel_per_guard: int  # raiders one guard stops
     guard_weight_pct: int  # each guard makes the realm this much less attractive
     max_guard_weight_pct: int
+    gastaldo_salary: int  # gold a month, added to the council's salaries when the watchtower is finished
 
 
 @dataclass(frozen=True)

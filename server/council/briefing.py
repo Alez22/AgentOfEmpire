@@ -233,7 +233,7 @@ def _clearing_part(state: GameState) -> str:
 def works_lines(state: GameState, config: Config, people=None, territory_summary: bool = True) -> list[str]:
     active = Counter(b.kind for b in state.buildings if b.turns_left == 0)
     building = [f"{b.kind} ({b.turns_left} turns left)" for b in state.buildings if b.turns_left > 0]
-    idle = state.adults - state.workers.total()
+    idle = state.free_adults() - state.workers.total()  # guards are not idle (village block B+C)
     output = expected_output(state, config, people)
     # Jobs (or housing) per building: without them a model once said "a farm
     # creates two jobs" (it has 15) and never built one (game 7).
@@ -264,6 +264,38 @@ def works_lines(state: GameState, config: Config, people=None, territory_summary
         *([needs_line(state, config)] if config.needs is not None else []),
         "- Building costs: " + "; ".join(costs) + ".",
     ]
+
+
+GATE_MEMORY_TURNS = 6  # months of raids and flights in the Gastaldo's briefing
+
+
+def _gate_event_text(kind: str, data: dict) -> str:
+    if kind == "flight":
+        parts = [f"{data['adults']} adults" if data["adults"] else "",
+                 f"{data['children']} children" if data["children"] else "",
+                 f"{data['merchants']} merchants" if data["merchants"] else ""]
+        return "families left for the woods: " + ", ".join(p for p in parts if p)
+    if data["repelled"]:
+        return f"a band of {data['raiders']} raiders was driven off by {data['guards']} guards"
+    return (f"a band of {data['raiders']} raiders against {data['guards']} guards carried away "
+            f"{data['food']} food and {data['wood']} wood")
+
+
+def gate_lines(state: GameState, config: Config, past: list[tuple[int, str, dict]]) -> list[str]:
+    """@brief The Gastaldo's section (village block B+C): the guard, what lies
+    in view of the bandits, the raids and flights of the last months.
+    @param past (turn, kind, data) of the realm's own raid and flight events, oldest first."""
+    rules = config.bandits
+    lines = ["## The gate and the guard",
+             f"- Guards on duty: {state.guards()} (the militia; every guard is an adult taken from work). "
+             f"Adults: {state.adults}, {state.free_adults()} of them free for the Architect's work.",
+             f"- Each guard stops about {rules.repel_per_guard} raiders; a band is about {rules.party_size}.",
+             f"- In view of the bandits: food {state.food}, wood {state.wood} (they go where much lies exposed)."]
+    if not past:
+        lines.append(f"- No raid and no family gone in the last {GATE_MEMORY_TURNS} months.")
+    for turn, kind, data in past:
+        lines.append(f"- {MONTHS[(turn - 1) % 12]} (turn {turn}): {_gate_event_text(kind, data)}.")
+    return lines
 
 
 def events_lines(events: list[dict]) -> list[str]:
@@ -326,13 +358,17 @@ def minister_briefing(
     history: list[str], directives: list[str], lessons: list[str],
     audiences: list[str] = (), audience_facts: list[str] = (), square_voices: list = (),
     people=None, people_lines: list[str] = (), note_lines: list[str] = (), market: list[str] = (),
+    gate: list[str] = (),
 ) -> str:
     """@brief Full briefing of a minister; each role sees only its own section.
     Lessons come first: they are the lens through which the numbers are read.
     @param market The Treasurer's market section (market_lines), if any.
+    @param gate The Gastaldo's section (gate_lines), if any.
     """
     if role == "treasurer":
         section = treasury_lines(state, config, people) + list(market)
+    elif role == "gastaldo":
+        section = list(gate)
     else:
         section = works_lines(state, config, people, territory_summary=False)
         if state.has_map():
@@ -349,13 +385,15 @@ def chancellor_briefing(
     reports: dict[str, str], proposals: list[dict], check_lines: list[str], lessons: list[str],
     audiences: list[str] = (), audience_facts: list[str] = (), square_voices: list = (),
     people=None, people_lines: list[str] = (), note_lines: list[str] = (), market: list[str] = (),
+    gate: list[str] = (),
 ) -> str:
     """@brief The Chancellor sees both sections, the reports, the proposals
     (also as one JSON line, easy to quote back) and the scribes' cost check.
     @param market The prices line (market_summary_line), if any.
+    @param gate The Gastaldo's section, once it sits (village block B+C).
     """
     lines = (header_lines(state) + lessons_lines(lessons)
-             + treasury_lines(state, config, people) + works_lines(state, config, people))
+             + treasury_lines(state, config, people) + works_lines(state, config, people) + list(gate))
     lines += (events_lines(events) + square_lines(list(square_voices)) + list(people_lines)
               + audience_lines(list(audiences)) + list(note_lines)
               + audience_fact_lines(list(audience_facts)) + directive_lines(directives))

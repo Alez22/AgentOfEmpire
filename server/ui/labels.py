@@ -38,7 +38,8 @@ REJECTIONS = {
     "OWN_GOODS_ON_SALE": "hai già questo bene in vendita al mercato: lo ricompreresti pagando due volte il margine",
     "NO_MARKET_BUILDING": "il regno non ha ancora un mercato finito",
     "TRADE_CAPACITY": "i mercanti non possono trattare tanti lotti questo mese",
-    "ONE_PER_REALM": "il regno ha già un mercato (o il suo cantiere)",
+    "ONE_PER_REALM": "il regno ne ha già uno (o il suo cantiere)",  # the market, the watchtower
+    "NO_WATCHTOWER": "nessuna milizia senza una torre di guardia finita",
     # The territory (engine/territory.py).
     "NO_SPACE": "non c'è posto nella zona",
     "UNKNOWN_ZONE": "zona sconosciuta",
@@ -63,6 +64,7 @@ ROLES = {
     "treasurer": {"name": "Il Tesoriere", "color": "#8FC07A", "initial": "T"},
     "architect": {"name": "L'Architetta", "color": "#7DB3E0", "initial": "A"},
     "chancellor": {"name": "Il Cancelliere", "color": "#D4AF5A", "initial": "C"},
+    "gastaldo": {"name": "Il Gastaldo", "color": "#B4A3D6", "initial": "G"},
     "square_voice": {"name": "La piazza", "color": "#C9A27E", "initial": "P"},
     "people": {"name": "Il popolo", "color": "#B7A88A", "initial": "V"},
 }
@@ -104,6 +106,9 @@ def order_label(order: dict) -> str:
                 f"{order.get('stone')} nelle cave{clearing}{trade}")
     if action == "set_merchant_tax":
         return f"Tassa dei mercanti al {order.get('rate')}%"
+    if action == "set_militia":
+        guards = order.get("guards")
+        return "Nessuna guardia: tutti al lavoro" if guards == 0 else f"Milizia: {guards} uomini di guardia"
     if action == "trade":
         verb = "Comprare" if order.get("side") == "buy" else "Vendere"
         return f"{verb} al mercato {lots_of(order.get('lots'), order.get('good'))}"
@@ -164,6 +169,16 @@ def event_label(kind: str, data: dict) -> str:
         return f"Messi in vendita al mercato {lots_of(data.get('lots'), data.get('good'))}."
     if kind == "trade_paid":
         return f"Il mercato ha pagato {data.get('gold')} oro per la merce venduta."
+    if kind == "flight":
+        parts = [f"{data['adults']} adulti" if data.get("adults") else "",
+                 f"{data['children']} bambini" if data.get("children") else "",
+                 f"{data['merchants']} mercanti" if data.get("merchants") else ""]
+        return "Famiglie partite per i boschi: " + ", ".join(p for p in parts if p) + "."
+    if kind == "raid" and data.get("repelled"):
+        return f"Una banda di {data.get('raiders')} briganti è stata respinta da {data.get('guards')} guardie."
+    if kind == "raid":
+        return (f"Una banda di {data.get('raiders')} briganti ha portato via {data.get('food')} cibo "
+                f"e {data.get('wood')} legno.")
     if kind == "salaries_unpaid":
         return f"L'oro non bastava: i consiglieri non hanno ricevuto il salario ({data.get('salaries')} oro)."
     return f"{kind}: {data}"

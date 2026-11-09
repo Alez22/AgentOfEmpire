@@ -1,8 +1,9 @@
 """@brief The council meeting of one turn: ministers propose, the engine checks
 the costs, the Chancellor composes a plan, the sovereign approves.
 
-A meeting costs 3 model calls; each directive of the sovereign adds a new
-round of 3 calls (max_directives_per_turn rounds at most). Every call is
+A meeting costs 3 model calls (4 once the Gastaldo sits, village block B+C);
+each directive of the sovereign adds a new round of as many calls
+(max_directives_per_turn rounds at most). Every call is
 logged in model_calls, including failed ones and calls skipped because the
 game's budget is exhausted.
 """
@@ -25,16 +26,20 @@ from engine.orders import Order
 from engine.state import GameState
 from server.council import briefing, manual, memory, persons
 from server.council.llm import LLMError
-from server.council.personality import describe_traits
+from server.council.personality import describe_traits, generate_traits
 from server.council.settings import CouncilSettings
 from server.db import games
 from server.db.access import Clearance
 
 PROMPTS_DIR = Path(__file__).with_name("prompts")
 MINISTERS = ("treasurer", "architect")
+# The Gastaldo joins the ministers when the realm's watchtower is finished
+# (village block B+C): ministers_of(ctx) lists who sits this month.
+GASTALDO = "gastaldo"
 ROLE_ACTIONS = {
     "treasurer": ("set_tax", "set_ration", "hold_feast", "trade", "set_merchant_tax"),
     "architect": ("build", "assign_workers", "set_zones", "claim_tiles", "fell_forest", "demolish"),
+    GASTALDO: ("set_militia",),
 }
 # Orders that exist only on the map: left out of the prompts of games
 # without one (the engine would refuse them with NO_MAP anyway).
@@ -42,7 +47,7 @@ MAP_ACTIONS = ("set_zones", "claim_tiles", "fell_forest", "demolish")
 # Likewise trade exists only where the realm can trade (a game with a market
 # and, in village block A, a finished market building).
 MARKET_ACTIONS = ("trade", "set_merchant_tax")
-ROLE_TITLES = {"treasurer": "Treasurer", "architect": "Architect", "chancellor": "Chancellor"}
+ROLE_TITLES = {"treasurer": "Treasurer", "architect": "Architect", "chancellor": "Chancellor", GASTALDO: "Gastaldo"}
 ROLE_DUTIES = {
     "treasurer": "the treasury, taxes, food rations and feasts for the people.",
     # How to do the job well is the craft (prompts/expertise_<role>.txt),
@@ -52,6 +57,8 @@ ROLE_DUTIES = {
     "architect_map": "construction, the town plan and the realm's land (claiming, clearing, felling, "
                      "demolishing), and the assignment of adults to fields, sawmills, quarries and clearing.",
     "chancellor": "chairing the council: turning the ministers' proposals into one plan for the sovereign.",
+    GASTALDO: "the village's gate and its guard: the militia against bandits, and what is seen of them "
+              "and of the families who leave.",
 }
 LESSON_HINTS = {
     "chancellor": "You can also learn what the sovereign tends to approve, remove or ask for.",
@@ -69,6 +76,7 @@ MAX_SUMMARY_WORDS = 350
 # The names also go into the prompts: "Architect" is neutral in English and
 # the models would otherwise call the Architetta "l'architetto".
 DISPLAY_NAMES = {"treasurer": "Il Tesoriere", "architect": "L'Architetta", "chancellor": "Il Cancelliere",
+                 GASTALDO: "Il Gastaldo",
                  "square_voice": "La Voce della piazza", "people": "Il popolo"}
 ABSENT_TEXT = "{name} non si è {presented} al consiglio questo mese."
 BUDGET_TEXT = "Il fondo per i consiglieri è esaurito: {name} tace fino alla fine della partita."
@@ -104,7 +112,7 @@ class AlreadyApprovedError(CouncilError):
 
 # JSON schemas sent to the models as the expected answer shape.
 class _NoteSchema(BaseModel):
-    to: Literal["treasurer", "architect", "chancellor"]
+    to: Literal["treasurer", "architect", "chancellor", "gastaldo"]
     text: str
 
 
@@ -115,7 +123,7 @@ class _MinisterSchema(BaseModel):
 
 
 class _PlanItemSchema(BaseModel):
-    proposer: Literal["treasurer", "architect"]
+    proposer: Literal["treasurer", "architect", "gastaldo"]
     order: Order
 
 
@@ -357,12 +365,14 @@ def _validate_proposals(role: str, raw_proposals: list) -> tuple[list[dict], lis
     return valid, discarded
 
 
-def _validate_plan(raw_plan: list) -> tuple[list[dict], list[dict]]:
+def _validate_plan(raw_plan: list, ministers: tuple[str, ...] = MINISTERS) -> tuple[list[dict], list[dict]]:
+    """@param ministers Who sits this month (ministers_of): a plan item of an
+           absent office (a Gastaldo before the watchtower) is discarded."""
     plan, discarded = [], []
     for item in raw_plan:
         proposer = item.get("proposer") if isinstance(item, dict) else None
         raw_order = item.get("order") if isinstance(item, dict) else item
-        if proposer not in MINISTERS:
+        if proposer not in ministers:
             discarded.append({"item": item, "reason": "UNKNOWN_PROPOSER"})
             continue
         clean_order, reason = _check_order(proposer, raw_order)
@@ -430,7 +440,8 @@ def _idle_left(order: dict, adults: int) -> str:
     """
     if order["action"] != "assign_workers":
         return ""
-    idle = adults - order["food"] - order["wood"] - order["stone"] - order.get("clearing", 0)
+    # Merchants (block A) were missing here: a market's workers read as idle.
+    idle = adults - order["food"] - order["wood"] - order["stone"] - order.get("clearing", 0) - order.get("trade", 0)
     return f"; WARNING: {idle} adults would be left without work" if idle > 0 else ""
 
 
@@ -447,7 +458,7 @@ def _check_lines(ctx: MeetingContext, items: list[dict], check: dict) -> list[st
     lines = []
     for item, verdict in zip(items, check["verdicts"]):
         outcome = "affordable" if verdict["accepted"] else f"REJECTED {verdict['code']}: {verdict['message']}"
-        outcome += (_idle_beyond_jobs(item["order"], jobs) + _idle_left(item["order"], ctx.state.adults)
+        outcome += (_idle_beyond_jobs(item["order"], jobs) + _idle_left(item["order"], ctx.state.free_adults())
                     + _clearing_without_land(item["order"], ctx.state))
         lines.append(f"{item['proposer']} {json.dumps(item['order'])}: {outcome}")
     lines.append(f"Spent if all accepted ones run: {check['spent']}; left: {check['remaining']}")
@@ -517,6 +528,10 @@ def _order_formats(ctx: MeetingContext) -> str:
             text += render_prompt("order_formats_merchant_tax.txt", max_rate=ctx.config.market.max_merchant_tax)
     if ctx.config.map is not None:
         text += render_prompt("order_formats_map.txt", max_claim=ctx.config.map.claim_max_per_order)
+    if ctx.config.bandits is not None:  # village block B+C
+        text += render_prompt("order_formats_watchtower.txt")
+        if GASTALDO in ctx.actors:
+            text += render_prompt("order_formats_militia.txt")
     return text
 
 
@@ -586,8 +601,13 @@ def name_of(ctx: MeetingContext, role: str) -> str:
     return persons.display_name(role, person)
 
 
+def ministers_of(ctx: MeetingContext) -> tuple[str, ...]:
+    """@brief The ministers who sit this month: the Gastaldo too once it has come."""
+    return (*MINISTERS, GASTALDO) if GASTALDO in ctx.actors else MINISTERS
+
+
 def names_by_role(ctx: MeetingContext) -> dict[str, str]:
-    return {role: name_of(ctx, role) for role in (*MINISTERS, "chancellor", "square_voice", "people")}
+    return {role: name_of(ctx, role) for role in (*ministers_of(ctx), "chancellor", "square_voice", "people")}
 
 
 def names_by_actor(ctx: MeetingContext) -> dict[int, str]:
@@ -620,10 +640,24 @@ def _minister_system(ctx: MeetingContext, actor: Actor) -> str:
         language=ctx.settings.language,
         order_formats=_order_formats(ctx),
         market_rule=market_rule(ctx.config, "council", ctx.state),
+        note_roles=_or_list([f'"{role}"' for role in (*ministers_of(ctx), "chancellor")]),
     )
 
 
+def _or_list(items: list[str]) -> str:
+    """@brief "a or b", "a, b or c": the wording the prompts always had."""
+    return items[0] if len(items) == 1 else ", ".join(items[:-1]) + " or " + items[-1]
+
+
+def _minister_names(ctx: MeetingContext) -> str:
+    """@brief '"Name, il Tesoriere" (a man) and "..." (a woman)', one per sitting minister."""
+    names = [f'"{name_of(ctx, role)}" ({persons.GENDER_WORDS[persons.gender_of(role, _person(ctx, role))]})'
+             for role in ministers_of(ctx)]
+    return names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+
+
 def _chancellor_system(ctx: MeetingContext, actor: Actor) -> str:
+    sitting = ministers_of(ctx)
     return render_prompt(
         "chancellor_system.txt",
         mandate=mandate_block(ctx, actor),
@@ -631,13 +665,11 @@ def _chancellor_system(ctx: MeetingContext, actor: Actor) -> str:
         expertise=role_expertise(ctx, actor.role),
         realm_name=ctx.realm_name,
         traits=describe_traits(actor.traits),
-        treasurer_name=name_of(ctx, "treasurer"),
-        architect_name=name_of(ctx, "architect"),
-        treasurer_gender=persons.GENDER_WORDS[persons.gender_of("treasurer", _person(ctx, "treasurer"))],
-        architect_gender=persons.GENDER_WORDS[persons.gender_of("architect", _person(ctx, "architect"))],
+        minister_names=_minister_names(ctx),
         person=person_block(actor),
-        treasurer_actions=allowed_actions(ctx, "treasurer"),
-        architect_actions=allowed_actions(ctx, "architect"),
+        plan_roles=_or_list([f"{role} ({allowed_actions(ctx, role)})" for role in sitting]),
+        proposer_options=_or_list([f'"{role}"' for role in sitting]),
+        note_roles=_or_list([f'"{role}"' for role in (*sitting, "chancellor")]),
         language=ctx.settings.language,
         order_formats=_order_formats(ctx),
         market_rule=market_rule(ctx.config, "council", ctx.state),
@@ -839,6 +871,7 @@ def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
         square_voices=square_voices(ctx), **_people_kwargs(ctx), note_lines=_note_lines(ctx, actor),
         market=briefing.market_lines(ctx.state, ctx.config, ctx.market, str(ctx.realm_id))
         if actor.role == "treasurer" else (),
+        gate=gate_lines(ctx) if actor.role == GASTALDO else (),
     )
     schema = _MinisterSchema.model_json_schema()
     system = _minister_system(ctx, actor)
@@ -853,6 +886,17 @@ def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
     payload = {"proposals": valid, "discarded": discarded, "absent": reply is None, "status": status}
     insert_message(ctx, round_number, "report", actor, report, payload)
     return report, valid
+
+
+def gate_lines(ctx: MeetingContext) -> list[str]:
+    """@brief The Gastaldo's section, with the realm's own raids and flights of
+    the last months (read as the server: they are the realm's own events)."""
+    rows = ctx.conn.execute(
+        "SELECT turn, kind, data FROM events WHERE realm_id = %s AND kind IN ('raid', 'flight')"
+        " AND turn >= %s AND turn < %s ORDER BY turn, id",
+        (ctx.realm_id, ctx.turn - briefing.GATE_MEMORY_TURNS, ctx.turn),
+    ).fetchall()
+    return briefing.gate_lines(ctx.state, ctx.config, rows)
 
 
 def _length_refusal(text: str, max_words: int) -> str:
@@ -918,6 +962,7 @@ def _chancellor_turn(ctx: MeetingContext, round_number: int, events: list[dict],
             _check_lines(ctx, proposals, check), lessons, *_audience_memory(ctx, actor),
             square_voices=square_voices(ctx), **_people_kwargs(ctx), note_lines=_note_lines(ctx, actor),
             market=briefing.market_summary_line(ctx.config, ctx.market, ctx.state),
+            gate=gate_lines(ctx) if GASTALDO in ctx.actors else (),
         )
         schema = _ChancellorSchema.model_json_schema()
         reply, status = _ask(ctx, actor, _chancellor_system(ctx, actor), user, schema, _ChancellorReply,
@@ -929,7 +974,7 @@ def _chancellor_turn(ctx: MeetingContext, round_number: int, events: list[dict],
         summary = FALLBACK_SUMMARY.format(name=office[0].upper() + office[1:], accepted=len(plan), total=len(proposals))
         discarded = []
     else:
-        plan, discarded = _validate_plan(reply.plan)
+        plan, discarded = _validate_plan(reply.plan, ministers_of(ctx))
         summary = reply.summary
         _store_note(ctx, actor, reply.note)
     plan, no_change = _drop_no_change(ctx.state, plan)
@@ -945,7 +990,7 @@ def _run_round(ctx: MeetingContext, round_number: int) -> None:
     )
     directives = _directives(ctx)
     reports, proposals = {}, []
-    for role in MINISTERS:
+    for role in ministers_of(ctx):
         actor = ctx.actors.get(role)
         if actor is None:
             continue
@@ -977,6 +1022,40 @@ def load_context(conn: psycopg.Connection, realm_id: int, client, settings) -> M
         games.load_latest_state(conn, realm_id), games.load_game_config(conn, game_id), actors,
         games.load_market(conn, game_id, turn),
     )
+
+
+def _has_watchtower(state: GameState) -> bool:
+    return any(b.kind == "watchtower" and b.turns_left == 0 for b in state.buildings)
+
+
+def ensure_gastaldo(ctx: MeetingContext) -> None:
+    """@brief Seat the Gastaldo at the first meeting after the watchtower is
+    finished (village block B+C). The engine already pays its salary (the
+    watchtower adds [bandits] gastaldo_salary); here the person joins: a free
+    moderate of the catalogue in games with persons, else a plain office with
+    the treasurer's model, as the councils of games without persons."""
+    if GASTALDO in ctx.actors or ctx.config.bandits is None or not _has_watchtower(ctx.state):
+        return
+    seed = ctx.conn.execute("SELECT seed FROM games WHERE id = %s", (ctx.game_id,)).fetchone()[0]
+    model = ctx.settings.models.get(GASTALDO) or ctx.actors["treasurer"].model
+    personality = {"traits": generate_traits(seed, ctx.realm_id, GASTALDO)}
+    if any(actor.person.get("persona") for actor in ctx.actors.values()):
+        taken = {row[0] for row in ctx.conn.execute(
+            "SELECT a.personality->>'persona' FROM actors a JOIN realms r ON r.id = a.realm_id"
+            " WHERE r.game_id = %s AND a.personality ? 'persona'", (ctx.game_id,))}
+        try:
+            person = persons.draw_person(persons.load_catalog(), GASTALDO, seed, ctx.realm_id, taken)
+        except ValueError:
+            person = None  # more realms than gastaldi in the catalogue: a plain office
+        if person is not None:
+            model = ctx.settings.model_tiers[person["tier"]]
+            personality = {key: person[key] for key in ("traits", "name", "gender", "resume", "salary", "tier")}
+            personality["persona"] = person["id"]
+    actor_id = ctx.conn.execute(
+        "INSERT INTO actors (realm_id, role, model, personality) VALUES (%s, %s, %s, %s) RETURNING id",
+        (ctx.realm_id, GASTALDO, model, Jsonb(personality)),
+    ).fetchone()[0]
+    ctx.actors[GASTALDO] = Actor(actor_id, GASTALDO, model, personality.get("traits", {}), personality)
 
 
 def _rounds_held(ctx: MeetingContext) -> int:
@@ -1036,10 +1115,11 @@ def hold_meeting(conn: psycopg.Connection, realm_id: int, client, settings: Coun
     """
     ctx = load_context(conn, realm_id, client, settings)
     _check_meeting(ctx)
+    ensure_gastaldo(ctx)
     if is_reflection_turn(ctx.turn):
         # 1 extra call per council member, before they speak, so the new
         # lessons are already in this meeting's briefings.
-        for role in (*MINISTERS, "chancellor"):
+        for role in (*ministers_of(ctx), "chancellor"):
             if role in ctx.actors:
                 _reflect(ctx, ctx.actors[role])
     # Imported here: the voice module builds on this one (no import cycle).

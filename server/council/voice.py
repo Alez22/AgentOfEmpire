@@ -34,7 +34,8 @@ SEASON_RULE = ("A season has just ended: tell how the people lived it, month aft
 # workers) never reaches the square even if listed here.
 # Cold, worn buildings and carts of bought goods are seen by everyone ([needs], market).
 TOLD_EVENTS = ("famine", "unrest_changed", "building_completed", "demography", "game_over", "audience",
-               "firewood_short", "stone_upkeep_short", "trade_bought", "class_unrest_changed")
+               "firewood_short", "stone_upkeep_short", "trade_bought", "class_unrest_changed",
+               "flight", "raid")  # village block B+C: families gone to the woods, bands at the gate
 # How far back the peasants remember (mood and events). One value while the
 # peasants are the only class; later each class gets its own horizon
 # (e.g. merchants and clergy a year or more): see docs/DESIGN.md.

@@ -225,6 +225,7 @@ carry = 25  # about 200 food a raid: a quarter of a month's eating
 repel_per_guard = 2  # lab: 4 guards repel half the raids or more; 2 cut the loot by 40 %
 guard_weight_pct = 10
 max_guard_weight_pct = 80
+gastaldo_salary = 2  # as a moderate counsellor of the catalogue (server/council/personas.toml)
 
 # Output per worker by land level; it replaces output_per_worker for realms
 # on a site with levels. Fair equals the buildings' values above.

@@ -113,13 +113,17 @@ def _apply_fixed_rules(state: GameState, config: Config, events: list[Event]) ->
     events.append(Event("rule_workers_to_food", {"moved": moved}))
 
 
-def _advance_construction(state: GameState, events: list[Event]) -> None:
+def _advance_construction(state: GameState, config: Config, events: list[Event]) -> None:
     for building in state.buildings:
         if building.turns_left == 0:
             continue
         building.turns_left -= 1
         if building.turns_left == 0:
             events.append(Event("building_completed", {"kind": building.kind}))
+            if building.kind == "watchtower" and config.bandits is not None:
+                # The Gastaldo arrives with the watchtower: one more salary,
+                # paid by the engine like the others (village block B+C).
+                state.council_salary += config.bandits.gastaldo_salary
 
 
 def _collect_taxes_and_upkeep(state: GameState, config: Config, events: list[Event]) -> bool:
@@ -568,7 +572,7 @@ def expected_output(state: GameState, config: Config, people: PeopleChoice | Non
     trial = copy.deepcopy(state)
     events: list[Event] = []
     _apply_fixed_rules(trial, config, events)
-    _advance_construction(trial, events)
+    _advance_construction(trial, config, events)
     upkeep_paid = _collect_taxes_and_upkeep(trial, config, events)
     _burn_firewood(trial, config, events)
     worn_pct = _pay_stone_upkeep(trial, config, events)
@@ -584,7 +588,7 @@ def jobs_at_harvest(state: GameState, config: Config) -> dict[str, int]:
     produce nothing (game 3: the Chancellor sent 63 adults to 60 farm jobs).
     """
     trial = copy.deepcopy(state)
-    _advance_construction(trial, [])
+    _advance_construction(trial, config, [])
     return {sector: jobs_in_sector(trial, config, sector) for sector in ("food", "wood", "stone")}
 
 
@@ -609,7 +613,7 @@ def resolve_turn(state: GameState, orders: list[Order], config: Config,
     # B+C). Without a militia the workers always fit the adults here: no-op.
     _rescale_workers(new_state, events)
     _apply_fixed_rules(new_state, config, events)
-    _advance_construction(new_state, events)
+    _advance_construction(new_state, config, events)
     upkeep_paid = _collect_taxes_and_upkeep(new_state, config, events)
     cold_pct = _burn_firewood(new_state, config, events)
     worn_pct = _pay_stone_upkeep(new_state, config, events)

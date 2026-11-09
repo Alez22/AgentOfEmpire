@@ -150,6 +150,10 @@ FAKE_MINISTER_REPLIES = {
         "report": "Maestà, una nuova fattoria ci proteggerebbe dal prossimo inverno.",
         "proposals": [{"action": "build", "building": "farm"}],
     },
+    "gastaldo": {
+        "report": "Maestà, i boschi sono inquieti: terrei due uomini di guardia alla porta.",
+        "proposals": [{"action": "set_militia", "guards": 2}],
+    },
 }
 PROPOSALS_MARKER = "Proposals (JSON): "
 

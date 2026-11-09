@@ -183,3 +183,42 @@ traits = { prudence = 760, loyalty = 920, ambition = 300, honesty = 880, compete
 tier = "medium"
 salary = 2
 resume = "Cresciuta alla corte, crede nella parola data più che nel buon senso. Non tradirebbe il sovrano nemmeno per salvarlo da se stesso."
+
+# ------------------------------------------------------------ gastaldi
+# Village block B+C (2026-11-09): the Gastaldo joins a realm's council when its
+# watchtower is finished, drawn then among the moderates not sitting elsewhere
+# in the game. The salary the engine pays is [bandits] gastaldo_salary in
+# engine/config.toml: keep these at the same value.
+
+[[persona]]
+id = "guidalberto"
+role = "gastaldo"
+name = "Guidalberto Ruffo"
+gender = "m"
+group = "moderate"
+traits = { prudence = 620, loyalty = 580, ambition = 450, honesty = 560, competence = 540 }
+tier = "medium"
+salary = 2
+resume = "Ha fatto la guardia ai guadi del fiume per un signore di pianura. Conta i passanti a occhio e non si fida di chi arriva di notte."
+
+[[persona]]
+id = "ermengarda"
+role = "gastaldo"
+name = "Ermengarda Valli"
+gender = "f"
+group = "moderate"
+traits = { prudence = 540, loyalty = 620, ambition = 470, honesty = 600, competence = 520 }
+tier = "medium"
+salary = 2
+resume = "Vedova di un capitano di ventura, ha tenuto la porta di un castello durante un lungo assedio. Sa che una guardia costa grano, e che il grano rubato costa di più."
+
+[[persona]]
+id = "lanfranco"
+role = "gastaldo"
+name = "Lanfranco Belli"
+gender = "m"
+group = "moderate"
+traits = { prudence = 500, loyalty = 540, ambition = 540, honesty = 520, competence = 580 }
+tier = "medium"
+salary = 2
+resume = "Figlio di un boscaiolo, conosce i sentieri dove si nascondono i fuggiaschi. Ne ha riportati alcuni a casa, altri li ha visti diventare briganti."
