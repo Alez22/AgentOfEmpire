@@ -18,7 +18,7 @@ from engine import parse_order
 from engine.config import Config
 from engine.market import (MarketState, buy_price, check_month_plan, market_status, sell_price, state_after_trades,
                            stock, trade_capacity)
-from engine.orders import AssignWorkersOrder, BuildOrder, Order, TradeOrder
+from engine.orders import AssignWorkersOrder, BuildOrder, Order, SetRationOrder, TradeOrder
 from engine.state import GameState
 from engine.turn import (firewood_needed, food_needed, monthly_tax_income, monthly_upkeep, resolve_turn,
                          season_of, stone_upkeep)
@@ -183,6 +183,9 @@ def _food_lots_to_sell(month: Month, orders: list[Order], left_food: int) -> int
         normal = copy.deepcopy(month.state)
         normal.ration = "normal"
         trial = Month(normal, month.config, month.market, month.realm_key)
+    # Why: game 29, Brenna's plan cut the ration to reduced, so the food
+    # "lasted" and the realm was told to sell 4 lots in November and December.
+    orders = [o for o in orders if not (isinstance(o, SetRationOrder) and o.ration == "reduced")]
     for lots in range(min(MAX_SELL_LOTS, left_food // lot), 0, -1):
         sale = parse_order({"action": "trade", "good": "food", "side": "sell", "lots": lots})[0]
         if food_lasts(trial, orders + [sale], to_spring=True):

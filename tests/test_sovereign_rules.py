@@ -182,6 +182,11 @@ def test_food_sells_down_to_what_reaches_the_spring(start_state, config):
     assert text == "Tesoriere, vendi al mercato 2 lotti di cibo." and "(R5b)" in reason
     start_state.ration = "reduced"  # the sale is weighed on the normal ration
     assert rules.directive(month, []) == (text, reason)
+    # A plan that cuts the ration does not make room for a sale (game 29, Brenna).
+    start_state.ration = "normal"
+    start_state.food -= 3 * lot  # one lot short of the spring at the normal ration
+    assert rules.directive(month, []) is None
+    assert rules.directive(month, _items({"action": "set_ration", "ration": "reduced"})) is None
 
 
 

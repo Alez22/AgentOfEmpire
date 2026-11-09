@@ -149,7 +149,8 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] After game 27 (decided 2026-11-09): R2b (no richer ration when the food does not last); the Treasurer's craft on the merchants' tax (free up to a tenth) and on selling food; food yields 15/16/19, farms 16 (lab `lab/food_balance.py`, see "Lab: the village's food balance")
   - [x] Game 28: check R2b, the craft lines and the new yields (see "Game 28")
   - [x] After game 28 (decided 2026-11-09): R5/R5b sell food down to what reaches the next March on the normal ration (the engine's months, in any season; in March the next one). On game 28's states: Aurelia sells 3 lots a month from October (its one merchant's lots), Brenna and Corvara nothing
-  - [ ] Game 29 to see whether Aurelia's food keeps Brenna standing
+  - [x] Game 29 (see "Game 29"): Aurelia sold food, Brenna stood; a defect of the food sale fixed (a reduced ration in the plan made room for a sale)
+  - [ ] Open after game 29: a building in winter that eats the firewood (Corvara built the market in February with poor wood and fell from the cold)
   - [ ] B+C: spec, multi-realm lab, engine, council, UI
 - [ ] Travellers, bandits and migration (designed 2026-11-08, `docs/DESIGN.md` Part 1): travellers carry public news late and distorted (in the village a public fact of another realm arrives only through them); families flee long discontent into a world pool of bandits (adults and some children, elders stay) that raids exposed stores; flight by class (clergy never), class lost in the pool, arrivals enter as peasants; a small pool from the start so rare raids teach the need for a militia; the **Gastaldo** (first council expansion, in the village, brought by the watchtower): doors (closed / normal / open), militia (none before it), news from outside, counter-espionage in the town; with open doors a raid becomes immigration; stages: 1 flight, raids, Gastaldo and militia, 2 doors and acceptance (needs a multi-realm lab for spirals), 3 spies among migrants, offended origin, remembered trade, funded bandits
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
@@ -888,6 +889,16 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 6. **Merchants' mood**: Aurelia's and Corvara's 450-510, calm; Brenna's followed the famine down to the strike (month 11).
 7. **Two defects, fixed**: the automatic sovereign played a fallen realm (meeting paid, then a 500 from the petition check): now it skips it. R7 told Brenna to buy wood the month its market opened, with no merchant yet (`TRADE_CAPACITY`): R7 and R5 now ask no more lots than the merchants can handle.
 8. To decide: the food of the world (nobody sells food: R5b, or the Treasurer's craft, or a start stock of food that lasts longer), the abundant ration with no food outside winter (an R2 for every month?), the merchants' tax that Treasurers cut to 0 for no reason.
+
+### Game 29: the food sale down to the next spring (2026-11-09, 12 months)
+
+`lab/auto_game.py new 0 12`, seed 0 (realms 41-43: Aurelia F+ W= S-, Brenna F- W+ S=, Corvara F= W- S+).
+
+1. **Aurelia sold food**: 2 lots in August (its Treasurer), then 4 a month from September to November on R5 directives, 14 lots in all, and still ended at 2,459 food on the normal ration, calm.
+2. **Brenna, poor in food, stood**: the normal ration from February to November, calm all year (mood 412-504); December on the reduced ration with 656 food.
+3. **Corvara fell (revolt, month 8), from the cold, not the food**: its council built the market in February with poor wood (111 wood, 80 for the market), firewood short in February and March (19 and 38 of 50), mood 502 -> 289, protests in April, the people's effort -12 to -25 %, famine in June, strike, revolt in August. R10 checks the firewood before ordering the market; a market the council plans itself is not checked.
+4. **A defect of the new food sale, fixed**: Brenna was told to sell 4 lots in November and December with 459-519 food. Its plan cut the ration to reduced, and the check ran on the plan, so the food "lasted". The sale is now weighed without a cut to the reduced ration. Its Treasurer had said so itself: "con la vendita una razione piena non ci porta alla primavera".
+5. The merchants' tax stayed at 10 % in all three realms.
 
 ### Game 28: R2b, the Treasurer's craft, food yields 15/16/19 (2026-11-09, 12 months)
 
