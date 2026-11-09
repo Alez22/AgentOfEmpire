@@ -1266,6 +1266,54 @@ The vision is in Part 1 ("The eras": every class is born from a building; "Trave
 5. UI: kingdom, market page, map sprite, labels. **Built 2026-11-09** after a mockup on the "Pagina Mercato" Design canvas (three artboards beside the approved page): the market page of a realm without its market shows no price, only what the market costs, who builds it, the site's months when it is under construction, and the realm's stores; with it, a "I mercanti" section after the prices (merchants and places, lots this month, the merchants' tax and what they paid last month, their public unrest as a chip, a banner on strike); on the map the market's two hexes in plum with a gold edge and the game-icons "shop" (delapouite, CC BY 3.0), in the legend and the detail card; the kingdom page lists the merchants and their unrest. **Two leaks closed in `server/sovereign_view.py`**: the sovereign's state carried the merchants' mood (now only their unrest) and the land levels (pre-existing, through `GET /state`).
 6. A 12-month game with three automatic realms.
 
+## Bandits, the watchtower, the Gastaldo and the militia (village block B+C, spec approved 2026-11-09)
+
+Stage 1 of "Travellers, bandits and migration" (Part 1): flight, the bandits' pool, raids, the watchtower, the Gastaldo and the militia. The doors and acceptance (stage 2) wait for this block's multi-realm lab on spirals; travellers and the Gastaldo's news from outside come with the travellers. Values in brackets come from the lab before the engine. Every new rule hangs on a config section `[bandits]`: a game saved before replays unchanged.
+
+**Flight** (per class, on each class's own mood: the engine of block A)
+
+- After [3] months of deep discontent (peasants: mood below [300]; merchants: below their own threshold) a small share of the class leaves every month: [2 %] of its adults and [1 %] of the realm's children (peasants only: the merchants' children are not counted apart). Elders stay. Integer shares with an accumulator, as births, so a small realm loses someone too.
+- Fugitives leave the realm and join the **bandits' pool**; a merchant who flees is a merchant less (`Workers.trade` down, the market's lots down).
+- Flight comes before revolt: discontent costs something long before the game is lost.
+
+**The pool** (a world state, like the market's warehouse and the land fund)
+
+- Adults and children counted apart; the class is lost. A small start of [5-15] wanderers, picked by the seed, so a few raids come in the first year.
+- Only adults raid. Children in the pool grow up at the realms' pace (`child_to_adult_permille`).
+- **The loot feeds the pool** (decided 2026-11-09): the bandits eat what they take, [food per bandit] a month like an adult; the food they cannot get makes the pool shrink. Natural decline [5 %] a month, more in winter. A world of well-guarded realms starves its bandits; a world of discontent feeds them.
+- Never shown: no number of bandits in any page or briefing. It is felt in the raids and heard in the square.
+
+**Raids** (a world step after every realm has resolved its month; order of the month in Part 1)
+
+- Every month the pool's adults raid. Each realm's share of the raiders is weighted by **what lies exposed** (food, wood, its goods on sale at the market) and by **how weak its militia is**. Deterministic shares with the seeded generator, as the market's: replay exact.
+- Each raider carries away up to [N] units, food first; with enough guards the raid is repelled, with fewer a proportional part of the loot is lost. Events: `raid` (the realm's; what was taken or that the guards drove them off), public as unrest is.
+
+**The watchtower** (`[buildings.watchtower]`)
+
+- [Wood and stone], [2] months, [1-2] hexes, one per realm, in a reserved place near the village's gate (a zone of a new purpose, like the market's). **It can be built from the first month** (decided 2026-11-09): the order "market, then watchtower" is the natural sequence, not a requirement.
+- When it is finished the **Gastaldo** arrives.
+
+**The Gastaldo** (decided 2026-11-09: in stage 1 its office is the militia and the raids; the doors and the news from outside come with stage 2 and the travellers)
+
+- The fourth counsellor: a person from the catalogue, with traits and a salary, joining the council the month the watchtower is finished. One more call a month (about +25-30 % of the council's cost) and one more salary.
+- Its order: **the militia**, "keep N men on guard" (`set_militia`). **No militia before the Gastaldo.** The engine takes the guards first; the Architect assigns the adults left. Guards produce nothing.
+- Its briefing: the realm's stores in view of the bandits, the raids suffered, the guards. The Chancellor sees the conflict ("every guard is grain less"), the Treasurer the cost.
+
+**The square and the people**
+
+- The Voice tells flights ("the Rossi are gone, they say to the woods") and raids, in its usual call.
+- The people's model still plays the peasants only.
+
+**Lab first** (multi-realm, 8 realms, 24 months on the real engine, as `lab/village_market.py`): to find the bracketed values; to check the spirals (a realm in crisis loses adults, produces less, grows angrier), that a serene world has almost no bandits, and that a realm without guards feels raids early but survives them.
+
+**Order of work** (one commit each, with tests)
+
+1. Lab and values.
+2. Engine: flight, the pool, raids, the watchtower and its zone, the militia (`set_militia`), snapshot and world state.
+3. Council: the Gastaldo (role, prompts, craft, briefing), briefings and manual, the Voice, the automatic sovereign.
+4. UI after a mockup: the watchtower on the map, raids and flights in the chronicle, the Gastaldo in the government page.
+5. A 12-month game with three automatic realms.
+
 ## Web UI
 
 Server-rendered pages (FastAPI with Jinja2 templates), phone first, in the style of the mockups: dark ground, gold, Cormorant Garamond titles, one colour per council member. Every action is a plain form followed by a redirect, so it works without JavaScript and reloading the page does not repeat the action; HTMX (vendored, not from a CDN) is used only to refresh the council and audience panels. Approved instead of TypeScript for the prototype: the map will come as a separate component or with the move to TypeScript, without changing the APIs. All text shown to players is in Italian.
