@@ -157,6 +157,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] B3. Council: the Gastaldo, briefings, manual, Voice, automatic sovereign R11 (mandates and debate still for three offices)
   - [ ] B4. UI after a mockup
   - [ ] B5. Game with three automatic realms
+    - [x] Game 30 (see "Game 30"): void, R8 crashed on the watchtower in 8 realm-months; fixed, to be played again
 - [ ] Travellers, bandits and migration (designed 2026-11-08, `docs/DESIGN.md` Part 1): travellers carry public news late and distorted (in the village a public fact of another realm arrives only through them); families flee long discontent into a world pool of bandits (adults and some children, elders stay) that raids exposed stores; flight by class (clergy never), class lost in the pool, arrivals enter as peasants; a small pool from the start so rare raids teach the need for a militia; the **Gastaldo** (first council expansion, in the village, brought by the watchtower): doors (closed / normal / open), militia (none before it), news from outside, counter-espionage in the town; with open doors a raid becomes immigration; stages: 1 flight, raids, Gastaldo and militia, 2 doors and acceptance (needs a multi-realm lab for spirals), 3 spies among migrants, offended origin, remembered trade, funded bandits
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
 - [ ] Eras, variable trust and loyalty, leaks. **Eras designed 2026-11-08** (`docs/DESIGN.md`, "Progress" → "The eras"): village short (tutorial), town the long era, kingdom the risky finale; passage = the palace's building site, public, an era never lost; four rare resources, one per site, recipes by kinds present (2 kinds village → town, 3 town → kingdom), games with fewer than 8 realms allowed; every class born from a building (market → merchants in the village, the realm starts without a market; workshop, barracks, temple in the town); the temple brings the Prior, not a minister, not required for the kingdom; war from the town, annexation only as a kingdom. Still to decide: names of the rare resources, values (costs, months, population thresholds), the militia in the village
@@ -906,6 +907,15 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 5. **The militia works and costs**: 4 guards (repel 2 raiders each) repel half the raids or more, the loot falls from 7,250 to 2,100 food and the pool starves (13 -> 2-7); 2 guards repel nothing (parties of about 10) but cut the loot by 40 %. The guards' food (4 farmers, about 64 food a month) costs as much as the raids they stop in a quiet world: the tension the design wants.
 6. **Bandits tip fragile realms**: with 2 realms in crisis and no guards, 4 realms fall instead of 2 (the others in the second spring, mood about 300, after 700-1,000 food lost); a rich realm with no guards is raided most (14 raids, 2,700 food).
 7. Values for the engine: flight below 350 for 3 months, 2 % adults, 1 % children; start pool 5-15; decline 5 % a month, 10 % in winter, +30 % of the food missing; parties of 8, 25 units a raider, 2 raiders stopped by a guard, each guard 10 % less attractive (max 80 %); watchtower 40 wood 20 stone, 2 months.
+
+### Game 30: block B+C, void (2026-11-09, 12 months)
+
+`lab/auto_game.py new 0 12`, seed 0 (realms 44-46: Aurelia, Brenna, Corvara).
+
+1. **Void: the automatic sovereign crashed (HTTP 500) in 8 realm-months** (Aurelia 6-9 and 12, Brenna 5, 6 and 8). R8 ("already N empty places") looked up the jobs of the watchtower's sector, which is empty (`AttributeError: 'Workers' object has no attribute ''`), whenever the Architect put the tower in the plan. Those months the realm gave no orders. Fixed: R8 skips a building with no jobs and no beds; a test.
+2. **So no watchtower and no Gastaldo**: the Architects of Aurelia (from month 5) and Brenna (months 5-8) proposed the tower every month, both before any raid on them.
+3. **Almost no bandits**: the pool started at 5 adults (5-15 scaled to 3 realms of 8), one raid of 2 raiders on Aurelia in month 3 (50 food), and it was empty from month 9. Nobody fled: all three realms stayed calm all year.
+4. Stores at the end: Aurelia 2,242 food, Brenna 1,316, Corvara 1,276; Aurelia sold 3 lots of food (R5b).
 
 ### Game 29: the food sale down to the next spring (2026-11-09, 12 months)
 

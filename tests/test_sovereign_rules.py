@@ -63,6 +63,12 @@ def test_no_new_building_while_its_jobs_are_empty(start_state, config):
     assert _excluded(start_state, config, farm) == [0]
 
 
+def test_a_watchtower_in_the_plan_is_not_weighed_by_r8(start_state, config):
+    """Game 30: the tower has no jobs nor beds, and R8 crashed on its empty sector."""
+    start_state.wood, start_state.stone = 5000, 5000
+    assert _excluded(start_state, config, {"action": "build", "building": "watchtower"}) == []
+
+
 def test_a_feast_must_leave_a_month_of_costs(start_state, config):
     start_state.council_salary = 20
     feast = {"action": "hold_feast", "gold": 10}

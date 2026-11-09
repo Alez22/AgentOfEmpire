@@ -374,6 +374,9 @@ def _empty_places(month: Month, kind: str) -> tuple[int, int]:
 def _empty_building(month: Month, item: Item) -> str:
     if item.raw.get("action") != "build":
         return ""
+    spec = month.config.buildings[item.order.building]
+    if not spec.jobs and not spec.housing:
+        return ""  # a building with no places (the watchtower) cannot stand empty
     empty, one_building = _empty_places(month, item.order.building)
     if empty * 2 < one_building:
         return ""
