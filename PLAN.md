@@ -147,7 +147,8 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] A6. Game 27, 12 months, three automatic realms (see "Game 27"); two defects of the automatic sovereign fixed
   - [x] A5. UI after a mockup ("Pagina Mercato" canvas): the market page without a market (no prices), "I mercanti", the market on the map (icon "shop"), the kingdom page; two leaks closed in the sovereign's state (merchants' mood, land levels)
   - [x] After game 27 (decided 2026-11-09): R2b (no richer ration when the food does not last); the Treasurer's craft on the merchants' tax (free up to a tenth) and on selling food; food yields 15/16/19, farms 16 (lab `lab/food_balance.py`, see "Lab: the village's food balance")
-  - [ ] Game 28: check R2b, the craft lines and the new yields
+  - [x] Game 28: check R2b, the craft lines and the new yields (see "Game 28")
+  - [ ] Open after game 28: the automatic sovereign never sells food (R5/R5b keep months of gross eating); Brenna fell after 8 months on the reduced ration
   - [ ] B+C: spec, multi-realm lab, engine, council, UI
 - [ ] Travellers, bandits and migration (designed 2026-11-08, `docs/DESIGN.md` Part 1): travellers carry public news late and distorted (in the village a public fact of another realm arrives only through them); families flee long discontent into a world pool of bandits (adults and some children, elders stay) that raids exposed stores; flight by class (clergy never), class lost in the pool, arrivals enter as peasants; a small pool from the start so rare raids teach the need for a militia; the **Gastaldo** (first council expansion, in the village, brought by the watchtower): doors (closed / normal / open), militia (none before it), news from outside, counter-espionage in the town; with open doors a raid becomes immigration; stages: 1 flight, raids, Gastaldo and militia, 2 doors and acceptance (needs a multi-realm lab for spirals), 3 spies among migrants, offended origin, remembered trade, funded bandits
 - [ ] Espionage, war, revolts and coups; revolt as odds instead of automatic game over, weighed against soldiers, guards and propaganda (a militarised regime as a real choice with its own risks: cost, army mood, coups)
@@ -886,6 +887,16 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 6. **Merchants' mood**: Aurelia's and Corvara's 450-510, calm; Brenna's followed the famine down to the strike (month 11).
 7. **Two defects, fixed**: the automatic sovereign played a fallen realm (meeting paid, then a 500 from the petition check): now it skips it. R7 told Brenna to buy wood the month its market opened, with no merchant yet (`TRADE_CAPACITY`): R7 and R5 now ask no more lots than the merchants can handle.
 8. To decide: the food of the world (nobody sells food: R5b, or the Treasurer's craft, or a start stock of food that lasts longer), the abundant ration with no food outside winter (an R2 for every month?), the merchants' tax that Treasurers cut to 0 for no reason.
+
+### Game 28: R2b, the Treasurer's craft, food yields 15/16/19 (2026-11-09, 12 months)
+
+`lab/auto_game.py new 0 12`, seed 0 as games 24-27 (realms 38-40: Aurelia F+ W= S-, Brenna F- W+ S=, Corvara F= W- S+).
+
+1. **The new yields work for the rich and the fair realm**: Aurelia ended at 2,020 food on the normal ration all year (game 27: 779 on the abundant ration), Corvara at 1,152 (game 27: 601), both calm.
+2. **The merchants' tax stayed at 10 % in all three realms** (game 27: 0 everywhere); Corvara's Treasurer even set it to 10 again.
+3. **R2b fired three times**, on Brenna's plan for the normal ration (food not lasting to spring).
+4. **Nobody sold food again**: Brenna asked 9 lots and got 6 (the start stock), Corvara asked 15 and got none. Aurelia had the food (1,400-2,000 from August) but its Treasurer never sold, and the sovereign's R5 (gold short from October: 25-47 gold) keeps 3 months of gross eating (about 2,800) before selling food, R5b 2. At about 1,425 food to reach spring, Aurelia had 600 or more to spare from October.
+5. **Brenna fell (revolt, month 12)** with 736 food: 8 months on the reduced ration (May-December), the people's petitions for the normal ration refused (R1, R2b: the food would not reach spring), mood 500 -> 208. Its 6 merchants (6 farmers less, about 90 food a month) traded about 1 lot a month.
 
 ### Lab: the village's food balance (2026-11-09)
 
