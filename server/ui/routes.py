@@ -350,7 +350,9 @@ def kingdom_page(request: Request, realm_id: int, conn=Depends(_connection)):
         "state": sovereign_state(state),  # never the full state: no mood
         "food_needed": food_needed(state, config),
         "housing": housing_capacity(state, config),
-        "jobs": {sector: jobs_in_sector(state, config, sector) for sector in ("food", "wood", "stone")},
+        "jobs": {sector: jobs_in_sector(state, config, sector) for sector in ("food", "wood", "stone", "trade")},
+        # Village block A: the merchants' row only where the market is a building.
+        "village_market": config.market is not None and config.market.needs_building,
         "buildings": buildings,
         # On the map the free space is the land, not a count of free tiles.
         "land": ({"owned": owned_count(state), "wild": len(state.clearing_queue)} if state.has_map() else None),

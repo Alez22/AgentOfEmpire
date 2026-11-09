@@ -19,6 +19,9 @@ HIDDEN_FROM_SOVEREIGN = (
     "aging_acc",
     "rng_seed",
     "feast_gold_this_turn",
+    # The land levels are a secret the council finds out from its production
+    # (docs/DESIGN.md, "Land levels"); found leaking through GET /state, 2026-11-09.
+    "land_levels",
 )
 
 
@@ -27,4 +30,7 @@ def sovereign_state(state: GameState) -> dict:
     visible = asdict(state)
     for field in HIDDEN_FROM_SOVEREIGN:
         visible.pop(field)
+    # Classes born from buildings (village block A): their unrest is public,
+    # their mood, low-mood months and trade memory are not.
+    visible["classes"] = {name: {"unrest": cls.unrest} for name, cls in state.classes.items()}
     return visible

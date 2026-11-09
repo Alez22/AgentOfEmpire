@@ -138,7 +138,7 @@ def test_sovereign_never_sees_the_mood(database_url, settings):
     with TestClient(create_app(database_url, settings, FakeClient(), admin_view=False)) as ui:
         realm_id = _play_one_month(ui)
         state = ui.get(f"/realms/{realm_id}/state").json()
-        for hidden in ("mood", "low_mood_turns", "birth_acc", "death_acc", "aging_acc", "rng_seed"):
+        for hidden in ("mood", "low_mood_turns", "birth_acc", "death_acc", "aging_acc", "rng_seed", "land_levels"):
             assert hidden not in state
         for page in ("", "/kingdom", "/chronicle"):
             text = html.unescape(ui.get(f"/ui/realms/{realm_id}{page}").text)
@@ -315,3 +315,13 @@ def test_voice_hears_the_direction_of_a_tax_change(db, realm, settings):
     facts = _by_role(client, "square_voice")[0]["user"]
     assert "taxes lowered from 10% to 7% (January)" in facts
     assert "ration cut from normal to reduced (January)" in facts
+
+
+def test_the_sovereign_sees_the_merchants_unrest_not_their_mood():
+    """Village block A: a class's unrest is public, its mood is not."""
+    from engine.config import load_config
+    from engine.state import ClassState, new_game
+    from server.sovereign_view import sovereign_state
+    state = new_game(load_config(), seed=0)
+    state.classes["merchants"] = ClassState(mood=210, low_mood_turns=3, unrest="protests", recent_trade=[[0, 9, 1]])
+    assert sovereign_state(state)["classes"] == {"merchants": {"unrest": "protests"}}

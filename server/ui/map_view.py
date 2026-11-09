@@ -16,6 +16,7 @@ CSS grid of tiles stays for games saved on the square grid.
 from urllib.parse import urlencode
 
 from engine.config import Config
+from engine.market import trade_capacity
 from engine.state import GameState
 from engine.territory import NOT_OWNED, TERRAIN_CHARS, WILD, building_works, claim_price, is_hex, owned_count
 from server.council import map_text
@@ -102,7 +103,12 @@ def _building_lines(state: GameState, config: Config, building) -> list[str]:
     if spec.needs_forest:
         where += ", accanto al bosco del regno"
     lines = [where]
-    if spec.jobs:
+    if spec.sector == "trade":
+        # Village block A: the merchants handle lots, they produce nothing.
+        lots = trade_capacity(state, config) if building.turns_left == 0 else 0
+        lines.append(f"{spec.jobs} posti per i mercanti, {state.workers.trade} al lavoro: {lots} lotti al mese")
+        lines.append("Uno solo per regno")
+    elif spec.jobs:
         lines.append(f"{spec.jobs} posti di lavoro")
     else:
         lines.append(f"Ospita {spec.housing} persone")

@@ -213,3 +213,13 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
 .trades { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; }
 .trades li { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; background: var(--card-raised); border-radius: 10px; padding: 10px 12px; }
 .link-button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border: 1px solid #4A3E22; border-radius: 10px; text-decoration: none; font-weight: 600; }
+
+/* Village block A: the market page without a market, the merchants' unrest. */
+.card.notice { border-color: #4A3E22; }
+.card-title-icon { display: flex; align-items: center; gap: 12px; color: var(--gold); }
+.card-title-icon h2 { color: var(--text); }
+.unrest-chip { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border-radius: 999px; font-size: 13px; font-weight: 600; }
+.unrest-chip.calm { background: #22301F; color: #9CCB8A; }
+.unrest-chip.protests { background: #3A2E1A; color: #E8C778; }
+.unrest-chip.strike { background: #3A2220; color: #E8907A; }
+.h-market { fill: #3B2F3A; } .hex-board polygon.h-market { stroke: var(--gold); stroke-width: 1.5; }

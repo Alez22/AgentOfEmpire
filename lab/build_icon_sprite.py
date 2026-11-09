@@ -8,7 +8,7 @@ icon, paths without their black background square and without fill, so
 the page colours them from CSS (fill on the <use>). AUTHORS.txt is copied
 next to it: the credits page reads it. Run again after adding an icon.
 
-Resources: about 25 KB for the 15 icons; the browser fetches the sprite
+Resources: about 26 KB for the 16 icons; the browser fetches the sprite
 once and caches it.
 """
 

@@ -26,6 +26,7 @@
     <tr><th>Anziani</th><td>{{ state.elders }}</td></tr>
     <tr><th>Alloggi</th><td>{{ state.children + state.adults + state.elders }} / {{ housing }}</td></tr>
     <tr><th>Malcontento</th><td>{{ labels.UNREST.get(state.unrest, state.unrest) }}</td></tr>
+    {% if state.classes and state.classes.merchants %}<tr><th>Malcontento dei mercanti</th><td>{{ labels.UNREST.get(state.classes.merchants.unrest, state.classes.merchants.unrest) }}</td></tr>{% endif %}
   </table>
 </section>
 
@@ -36,7 +37,8 @@
     <tr><th>Nei boschi</th><td>{{ state.workers.wood }} / {{ jobs.wood }} posti</td></tr>
     <tr><th>Nelle cave</th><td>{{ state.workers.stone }} / {{ jobs.stone }} posti</td></tr>
     {% if land %}<tr><th>A dissodare</th><td>{{ state.workers.clearing }}</td></tr>{% endif %}
-    <tr><th>Senza lavoro</th><td>{{ state.adults - state.workers.food - state.workers.wood - state.workers.stone - state.workers.clearing }}</td></tr>
+    {% if village_market %}<tr><th>Al mercato (mercanti)</th><td>{{ state.workers.trade }} / {{ jobs.trade }} posti</td></tr>{% endif %}
+    <tr><th>Senza lavoro</th><td>{{ state.adults - state.workers.food - state.workers.wood - state.workers.stone - state.workers.clearing - state.workers.trade }}</td></tr>
   </table>
 </section>
 

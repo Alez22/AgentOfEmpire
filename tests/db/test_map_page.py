@@ -99,4 +99,4 @@ def test_the_hex_board_lights_a_zone_and_the_chosen_building(ui, database_url):
 def test_credits_list_every_icon_author(ui):
     page = ui.get("/ui/credits").text
     assert "CC BY 3.0" in page and "delapouite" in page and "lorc" in page
-    assert page.count("sprite.svg#i-") == 15
+    assert page.count("sprite.svg#i-") == 16  # 15 until the market's shop (2026-11-09)

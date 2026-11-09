@@ -7,7 +7,8 @@ bought, and never the realm's land levels.
 """
 
 from engine.config import Config
-from engine.market import GOODS, MarketState, buy_price, sell_price, stock
+from engine.market import GOODS, MarketState, buy_price, market_status, sell_price, stock, trade_capacity
+from engine.turn import jobs_in_sector
 from engine.state import GameState
 from engine.turn import firewood_needed, stone_upkeep
 from server.ui import labels
@@ -99,6 +100,37 @@ def _needs_lines(state: GameState, config: Config) -> list[str]:
     ]
 
 
+# The merchants' unrest as the page shows it (public, like the peasants').
+MERCHANT_UNREST = {"calm": ("calmi", "calm"), "protests": ("protestano", "protests"),
+                   "strike": ("in sciopero", "strike")}
+
+
+def _no_market(state: GameState, config: Config) -> dict:
+    """@brief Village block A: a realm without its market sees no price."""
+    spec = config.buildings["market"]
+    site = next((b for b in state.buildings if b.kind == "market"), None)
+    return {"wood": spec.wood, "months": spec.build_turns,
+            "site_months": site.turns_left if site is not None else None}
+
+
+def _merchants(state: GameState, config: Config, last_events: list[dict]) -> dict | None:
+    """@brief The merchants' section (village block A); None elsewhere."""
+    if not config.market.needs_building:
+        return None
+    cls = state.classes.get("merchants")
+    words, kind = MERCHANT_UNREST[cls.unrest if cls is not None else "calm"]
+    return {
+        "count": state.workers.trade,
+        "places": jobs_in_sector(state, config, "trade"),
+        "lots": trade_capacity(state, config),
+        "per_merchant": config.market.lots_per_merchant,
+        "tax_rate": state.merchant_tax_rate,
+        "tax_paid": sum(e["data"].get("gold", 0) for e in last_events if e["kind"] == "merchant_tax"),
+        "unrest_words": words,
+        "unrest": kind,
+    }
+
+
 def market_page(history: list[tuple[int, MarketState]], state: GameState, config: Config, realm_key: str,
                 plan: dict | None, last_events: list[dict]) -> dict:
     """@brief Everything the page shows.
@@ -108,14 +140,20 @@ def market_page(history: list[tuple[int, MarketState]], state: GameState, config
     @param last_events This realm's events of the previous month.
     """
     market = history[-1][1]
+    stores = [("Cibo", state.food), ("Legno", state.wood), ("Pietra", state.stone), ("Oro", state.gold)]
+    if market_status(state, config) == "unbuilt":
+        # No prices, stock or totals: they come only with the travellers (later).
+        return {"unbuilt": _no_market(state, config), "stores": stores, "needs": _needs_lines(state, config)}
     return {
+        "unbuilt": None,
+        "merchants": _merchants(state, config, last_events),
         "lot": config.market.lot_units,
         "goods": [_good_row(history, config, good) for good in GOODS],
         "waiting": _waiting(market, config, realm_key),
-        "stores": [("Cibo", state.food), ("Legno", state.wood), ("Pietra", state.stone), ("Oro", state.gold)],
+        "stores": stores,
         "needs": _needs_lines(state, config),
         "proposals": _trade_proposals(plan, market, config),
         "met": plan is not None,
         "last_month": [labels.event_label(e["kind"], e["data"]) for e in last_events
-                       if e["kind"].startswith("trade_")],
+                       if e["kind"].startswith("trade_") or e["kind"] == "merchant_tax"],
     }

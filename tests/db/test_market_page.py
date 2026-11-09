@@ -35,7 +35,9 @@ def _page(ui, realm_id) -> str:
 
 
 def test_the_market_page_shows_the_prices(ui, database_url):
-    _, (realm_id,) = _game(database_url, load_raw_config())
+    raw = load_raw_config()
+    raw["market"]["needs_building"] = False  # open from the first month, as before village block A
+    _, (realm_id,) = _game(database_url, raw)
     page = _page(ui, realm_id)
     assert 'aria-current="page">Mercato</a>' in page
     assert "Prezzi del mese" in page and "oro per lotto da 50" in page
@@ -84,3 +86,35 @@ def test_pages_hold_with_a_market_building_on_the_map(ui, database_url):
         response = ui.get(f"/ui/realms/{realm_id}{page}")
         assert response.status_code == 200, page
     assert "Completato un mercato" in html.unescape(ui.get(f"/ui/realms/{realm_id}/chronicle").text)
+
+
+def test_a_realm_without_its_market_sees_no_price(ui, database_url):
+    """Village block A (decided 2026-11-08): no prices before the market."""
+    game_id, (realm_id,) = _game(database_url, load_raw_config())
+    page = _page(ui, realm_id)
+    assert "Il regno non ha ancora un mercato" in page and "80 legno" in page
+    assert "Prezzi del mese" not in page and "Compri a" not in page
+    with psycopg.connect(database_url, autocommit=True) as conn:
+        submit_order(conn, realm_id, {"action": "build", "building": "market"})
+        resolve_open_turn(conn, game_id)
+    page = _page(ui, realm_id)
+    assert "Il mercato è in costruzione" in page and "Sarà finito tra 1 mese" in page
+    assert "Compri a" not in page
+
+
+def test_an_open_market_shows_its_merchants(ui, database_url):
+    game_id, (realm_id,) = _game(database_url, load_raw_config())
+    staff = {"action": "assign_workers", "food": 50, "wood": 4, "stone": 3, "trade": 3}
+    with psycopg.connect(database_url, autocommit=True) as conn:
+        submit_order(conn, realm_id, {"action": "build", "building": "market"})
+        resolve_open_turn(conn, game_id)
+        resolve_open_turn(conn, game_id)
+        submit_order(conn, realm_id, staff)
+        resolve_open_turn(conn, game_id)
+    page = _page(ui, realm_id)
+    assert "Prezzi del mese" in page and "I mercanti" in page
+    assert "su 6 posti" in page and "Tassa dei mercanti" in page and "calmi" in page
+    map_page = html.unescape(ui.get(f"/ui/realms/{realm_id}/map").text)
+    assert "#i-shop" in map_page and "h-market" in map_page
+    kingdom = html.unescape(ui.get(f"/ui/realms/{realm_id}/kingdom").text)
+    assert "Al mercato (mercanti)" in kingdom and "Malcontento dei mercanti" in kingdom

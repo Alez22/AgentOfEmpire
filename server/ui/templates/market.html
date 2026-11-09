@@ -4,13 +4,45 @@
 <section>
   <div class="kicker">{{ realm.name }} · turno {{ turn }}, {{ labels.month_name(turn) }}</div>
   <h1>Il mercato</h1>
-  {% if market %}
+  {% if market and not market.unbuilt %}
   <p class="hint">Un solo magazzino per tutti i regni del mondo. Qui vedi i prezzi e quanto si è scambiato, mai chi ha comprato o venduto. Gli scambi li propone il Tesoriere.</p>
   {% endif %}
 </section>
 
 {% if not market %}
 <p class="banner info">In questo mondo non c'è mercato: l'oro non compra cibo, legno o pietra.</p>
+{% elif market.unbuilt %}
+{% if market.unbuilt.site_months %}
+<section class="card notice" aria-labelledby="cantiere">
+  <h2 id="cantiere">Il mercato è in costruzione</h2>
+  <p>Sarà finito tra {{ market.unbuilt.site_months }} {{ "mese" if market.unbuilt.site_months == 1 else "mesi" }}. Da allora il Tesoriere potrà commerciare, se l'Architetta mette dei mercanti al lavoro.</p>
+  <p class="hint">Fino ad allora non si compra e non si vende, e dei prezzi degli altri regni non giunge notizia.</p>
+</section>
+{% else %}
+<section class="card notice" aria-labelledby="nessuno">
+  <div class="card-title-icon">
+    <svg aria-hidden="true" width="40" height="40" viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16 9 7h22l3 9"/><path d="M6 16c0 2.5 2 4 4.7 4s4.6-1.5 4.6-4c0 2.5 2 4 4.7 4s4.7-1.5 4.7-4c0 2.5 2 4 4.6 4S34 18.5 34 16"/><path d="M9 20v13h22V20"/><path d="M16 33v-7h8v7"/></svg>
+    <h2 id="nessuno">Il regno non ha ancora un mercato</h2>
+  </div>
+  <p>Senza mercato non si compra e non si vende, e dei prezzi degli altri regni non giunge notizia. Qui non vedi prezzi né scorte del magazzino comune.</p>
+  <div class="stats two">
+    <div class="stat"><div class="label">Costa</div><div class="value">{{ market.unbuilt.wood }} legno</div></div>
+    <div class="stat"><div class="label">Cantiere</div><div class="value">{{ market.unbuilt.months }} mesi</div></div>
+  </div>
+  <p>Lo costruisce l'Architetta nella zona <strong>Mercato</strong>, accanto alla piazza. Quando è finito ci lavorano i mercanti: più mercanti, più lotti al mese.</p>
+  <a class="link-button" href="/ui/realms/{{ realm_id }}/map">Vedi la zona sulla mappa</a>
+</section>
+{% endif %}
+
+<section class="card" aria-labelledby="magazzini">
+  <h2 id="magazzini">I magazzini del regno</h2>
+  <div class="stats two">
+    {% for name, value in market.stores %}<div class="stat"><div class="label">{{ name }}</div><div class="value">{{ value }}</div></div>{% endfor %}
+  </div>
+  {% if market.needs %}<ul class="events">{% for line in market.needs %}<li>{{ line }}</li>{% endfor %}</ul>{% endif %}
+</section>
+
+<p class="hint">Come funziona il mercato: <a href="/ui/realms/{{ realm_id }}/manual">Manuale, sezione Mercato</a>.</p>
 {% else %}
 <section class="card" aria-labelledby="prezzi">
   <div class="card-head"><h2 id="prezzi">Prezzi del mese</h2><span class="hint">oro per lotto da {{ market.lot }}</span></div>
@@ -37,6 +69,22 @@
   </div>
   {% endfor %}
 </section>
+
+{% if market.merchants %}{% set m = market.merchants %}
+<section class="card" aria-labelledby="mercanti">
+  <div class="card-head"><h2 id="mercanti">I mercanti</h2><span class="unrest-chip {{ m.unrest }}">{{ m.unrest_words }}</span></div>
+  <div class="stats two">
+    <div class="stat"><div class="label">Al mercato</div><div class="value">{{ m.count }} <span class="note">su {{ m.places }} posti</span></div></div>
+    <div class="stat"><div class="label">Lotti questo mese</div><div class="value">{{ m.lots }} <span class="note">{{ m.per_merchant }} a testa</span></div></div>
+    <div class="stat"><div class="label">Tassa dei mercanti</div><div class="value">{{ m.tax_rate }}%</div></div>
+    <div class="stat"><div class="label">Pagata il mese scorso</div><div class="value">{{ m.tax_paid }} oro</div></div>
+  </div>
+  {% if m.unrest == "strike" %}<p class="banner error">I mercanti scioperano: questo mese non si commercia.</p>{% endif %}
+  <p class="hint">I lotti valgono per acquisti e vendite insieme. Se i mercanti sono scontenti ne trattano di meno; in sciopero il mercato si ferma.</p>
+  <p class="hint">La tassa è sul valore in oro degli scambi del mese: un mercato fermo non paga nulla. I mercanti non pagano la tassa ordinaria.</p>
+  <p class="hint">I mercanti li assegna l'Architetta, la tassa la propone il Tesoriere. Come stanno lo racconta la piazza.</p>
+</section>
+{% endif %}
 
 <section class="card" aria-labelledby="attesa">
   <h2 id="attesa">La tua merce in attesa</h2>
