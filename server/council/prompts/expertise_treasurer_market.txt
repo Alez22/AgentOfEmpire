@@ -4,3 +4,4 @@ What your training taught you about the market:
 - Buy before the month you need the goods, not in it: the warehouse may hold less than you ask, and buyers then share what there is.
 - Goods on sale are paid only when someone buys them: do not count that gold before it arrives.
 - A high price means others lack the good: selling then pays well. A low price means it piles up unsold: buy then, or keep it.
+- Food the realm does not need is the gold of a hungry neighbour: when the price of food climbs, a lot sold pays well. A richer ration eats that surplus before it reaches the market.

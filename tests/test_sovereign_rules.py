@@ -72,6 +72,19 @@ def test_a_feast_must_leave_a_month_of_costs(start_state, config):
     assert _excluded(start_state, config, feast) == []
 
 
+def test_no_richer_ration_when_the_food_does_not_last(start_state, config):
+    """R2b: with an empty granary R2 drops nothing (the famine comes anyway),
+    so a richer ration is checked on its own (game 27, Brenna and Aurelia)."""
+    abundant = {"action": "set_ration", "ration": "abundant"}
+    reduced = {"action": "set_ration", "ration": "reduced"}
+    start_state.turn = 7  # July
+    start_state.food = 0
+    assert _excluded(start_state, config, abundant) == [0]
+    assert _excluded(start_state, config, reduced) == []  # a poorer ration is always allowed
+    start_state.food = 50_000
+    assert _excluded(start_state, config, abundant) == []
+
+
 def test_no_buying_wood_that_is_already_enough(start_state, config):
     start_state.wood = 5000
     assert _excluded(start_state, config, {"action": "trade", "good": "wood", "side": "buy", "lots": 1}) == [0]

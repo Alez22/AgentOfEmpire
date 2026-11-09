@@ -7,6 +7,7 @@ Pure functions: state, config and market in, decisions with their reasons
 Rule names follow the draft of game 24: R1 petitions, R2 winter food,
 R3 no claims in winter, R4b useless purchases, R5 sell when gold is short,
 R6 tax cuts, R7 buy what runs short, R8 empty buildings, R9 feasts.
+R2b (after game 27): no richer ration when the food does not last.
 R10 (village block A, 2026-11-08): build the market, then staff it.
 """
 
@@ -365,6 +366,23 @@ def _costly_feast(month: Month, item: Item, kept: list[Order]) -> str:
     return f"resterebbero {gold_left} oro, meno delle spese del mese ({monthly_costs}) (R9)"
 
 
+RATION_ORDER = ("reduced", "normal", "abundant")
+
+
+def _richer_ration(month: Month, item: Item, kept: list[Order]) -> str:
+    """@brief R2b: a richer ration when the food does not last with it.
+    Why: R2 drops an order only when the food lasts without it; with an empty
+    granary nothing helps, so in game 27 Brenna (food 0) and Aurelia (half a
+    month of food) kept the abundant ration from July and ate their surplus."""
+    if item.raw.get("action") != "set_ration":
+        return ""
+    if RATION_ORDER.index(item.order.ration) <= RATION_ORDER.index(month.state.ration):
+        return ""
+    if food_lasts(month, kept):
+        return ""
+    return "con la razione più ricca il cibo non basta (R2b)"
+
+
 def exclusions(month: Month, items: list[Item], granted: dict | None) -> list[tuple[int, str]]:
     """@brief Plan items to leave out, with their reasons: (index, reason).
     Only items the engine check accepted; a granted petition runs first.
@@ -383,7 +401,8 @@ def exclusions(month: Month, items: list[Item], granted: dict | None) -> list[tu
             excluded.append((item.index, reason))
             kept.remove(item)
     for item in list(kept):
-        reason = _costly_feast(month, item, first + [i.order for i in kept])
+        orders = first + [i.order for i in kept]
+        reason = _costly_feast(month, item, orders) or _richer_ration(month, item, orders)
         if reason:
             excluded.append((item.index, reason))
             kept.remove(item)
