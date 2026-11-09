@@ -26,11 +26,11 @@ HEX_WIDTH = math.sqrt(3) * RADIUS
 PAD = 12
 TERRAIN_CLASS = {".": "h-plain", "T": "h-forest", "^": "h-hill", "~": "h-river"}
 LOT_CLASS = {"farm": "h-field", "quarry": "h-quarry", "square": "h-square", "sawmill": "h-sawmill",
-             "house": "h-plain", "market": "h-market", "watchtower": "h-plain"}  # watchtower: B4
+             "house": "h-plain", "market": "h-market", "watchtower": "h-watch"}
 SPRITE = "/static/icons/sprite.svg"
 # Icon of each building kind for the detail card and the legend.
 KIND_ICON = {"farm": "barn", "house": "family-house", "sawmill": "circular-saw", "quarry": "mining",
-             "square": "well", "market": "shop", "watchtower": "house"}  # watchtower: icon in B4
+             "square": "well", "market": "shop", "watchtower": "watchtower"}
 
 
 def centre(x: int, y: int, x1: int, y1: int) -> tuple[float, float]:
@@ -75,7 +75,8 @@ def _icon(name: str, cx: float, cy: float, scale: float, cls: str) -> dict:
 def _building_icons(kind: str, tiles: list[tuple[int, int]], building_id: int, x1: int, y1: int,
                     site: bool) -> list[dict]:
     """@brief The icons of one lot: the barn in the farm's centre and wheat
-    around it, saw and log pile, pick and stones, a house, the square's well."""
+    around it, saw and log pile, pick and stones, a house, the square's well,
+    the watchtower."""
     cls = "i-building site" if site else "i-building"
     centres = [centre(x, y, x1, y1) for x, y in tiles]
     if kind == "square":
@@ -92,6 +93,8 @@ def _building_icons(kind: str, tiles: list[tuple[int, int]], building_id: int, x
     if kind == "quarry":
         return [_icon("mining" if index == 0 else "stone-pile", cx, cy, 1.1, cls)
                 for index, (cx, cy) in enumerate(centres)]
+    if kind == "watchtower":
+        return [_icon("watchtower", *centres[0], 1.25, cls)]
     return []
 
 

@@ -91,7 +91,7 @@
                              ("h-river", None, "Fiume"), ("h-wild", None, "Da dissodare"), ("h-square", "well", "Piazza"),
                              ("h-field", "barn", "Fattoria"), ("h-plain", "family-house", "Casa"),
                              ("h-sawmill", "circular-saw", "Segheria"), ("h-quarry", "mining", "Cava"),
-                             ("h-market", "shop", "Mercato")] %}
+                             ("h-market", "shop", "Mercato"), ("h-watch", "watchtower", "Torre di guardia")] %}
   <span><svg aria-hidden="true" viewBox="-26 -26 52 52"><polygon class="{{ cls }}" points="20.8,-12 20.8,12 0,24 -20.8,12 -20.8,-12 0,-24"/>{% if icon %}<use href="{{ map.sprite }}#i-{{ icon }}" class="{% if icon in ('pine-tree',) %}i-tree{% elif icon == 'hills' %}i-hill{% else %}i-building{% endif %}" x="-15" y="-15" width="30" height="30"/>{% endif %}</svg>{{ name }}</span>
   {% endfor %}
 </section>

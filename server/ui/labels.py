@@ -119,6 +119,16 @@ def rejection_label(code: str | None) -> str:
     return REJECTIONS.get(code or "", code or "")
 
 
+def event_alert(kind: str, data: dict) -> tuple[str, str] | None:
+    """@brief (css class, word) of the events the chronicle puts first in a
+    box (village block B+C): raids and flights; None for the others."""
+    if kind == "raid":
+        return ("repelled", "Assalto respinto") if data.get("repelled") else ("raid", "Assalto")
+    if kind == "flight":
+        return "flight", "Fuga"
+    return None
+
+
 def event_label(kind: str, data: dict) -> str:
     """@brief One sentence per engine event."""
     if kind == "famine":

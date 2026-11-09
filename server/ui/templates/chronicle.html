@@ -8,9 +8,12 @@
 {% for month in months %}
 <section class="card">
   <h2>Turno {{ month.turn }} · {{ labels.month_name(month.turn) }}</h2>
+  {% for e in month.events %}{% set alert = labels.event_alert(e.kind, e.data) %}{% if alert %}
+  <div class="event-alert {{ alert[0] }}"><span class="word">{{ alert[1] }}</span>{{ labels.event_label(e.kind, e.data) }}</div>
+  {% endif %}{% endfor %}
   {% if month.events %}
   <ul class="events">
-    {% for e in month.events %}<li>{{ labels.event_label(e.kind, e.data) }}</li>{% endfor %}
+    {% for e in month.events if not labels.event_alert(e.kind, e.data) %}<li>{{ labels.event_label(e.kind, e.data) }}</li>{% endfor %}
   </ul>
   {% else %}
   <p class="hint">Nessun evento.</p>

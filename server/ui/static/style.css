@@ -223,3 +223,11 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
 .unrest-chip.protests { background: #3A2E1A; color: #E8C778; }
 .unrest-chip.strike { background: #3A2220; color: #E8907A; }
 .h-market { fill: #3B2F3A; } .hex-board polygon.h-market { stroke: var(--gold); stroke-width: 1.5; }
+
+/* Village block B+C: the watchtower, the chronicle's raids and flights. */
+.h-watch { fill: #25303B; } .hex-board polygon.h-watch { stroke: #9DB2C6; stroke-width: 1.5; }
+.event-alert { display: flex; flex-direction: column; gap: 2px; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; font-size: 14px; }
+.event-alert .word { font-size: 12px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.event-alert.raid { background: #2A1E1C; border: 1px solid #5A3530; } .event-alert.raid .word { color: #E8907A; }
+.event-alert.repelled { background: #1E2A26; border: 1px solid #355247; } .event-alert.repelled .word { color: #9CCB8A; }
+.event-alert.flight { background: #2E2718; border: 1px solid #5A4A26; } .event-alert.flight .word { color: #E8C778; }

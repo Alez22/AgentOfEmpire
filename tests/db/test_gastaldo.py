@@ -7,7 +7,7 @@ import pytest
 from psycopg.types.json import Jsonb
 
 from engine.config import load_raw_config
-from server.council import audience, manual, meeting, persons
+from server.council import audience, mandates, manual, meeting, persons
 from server.council.llm import FakeClient
 from server.council.settings import load_settings
 from server.db.games import create_game, list_orders
@@ -122,3 +122,47 @@ def test_the_pages_show_the_gastaldo(db, database_url, settings):
             assert response.status_code == 200, page
         assert "Il Gastaldo" in ui.get(f"/ui/realms/{realm_id}/council-panel").text
         assert "Briganti" in ui.get(f"/ui/realms/{realm_id}/manual").text
+
+
+def test_the_sovereign_may_give_the_gastaldo_a_mandate(db, settings):
+    """Village block B+C, step 4: the Gastaldo takes a mandate like the others,
+    and the Chancellor reads it."""
+    import json
+    _, realm_id = _realm(db)
+    with pytest.raises(meeting.CouncilError):
+        mandates.check_request(db, realm_id, "gastaldo", "Poche guardie")  # not yet sitting
+    _give_watchtower(db, realm_id)
+    meeting.hold_meeting(db, realm_id, FakeClient(), settings)
+    text = "Il Gastaldo rimandi metà delle guardie nei campi se il bosco tace da tre mesi."
+    review = json.dumps({"decision": "approved", "mandate": text, "reply": "Fatto, Maestà."})
+    assert mandates.review(db, realm_id, "gastaldo", "Poche guardie se è tutto calmo",
+                           FakeClient({"chancellor": [review]}), settings)["decision"] == "approved"
+    client = FakeClient()  # the council already met this month: the audiences read the same prompts
+    audience.speak(db, realm_id, "gastaldo", "Quante guardie?", client, settings)
+    audience.speak(db, realm_id, "chancellor", "Che dice il Gastaldo?", client, settings)
+    assert text in client.calls[0]["system"]
+    assert f"Mandate of Il Gastaldo: «{text}»" in client.calls[1]["system"]
+
+
+def test_the_government_page_shows_the_gate_and_the_chronicle_the_raid(db, database_url, settings):
+    from fastapi.testclient import TestClient
+    from server.app import create_app
+    _, realm_id = _realm(db)
+    with TestClient(create_app(database_url, settings, FakeClient())) as ui:
+        page = ui.get(f"/ui/realms/{realm_id}/government").text
+        assert "siederà in consiglio un Gastaldo" in page and "La porta e la guardia" not in page
+    _give_watchtower(db, realm_id)
+    meeting.hold_meeting(db, realm_id, FakeClient(), settings)
+    game_id = db.execute("SELECT game_id FROM realms WHERE id = %s", (realm_id,)).fetchone()[0]
+    db.execute("INSERT INTO events (game_id, realm_id, turn, kind, data, visibility) VALUES (%s, %s, 1, 'raid', %s, 'public')",
+               (game_id, realm_id, Jsonb({"raiders": 9, "guards": 0, "repelled": False, "food": 200, "wood": 25})))
+    db.execute("UPDATE snapshots SET state = jsonb_set(state, '{militia}', '3') WHERE realm_id = %s", (realm_id,))
+    db.execute("UPDATE snapshots SET turn = 2, state = jsonb_set(state, '{turn}', '2') WHERE realm_id = %s",
+               (realm_id,))
+    with TestClient(create_app(database_url, settings, FakeClient())) as ui:
+        page = ui.get(f"/ui/realms/{realm_id}/government").text
+        assert "La porta e la guardia" in page and "siederà in consiglio" not in page
+        assert "gennaio" in page  # the last raid
+        assert 'action="/ui/realms/%d/government/gastaldo"' % realm_id in page
+        chronicle = ui.get(f"/ui/realms/{realm_id}/chronicle").text
+        assert 'class="event-alert raid"' in chronicle and "Assalto" in chronicle

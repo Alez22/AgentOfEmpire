@@ -19,7 +19,6 @@ import psycopg
 from pydantic import BaseModel
 
 from server.council.meeting import (
-    MINISTERS,
     ROLE_ACTIONS,
     ROLE_DUTIES,
     ROLE_TITLES,
@@ -32,11 +31,12 @@ from server.council.meeting import (
     name_of,
     render_prompt,
     market_rule,
+    ministers_of,
 )
 from server.council import manual
 from server.council.personality import describe_traits
 
-MANDATE_ROLES = ("treasurer", "architect", "chancellor")
+MANDATE_ROLES = ("treasurer", "architect", "chancellor", "gastaldo")  # the Gastaldo once it sits
 MAX_REQUEST_CHARS = 600
 MAX_MANDATE_CHARS = 500
 NO_ANSWER = "La cancelleria non ha risposto: il mandato resta quello di prima. Riprova più tardi."
@@ -84,7 +84,7 @@ def active_mandate(conn: psycopg.Connection, actor_id: int) -> tuple[str, int] |
 
 def prompt_block(ctx: MeetingContext, actor) -> str:
     """@brief The mandate lines of a counsellor's system prompt ("" if none).
-    The Chancellor also reads the ministers' mandates."""
+    The Chancellor also reads the ministers' mandates (the Gastaldo's once it sits)."""
     lines = []
     own = active_mandate(ctx.conn, actor.id)
     if own:
@@ -92,7 +92,7 @@ def prompt_block(ctx: MeetingContext, actor) -> str:
                      f"(it guides you; the rules of your office and this month's directives come first): "
                      f"«{own[0]}»")
     if actor.role == "chancellor":
-        for role in MINISTERS:
+        for role in ministers_of(ctx):
             minister = ctx.actors.get(role)
             mandate = active_mandate(ctx.conn, minister.id) if minister else None
             if mandate:

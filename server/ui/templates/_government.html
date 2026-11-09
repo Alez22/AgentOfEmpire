@@ -10,6 +10,16 @@
     <div><div class="name">{{ names.get(office.role, who.name) }}</div>
       {% if office.salary %}<div class="meta">salario: {{ office.salary }} oro al mese</div>{% endif %}</div>
   </div>
+  {% if office.role == "gastaldo" and gate %}
+  <h3>La porta e la guardia</h3>
+  <div class="stats two">
+    <div class="stat"><div class="label">Di guardia</div><div class="value">{{ gate.guards }} <small>uomini</small></div></div>
+    <div class="stat"><div class="label">Fermano</div><div class="value">{{ gate.stops }} <small>briganti</small></div></div>
+    <div class="stat"><div class="label">Ultimo assalto</div><div class="value">{{ gate.last_raid or "nessuno" }}</div></div>
+    <div class="stat"><div class="label">Fughe in {{ gate.months }} mesi</div><div class="value">{{ gate.flights or "nessuna" }}</div></div>
+  </div>
+  <p class="hint">Le guardie non lavorano: ognuna è un contadino in meno. La milizia la propone il Gastaldo nel consiglio.</p>
+  {% endif %}
   <h3>Mandato in vigore</h3>
   {% if office.mandate %}
   <p class="directive">«{{ office.mandate }}»</p>
@@ -33,11 +43,14 @@
   {% elif open_turn %}
   <form method="post" action="/ui/realms/{{ realm_id }}/government/{{ office.role }}">
     <label class="field">Il mandato che vorresti
-      <textarea name="text" maxlength="{{ max_chars }}" placeholder="Es. «Costruisci solo dove ci sono braccia libere: prima le case, poi le fattorie»" required></textarea>
+      <textarea name="text" maxlength="{{ max_chars }}" placeholder="{% if office.role == 'gastaldo' %}Es. «Se il bosco tace da tre mesi, rimanda metà delle guardie nei campi»{% else %}Es. «Costruisci solo dove ci sono braccia libere: prima le case, poi le fattorie»{% endif %}" required></textarea>
     </label>
     <button type="submit" {% if running %}disabled{% endif %}>Manda alla cancelleria</button>
   </form>
   {% endif %}
 </section>
 {% endfor %}
+{% if watch_open and not gate %}
+<p class="hint">Quando la torre di guardia sarà finita, siederà in consiglio un Gastaldo per la porta e la milizia.</p>
+{% endif %}
 </div>

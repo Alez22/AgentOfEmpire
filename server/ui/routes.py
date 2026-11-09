@@ -25,7 +25,7 @@ from engine.config import load_raw_config
 from engine.territory import owned_count
 from engine.turn import food_needed, housing_capacity, jobs_in_sector, season_of
 from server.council import audience, debate, mandates, manual, meeting, people, persons
-from server.council.briefing import months_until_winter
+from server.council.briefing import GATE_MEMORY_TURNS, months_until_winter
 from server.db import games
 from server.sovereign_view import sovereign_state
 from server.ui import labels, map_view, market_view
@@ -273,13 +273,38 @@ def _government_page(realm_id: int, error: str = "") -> RedirectResponse:
     return RedirectResponse(url, status_code=303)
 
 
+def _gate_card(conn: psycopg.Connection, realm_id: int) -> dict:
+    """@brief The Gastaldo's card on the government page (village block B+C):
+    the guards, the raiders they stop, the last raid and the flights of the
+    last months, from the events the sovereign may see. Never the bandits'
+    number: nobody can count them."""
+    game_id = games.realm_game_id(conn, realm_id)
+    state = games.load_latest_state(conn, realm_id)
+    config = games.load_game_config(conn, game_id)
+    last_raid, flights = None, 0
+    for turn in range(state.turn - 1, 0, -1):  # newest first
+        own = [e for e in games.list_events_for_sovereign(conn, game_id, realm_id, turn) if e["realm_id"] == realm_id]
+        if state.turn - turn <= GATE_MEMORY_TURNS:
+            flights += sum(1 for e in own if e["kind"] == "flight")
+        if last_raid is None and any(e["kind"] == "raid" for e in own):
+            last_raid = labels.month_name(turn)
+        if last_raid is not None and state.turn - turn >= GATE_MEMORY_TURNS:
+            break
+    repel = config.bandits.repel_per_guard if config.bandits else 0
+    return {"guards": state.militia, "stops": state.militia * repel, "last_raid": last_raid,
+            "flights": flights, "months": GATE_MEMORY_TURNS}
+
+
 def _government_context(request: Request, conn: psycopg.Connection, realm_id: int) -> dict:
     jobs = request.app.state.council_jobs
     kind = jobs.running_kind(realm_id) or ""
     game = games.load_game(conn, games.realm_game_id(conn, realm_id))
+    offices = mandates.government(conn, realm_id)
     return {
         "realm_id": realm_id,
-        "offices": mandates.government(conn, realm_id),
+        "offices": offices,
+        "gate": _gate_card(conn, realm_id) if any(o["role"] == "gastaldo" for o in offices) else None,
+        "watch_open": games.load_game_config(conn, game["id"]).bandits is not None,
         "names": games.role_names(conn, realm_id),
         "open_turn": game["open_turn"],
         "running": kind.startswith("mandate:"),

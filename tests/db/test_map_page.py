@@ -99,12 +99,12 @@ def test_the_hex_board_lights_a_zone_and_the_chosen_building(ui, database_url):
 def test_credits_list_every_icon_author(ui):
     page = ui.get("/ui/credits").text
     assert "CC BY 3.0" in page and "delapouite" in page and "lorc" in page
-    assert page.count("sprite.svg#i-") == 16  # 15 until the market's shop (2026-11-09)
+    assert page.count("sprite.svg#i-") == 17  # 16 until the watchtower (village block B+C)
 
 
 def test_a_watchtower_on_the_map_and_its_card(ui, database_url):
     """Village block B+C: the page draws a finished watchtower and describes it
-    (its own look comes with the UI step; until then a plain hex)."""
+    in its own slate hex with the game-icons watchtower (step 4)."""
     realm_id = _realm(database_url, _hex_raw())
     tower = {"kind": "watchtower", "turns_left": 0, "id": 13, "x": 0, "y": 0}
     with psycopg.connect(database_url, autocommit=True) as conn:
@@ -115,3 +115,4 @@ def test_a_watchtower_on_the_map_and_its_card(ui, database_url):
                      " '{next_building_id}', '14') WHERE realm_id = %s", (psycopg.types.json.Jsonb([tower]), realm_id))
     page = ui.get(f"/ui/realms/{realm_id}/map", params={"b": 13}).text
     assert "Torre di guardia n. 1" in page and "Torre di guardia" in page
+    assert 'class="h-watch' in page and "#i-watchtower" in page
