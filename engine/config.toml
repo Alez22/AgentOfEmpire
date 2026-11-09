@@ -34,7 +34,7 @@ stone = 10
 gold = 0
 build_turns = 2
 jobs = 15
-output_per_worker = 15
+output_per_worker = 16  # was 15: equals the fair land (lab/food_balance.py, 2026-11-09)
 sector = "food"
 housing = 0
 width = 3
@@ -193,7 +193,11 @@ empty_malus = -80  # the warehouse empty for everyone
 # Output per worker by land level; it replaces output_per_worker for realms
 # on a site with levels. Fair equals the buildings' values above.
 [levels]
-food = { poor = 14, fair = 15, rich = 18 }  # 18 (2026-11-08, game 24 and lab "food"): with 16 nobody had food to sell; 13 too harsh, 19 floods
+# Food was 14/15/18 (rich 18: game 24 and lab "food", 2026-11-08). Lab
+# food_balance (2026-11-09): the world ate 3,900 food a year more than it grew,
+# a fair realm 5 months a year on the reduced ration; at 15/16/19 a fair realm
+# about breaks even, a poor one buys about 16 lots a year, a rich one sells 30+.
+food = { poor = 15, fair = 16, rich = 19 }
 wood = { poor = 3, fair = 6, rich = 9 }
 stone = { poor = 2, fair = 4, rich = 6 }
 

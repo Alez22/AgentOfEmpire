@@ -22,10 +22,11 @@ def test_winter_drains_the_food_reserve(start_state, config):
     assert 150 <= end_of_winter.food <= 260
 
 
-def test_first_year_ends_with_less_food_than_it_started(start_state, config):
+def test_first_year_about_breaks_even(start_state, config):
     end_of_year = _play(start_state, config, 12)[-1]
-    # Engine: about 1150 with 2 % spoilage (the fixed rule adds farmers in spring)
-    assert 1000 <= end_of_year.food < 1600
+    # Fair land breaks even since 2026-11-09 (lab/food_balance.py, farms 16 per
+    # worker): about 1620 with 2 % spoilage. Was about 1150 at 15 per worker.
+    assert 1300 <= end_of_year.food <= 1900
 
 
 def test_population_grows_slowly(start_state, config):

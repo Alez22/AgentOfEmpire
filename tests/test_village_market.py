@@ -229,6 +229,8 @@ def test_the_peasants_mood_is_the_same_as_before_the_classes(start_state, config
     """The peasants go through the shared step: a month with feast, petition,
     famine and cold gives the numbers of the old formula."""
     from engine.people import PeopleChoice
+    # The food yields of that commit (raised 2026-11-09): the oracle below is its number.
+    config = replace(config, levels=replace(config.levels, food={"poor": 14, "fair": 15, "rich": 18}))
     start_state.turn = 1
     start_state.wood = 10
     start_state.food = 300

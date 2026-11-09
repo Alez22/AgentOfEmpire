@@ -89,8 +89,8 @@ def test_stored_food_spoils_after_consumption(start_state, config):
     result = resolve_turn(start_state, [], config)
     spoiled = [e for e in result.events if e.kind == "food_spoiled"]
     assert spoiled
-    # Winter: 53 * 15 / 2 = 397 produced, 860 eaten, then the spoilage share of the rest rots.
-    stock_after_eating = 10_000 + 397 - 860
+    # Winter: 53 * 16 / 2 = 424 produced, 860 eaten, then the spoilage share of the rest rots.
+    stock_after_eating = 10_000 + 424 - 860
     assert spoiled[0].data["amount"] == stock_after_eating * config.economy.food_spoilage_pct // 100
     assert result.state.food == stock_after_eating - spoiled[0].data["amount"]
 

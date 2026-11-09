@@ -25,7 +25,7 @@ def test_manual_follows_the_config():
     # A game saved before the market and the land levels: the yields are told.
     config = replace(load_config(), market=None, levels=None, needs=None)
     text = manual.prompt_text(config)
-    assert "- farm: costs wood 40, stone 10, gold 0; built in 2 months; 15 jobs; each worker yields 15 food" in text
+    assert "- farm: costs wood 40, stone 10, gold 0; built in 2 months; 15 jobs; each worker yields 16 food" in text
     assert "even when not all its jobs are filled" in text
     assert "gold cannot buy food" in text and "It brings no food." in text
     assert "a strike (all production -30%)" in text

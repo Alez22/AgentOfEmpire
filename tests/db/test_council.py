@@ -513,13 +513,13 @@ def test_briefings_show_the_harvest_and_the_empty_jobs(db, realm, settings):
     client = FakeClient()
     meeting.hold_meeting(db, realm_id, client, settings)  # January: farms at 50 %
     treasurer, architect = client.calls[0]["user"], client.calls[1]["user"]
-    # 53 farmers x 15 x 50 % = 397; 1600 + 397 - 860 eaten = 1137, minus 2 % rot = 1115.
+    # 53 farmers x 16 x 50 % = 424; 1600 + 424 - 860 eaten = 1164, minus 2 % rot = 1141.
     # (Seed 3: a site with every land level fair, so the yields are the buildings' own.)
-    assert ("Harvest expected this month if nothing changes: 397 food (winter: farms yield 50%). "
-            "After eating and rot the store would go from 1600 to about 1115: it shrinks.") in treasurer
+    assert ("Harvest expected this month if nothing changes: 424 food (winter: farms yield 50%). "
+            "After eating and rot the store would go from 1600 to about 1141: it shrinks.") in treasurer
     assert "Without any harvest it would last about 1.8 months." in treasurer
     assert "Jobs without workers: food 7, wood 6, stone 7, trade 0." in architect  # no market yet: no places
-    assert "Expected this month if nothing changes: food +397, wood +24, stone +12." in architect
+    assert "Expected this month if nothing changes: food +424, wood +24, stone +12." in architect
 
 
 def test_orders_that_change_nothing_leave_the_plan(db, realm, settings):
@@ -634,11 +634,11 @@ def test_jobs_at_harvest_count_sites_finishing_this_month(db, realm, settings):
 def test_treasurer_sees_the_coming_seasons(db, realm, settings):
     _, realm_id = realm
     client = FakeClient()
-    # January, 53 farmers: 397 this month, so about 794 at full yield (the line
+    # January, 53 farmers: 424 this month, so about 848 at full yield (the line
     # scales this month's rounded harvest).
     meeting.hold_meeting(db, realm_id, client, settings)
-    assert ("- Coming seasons, with today's farmers: spring 100% (about 794 a month); "
-            "summer 120% (about 952 a month); autumn 130% (about 1032 a month). "
+    assert ("- Coming seasons, with today's farmers: spring 100% (about 848 a month); "
+            "summer 120% (about 1017 a month); autumn 130% (about 1102 a month). "
             "Months left in this season: 3.") in client.calls[0]["user"]
 
 
