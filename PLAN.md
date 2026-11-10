@@ -928,6 +928,15 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 6. **The stream decides whether stage 2 matters**: inflow 0 (today's world) 6-14 arrivals in 24 months; inflow 2 a month (for 8 realms) 29-52, raids 53 instead of 21 without watchtowers and no extra fall; inflow 4 without watchtowers 5 realms fall to raids.
 7. **Decided 2026-11-10: no inflow**, the world stays as it is (start pool plus flight); stage 2 stays a small effect. The tuned values of point 4 go into the DESIGN brackets.
 
+### Game 33: stage 2 with the accumulators (2026-11-10, 12 months)
+
+`lab/auto_game.py new 0 12`, seed 0 (realms 53-55: Aurelia, Brenna, Corvara). 242 calls, $0.29; 4 timeouts and 1 invalid reply, no server error. Replay matches.
+
+1. **Nobody arrived again, now for hunger, not rounding.** The accumulator worked: the pool (5 adults, then 3, 2, 1, empty from month 9 by its decline) produced one seeker in month 6. No realm drew him: a month of eating is about 900 food and in spring and summer all three held 100-700 (`min_food_months` 1). Aurelia had room from month 8 (1,030 food, 15 beds), when the pool was down to 1 wanderer.
+2. Only one raid: 2 raiders on Brenna in March, no guards, 50 food. Brenna ordered the tower in April, finished in May, 4 guards from June (3 from October); Corvara's tower finished in December; Aurelia built none. No Gastaldo proposed any doors.
+3. All three calm at year end; Brenna on the reduced ration (829 food).
+4. **Reading**: in a 3-realm world the start pool (5) only shrinks (no inflow, decided) and in the warm months the realms eat what they grow, so stage 2 stays almost silent. Open: accept it (more realms, or flight from long discontent, fill the pool), or reconsider the inflow of wanderers.
+
 ### Game 32: block B+C stage 2, the doors (2026-11-10, 12 months)
 
 `lab/auto_game.py new 0 12`, seed 0 (realms 50-52: Aurelia, Brenna, Corvara). 251 calls, $0.31; 9 invalid replies and 4 timeouts, no server error. Replay matches.
