@@ -916,6 +916,17 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 6. **Bandits tip fragile realms**: with 2 realms in crisis and no guards, 4 realms fall instead of 2 (the others in the second spring, mood about 300, after 700-1,000 food lost); a rich realm with no guards is raided most (14 raids, 2,700 food).
 7. Values for the engine: flight below 350 for 3 months, 2 % adults, 1 % children; start pool 5-15; decline 5 % a month, 10 % in winter, +30 % of the food missing; parties of 8, 25 units a raider, 2 raiders stopped by a guard, each guard 10 % less attractive (max 80 %); watchtower 40 wood 20 stone, 2 months.
 
+### Lab: the doors and acceptance, block B+C stage 2 (2026-11-10)
+
+`lab/village_migration.py`: 8 realms, 24 months, on the real engine with stage 1 (`engine/bandits.py`) and the bandits lab's fixed policy; acceptance, raids turned into immigration and the grumbling run on top. Realms 1-2 in crisis (tax 25 %) in most runs.
+
+1. **The baseline needed a kinder tax**: with the bandits lab's gold policy (5-10 %) the realms sat at mood 310-370 and fell by chance, and almost nobody reached the unrest threshold to draw anyone. At tax 5 the 6 healthy realms stay calm (lowest 344-397); only the 2 crisis realms fall. The stage-1 lab gives the same numbers at its own commit (no regression).
+2. **The world's pool is tiny, so is migration**: about 13 wanderers for 8 realms, shrinking; the crisis realms revolt in month 8 having lost 3 adults each (flight is slower than revolt). Arrivals over 24 months: 4-14 adults for all 8 realms (about 1 a realm a year), almost all from raids stopped by guards at open doors. Free beds are not the limit (houses keep 10-20 free).
+3. **With a bigger stream (a lab inflow of 4-10 wanderers a month) the first values break**: open doors took 20-47 raiders a realm, the grumbling (10 mood a 1 % arrived) toppled 3 of 6 open realms; the search for a home never found a realm with 2 months of food (almost every arrival came from raids).
+4. **Tuned values**: seek 10 % of the pool a month; a realm draws people with 1 month of food (not 2); stopped raiders kept 25 % at normal, 50 % at open (not 90); grumbling 4 mood a 1 % arrived, only in scarcity; closed doors need 2 guards. With them, no realm falls beyond the crisis ones at inflow 0 and 2; open realms grow 60 -> 80-95 adults against 74 closed, with 0-56 mood of grumbling; a fragile open realm (poor wood) protests.
+5. **No spiral**: a rich realm does not absorb the others' people (the crisis realms fall by revolt long before their flight counts); closed doors with 4 guards are the safe choice, open doors a bet on growth.
+6. **The stream decides whether stage 2 matters**: inflow 0 (today's world) 6-14 arrivals in 24 months; inflow 2 a month (for 8 realms) 29-52, raids 53 instead of 21 without watchtowers and no extra fall; inflow 4 without watchtowers 5 realms fall to raids.
+
 ### Game 31: block B+C (2026-11-09, 12 months)
 
 `lab/auto_game.py new 0 12`, seed 0 (realms 47-49: Aurelia, Brenna, Corvara). 229 calls, $0.24. No errors.
