@@ -1011,6 +1011,37 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
   - [x] The briefing says when a zone has no land left to claim ("all its land is the realm's: nothing to claim here"; Aurelia's `NO_LAND`, game 26)
   - [ ] Map page: the lit zone's colour (fields #F2D27A) is close to the realm's gold border; pick zone colours for the night board
 
+## Review: playability and originality (2026-11-10)
+
+A reading of `docs/DESIGN.md`, the notes of games 1–33 and the pages of game 33. No new game was played. The proposals are in "Open decisions" (rows marked "review 2026-11-10"); nothing here is decided yet.
+
+**Verdict**: originality is high in the court and in the information, conventional in the economy. Playability stands on good ground, but today the sovereign mostly approves the plan and corrects the council's mistakes. The recent work went almost all into the economy, the least original part.
+
+**What is really new**
+
+- **The mood hidden from everyone**: neither the sovereign nor the council sees it; only the Voice of the square reads it, puts it into words and may be wrong. The filter is in the database, not in the prompt.
+- **The court as persons**: secret lessons (wrong ones too), secret notes, audiences where a counsellor speaks differently than in council, mandates rewritten by the Chancellor. Games 6 and 7 are the liveliest notes of this file.
+- **Eras change the regime of information**: rumours, then communiqués that may lie, then independent journalism. The strongest idea of the design still to build.
+- **Bandits born from discontent**: a neighbour's misrule becomes your problem, and accepting people is a common good paid by one.
+
+**What is conventional**: food, wood, stone and gold; taxes, rations and feasts; the unrest ladder; three eras; four victories. Fine, as long as the economy stays the ground the court moves on and not the centre of the game.
+
+**Playability findings**
+
+1. **The sovereign is a proof-reader.** In game 24 almost every intervention is "excluded" (66 workers of 60, farmers off the fields in winter). Eleven fixed rules (R1–R11) carry a year with no model. In game 7, turns 21–30, the sovereign "only approved".
+2. **Mistakes come from the model, not from character.** With moderate persons only there is no intrigue, and the notes make the council consensual. Every fix (manual, craft, briefing lines) moves the council towards an autopilot: the same tension as "gameplay over optimization".
+3. **The new systems do not bite.** Each choice is well argued on its own; the sum is the problem: the market about 1 lot a realm a month; the merchants' tax 1–2 gold a month; bandits one raid a year of 50 food, the pool empty from month 9; the doors no arrival (games 32, 33); the people's effort −3 to +4 % except after a refused petition; the debate adds little without a conflict.
+4. **The village has no engine of growth.** Population 100 → 120 in 30 months (game 7) against a gate of about 200 by year 2½; the immigration meant to fill the gap is silent.
+5. **Pace.** A turn is about a minute of waiting and about 540 words to read (Brenna, June, game 33), and many months say only "born 1, dead 0". With the Marshal, the Ambassador and the Prior the text doubles. At a turn a day the village lasts over a real month with almost no interaction between players.
+6. **The counsellors' Italian**: "quest'empo", "dei guardie", "territorial" in one month's reports; the Voice is good. In a game made of text it weighs a lot.
+7. **Few human tests.** The only game played by a person is game 7 "Prova", before the map, the market and the bandits. A model playing the sovereign never gets bored.
+
+**Risks for the town and the kingdom**
+
+- **Holes in the design**: war, diplomacy, espionage and victory are the [Lost] sections, the very ones that carry the two eras.
+- **A horizon never tried**: no game beyond 30 months, none with the market beyond 12, so no realm ever came near an era passage.
+- **Breadth**: Prior, journalist, spies, double agents, coups, exile, Jev; every block of the village took a lab and several games.
+
 ## Open decisions
 
 | Decision | Needed by | Notes |
@@ -1024,6 +1055,14 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 | Jev | phase 4 | technical details, policy schema, waiting-list sign-up |
 | Lost vision sections | before phase 4 | rewrite the parts marked [Lost] in `docs/DESIGN.md` (map, war, victory, diplomacy, espionage); progress rewritten 2026-11-08 ("The eras"), war by era decided |
 | Palace in the engine | phase 4, after the hex grid | fixed building east of the square (approved in direction); a 4-hex rhombus, its place left free in the hex core |
+| A long automatic game (review 2026-11-10) | before the town | 8 realms, 36–48 months, about $3 at game 33's cost ($0.008 a realm a month): does any realm reach the gate of the town (population about 200), do the market, the bandits and the doors come alive with 8 realms |
+| A lab on extreme traits (review 2026-11-10) | before hiring and dismissal | same seed, extreme persons instead of the moderates: if the behaviour does not change in a way the sovereign can read, hiring and dismissal do not hold |
+| The court before more economy (review 2026-11-10) | next block of phase 4 | bring forward variable trust and loyalty, hiring and dismissal, ahead of further economic systems |
+| Pace (review 2026-11-10) | before a game with friends | quiet months run by themselves under the mandates, the game stops on events and season ends; how to keep the text readable with 7–8 voices; the length of the village |
+| Order of the town (review 2026-11-10) | with the rewrite of the [Lost] sections | first the Ambassador, treaties and rare resources, then the Marshal and war: the talk between ambassadors is where a model adds most, war where it adds least |
+| Archives opened at game end (review 2026-11-10) | phase 4 | the mood curve, the lessons and the secret notes shown to the sovereign when the game ends; the admin view already holds them |
+| A 12-month game played by hand (review 2026-11-10) | before the town | by the user on the current build, noting the minutes per turn and when it gets boring |
+| The counsellors' Italian (review 2026-11-10) | with "Models per tier" | a better model for the text the sovereign reads; today's cost leaves room |
 
 ## Decisions made (the main ones)
 
