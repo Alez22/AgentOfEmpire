@@ -16,6 +16,9 @@ the lab tuned the values with), in this order:
    closed none, normal the smaller of free beds and empty jobs, open the
    free beds (beyond the jobs too). Seekers are shared in proportion to
    that room.
+   With migration.accumulate the fractions of 1 and 2 are kept in hundredths
+   (the realm's keep_acc, the pool's seek_acc), as flight does: a small pool
+   still sends somebody every few months (game 32). Without it they round down.
 3. The natives' grumbling: in scarcity (food under scarce_food_months or no
    empty job) the arrivals cost the peasants' mood grumble_per_pct points
    per 1 % of the population arrived, at once.
@@ -68,6 +71,16 @@ def _room(state: GameState, config: Config, rules: MigrationConfig) -> int:
     return beds if doors == "open" else min(beds, empty_jobs(state, config))
 
 
+def _share(acc: int, count: int, pct: int, accumulate: bool) -> tuple[int, int]:
+    """@brief pct % of count, as (people, new acc in hundredths): with accumulate
+    the fraction carries to the next month (as engine/bandits.py _leave), else
+    it is lost (games saved before) and acc stays as it is."""
+    if not accumulate:
+        return count * pct // 100, acc
+    acc += count * pct
+    return acc // 100, acc % 100
+
+
 def _stopped_raiders_stay(state: GameState, events: list[Event], config: Config, rules: MigrationConfig,
                           pool: BanditPool) -> int:
     """@brief The raiders the guards stopped this month who stay, by the doors.
@@ -78,7 +91,8 @@ def _stopped_raiders_stay(state: GameState, events: list[Event], config: Config,
         if event.kind != "raid" or not keep_pct:
             continue
         stopped = min(event.data["raiders"], event.data["guards"] * config.bandits.repel_per_guard)
-        stay = min(stopped * keep_pct // 100, free_beds(state, config), pool.adults)
+        keeping, state.keep_acc = _share(state.keep_acc, stopped, keep_pct, rules.accumulate)
+        stay = min(keeping, free_beds(state, config), pool.adults)
         pool.adults -= stay
         state.adults += stay
         taken += stay
@@ -105,8 +119,8 @@ def _seekers_settle(states: dict[str, GameState], config: Config, rules: Migrati
                     pool: BanditPool) -> dict[str, tuple[int, int]]:
     """@brief seek_pct of the pool looks for a home among the realms that draw it.
     @return {realm key: (adults, children)} taken in (already moved)."""
-    seekers = pool.adults * rules.seek_pct // 100
-    seeking_children = pool.children * rules.seek_pct // 100
+    seekers, pool.seek_acc[0] = _share(pool.seek_acc[0], pool.adults, rules.seek_pct, rules.accumulate)
+    seeking_children, pool.seek_acc[1] = _share(pool.seek_acc[1], pool.children, rules.seek_pct, rules.accumulate)
     rooms = {key: _room(state, config, rules) for key, state in states.items()}
     settled = {}
     for key, adults in _shares(seekers, rooms).items():

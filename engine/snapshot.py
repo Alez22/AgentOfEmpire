@@ -17,7 +17,8 @@ from engine.state import Building, ClassState, GameState, Workers, Zone
 # 5: militia, flight accumulators (village block B+C). Older snapshots load with
 # no militia and empty accumulators.
 # 6: doors (village block B+C, stage 2). Older snapshots load at "normal".
-FORMAT_VERSION = 6
+# 7: keep_acc (stage 2, the stopped raiders' accumulator). Older snapshots load at 0.
+FORMAT_VERSION = 7
 
 
 def state_to_dict(state: GameState) -> dict:

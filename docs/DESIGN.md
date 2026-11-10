@@ -1326,13 +1326,13 @@ Stage 2 of "Travellers, bandits and migration" (Part 1, "Migration and the doors
 
 **Acceptance** (in the world step, after the raids)
 
-- Every month [10 %] of the pool's adults, and the same share of its children, look for a home.
+- Every month [10 %] of the pool's adults, and the same share of its children, look for a home. The fractions accumulate month to month, as flight does (decided 2026-11-10, game 32: rounded down, a pool under 10 sent nobody all year): 5 wanderers send one seeker every second month.
 - They are shared among the realms by **attraction**: only a realm with the mood above the unrest threshold, food for at least [1] month (the lab: 2 months blocked almost every seeker) and free beds draws anybody; with open doors a hungry or angry realm still draws nobody.
 - How many a realm takes, by its doors: closed none; normal at most the smaller of free beds and empty jobs; open up to the free beds, beyond the jobs too (a bet on growth). Deterministic shares with the seeded generator, as the raids.
 
 **A raid turned into immigration**
 
-- The raiders the guards stop (2 a guard) are driven off or taken in, by the doors: closed all driven off; normal [25 %] stays; open [50 %] (the lab: almost all flooded the open realms with 20-47 raiders and toppled them by grumbling). Never beyond the free beds; the others go back to the woods.
+- The raiders the guards stop (2 a guard) are driven off or taken in, by the doors: closed all driven off; normal [25 %] stays; open [50 %] (the lab: almost all flooded the open realms with 20-47 raiders and toppled them by grumbling). Never beyond the free beds; the others go back to the woods. The fractions accumulate in each realm (game 32): of a band of 2 at normal doors, one stays every second raid.
 
 **Arrival**: as **peasants**, free adults for the Architect from the next month; children as children. They leave the pool: fewer bandits for everyone.
 

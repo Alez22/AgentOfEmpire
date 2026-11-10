@@ -85,7 +85,9 @@ def replay_game(conn: psycopg.Connection, game_id: int) -> ReplayMismatch | None
         if mismatch:
             return mismatch
         if pool is not None and turn + 1 in pools:
-            stored_pool = _canonical(pools[turn + 1])
+            # Through the dataclass, as the states: a pool stored before a new
+            # field compares with its default.
+            stored_pool = _canonical(pool_to_dict(pool_from_dict(pools[turn + 1])))
             replayed_pool = _canonical(pool_to_dict(pool))
             if stored_pool != replayed_pool:
                 return ReplayMismatch(None, turn + 1, stored_pool, replayed_pool)

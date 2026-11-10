@@ -131,6 +131,9 @@ class GameState:
     # "closed", "normal" or "open". "normal" without a watchtower and in games
     # saved before.
     doors: str = "normal"
+    # Hundredths of a stopped raider staying (stage 2, migration.accumulate).
+    # 0 for games saved before.
+    keep_acc: int = 0
 
     def has_map(self) -> bool:
         return bool(self.terrain)

@@ -24,7 +24,7 @@ The world step, after resolve_month (engine/market.py), in this order:
 """
 
 import random
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 
 from engine.config import BanditsConfig, Config
 from engine.migration import resolve_arrivals
@@ -43,6 +43,9 @@ class BanditPool:
     food: int = 0  # what they looted and have not eaten yet
     grow_acc: int = 0  # thousandths of a child growing up, as the realms' aging
     decline_acc: int = 0  # hundredths of a bandit leaving
+    # Hundredths of a seeker, [adults, children] (stage 2, migration.accumulate);
+    # [0, 0] for games saved before.
+    seek_acc: list[int] = field(default_factory=lambda: [0, 0])
 
 
 def new_pool(config: Config, seed: int, realm_count: int) -> BanditPool | None:

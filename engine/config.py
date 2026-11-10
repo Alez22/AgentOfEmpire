@@ -260,6 +260,10 @@ class MigrationConfig:
     closed_min_guards: int  # closed doors hold only with this many guards; with fewer they count as normal
     scarce_food_months: int  # the natives grumble at arrivals with less food than this, or no empty job
     grumble_per_pct: int  # peasants' mood lost per 1 % of the population arrived, in scarcity
+    # Fractions of seekers and stopped raiders kept in accumulators (game 32:
+    # rounded down, a pool under 10 sent nobody). False for games saved before:
+    # they round down and replay unchanged.
+    accumulate: bool = False
 
 
 @dataclass(frozen=True)

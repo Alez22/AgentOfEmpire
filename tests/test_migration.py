@@ -7,9 +7,9 @@ from dataclasses import replace
 
 from engine import parse_order
 from engine.bandits import BanditPool, resolve_world
-from engine.migration import doors_in_force, empty_jobs, free_beds
+from engine.migration import doors_in_force, empty_jobs, free_beds, resolve_arrivals
 from engine.snapshot import state_from_dict, state_to_dict
-from engine.state import Building
+from engine.state import Building, Event
 from engine.territory import find_place
 from engine.turn import TurnResult, food_needed
 from engine.validator import apply_orders
@@ -197,6 +197,37 @@ def test_the_natives_grumble_only_in_scarcity(start_state, config):
     assert arrivals["scarce"][0]["grumbled"]
     grumble = 100 * arrivals["scarce"][0]["adults"] // scarce.population() * config.migration.grumble_per_pct
     assert grumble > 0 and scarce.mood == mood - grumble
+
+
+# ---- accumulators (game 32: a small pool sent nobody) -----------------------------
+
+def _months_of_arrivals(state, config, months, pool, raid=None):
+    """@brief resolve_arrivals alone, month after month (no pool's month, no
+    real raid): the adults taken in each month."""
+    taken = []
+    for _ in range(months):
+        events = {"1": [Event("raid", dict(raid))] if raid else []}
+        resolve_arrivals(pool, {"1": state}, events, config)
+        taken.append(sum(e.data["adults"] for e in events["1"] if e.kind == "arrival"))
+    return taken
+
+
+def test_a_small_pool_still_sends_a_seeker_every_few_months(start_state, config):
+    start_state.food = PLENTY
+    # 5 wanderers, 10 %: half a seeker a month, one every second month.
+    pool = BanditPool(seed=1, adults=5)
+    assert _months_of_arrivals(copy.deepcopy(start_state), config, 4, pool) == [0, 1, 0, 0]
+    # Without the accumulators (games saved before) 10 % of 5 is never anybody.
+    old = replace(config, migration=replace(config.migration, accumulate=False))
+    assert _months_of_arrivals(copy.deepcopy(start_state), old, 4, BanditPool(seed=1, adults=5)) == [0] * 4
+
+
+def test_of_a_band_of_two_one_stays_every_second_raid(start_state, config):
+    _guarded(start_state, config, "normal")
+    raid = {"raiders": 2, "guards": 4}  # 25 % of 2 stopped: half a raider a raid
+    pool = BanditPool(seed=1, adults=2)
+    assert _months_of_arrivals(start_state, config, 2, pool, raid) == [0, 1]
+    assert start_state.keep_acc == 0 and pool.adults == 1
 
 
 def test_the_arrival_is_public():

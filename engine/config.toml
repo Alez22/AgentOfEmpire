@@ -238,6 +238,7 @@ keep_open_pct = 50  # lab: 90 flooded open realms with 20-47 raiders, the grumbl
 closed_min_guards = 2
 scarce_food_months = 2
 grumble_per_pct = 4  # lab: 10 toppled the open realms with a bigger stream
+accumulate = true  # game 32: rounded down, a pool of 2-5 sent nobody all year
 
 # Output per worker by land level; it replaces output_per_worker for realms
 # on a site with levels. Fair equals the buildings' values above.
