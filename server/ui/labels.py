@@ -109,6 +109,9 @@ def order_label(order: dict) -> str:
     if action == "set_militia":
         guards = order.get("guards")
         return "Nessuna guardia: tutti al lavoro" if guards == 0 else f"Milizia: {guards} uomini di guardia"
+    if action == "set_doors":
+        return {"closed": "Porte chiuse ai vagabondi", "normal": "Porte normali: entra chi trova lavoro",
+                "open": "Porte aperte ai vagabondi"}.get(order.get("doors"), f"Porte: {order.get('doors')}")
     if action == "trade":
         verb = "Comprare" if order.get("side") == "buy" else "Vendere"
         return f"{verb} al mercato {lots_of(order.get('lots'), order.get('good'))}"
@@ -197,7 +200,7 @@ def event_label(kind: str, data: dict) -> str:
         if data.get("from_raids"):
             text += f", di cui {data['from_raids']} briganti fermati alle porte"
         text += "."
-        if data.get("grumble"):
+        if data.get("grumbled"):
             text += " Con le scorte scarse, i contadini mormorano contro i nuovi venuti."
         return text
     if kind == "salaries_unpaid":

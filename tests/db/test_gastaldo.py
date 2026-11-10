@@ -73,7 +73,7 @@ def test_the_gastaldo_joins_when_the_watchtower_is_finished(db, settings):
     assert "carried away 200 food and 25 wood" in gastaldo["user"]
     chancellor = next(c for c in client.calls if c["role"] == "chancellor")
     assert '"Il Gastaldo" (a man)' in chancellor["system"]
-    assert "gastaldo (set_militia)" in chancellor["system"]
+    assert "gastaldo (set_militia, set_doors)" in chancellor["system"]
     assert "## The gate and the guard" in chancellor["user"]
     plan = [m for m in meeting.list_messages(db, realm_id, 1) if m["kind"] == "summary"][-1]["payload"]["plan"]
     assert {"proposer": "gastaldo", "order": {"action": "set_militia", "guards": 2}} in plan
@@ -105,8 +105,12 @@ def test_the_manual_tells_the_bandits_but_not_their_number(db):
     from engine.config import config_from_dict
     config = config_from_dict(load_raw_config())
     text = manual.prompt_text(config)
-    assert "Bandits:" in text and "nobody can count" in text
-    assert any(section["title"] == "Briganti" for section in manual.page_sections(config))
+    assert "Bandits and arrivals:" in text and "nobody can count" in text
+    assert any(section["title"] == "Briganti e arrivi" for section in manual.page_sections(config))
+    from dataclasses import replace
+    stage_one = replace(config, migration=None)  # games saved before stage 2
+    assert "Bandits:" in manual.prompt_text(stage_one) and "doors" not in manual.prompt_text(stage_one)
+    assert any(section["title"] == "Briganti" for section in manual.page_sections(stage_one))
 
 
 def test_the_pages_show_the_gastaldo(db, database_url, settings):
@@ -179,3 +183,46 @@ def test_the_gastaldo_speaks_in_the_debate(db, settings):
     assert _roles_called(client) == ["treasurer", "architect", "gastaldo"]
     assert "You are the Gastaldo" in client.calls[-1]["system"]
     assert "## Already said in this debate" in client.calls[-1]["user"]
+
+
+# ---- the doors (village block B+C, stage 2) -------------------------------------------
+
+def _arrival_last_month(db, realm_id):
+    game_id = db.execute("SELECT game_id FROM realms WHERE id = %s", (realm_id,)).fetchone()[0]
+    db.execute("INSERT INTO events (game_id, realm_id, turn, kind, data, visibility)"
+               " VALUES (%s, %s, 0, 'arrival', %s, 'public')",
+               (game_id, realm_id, Jsonb({"adults": 3, "children": 1, "from_raids": 2, "grumbled": True})))
+
+
+def test_the_gastaldo_keeps_the_doors(db, settings):
+    _, realm_id = _realm(db)
+    _give_watchtower(db, realm_id)
+    _arrival_last_month(db, realm_id)
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)
+    gastaldo = next(c for c in client.calls if c["role"] == "gastaldo")
+    assert '{"action": "set_doors", "doors": "closed" | "normal" | "open"}' in gastaldo["system"]
+    assert "at least 2 guards" in gastaldo["system"]
+    assert "Also the doors" in gastaldo["system"] and "a bet on growth" in gastaldo["system"]
+    assert "- The doors: normal. Free beds: " in gastaldo["user"]
+    assert "3 adults and 1 children settled (2 of them stopped raiders); the people grumbled" in gastaldo["user"]
+
+
+def test_a_game_before_stage_two_has_no_doors(db, settings):
+    raw = load_raw_config()
+    del raw["migration"]
+    game_id = create_game(db, raw, seed=3, realm_names=["Nord"], council_models=COUNCIL)
+    realm_id = db.execute("SELECT id FROM realms WHERE game_id = %s", (game_id,)).fetchone()[0]
+    _give_watchtower(db, realm_id)
+    client = FakeClient()
+    meeting.hold_meeting(db, realm_id, client, settings)
+    gastaldo = next(c for c in client.calls if c["role"] == "gastaldo")
+    assert "set_doors" not in gastaldo["system"] and "a bet on growth" not in gastaldo["system"]
+    assert "The doors:" not in gastaldo["user"]
+
+
+def test_doors_already_in_force_are_dropped_from_the_plan(config):
+    from engine import new_game
+    state = new_game(config, seed=1)
+    assert meeting._changes_nothing(state, {"action": "set_doors", "doors": "normal"})
+    assert not meeting._changes_nothing(state, {"action": "set_doors", "doors": "open"})

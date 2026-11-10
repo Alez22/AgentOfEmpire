@@ -39,7 +39,7 @@ GASTALDO = "gastaldo"
 ROLE_ACTIONS = {
     "treasurer": ("set_tax", "set_ration", "hold_feast", "trade", "set_merchant_tax"),
     "architect": ("build", "assign_workers", "set_zones", "claim_tiles", "fell_forest", "demolish"),
-    GASTALDO: ("set_militia",),
+    GASTALDO: ("set_militia", "set_doors"),
 }
 # Orders that exist only on the map: left out of the prompts of games
 # without one (the engine would refuse them with NO_MAP anyway).
@@ -47,6 +47,8 @@ MAP_ACTIONS = ("set_zones", "claim_tiles", "fell_forest", "demolish")
 # Likewise trade exists only where the realm can trade (a game with a market
 # and, in village block A, a finished market building).
 MARKET_ACTIONS = ("trade", "set_merchant_tax")
+# The doors exist only in games with [migration] (village block B+C, stage 2).
+MIGRATION_ACTIONS = ("set_doors",)
 ROLE_TITLES = {"treasurer": "Treasurer", "architect": "Architect", "chancellor": "Chancellor", GASTALDO: "Gastaldo"}
 ROLE_DUTIES = {
     "treasurer": "the treasury, taxes, food rations and feasts for the people.",
@@ -390,6 +392,8 @@ def _changes_nothing(state: GameState, order: dict) -> bool:
         return order["rate"] == state.tax_rate
     if action == "set_ration":
         return order["ration"] == state.ration
+    if action == "set_doors":
+        return order["doors"] == state.doors
     if action == "assign_workers":
         workers = state.workers
         return ((order["food"], order["wood"], order["stone"], order.get("clearing", 0))
@@ -532,6 +536,9 @@ def _order_formats(ctx: MeetingContext) -> str:
         text += render_prompt("order_formats_watchtower.txt")
         if GASTALDO in ctx.actors:
             text += render_prompt("order_formats_militia.txt")
+            if ctx.config.migration is not None:  # stage 2
+                text += render_prompt("order_formats_doors.txt",
+                                      closed_min_guards=ctx.config.migration.closed_min_guards)
     return text
 
 
@@ -539,7 +546,8 @@ def allowed_actions(ctx: MeetingContext, role: str) -> str:
     status = market_status(ctx.state, ctx.config)
     actions = [a for a in ROLE_ACTIONS[role] if (ctx.config.map is not None or a not in MAP_ACTIONS)
                and (status == "open" or a not in MARKET_ACTIONS)
-               and (a != "set_merchant_tax" or _village_market(ctx.config))]
+               and (a != "set_merchant_tax" or _village_market(ctx.config))
+               and (ctx.config.migration is not None or a not in MIGRATION_ACTIONS)]
     return ", ".join(actions)
 
 
@@ -549,6 +557,8 @@ def duties_of(ctx: MeetingContext, role: str) -> str:
         duties = ROLE_DUTIES["architect_map"]
     if _village_market(ctx.config) and role in VILLAGE_DUTIES:
         duties += VILLAGE_DUTIES[role]
+    if ctx.config.migration is not None and role == GASTALDO:
+        duties += DOORS_DUTY
     return duties
 
 
@@ -557,6 +567,8 @@ VILLAGE_DUTIES = {
     "architect": " Also the realm's market building and the merchants who work in it.",
     "treasurer": " Also the merchants' tax, once the realm has a market.",
 }
+# Village block B+C, stage 2: the Gastaldo keeps the doors too.
+DOORS_DUTY = " Also the doors: who of the wanderers may settle in the realm."
 
 
 EXPERTISE_INTRO = (
@@ -569,12 +581,14 @@ EXPERTISE_INTRO = (
 
 def role_expertise(ctx: MeetingContext, role: str) -> str:
     """@brief The craft of a role in this realm: town planning on the map,
-    trading once the realm can trade, the village market where it is a building."""
+    trading once the realm can trade, the village market where it is a building,
+    the doors where newcomers can settle (stage 2)."""
     return expertise_block(role, ctx.config.map is not None, market_status(ctx.state, ctx.config) == "open",
-                           _village_market(ctx.config))
+                           _village_market(ctx.config), ctx.config.migration is not None)
 
 
-def expertise_block(role: str, with_map: bool = False, with_market: bool = False, with_village: bool = False) -> str:
+def expertise_block(role: str, with_map: bool = False, with_market: bool = False, with_village: bool = False,
+                    with_doors: bool = False) -> str:
     """@brief What the office's training teaches (a role's craft, the same
     for every holder today; later it can differ by person, in a résumé).
     On the map the Architect's craft adds town planning (expertise_<role>_map.txt);
@@ -583,7 +597,8 @@ def expertise_block(role: str, with_map: bool = False, with_market: bool = False
     if not path.exists():
         return ""
     text = path.read_text()
-    for wanted, suffix in ((with_map, "map"), (with_market, "market"), (with_village, "village")):
+    for wanted, suffix in ((with_map, "map"), (with_market, "market"), (with_village, "village"),
+                           (with_doors, "doors")):
         extra = PROMPTS_DIR / f"expertise_{role}_{suffix}.txt"
         if wanted and extra.exists():
             text += extra.read_text()
@@ -889,10 +904,10 @@ def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
 
 
 def gate_lines(ctx: MeetingContext) -> list[str]:
-    """@brief The Gastaldo's section, with the realm's own raids and flights of
-    the last months (read as the server: they are the realm's own events)."""
+    """@brief The Gastaldo's section, with the realm's own raids, flights and
+    arrivals of the last months (read as the server: they are the realm's own events)."""
     rows = ctx.conn.execute(
-        "SELECT turn, kind, data FROM events WHERE realm_id = %s AND kind IN ('raid', 'flight')"
+        "SELECT turn, kind, data FROM events WHERE realm_id = %s AND kind IN ('raid', 'flight', 'arrival')"
         " AND turn >= %s AND turn < %s ORDER BY turn, id",
         (ctx.realm_id, ctx.turn - briefing.GATE_MEMORY_TURNS, ctx.turn),
     ).fetchall()

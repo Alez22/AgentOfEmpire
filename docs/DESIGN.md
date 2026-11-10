@@ -1347,8 +1347,8 @@ Stage 2 of "Travellers, bandits and migration" (Part 1, "Migration and the doors
 **Order of work** (one commit each, with tests)
 
 1. Lab (8 realms, 24 months, on the real engine with stage 1): the bracketed values and the spirals (a realm in crisis losing adults while a rich one absorbs them and grows), against all normal, all open, all closed. Done 2026-11-10.
-2. Engine. Built 2026-11-10 (`engine/migration.py`, run at the end of the world step, after the pool's month: the order the lab tuned the values with).
-3. Council.
+2. Engine. Built 2026-11-10 (the `arrival` event carries `grumbled`, yes or no: the council never reads mood points) (`engine/migration.py`, run at the end of the world step, after the pool's month: the order the lab tuned the values with).
+3. Council. Built 2026-11-10.
 4. UI after a mockup.
 5. A 12-month game with three automatic realms.
 

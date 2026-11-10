@@ -161,7 +161,7 @@ Still mandatory before any game with other players: until then, nobody else on T
 - [ ] Village block B+C, stage 2: the doors and acceptance (`docs/DESIGN.md`, "The doors and acceptance", spec approved 2026-11-10)
   - [x] S1. Lab (8 realms, 24 months): values and spirals (`lab/village_migration.py`); values tuned, no inflow from outside (decided 2026-11-10)
   - [x] S2. Engine (2026-11-10): `[migration]`, `engine/migration.py` run by `resolve_world` after the pool's month, `set_doors` (needs a finished watchtower; demolition resets to normal), `GameState.doors` (snapshot format 6), public `arrival` event with an Italian chronicle line; same states as the lab's tuned acceptance, also with a lab inflow of 6; replays 27, 29, 31 unchanged; the two village labs run without `[migration]`
-  - [ ] S3. Council
+  - [x] S3. Council (2026-11-10): `set_doors` to the Gastaldo (only in games with `[migration]`, a no-change order dropped), its duty and craft (`expertise_gastaldo_doors.txt`), `order_formats_doors.txt`; the gate section adds the doors in force, free beds, empty jobs and the arrivals of the last 6 months; the manual's "Bandits and arrivals" / "Briganti e arrivi"; the Voice and the memory hear `arrival`; the `arrival` event says only whether the people grumbled (no mood points: the council never sees the mood)
   - [ ] S4. UI after a mockup
   - [ ] S5. Game with three automatic realms
     - [x] Game 30 (see "Game 30"): void, R8 crashed on the watchtower in 8 realm-months; fixed, to be played again

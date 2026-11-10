@@ -8,6 +8,7 @@ import copy
 import json
 from collections import Counter
 
+from engine import migration
 from engine.config import Config
 from engine.market import GOODS, MarketState, buy_price, market_status, sell_price, stock, trade_capacity
 from engine.state import GameState
@@ -270,6 +271,11 @@ GATE_MEMORY_TURNS = 6  # months of raids and flights in the Gastaldo's briefing
 
 
 def _gate_event_text(kind: str, data: dict) -> str:
+    if kind == "arrival":  # stage 2
+        children = f" and {data['children']} children" if data["children"] else ""
+        raiders = f" ({data['from_raids']} of them stopped raiders)" if data["from_raids"] else ""
+        grumbled = "; the people grumbled against them" if data["grumbled"] else ""
+        return f"{data['adults']} adults{children} settled{raiders}{grumbled}"
     if kind == "flight":
         parts = [f"{data['adults']} adults" if data["adults"] else "",
                  f"{data['children']} children" if data["children"] else "",
@@ -281,18 +287,31 @@ def _gate_event_text(kind: str, data: dict) -> str:
             f"{data['food']} food and {data['wood']} wood")
 
 
+def _doors_lines(state: GameState, config: Config) -> list[str]:
+    """@brief The doors and the room for newcomers (village block B+C, stage 2)."""
+    rules = config.migration
+    doors = migration.doors_in_force(state, rules)
+    held = ""
+    if state.doors == "closed" and doors != "closed":
+        held = f" (ordered closed, but with fewer than {rules.closed_min_guards} guards they count as normal)"
+    return [f"- The doors: {doors}{held}. Free beds: {migration.free_beds(state, config)}; "
+            f"empty jobs: {migration.empty_jobs(state, config)}."]
+
+
 def gate_lines(state: GameState, config: Config, past: list[tuple[int, str, dict]]) -> list[str]:
     """@brief The Gastaldo's section (village block B+C): the guard, what lies
-    in view of the bandits, the raids and flights of the last months.
-    @param past (turn, kind, data) of the realm's own raid and flight events, oldest first."""
+    in view of the bandits, the doors (stage 2), the raids, flights and arrivals of the last months.
+    @param past (turn, kind, data) of the realm's own raid, flight and arrival events, oldest first."""
     rules = config.bandits
     lines = ["## The gate and the guard",
              f"- Guards on duty: {state.guards()} (the militia; every guard is an adult taken from work). "
              f"Adults: {state.adults}, {state.free_adults()} of them free for the Architect's work.",
              f"- Each guard stops about {rules.repel_per_guard} raiders; a band is about {rules.party_size}.",
              f"- In view of the bandits: food {state.food}, wood {state.wood} (they go where much lies exposed)."]
+    if config.migration is not None:  # stage 2
+        lines += _doors_lines(state, config)
     if not past:
-        lines.append(f"- No raid and no family gone in the last {GATE_MEMORY_TURNS} months.")
+        lines.append(f"- No raid, no family gone and nobody settled in the last {GATE_MEMORY_TURNS} months.")
     for turn, kind, data in past:
         lines.append(f"- {MONTHS[(turn - 1) % 12]} (turn {turn}): {_gate_event_text(kind, data)}.")
     return lines

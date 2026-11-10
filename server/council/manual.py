@@ -143,8 +143,8 @@ def _bandits_lines(config: Config) -> list[str]:
     """@brief Flight, bandits and the militia (village block B+C), for the prompts.
     The pool's size is never told: nobody in the game knows it."""
     rules = config.bandits
-    return [
-        "Bandits:",
+    lines = [
+        "Bandits and arrivals:" if config.migration is not None else "Bandits:",
         f"- After {rules.flee_turns} months of deep discontent (the count that leads to protests) a class starts "
         f"to flee: every month about {rules.flee_adult_pct}% of its adults leave for the woods, the peasants with "
         f"{rules.flee_child_pct}% of the children; the elders stay. The merchants flee by their own discontent. "
@@ -156,6 +156,29 @@ def _bandits_lines(config: Config) -> list[str]:
         f"each guard stops {rules.repel_per_guard} raiders, enough guards drive a band off, fewer cut its loot. "
         "Guards are adults taken from work before the Architect assigns the others, and they produce nothing. "
         f"The Gastaldo's salary is {rules.gastaldo_salary} gold a month.",
+    ]
+    if config.migration is not None:
+        lines += _arrivals_lines(config)
+    return lines
+
+
+def _arrivals_lines(config: Config) -> list[str]:
+    """@brief The doors and acceptance (village block B+C, stage 2), for the prompts."""
+    rules = config.migration
+    return [
+        f"- Every month about {rules.seek_pct}% of the wanderers look for a home. They go only to a realm whose "
+        f"people are calm (no unrest), with food for at least {rules.min_food_months} month(s) of eating and "
+        "free beds; they settle as peasants, free for the Architect's work from the next month, their "
+        "children as children. Who settles is a bandit less in the woods.",
+        "- The doors (the Gastaldo's order, only with the watchtower; without it every realm is at normal): "
+        "closed takes nobody; normal takes as many as the empty jobs, never beyond the free beds; open fills "
+        f"the free beds, beyond the jobs too. Closed doors hold only with at least {rules.closed_min_guards} "
+        "guards, with fewer they count as normal.",
+        f"- Of the raiders the guards stop, {rules.keep_normal_pct}% stay with normal doors and "
+        f"{rules.keep_open_pct}% with open doors, as far as the free beds go; closed doors drive them all off.",
+        f"- When food is short (less than {rules.scarce_food_months} months of eating) or there is no empty "
+        "job, the people grumble against the newcomers: the more arrive at once against the population, "
+        "the louder they grumble. With enough food and work for all, nobody grumbles.",
     ]
 
 
@@ -325,7 +348,7 @@ def page_sections(config: Config) -> list[dict]:
 def _bandits_section(config: Config) -> dict:
     """@brief Flight, bandits and the militia for the sovereign's page (Italian)."""
     rules = config.bandits
-    return {"title": "Briganti", "entries": [], "notes": [
+    notes = [
         f"Dopo {rules.flee_turns} mesi di scontento profondo (lo stesso conto che porta alle proteste) una classe "
         f"comincia a fuggire: ogni mese circa il {rules.flee_adult_pct}% dei suoi adulti parte per i boschi, i "
         f"contadini con l'{rules.flee_child_pct}% dei bambini; gli anziani restano. I mercanti fuggono per il loro "
@@ -337,7 +360,31 @@ def _bandits_section(config: Config) -> dict:
         f"guardia ferma {rules.repel_per_guard} briganti; abbastanza guardie respingono la banda, meno guardie "
         "riducono il bottino. Le guardie sono adulti tolti al lavoro prima che l'Architetta assegni gli altri, e "
         f"non producono nulla. Il Gastaldo costa {rules.gastaldo_salary} oro al mese di salario.",
-    ]}
+    ]
+    if config.migration is None:
+        return {"title": "Briganti", "entries": [], "notes": notes}
+    return {"title": "Briganti e arrivi", "entries": [], "notes": notes + _arrivals_notes(config)}
+
+
+def _arrivals_notes(config: Config) -> list[str]:
+    """@brief The doors and acceptance for the sovereign's page (Italian)."""
+    rules = config.migration
+    return [
+        f"Ogni mese circa il {rules.seek_pct}% dei vagabondi cerca casa. Va solo in un regno con il popolo "
+        f"calmo (nessun disordine), cibo per almeno {rules.min_food_months} mese e letti liberi; si stabilisce "
+        "come contadino, libero per il lavoro dall'Architetta dal mese dopo, i bambini come bambini. Chi si "
+        "stabilisce è un brigante in meno nei boschi.",
+        "Le porte (ordine del Gastaldo, solo con la torre; senza torre ogni regno ha le porte normali): chiuse "
+        "non entra nessuno; normali entrano quanti sono i posti di lavoro vuoti, mai oltre i letti liberi; "
+        f"aperte si riempiono i letti liberi, anche oltre il lavoro. Le porte chiuse tengono solo con almeno "
+        f"{rules.closed_min_guards} guardie, con meno contano come normali.",
+        f"Dei briganti fermati dalle guardie restano il {rules.keep_normal_pct}% con le porte normali e il "
+        f"{rules.keep_open_pct}% con le porte aperte, finché ci sono letti liberi; le porte chiuse li "
+        "cacciano tutti.",
+        f"Quando il cibo scarseggia (meno di {rules.scarce_food_months} mesi) o non c'è lavoro libero, il popolo "
+        "mormora contro i nuovi venuti: più ne arrivano insieme rispetto alla popolazione, più forte mormora. "
+        "Con cibo e lavoro per tutti nessuno mormora.",
+    ]
 
 
 MONTHS_IT = ("gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre",

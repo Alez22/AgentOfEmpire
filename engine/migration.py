@@ -151,5 +151,7 @@ def resolve_arrivals(pool: BanditPool, states: dict[str, GameState], events: dic
         if not adults + children:
             continue
         grumble = _grumbling(state, config, rules, adults + children)
+        # Only whether the natives grumbled: the mood points stay hidden, as
+        # everywhere the council reads events (server/council/memory.py).
         events[key].append(Event("arrival", {"adults": adults, "children": children,
-                                             "from_raids": from_raids[key], "grumble": grumble}))
+                                             "from_raids": from_raids[key], "grumbled": grumble > 0}))

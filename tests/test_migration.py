@@ -186,7 +186,7 @@ def test_the_natives_grumble_only_in_scarcity(start_state, config):
     fed = copy.deepcopy(start_state)
     fed.food = PLENTY
     _, arrivals = _seek({"fed": fed}, config)
-    assert arrivals["fed"][0]["grumble"] == 0
+    assert not arrivals["fed"][0]["grumbled"]
     # Food between one and two months: it still draws people, but it is scarce.
     # Guards repel every party, so no raid eats into that food.
     scarce = copy.deepcopy(start_state)
@@ -194,7 +194,8 @@ def test_the_natives_grumble_only_in_scarcity(start_state, config):
     scarce.food = config.migration.scarce_food_months * food_needed(scarce, config) - 100
     mood = scarce.mood
     _, arrivals = _seek({"scarce": scarce}, config)
-    grumble = arrivals["scarce"][0]["grumble"]
+    assert arrivals["scarce"][0]["grumbled"]
+    grumble = 100 * arrivals["scarce"][0]["adults"] // scarce.population() * config.migration.grumble_per_pct
     assert grumble > 0 and scarce.mood == mood - grumble
 
 
@@ -204,7 +205,7 @@ def test_the_arrival_is_public():
 
 def test_the_chronicle_tells_an_arrival():
     from server.ui.labels import event_label
-    text = event_label("arrival", {"adults": 3, "children": 1, "from_raids": 2, "grumble": 4})
+    text = event_label("arrival", {"adults": 3, "children": 1, "from_raids": 2, "grumbled": True})
     assert text.startswith("Sono arrivati a stabilirsi 3 adulti e 1 bambini, di cui 2 briganti")
     assert "mormorano" in text
-    assert "mormorano" not in event_label("arrival", {"adults": 2, "children": 0, "from_raids": 0, "grumble": 0})
+    assert "mormorano" not in event_label("arrival", {"adults": 2, "children": 0, "from_raids": 0, "grumbled": False})

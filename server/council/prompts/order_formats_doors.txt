@@ -1,0 +1,2 @@
+The doors (the Gastaldo's order, only with a finished watchtower; without it the realm is at normal):
+- {{"action": "set_doors", "doors": "closed" | "normal" | "open"}}   who of the wanderers may settle: closed nobody (it holds only with at least {closed_min_guards} guards, with fewer the doors count as normal); normal as many as the empty jobs, never beyond the free beds; open up to the free beds, beyond the jobs too
