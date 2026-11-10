@@ -55,6 +55,8 @@ EVENT_VISIBILITY = {
     # them); a raid is public like unrest. The pool's size is never shown.
     "flight": "court",
     "raid": "public",
+    # Stage 2: newcomers settling are seen by everybody, like a raid.
+    "arrival": "public",
 }
 
 

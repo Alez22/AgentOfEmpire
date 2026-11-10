@@ -249,6 +249,20 @@ class BanditsConfig:
 
 
 @dataclass(frozen=True)
+class MigrationConfig:
+    """Village block B+C, stage 2 (docs/DESIGN.md, "The doors and acceptance";
+    values from lab/village_migration.py, 2026-11-10). Needs [bandits]: the
+    newcomers come from the bandits' pool."""
+    seek_pct: int  # share of the pool's adults (and children) looking for a home each month
+    min_food_months: int  # a realm with less food than this many months of eating draws nobody
+    keep_normal_pct: int  # share of the raiders the guards stopped who stay, normal doors
+    keep_open_pct: int  # the same, open doors (closed doors: none)
+    closed_min_guards: int  # closed doors hold only with this many guards; with fewer they count as normal
+    scarce_food_months: int  # the natives grumble at arrivals with less food than this, or no empty job
+    grumble_per_pct: int  # peasants' mood lost per 1 % of the population arrived, in scarcity
+
+
+@dataclass(frozen=True)
 class LevelsConfig:
     """Output per worker by land level: {"poor": 14, "fair": 15, "rich": 16}."""
     food: dict[str, int]
@@ -278,6 +292,8 @@ class Config:
     classes: dict[str, ClassConfig] | None = None
     # Village block B+C; None for games saved before: no bandits, no militia.
     bandits: BanditsConfig | None = None
+    # Village block B+C, stage 2; None for games saved before: no doors, nobody arrives.
+    migration: MigrationConfig | None = None
 
 
 def load_raw_config(path: Path = DEFAULT_CONFIG_PATH) -> dict:
@@ -319,4 +335,5 @@ def config_from_dict(raw: dict) -> Config:
         classes=({name: ClassConfig(**values) for name, values in raw["classes"].items()}
                  if "classes" in raw else None),
         bandits=BanditsConfig(**raw["bandits"]) if "bandits" in raw else None,
+        migration=MigrationConfig(**raw["migration"]) if "migration" in raw else None,
     )

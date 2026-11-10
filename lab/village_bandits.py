@@ -125,7 +125,8 @@ def lab_config(rules):
                            jobs=0, output_per_worker=0, sector="", housing=0, hex_steps=[])
     # A lab stand-in for the reserved place near the gate: the palace's reserve.
     territory.KIND_PURPOSES["watchtower"] = ("reserve",)
-    return dataclasses.replace(base, buildings={**base.buildings, "watchtower": tower})
+    # Stage 1 only: without [migration] nobody settles (lab/village_migration.py has stage 2).
+    return dataclasses.replace(base, buildings={**base.buildings, "watchtower": tower}, migration=None)
 
 
 def _has(state, kind, finished=True):

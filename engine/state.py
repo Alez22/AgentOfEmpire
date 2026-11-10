@@ -127,6 +127,10 @@ class GameState:
     # person, [adults, children]. 0 for games saved before.
     militia: int = 0
     flight_acc: list[int] = field(default_factory=lambda: [0, 0])
+    # Village block B+C, stage 2: the doors the Gastaldo keeps (set_doors):
+    # "closed", "normal" or "open". "normal" without a watchtower and in games
+    # saved before.
+    doors: str = "normal"
 
     def has_map(self) -> bool:
         return bool(self.terrain)

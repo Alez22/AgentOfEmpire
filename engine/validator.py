@@ -18,6 +18,7 @@ from engine.orders import (
     FellForestOrder,
     HoldFeastOrder,
     Order,
+    SetDoorsOrder,
     SetMerchantTaxOrder,
     SetMilitiaOrder,
     SetRationOrder,
@@ -191,6 +192,7 @@ def _apply_demolish(state: GameState, order: DemolishOrder, config: Config) -> O
     state.buildings.remove(building)
     if building.kind == "watchtower":
         state.militia = 0  # no militia without the watchtower (village block B+C)
+        state.doors = "normal"  # nor doors (stage 2)
     return OrderResult(order, True)
 
 
@@ -237,6 +239,17 @@ def _apply_militia(state: GameState, order: SetMilitiaOrder) -> OrderResult:
     return OrderResult(order, True)
 
 
+def _apply_doors(state: GameState, order: SetDoorsOrder, config: Config) -> OrderResult:
+    """@brief The Gastaldo's doors: only with a finished watchtower; without it
+    a realm stays at "normal" (docs/DESIGN.md, "The doors and acceptance")."""
+    if config.migration is None:
+        return _reject(order, "NO_MIGRATION", "this game has no doors")
+    if not any(b.kind == "watchtower" and b.turns_left == 0 for b in state.buildings):
+        return _reject(order, "NO_WATCHTOWER", "no doors without a finished watchtower")
+    state.doors = order.doors
+    return OrderResult(order, True)
+
+
 def _apply_feast(state: GameState, order: HoldFeastOrder) -> OrderResult:
     if state.gold < order.gold:
         return _reject(order, "INSUFFICIENT_RESOURCES", f"only {state.gold} gold")
@@ -253,7 +266,8 @@ def _apply_ration(state: GameState, order: SetRationOrder) -> OrderResult:
 
 
 def _apply_policy(
-    state: GameState, order: SetTaxOrder | SetRationOrder | SetMerchantTaxOrder | SetMilitiaOrder, config: Config,
+    state: GameState, order: SetTaxOrder | SetRationOrder | SetMerchantTaxOrder | SetMilitiaOrder | SetDoorsOrder,
+    config: Config,
     policies_set: set[str],
 ) -> OrderResult:
     if order.action in policies_set:
@@ -264,6 +278,8 @@ def _apply_policy(
         result = _apply_merchant_tax(state, order, config)
     elif isinstance(order, SetMilitiaOrder):
         result = _apply_militia(state, order)
+    elif isinstance(order, SetDoorsOrder):
+        result = _apply_doors(state, order, config)
     else:
         result = _apply_ration(state, order)
     if result.accepted:

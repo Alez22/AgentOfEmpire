@@ -227,6 +227,18 @@ guard_weight_pct = 10
 max_guard_weight_pct = 80
 gastaldo_salary = 2  # as a moderate counsellor of the catalogue (server/council/personas.toml)
 
+# The doors and acceptance (village block B+C, stage 2; docs/DESIGN.md, "The
+# doors and acceptance"; values from lab/village_migration.py, 2026-11-10).
+# Needs [bandits]. Without this section (games saved before) nobody arrives.
+[migration]
+seek_pct = 10  # of the pool, a month
+min_food_months = 1  # lab: 2 months blocked almost every seeker
+keep_normal_pct = 25
+keep_open_pct = 50  # lab: 90 flooded open realms with 20-47 raiders, the grumbling toppled 3 of 6
+closed_min_guards = 2
+scarce_food_months = 2
+grumble_per_pct = 4  # lab: 10 toppled the open realms with a bigger stream
+
 # Output per worker by land level; it replaces output_per_worker for realms
 # on a site with levels. Fair equals the buildings' values above.
 [levels]

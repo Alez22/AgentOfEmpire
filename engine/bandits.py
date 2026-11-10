@@ -19,13 +19,15 @@ The world step, after resolve_month (engine/market.py), in this order:
    people; the food they lack, a natural decline (more in winter) and an
    accumulator make the pool shrink; children grow up.
 
-Not here yet (stage 2): the doors, acceptance, raids turned into immigration.
+4. Stage 2, with a [migration] section: raids turned into immigration,
+   acceptance and the natives' grumbling (engine/migration.py).
 """
 
 import random
 from dataclasses import asdict, dataclass
 
 from engine.config import BanditsConfig, Config
+from engine.migration import resolve_arrivals
 from engine.state import Event, GameState
 from engine.turn import TurnResult, _rescale_workers
 
@@ -150,7 +152,7 @@ def _pool_month(pool: BanditPool, config: Config, month_of_year: int) -> None:
 def resolve_world(pool: BanditPool | None, results: dict[str, TurnResult], config: Config,
                   turn: int) -> BanditPool | None:
     """@brief The world step of a month, after resolve_month: flight, raids,
-    the pool's month. Changes the realms' new states and appends their events.
+    the pool's month, then the arrivals (stage 2). Changes the realms' new states and appends their events.
     @param pool The pool at the start of the month (None: a game without bandits).
     @param results {realm key: TurnResult} of resolve_month, in the realms' fixed order.
     @param turn The month just resolved (1 = January of the first year).
@@ -166,4 +168,6 @@ def resolve_world(pool: BanditPool | None, results: dict[str, TurnResult], confi
         _flee(state, rules, pool, events[key])
     _raids(playing, events, rules, pool, turn)
     _pool_month(pool, config, (turn - 1) % 12 + 1)
+    if config.migration is not None:
+        resolve_arrivals(pool, playing, events, config)
     return pool

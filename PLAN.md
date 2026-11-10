@@ -160,7 +160,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] After B4 (decided 2026-11-10): the Gastaldo speaks in the debate on the plan, after the Architect
 - [ ] Village block B+C, stage 2: the doors and acceptance (`docs/DESIGN.md`, "The doors and acceptance", spec approved 2026-11-10)
   - [x] S1. Lab (8 realms, 24 months): values and spirals (`lab/village_migration.py`); values tuned, no inflow from outside (decided 2026-11-10)
-  - [ ] S2. Engine
+  - [x] S2. Engine (2026-11-10): `[migration]`, `engine/migration.py` run by `resolve_world` after the pool's month, `set_doors` (needs a finished watchtower; demolition resets to normal), `GameState.doors` (snapshot format 6), public `arrival` event with an Italian chronicle line; same states as the lab's tuned acceptance, also with a lab inflow of 6; replays 27, 29, 31 unchanged; the two village labs run without `[migration]`
   - [ ] S3. Council
   - [ ] S4. UI after a mockup
   - [ ] S5. Game with three automatic realms

@@ -189,6 +189,17 @@ def event_label(kind: str, data: dict) -> str:
     if kind == "raid":
         return (f"Una banda di {data.get('raiders')} briganti ha portato via {data.get('food')} cibo "
                 f"e {data.get('wood')} legno.")
+    if kind == "arrival":
+        # Village block B+C, stage 2: newcomers from the woods (engine/migration.py).
+        text = f"Sono arrivati a stabilirsi {data.get('adults')} adulti"
+        if data.get("children"):
+            text += f" e {data['children']} bambini"
+        if data.get("from_raids"):
+            text += f", di cui {data['from_raids']} briganti fermati alle porte"
+        text += "."
+        if data.get("grumble"):
+            text += " Con le scorte scarse, i contadini mormorano contro i nuovi venuti."
+        return text
     if kind == "salaries_unpaid":
         return f"L'oro non bastava: i consiglieri non hanno ricevuto il salario ({data.get('salaries')} oro)."
     return f"{kind}: {data}"

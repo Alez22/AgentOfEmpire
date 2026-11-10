@@ -60,6 +60,13 @@ class SetMilitiaOrder(BaseOrder):
     guards: int = Field(ge=0)
 
 
+class SetDoorsOrder(BaseOrder):
+    """The Gastaldo's doors (village block B+C, stage 2): who of the bandits'
+    pool may settle. Only with a finished watchtower."""
+    action: Literal["set_doors"]
+    doors: Literal["closed", "normal", "open"]
+
+
 class HoldFeastOrder(BaseOrder):
     action: Literal["hold_feast"]
     gold: int = Field(gt=0)
@@ -115,7 +122,7 @@ class TradeOrder(BaseOrder):
 Order = Annotated[
     BuildOrder | AssignWorkersOrder | SetTaxOrder | SetRationOrder | HoldFeastOrder
     | SetZonesOrder | DemolishOrder | ClaimTilesOrder | FellForestOrder | TradeOrder
-    | SetMerchantTaxOrder | SetMilitiaOrder,
+    | SetMerchantTaxOrder | SetMilitiaOrder | SetDoorsOrder,
     Field(discriminator="action"),
 ]
 
