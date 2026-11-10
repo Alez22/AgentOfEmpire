@@ -4,7 +4,7 @@ one or two sentences, agreeing or objecting; the plan does not change,
 the sovereign decides.
 
 One debate per plan (per council round). Cost: one model call per
-minister (two today), about $0.001-0.002 and 10-30 seconds.
+minister (two, three once the Gastaldo sits), about $0.001-0.003 and 10-30 seconds.
 """
 
 from typing import Literal
@@ -14,7 +14,6 @@ from pydantic import BaseModel
 
 from server.council.memory import order_text
 from server.council.meeting import (
-    MINISTERS,
     ROLE_TITLES,
     AlreadyApprovedError,
     CouncilError,
@@ -31,6 +30,7 @@ from server.council.meeting import (
     name_of,
     person_block,
     render_prompt,
+    ministers_of,
 )
 from server.council import manual
 from server.council.personality import describe_traits
@@ -105,7 +105,7 @@ def hold_debate(conn: psycopg.Connection, realm_id: int, client, settings) -> No
     round_number = _rounds_held(ctx)
     messages = _latest_round_messages(ctx)
     comments: list[str] = []
-    for role in MINISTERS:
+    for role in ministers_of(ctx):  # the Gastaldo too once it sits
         actor = ctx.actors.get(role)
         if actor is None:
             continue

@@ -166,3 +166,16 @@ def test_the_government_page_shows_the_gate_and_the_chronicle_the_raid(db, datab
         assert 'action="/ui/realms/%d/government/gastaldo"' % realm_id in page
         chronicle = ui.get(f"/ui/realms/{realm_id}/chronicle").text
         assert 'class="event-alert raid"' in chronicle and "Assalto" in chronicle
+
+
+def test_the_gastaldo_speaks_in_the_debate(db, settings):
+    """Village block B+C: the Gastaldo comments on the plan after the Architect."""
+    from server.council import debate
+    _, realm_id = _realm(db)
+    _give_watchtower(db, realm_id)
+    meeting.hold_meeting(db, realm_id, FakeClient(), settings)
+    client = FakeClient()
+    debate.hold_debate(db, realm_id, client, settings)
+    assert _roles_called(client) == ["treasurer", "architect", "gastaldo"]
+    assert "You are the Gastaldo" in client.calls[-1]["system"]
+    assert "## Already said in this debate" in client.calls[-1]["user"]
