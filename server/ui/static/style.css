@@ -231,3 +231,11 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
 .event-alert.raid { background: #2A1E1C; border: 1px solid #5A3530; } .event-alert.raid .word { color: #E8907A; }
 .event-alert.repelled { background: #1E2A26; border: 1px solid #355247; } .event-alert.repelled .word { color: #9CCB8A; }
 .event-alert.flight { background: #2E2718; border: 1px solid #5A4A26; } .event-alert.flight .word { color: #E8C778; }
+.event-alert.arrival { background: #1E2430; border: 1px solid #3A4A66; } .event-alert.arrival .word { color: #A9BEDC; }
+/* The doors on the Gastaldo's card (stage 2); "not-held": closed doors without enough guards. */
+.doors-box { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: #1E2430; border: 1px solid #3A4A66; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; }
+.doors-box .label { font-size: 12px; color: var(--muted); }
+.doors-box .word { font-size: 20px; font-weight: 600; text-transform: capitalize; }
+.doors-box .meaning { font-size: 13px; color: #A9BEDC; text-align: right; max-width: 190px; }
+.doors-box.not-held { background: #2E2718; border-color: #5A4A26; } .doors-box.not-held .meaning { color: #E8C778; }
+.stat.wide { grid-column: span 2; }

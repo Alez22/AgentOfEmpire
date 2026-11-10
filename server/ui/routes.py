@@ -21,6 +21,7 @@ from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
+from engine import migration
 from engine.config import load_raw_config
 from engine.territory import owned_count
 from engine.turn import food_needed, housing_capacity, jobs_in_sector, season_of
@@ -273,6 +274,35 @@ def _government_page(realm_id: int, error: str = "") -> RedirectResponse:
     return RedirectResponse(url, status_code=303)
 
 
+# Months of arrivals on the kingdom page (village block B+C, stage 2): a year,
+# long enough to see whether the houses fill with newcomers.
+NEWCOMERS_MONTHS = 12
+
+
+def _arrivals(conn: psycopg.Connection, game_id: int, realm_id: int, now_turn: int, months: int) -> dict:
+    """@brief Newcomers of the last months, from the events the sovereign may see:
+    {"adults", "children", "from_raids"} summed."""
+    total = {"adults": 0, "children": 0, "from_raids": 0}
+    for turn in range(max(1, now_turn - months), now_turn):
+        for event in games.list_events_for_sovereign(conn, game_id, realm_id, turn):
+            if event["realm_id"] == realm_id and event["kind"] == "arrival":
+                for key in total:
+                    total[key] += event["data"].get(key, 0)
+    return total
+
+
+def _doors_card(conn: psycopg.Connection, game_id: int, realm_id: int, state, config) -> dict | None:
+    """@brief The doors on the Gastaldo's card (stage 2); None in games without them."""
+    if config.migration is None:
+        return None
+    in_force = migration.doors_in_force(state, config.migration)
+    return {"doors": in_force, "word": labels.DOORS[in_force], "hint": labels.DOORS_HINTS[in_force],
+            "not_held": state.doors == "closed" and in_force != "closed",
+            "min_guards": config.migration.closed_min_guards,
+            "free_beds": migration.free_beds(state, config), "empty_jobs": migration.empty_jobs(state, config),
+            "arrived": _arrivals(conn, game_id, realm_id, state.turn, GATE_MEMORY_TURNS)}
+
+
 def _gate_card(conn: psycopg.Connection, realm_id: int) -> dict:
     """@brief The Gastaldo's card on the government page (village block B+C):
     the guards, the raiders they stop, the last raid and the flights of the
@@ -292,7 +322,8 @@ def _gate_card(conn: psycopg.Connection, realm_id: int) -> dict:
             break
     repel = config.bandits.repel_per_guard if config.bandits else 0
     return {"guards": state.militia, "stops": state.militia * repel, "last_raid": last_raid,
-            "flights": flights, "months": GATE_MEMORY_TURNS}
+            "flights": flights, "months": GATE_MEMORY_TURNS,
+            "doors": _doors_card(conn, game_id, realm_id, state, config)}
 
 
 def _government_context(request: Request, conn: psycopg.Connection, realm_id: int) -> dict:
@@ -381,6 +412,12 @@ def kingdom_page(request: Request, realm_id: int, conn=Depends(_connection)):
         "buildings": buildings,
         # On the map the free space is the land, not a count of free tiles.
         "land": ({"owned": owned_count(state), "wild": len(state.clearing_queue)} if state.has_map() else None),
+        # Stage 2: the doors among the laws (normal before the watchtower too) and the year's newcomers.
+        "doors": (labels.DOORS[migration.doors_in_force(state, config.migration)]
+                  if config.migration is not None else None),
+        "newcomers": (_arrivals(conn, game_id, realm_id, state.turn, NEWCOMERS_MONTHS)
+                      if config.migration is not None else None),
+        "newcomers_months": NEWCOMERS_MONTHS,
         "nav": "kingdom",
         "realm_id": realm_id,
     }

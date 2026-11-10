@@ -12,13 +12,25 @@
   </div>
   {% if office.role == "gastaldo" and gate %}
   <h3>La porta e la guardia</h3>
+  {% set doors = gate.doors %}
+  {% if doors %}
+  <div class="doors-box{% if doors.not_held %} not-held{% endif %}">
+    <div><div class="label">Le porte</div><div class="word">{{ doors.word }}</div></div>
+    <div class="meaning">{% if doors.not_held %}ordinate chiuse, ma con meno di {{ doors.min_guards }} guardie contano come normali{% else %}{{ doors.hint }}{% endif %}</div>
+  </div>
+  {% endif %}
   <div class="stats two">
     <div class="stat"><div class="label">Di guardia</div><div class="value">{{ gate.guards }} <small>uomini</small></div></div>
     <div class="stat"><div class="label">Fermano</div><div class="value">{{ gate.stops }} <small>briganti</small></div></div>
     <div class="stat"><div class="label">Ultimo assalto</div><div class="value">{{ gate.last_raid or "nessuno" }}</div></div>
     <div class="stat"><div class="label">Fughe in {{ gate.months }} mesi</div><div class="value">{{ gate.flights or "nessuna" }}</div></div>
+    {% if doors %}
+    <div class="stat"><div class="label">Letti liberi</div><div class="value">{{ doors.free_beds }}</div></div>
+    <div class="stat"><div class="label">Lavori vuoti</div><div class="value">{{ doors.empty_jobs }}</div></div>
+    <div class="stat wide"><div class="label">Arrivati in {{ gate.months }} mesi</div><div class="value">{% if doors.arrived.adults or doors.arrived.children %}{{ doors.arrived.adults }} adulti{% if doors.arrived.children %}, {{ doors.arrived.children }} bambini{% endif %}{% if doors.arrived.from_raids %} <small>· {{ doors.arrived.from_raids }} erano briganti fermati</small>{% endif %}{% else %}nessuno{% endif %}</div></div>
+    {% endif %}
   </div>
-  <p class="hint">Le guardie non lavorano: ognuna è un contadino in meno. La milizia la propone il Gastaldo nel consiglio.</p>
+  <p class="hint">Le guardie non lavorano: ognuna è un contadino in meno. {% if doors %}Milizia e porte le propone{% else %}La milizia la propone{% endif %} il Gastaldo nel consiglio.</p>
   {% endif %}
   <h3>Mandato in vigore</h3>
   {% if office.mandate %}

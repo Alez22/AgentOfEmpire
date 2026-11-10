@@ -25,6 +25,7 @@
     <tr><th>Adulti</th><td>{{ state.adults }}</td></tr>
     <tr><th>Anziani</th><td>{{ state.elders }}</td></tr>
     <tr><th>Alloggi</th><td>{{ state.children + state.adults + state.elders }} / {{ housing }}</td></tr>
+    {% if newcomers and (newcomers.adults or newcomers.children) %}<tr><th>Nuovi venuti in {{ newcomers_months }} mesi</th><td>{{ newcomers.adults }} adulti{% if newcomers.children %}, {{ newcomers.children }} bambini{% endif %}</td></tr>{% endif %}
     <tr><th>Malcontento</th><td>{{ labels.UNREST.get(state.unrest, state.unrest) }}</td></tr>
     {% if state.classes and state.classes.merchants %}<tr><th>Malcontento dei mercanti</th><td>{{ labels.UNREST.get(state.classes.merchants.unrest, state.classes.merchants.unrest) }}</td></tr>{% endif %}
   </table>
@@ -55,6 +56,7 @@
     {% endif %}
     <tr><th>Tasse</th><td>{{ state.tax_rate }}%</td></tr>
     <tr><th>Razione</th><td>{{ labels.RATIONS.get(state.ration, state.ration) }}</td></tr>
+    {% if doors %}<tr><th>Porte</th><td>{{ doors }}</td></tr>{% endif %}
   </table>
 </section>
 {% endblock %}

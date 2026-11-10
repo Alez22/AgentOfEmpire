@@ -226,3 +226,52 @@ def test_doors_already_in_force_are_dropped_from_the_plan(config):
     state = new_game(config, seed=1)
     assert meeting._changes_nothing(state, {"action": "set_doors", "doors": "normal"})
     assert not meeting._changes_nothing(state, {"action": "set_doors", "doors": "open"})
+
+
+def test_the_pages_show_the_doors_and_the_arrivals(db, database_url, settings):
+    """Stage 2, step 4: the doors on the Gastaldo's card and among the laws,
+    the arrivals in the chronicle and on the kingdom page."""
+    from fastapi.testclient import TestClient
+    from server.app import create_app
+    _, realm_id = _realm(db)
+    with TestClient(create_app(database_url, settings, FakeClient())) as ui:
+        kingdom = ui.get(f"/ui/realms/{realm_id}/kingdom").text
+        assert "<th>Porte</th><td>normali</td>" in kingdom  # before the watchtower too
+        assert "Nuovi venuti" not in kingdom  # nobody came yet
+    _give_watchtower(db, realm_id)
+    meeting.hold_meeting(db, realm_id, FakeClient(), settings)
+    game_id = db.execute("SELECT game_id FROM realms WHERE id = %s", (realm_id,)).fetchone()[0]
+    db.execute("INSERT INTO events (game_id, realm_id, turn, kind, data, visibility) VALUES (%s, %s, 1, 'arrival', %s, 'public')",
+               (game_id, realm_id, Jsonb({"adults": 5, "children": 1, "from_raids": 4, "grumbled": False})))
+    # Closed doors with one guard: they count as normal.
+    db.execute("UPDATE snapshots SET turn = 2, state = state || '{\"turn\": 2, \"doors\": \"closed\", \"militia\": 1}'"
+               " WHERE realm_id = %s", (realm_id,))
+    with TestClient(create_app(database_url, settings, FakeClient())) as ui:
+        page = ui.get(f"/ui/realms/{realm_id}/government").text
+        assert 'class="doors-box not-held"' in page and "contano come normali" in page
+        assert "Letti liberi" in page and "5 adulti, 1 bambini" in page and "4 erano briganti fermati" in page
+        chronicle = ui.get(f"/ui/realms/{realm_id}/chronicle").text
+        assert 'class="event-alert arrival"' in chronicle and "Sono arrivati a stabilirsi 5 adulti" in chronicle
+        kingdom = ui.get(f"/ui/realms/{realm_id}/kingdom").text
+        assert "<th>Nuovi venuti in 12 mesi</th><td>5 adulti, 1 bambini</td>" in kingdom
+        assert "<th>Porte</th><td>normali</td>" in kingdom
+    db.execute("UPDATE snapshots SET state = state || '{\"doors\": \"open\"}' WHERE realm_id = %s", (realm_id,))
+    with TestClient(create_app(database_url, settings, FakeClient())) as ui:
+        page = ui.get(f"/ui/realms/{realm_id}/government").text
+        assert 'class="doors-box"' in page and "anche senza lavoro" in page
+        assert "<th>Porte</th><td>aperte</td>" in ui.get(f"/ui/realms/{realm_id}/kingdom").text
+
+
+def test_a_game_before_stage_two_shows_no_doors(db, database_url, settings):
+    from fastapi.testclient import TestClient
+    from server.app import create_app
+    raw = load_raw_config()
+    del raw["migration"]
+    game_id = create_game(db, raw, seed=3, realm_names=["Nord"], council_models=COUNCIL)
+    realm_id = db.execute("SELECT id FROM realms WHERE game_id = %s", (game_id,)).fetchone()[0]
+    _give_watchtower(db, realm_id)
+    meeting.hold_meeting(db, realm_id, FakeClient(), settings)
+    with TestClient(create_app(database_url, settings, FakeClient())) as ui:
+        page = ui.get(f"/ui/realms/{realm_id}/government").text
+        assert "La porta e la guardia" in page and "doors-box" not in page and "Letti liberi" not in page
+        assert "<th>Porte</th>" not in ui.get(f"/ui/realms/{realm_id}/kingdom").text
