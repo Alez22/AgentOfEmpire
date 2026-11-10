@@ -1316,7 +1316,7 @@ Stage 1 of "Travellers, bandits and migration" (Part 1): flight, the bandits' po
 
 ## The doors and acceptance (village block B+C, stage 2, spec approved 2026-11-10)
 
-Stage 2 of "Travellers, bandits and migration" (Part 1, "Migration and the doors"): people of the bandits' pool become citizens. Values in brackets come from a lab before the engine. Every new rule hangs on a config section `[migration]`: a game saved before replays unchanged. The travellers and the news from outside stay out (decided 2026-11-10).
+Stage 2 of "Travellers, bandits and migration" (Part 1, "Migration and the doors"): people of the bandits' pool become citizens. Values in brackets come from a lab before the engine. Every new rule hangs on a config section `[migration]`: a game saved before replays unchanged. The travellers and the news from outside stay out (decided 2026-11-10). No steady inflow of wanderers from outside: the pool is the start pool plus flight, as in stage 1 (decided 2026-11-10 after the lab: stage 2 stays a small effect, about 1 arrival a realm a year, mostly stopped raiders). Values tuned by the lab (`lab/village_migration.py`, PLAN "Lab: the doors and acceptance").
 
 **The doors** (a policy of the Gastaldo, like the ration)
 
@@ -1327,16 +1327,16 @@ Stage 2 of "Travellers, bandits and migration" (Part 1, "Migration and the doors
 **Acceptance** (in the world step, after the raids)
 
 - Every month [10 %] of the pool's adults, and the same share of its children, look for a home.
-- They are shared among the realms by **attraction**: only a realm with the mood above the unrest threshold, food for at least [2] months and free beds draws anybody; with open doors a hungry or angry realm still draws nobody.
+- They are shared among the realms by **attraction**: only a realm with the mood above the unrest threshold, food for at least [1] month (the lab: 2 months blocked almost every seeker) and free beds draws anybody; with open doors a hungry or angry realm still draws nobody.
 - How many a realm takes, by its doors: closed none; normal at most the smaller of free beds and empty jobs; open up to the free beds, beyond the jobs too (a bet on growth). Deterministic shares with the seeded generator, as the raids.
 
 **A raid turned into immigration**
 
-- The raiders the guards stop (2 a guard) are driven off or taken in, by the doors: closed all driven off; normal [a quarter] stays; open [almost all]. Never beyond the free beds; the others go back to the woods.
+- The raiders the guards stop (2 a guard) are driven off or taken in, by the doors: closed all driven off; normal [25 %] stays; open [50 %] (the lab: almost all flooded the open realms with 20-47 raiders and toppled them by grumbling). Never beyond the free beds; the others go back to the woods.
 
 **Arrival**: as **peasants**, free adults for the Architect from the next month; children as children. They leave the pool: fewer bandits for everyone.
 
-**The natives' grumbling**: when food or jobs are scarce and many arrive together, a mood malus on the peasants in proportion to the arrivals against the population; none when there is enough for all.
+**The natives' grumbling**: when food or jobs are scarce and many arrive together, a mood malus on the peasants in proportion to the arrivals against the population ([4] mood for every 1 % arrived; the lab: 10 toppled 3 of 6 open realms); none when there is enough for all. Scarcity: food for less than [2] months or no empty jobs.
 
 **Events**: `arrival` (adults, children, how many from a raid), public. The Voice tells arrivals and grumbling.
 

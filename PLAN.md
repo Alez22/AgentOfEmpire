@@ -159,7 +159,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] B5. Game with three automatic realms
   - [x] After B4 (decided 2026-11-10): the Gastaldo speaks in the debate on the plan, after the Architect
 - [ ] Village block B+C, stage 2: the doors and acceptance (`docs/DESIGN.md`, "The doors and acceptance", spec approved 2026-11-10)
-  - [ ] S1. Lab (8 realms, 24 months): values and spirals
+  - [x] S1. Lab (8 realms, 24 months): values and spirals (`lab/village_migration.py`); values tuned, no inflow from outside (decided 2026-11-10)
   - [ ] S2. Engine
   - [ ] S3. Council
   - [ ] S4. UI after a mockup
@@ -926,6 +926,7 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 4. **Tuned values**: seek 10 % of the pool a month; a realm draws people with 1 month of food (not 2); stopped raiders kept 25 % at normal, 50 % at open (not 90); grumbling 4 mood a 1 % arrived, only in scarcity; closed doors need 2 guards. With them, no realm falls beyond the crisis ones at inflow 0 and 2; open realms grow 60 -> 80-95 adults against 74 closed, with 0-56 mood of grumbling; a fragile open realm (poor wood) protests.
 5. **No spiral**: a rich realm does not absorb the others' people (the crisis realms fall by revolt long before their flight counts); closed doors with 4 guards are the safe choice, open doors a bet on growth.
 6. **The stream decides whether stage 2 matters**: inflow 0 (today's world) 6-14 arrivals in 24 months; inflow 2 a month (for 8 realms) 29-52, raids 53 instead of 21 without watchtowers and no extra fall; inflow 4 without watchtowers 5 realms fall to raids.
+7. **Decided 2026-11-10: no inflow**, the world stays as it is (start pool plus flight); stage 2 stays a small effect. The tuned values of point 4 go into the DESIGN brackets.
 
 ### Game 31: block B+C (2026-11-09, 12 months)
 
