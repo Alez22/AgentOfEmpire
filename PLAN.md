@@ -928,6 +928,16 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 6. **The stream decides whether stage 2 matters**: inflow 0 (today's world) 6-14 arrivals in 24 months; inflow 2 a month (for 8 realms) 29-52, raids 53 instead of 21 without watchtowers and no extra fall; inflow 4 without watchtowers 5 realms fall to raids.
 7. **Decided 2026-11-10: no inflow**, the world stays as it is (start pool plus flight); stage 2 stays a small effect. The tuned values of point 4 go into the DESIGN brackets.
 
+### Lab: the people of a fallen realm (2026-11-11, after game 34)
+
+`lab/village_fallen.py`: 8 realms, 30 months, the real engine with stages 1 and 2 and the policy of `lab/village_migration.py`; realms 1-2 in crisis (tax 25 %) fall at month 8. On top, the month a realm falls, a share of its adults (half that share of its children, 25 % of its food) joins the pool; or, as "refugees", first looks for a home with the engine's room and only the homeless go to the woods. Three worlds (no watchtowers; watchtowers with 2 guards; 4 guards with realms 3-5 open, 6-8 closed), pool seeds 0-2. Today: the six other realms go from 360 to about 470 adults, 8-15 arrivals in all.
+
+1. **25 % or more to the woods spirals**: 50 % and 75 % topple 6 of the 6 other realms in most runs without 4 guards each (pool peak 150-300, 100-260 raids); 25 % topples one more realm in 2 of 3 seeds without watchtowers.
+2. **10-15 % to the woods holds** in the worlds without and with 2 guards (no extra fall in 6 of 6 runs each): raids +50 % (17-31 against 11-20), arrivals about double (15-29, half of them stopped raiders where there are guards), growth almost none (+4 to +10 adults for six realms).
+3. **Refugees grow the neighbours but the lump topples the fragile one**: 30 of 37 settle at once (25 %), 67 of 77 (50 %); without watchtowers +25 to +55 adults for six realms with no extra fall at 25 %; with watchtowers realm 3 (fair food, poor wood) falls at month 19-20 in every run: the natives' grumbling for a mass arrival in scarcity (4 mood a 1 %) and the extra mouths.
+4. **Realm 3 is the fragile one** in the open-doors world even today (falls in 1 of 3 seeds with nobody joining the pool).
+5. **Reading**: the fallen realm's people make bandits matter at 10-15 %; as a growth engine they need to arrive slowly (or with a softer grumbling), not in one month.
+
 ### Lab: the village in three years (2026-11-11, after game 34)
 
 `lab/village_years.py`: each of the 8 sites alone for 36 months on the real engine (no market, bandits, arrivals or council), a careful fixed policy: ration by the food's months, the lowest tax that covers the costs, quarry and sawmill hands sized to the upkeep and the next winter's firewood, every other adult on the fields, a farm when the fields are full, a house when fewer than 10 beds are free. Then one lever at a time.
