@@ -1,6 +1,6 @@
 # AgentOfEmpire – Work plan
 
-Updated 2026-11-08.
+Updated 2026-11-11 (game 34, three years with studied choices: all three realms fell; see its notes and the new open decisions).
 
 The prototype is complete and playable from a phone, and the field test is closed. Phase 3 (accounts) is set aside: the game first needs richer dynamics. **Now: phase 4, the market**: the labs are done (`lab/market_sim.py`, `lab/market_closed.py`) and the spec "Market, needs and land levels" is approved (`docs/DESIGN.md`); next, the engine (step 1 built: needs, land levels, a site per realm; steps 2 and 3 built: the market, the `trade` order, market states in the database, game-level resolution and replay; step 4 built: the council trades through the Treasurer, the "Mercato" page; next step 5, a 12-month game with three realms), then a game with three realms. The territory step 1 is done (spec in `docs/DESIGN.md`, "Territory").
 
@@ -928,6 +928,20 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 6. **The stream decides whether stage 2 matters**: inflow 0 (today's world) 6-14 arrivals in 24 months; inflow 2 a month (for 8 realms) 29-52, raids 53 instead of 21 without watchtowers and no extra fall; inflow 4 without watchtowers 5 realms fall to raids.
 7. **Decided 2026-11-10: no inflow**, the world stays as it is (start pool plus flight); stage 2 stays a small effect. The tuned values of point 4 go into the DESIGN brackets.
 
+### Game 34: three years with studied choices (2026-11-10/11, ended at month 26)
+
+Seed 0 (realms 56-58). Claude as sovereign through a driver (my choices first, then the automatic sovereign R1-R11 for the rest; some months approved by hand). Stimuli: Aurelia "open doors" (tower early, doors open, later a golden age: tax 5, abundant ration), Brenna "the merchant" (buy food, sell wood), Corvara "the repentant tyrant" (tax 25 %, petitions refused, then a feast). 453 calls, $0.53 (cap raised to $3 for the game, back to $1). Replay matches. **All three fell**: Brenna month 11, Corvara month 18, Aurelia month 26.
+
+1. **Brenna fell (revolt, month 11)**, the third time in 8 games (27, 28, 34) for the same reason: the reduced ration from April, six petitions for the normal ration refused by R1/R2b ("the food would not reach spring"), effort -25 %, strike, revolt. In month 10 the people made no petition (exhausted), so my "grant" had nothing to grant, and R2b excluded the Treasurer's own normal ration; in month 11 the Chancellor raised the tax to 12 in the strike.
+2. **The repentant tyrant works**: one month at 25 % (mood -30), then in month 10 the normal ration and a feast of 100 gold paid with the tyranny's gold: protests to calm in one month (274 -> 393). Corvara then fell in the second winter: reduced ration, stone at 0, strike, famine in May-June (20 dead), revolt in June. Its April meeting was void (network outage, below).
+3. **Ministers undo the sovereign's directive the next month**: Aurelia's Gastaldo opened the doors in April and set them back to normal in May; Corvara's Treasurer brought the tax from 25 to 12 a month after "it stays there until I say otherwise"; Corvara's merchants' tax 30 % back to 10 the next month. Aurelia's Treasurer answered "obbedisco: la gabella scende al 5" with no `set_tax` in the plan. **Mandates held** (the doors stayed open from month 7 to the end). The sovereign sees none of this unless reading every order.
+4. **Stone upkeep short halves every building, farms included**: the hidden killer of Corvara and Aurelia (stone 0-4 for months, fields at half). In October of year 2 Aurelia's Architect proposed the cure (8 hands to the quarry: "il raccolto torna intero") and **R2 excluded it** (no farmers off the fields in autumn and winter). R2 does not know the stone.
+5. **My golden age was a blunder the game punished readably**: abundant ration in July with stone 13 against 15 of upkeep; the Architect warned in council; famine from August (9 %, 35 %, 16 %), mood 482 -> 185 in two months, while the square was happiest ("i bambini ridono al pozzo") the month the granary hit 0. The content band (mood above 550) was never reached in the whole game (max about 510).
+6. **Network outages pass the month with an empty council**: "Temporary failure in name resolution" (Corvara month 16, 15 calls) and "Network is unreachable" (Aurelia months 20-21): ministers "absent", plan empty, the month resolved anyway. Two of the three falls had a void month near the end.
+7. **Stage 2 seen for the first time**: a raid of 2 repelled at Aurelia's open doors in month 24, one raider stayed (grumbled). Arrivals in 26 months: 3 adults (Brenna 5, Corvara 12, Aurelia 24). Flights: about 10 adults in all. **A fallen realm sends nobody to the pool**: 103 people at Brenna's fall, 85 at Corvara's, vanish.
+8. **The court is alive**: Corvara's Treasurer bargained 25 -> 15 ("vi consiglio misura"); its Chancellor in audience: "la corda è già tesa... meglio un granaio pieno e un popolo che lavora che uno scrigno con dentro una rivolta"; Brenna's Treasurer: "le parlo da mugnaia, non da cortigiana". Several reports with English words ("however", "autosufficient") and broken words.
+9. **The second winter is the wall**: in March of year 2 Aurelia had 51 food and Corvara 12; nobody grew past 112 people (gate about 200). The start stock carries year 1; year 2 shows whether the realm feeds itself, and none did under these choices.
+
 ### Game 33: stage 2 with the accumulators (2026-11-10, 12 months)
 
 `lab/auto_game.py new 0 12`, seed 0 (realms 53-55: Aurelia, Brenna, Corvara). 242 calls, $0.29; 4 timeouts and 1 invalid reply, no server error. Replay matches.
@@ -1063,6 +1077,11 @@ A reading of `docs/DESIGN.md`, the notes of games 1–33 and the pages of game 3
 | Archives opened at game end (review 2026-11-10) | phase 4 | the mood curve, the lessons and the secret notes shown to the sovereign when the game ends; the admin view already holds them |
 | A 12-month game played by hand (review 2026-11-10) | before the town | by the user on the current build, noting the minutes per turn and when it gets boring |
 | The counsellors' Italian (review 2026-11-10) | with "Models per tier" | a better model for the text the sovereign reads; today's cost leaves room |
+| Orders reversed by a minister (game 34) | before a game played by hand | a minister undoes a sovereign's directive the next month, or says "obbedisco" with no order in the plan; options: show the sovereign when a plan reverses an order of the last months, flag "agreed in words, no order", or leave it to mandates and say so in the manual |
+| A void month on a network outage (game 34) | before a long game | when the ministers are absent for an HTTP error the month still resolves with an empty plan; options: pause the turn and retry, or keep it as "the council did not meet" |
+| R2 and the stone (game 34) | before the next automatic game | stone upkeep short halves the farms too, so moving farmers to the quarry raises the food; R2 excluded exactly that; options: an R2 exception when stone is short, or the briefing says the halving to the Treasurer |
+| A fallen realm's people (game 34) | with the bandits, stage 3 | today they vanish; part of them into the pool would fill small worlds' pools from the first fall (the spiral the design wants), to tune in the lab |
+| Village viability in year 2 (game 34) | before closing the village | the second winter emptied every granary; with the gate at about 200 people, no realm grew past 112 in 26 months; a lab with the real engine over 36 months before deciding (yields, stone upkeep, the start stock) |
 
 ## Decisions made (the main ones)
 
