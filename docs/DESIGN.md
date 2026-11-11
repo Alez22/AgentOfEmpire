@@ -1270,6 +1270,41 @@ The vision is in Part 1 ("The eras": every class is born from a building; "Trave
 5. UI: kingdom, market page, map sprite, labels. **Built 2026-11-09** after a mockup on the "Pagina Mercato" Design canvas (three artboards beside the approved page): the market page of a realm without its market shows no price, only what the market costs, who builds it, the site's months when it is under construction, and the realm's stores; with it, a "I mercanti" section after the prices (merchants and places, lots this month, the merchants' tax and what they paid last month, their public unrest as a chip, a banner on strike); on the map the market's two hexes in plum with a gold edge and the game-icons "shop" (delapouite, CC BY 3.0), in the legend and the detail card; the kingdom page lists the merchants and their unrest. **Two leaks closed in `server/sovereign_view.py`**: the sovereign's state carried the merchants' mood (now only their unrest) and the land levels (pre-existing, through `GET /state`).
 6. A 12-month game with three automatic realms.
 
+## Seasonal sovereign (spec to approve, 2026-11-11, after game 37)
+
+The engine stays monthly and the council meets every month; the sovereign plays four months a year and when something goes wrong. Why: a turn a day makes the village last over a real month, and most months say only "born 1, dead 0" (review 2026-11-10, "Pace"). Game 37 played it with a driver: calm seasons ran by themselves, but in the automatic months the people's petitions and the ministers undid the season's laws (Corvara's 10 % tax back to 7 % three times, Fosca's tax to 25 %, Brenna's normal ration granted a month before its famine). Decided by the user on 2026-11-11: **the season's laws stay locked until the next season; only the sovereign changes a law.**
+
+**A game setting**: `rhythm` chosen when the game is created, "monthly" (today, the default; every game saved before) or "seasonal". A column of `games` (migration 016); the new-game form and `POST /games` take it.
+
+**The sovereign's months** (seasonal games; one pure function, `server/sovereign/rhythm.py`, from the realm's state and last month's events):
+- **Season**: the first month of each season, January, April, July and October (turn 1 is one).
+- **Alarm**, any other month, when last month brought:
+  - a famine (every month it happens: it kills);
+  - a raid the guards did not repel;
+  - the unrest one step higher (protests, then strike; revolt ends the game);
+  - the first flight of a stretch (a month with flight after a month without).
+- Why not every flight: in game 37 flight came every month from the protests on and called the sovereign every month; the first one brings the news, the next ones repeat what the unrest step already says. Why not a refused order or a petition: they no longer exist in automatic months (below).
+
+**An automatic month** (every other month), through the automatic sovereign (`server/sovereign/auto.py`, "Automatic sovereign, first version"), started in the background as soon as the month opens, like the meetings today:
+1. The council meets as usual, under the mandates.
+2. **R12 locked laws**: every plan item that changes a law is excluded, with its reason ("Legge della stagione: la decide il sovrano (R12)"). The laws are the four the reversal line already tracks: the people's tax, the merchants' tax, the ration, the doors. Workers, buildings, claims, trades, the militia and feasts stay to the council and the other rules (R2-R11), as today.
+3. **No petition**: the people's model still chooses effort and births, but a petition is dropped, as an impossible one is today: no answer, so no mood lost. The people's prompt is told the crown sits only at the start of a season. Petitions come back in the sovereign's months.
+4. The plan is approved by the rules; the month is ready to resolve.
+
+**The sovereign's month** is today's turn, with one more box on the turn page, "Dalla tua ultima udienza": for each automatic month since the sovereign last played, one line with the rules' decisions (the `sovereign` messages already stored) and the month's loud events (raids, arrivals, buildings finished, unrest), each linked to that month's council page. An alarm month says why at the top ("Allarme: carestia a marzo").
+
+**Edge cases**
+- A law the season needs to change, e.g. the granary runs out in the second month on the normal ration: the famine is an alarm and the sovereign plays the next month. One month of hunger is the price of the season's choice (gameplay over optimization).
+- Conditional mandates ("reduced ration below one month of food") no longer act in automatic months, since the Treasurer's ration order is excluded. The mandates page says that in seasonal games the laws wait for the sovereign.
+- A realm that falls: no more months of any kind.
+- The month resolves as today (the button or `POST /games/{id}/turns/resolve`); automatic realms are ready at once.
+
+**Cost**: the same model calls as a monthly game (the council meets every month). What changes is the sovereign's time: game 37 had 53 sovereign months out of 144 (39 seasons and 14 alarms); with the alarms above, about the same in calm and fewer in a crisis.
+
+**Tests** (fake client): which months are the sovereign's (seasons, each alarm, the second flight of a stretch is not one); R12 excludes the four laws and keeps the rest; a petition in an automatic month is dropped with no mood change; a monthly game is unchanged; the turn page box.
+
+**Order of work** (one commit each): the rhythm function and the setting (migration); R12 and the dropped petition in the automatic months; the background run of automatic months; the turn page box; then a game of six realms with the seasonal sovereign.
+
 ## Bandits, the watchtower, the Gastaldo and the militia (village block B+C, spec approved 2026-11-09)
 
 Stage 1 of "Travellers, bandits and migration" (Part 1): flight, the bandits' pool, raids, the watchtower, the Gastaldo and the militia. The doors and acceptance (stage 2) wait for this block's multi-realm lab on spirals; travellers and the Gastaldo's news from outside come with the travellers. Values in brackets come from the lab before the engine. Every new rule hangs on a config section `[bandits]`: a game saved before replays unchanged.
