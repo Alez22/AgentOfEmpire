@@ -295,7 +295,7 @@ adult_to_elder_permille = 4
 [mood]
 base = 500
 approach_pct = 25
-ration_reduced = -150
+ration_reduced = -100  # was -150: with any tax above 5 % six reduced months were a revolt (lab/second_winter.py, 2026-11-11)
 ration_abundant = 100
 tax_free_rate = 5
 tax_per_point = -10

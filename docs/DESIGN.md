@@ -591,7 +591,7 @@ Target mood = 500 ‰ + sum of modifiers; the real mood moves 25 % of the distan
 
 | Modifier | Value |
 | --- | --- |
-| Reduced / abundant ration | −150 / +100 |
+| Reduced / abundant ration | −100 (−150 until 2026-11-11, lab "the second winter") / +100 |
 | Taxes | −10 per point above 5 % (10 % = −50, 30 % = −250) |
 | Hunger | −6 per point % of missing food, at most −400 |
 | Food reserve over 3 months | +50 |
