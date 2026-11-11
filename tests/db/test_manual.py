@@ -80,3 +80,10 @@ def test_manual_page_in_italian(database_url, settings):
         assert "L'oro compra anche cibo, legno e pietra al mercato" in page
         assert "Mercato" in page and "Legna e pietra" in page
         assert "Manuale" in ui.get(f"/ui/realms/{realm_id}").text  # the tab
+
+
+def test_the_manual_tells_a_fallen_realms_people_take_to_the_woods():
+    config = load_config()
+    assert "When a realm falls, about 10% of its adults" in manual.prompt_text(config)
+    silent = replace(config, bandits=replace(config.bandits, fallen_adult_pct=0))
+    assert "When a realm falls" not in manual.prompt_text(silent)

@@ -143,6 +143,30 @@ def test_a_fallen_realm_is_not_raided(start_state, config):
     assert not results["1"].events
 
 
+def test_part_of_a_fallen_realm_takes_to_the_woods(start_state, config):
+    """Game 34: the people of a fallen realm vanished; now part of them join the pool."""
+    from dataclasses import replace
+    from engine.state import Event
+    rules = config.bandits
+    start_state.game_over = "revolt"
+    adults, children, food = start_state.adults, start_state.children, start_state.food
+    results = {"1": TurnResult(start_state, [], [Event("game_over", {"reason": "revolt"})])}
+    pool = resolve_world(BanditPool(seed=1, adults=0), results, config, 5)
+    fled = adults * rules.fallen_adult_pct // 100
+    assert fled > 0
+    assert pool.adults == fled
+    assert pool.children == children * rules.fallen_child_pct // 100
+    assert pool.food == food * rules.fallen_food_pct // 100
+    assert start_state.adults == adults - fled
+    assert _kinds(results["1"], "flight") == [{"adults": fled, "children": pool.children, "merchants": 0}]
+    # Games saved before the rule have no shares: nobody leaves.
+    old = replace(config, bandits=replace(rules, fallen_adult_pct=0, fallen_child_pct=0, fallen_food_pct=0))
+    again = copy.deepcopy(start_state)
+    results = {"1": TurnResult(again, [], [Event("game_over", {"reason": "revolt"})])}
+    assert resolve_world(BanditPool(seed=1, adults=0), results, old, 5).adults == 0
+    assert not _kinds(results["1"], "flight")
+
+
 # ---- the pool's month -------------------------------------------------------------
 
 def test_a_hungry_pool_shrinks_faster_than_a_fed_one(config):

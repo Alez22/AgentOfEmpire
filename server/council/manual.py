@@ -157,6 +157,10 @@ def _bandits_lines(config: Config) -> list[str]:
         "Guards are adults taken from work before the Architect assigns the others, and they produce nothing. "
         f"The Gastaldo's salary is {rules.gastaldo_salary} gold a month.",
     ]
+    if rules.fallen_adult_pct:
+        lines.insert(2, f"- When a realm falls, about {rules.fallen_adult_pct}% of its adults and "
+                        f"{rules.fallen_child_pct}% of its children take to the woods with part of its granary: "
+                        "a neighbour's fall brings bandits to everyone.")
     if config.migration is not None:
         lines += _arrivals_lines(config)
     return lines
@@ -361,6 +365,10 @@ def _bandits_section(config: Config) -> dict:
         "riducono il bottino. Le guardie sono adulti tolti al lavoro prima che l'Architetta assegni gli altri, e "
         f"non producono nulla. Il Gastaldo costa {rules.gastaldo_salary} oro al mese di salario.",
     ]
+    if rules.fallen_adult_pct:
+        notes.insert(1, f"Quando un regno cade, circa il {rules.fallen_adult_pct}% dei suoi adulti e il "
+                        f"{rules.fallen_child_pct}% dei bambini prende la via dei boschi con parte del granaio: "
+                        "la caduta di un vicino porta briganti a tutti.")
     if config.migration is None:
         return {"title": "Briganti", "entries": [], "notes": notes}
     return {"title": "Briganti e arrivi", "entries": [], "notes": notes + _arrivals_notes(config)}

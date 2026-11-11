@@ -1101,9 +1101,10 @@ A reading of `docs/DESIGN.md`, the notes of games 1–33 and the pages of game 3
 | A 12-month game played by hand (review 2026-11-10) | before the town | by the user on the current build, noting the minutes per turn and when it gets boring |
 | The counsellors' Italian (review 2026-11-10) | with "Models per tier" | a better model for the text the sovereign reads; today's cost leaves room |
 | Orders reversed by a minister (game 34) | before a game played by hand | a minister undoes a sovereign's directive the next month, or says "obbedisco" with no order in the plan; options: show the sovereign when a plan reverses an order of the last months, flag "agreed in words, no order", or leave it to mandates and say so in the manual |
-| A fallen realm's people (game 34) | with the bandits, stage 3 | today they vanish; part of them into the pool would fill small worlds' pools from the first fall (the spiral the design wants), to tune in the lab |
 
 ## Decisions made (the main ones)
+
+- **A fallen realm's people (2026-11-11, built):** the month a realm falls, 10 % of its adults and 5 % of its children take to the woods with 25 % of its food (lab "the people of a fallen realm": 25 % or more spiralled). Slow refugees as a growth engine left to stage 3.
 
 - **The gate of the town (2026-11-11):** a low population minimum [about 120] and the other conditions (a winter without hunger, the market, no revolt, the rare resources): good government, not a headcount (`docs/DESIGN.md`, "The eras"; lab "the village in three years"). Arrivals from fallen realms as the growth engine on top (spec to approve); births +50 % with food yields +1 kept as an option.
 

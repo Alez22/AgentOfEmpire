@@ -246,6 +246,12 @@ class BanditsConfig:
     guard_weight_pct: int  # each guard makes the realm this much less attractive
     max_guard_weight_pct: int
     gastaldo_salary: int  # gold a month, added to the council's salaries when the watchtower is finished
+    # The month a realm falls, these shares of its people and food join the
+    # pool (lab/village_fallen.py, 2026-11-11: 25 % or more spiralled).
+    # 0 in games saved before: they replay unchanged.
+    fallen_adult_pct: int = 0
+    fallen_child_pct: int = 0
+    fallen_food_pct: int = 0
 
 
 @dataclass(frozen=True)

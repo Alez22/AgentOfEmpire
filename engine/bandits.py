@@ -21,6 +21,9 @@ The world step, after resolve_month (engine/market.py), in this order:
 
 4. Stage 2, with a [migration] section: raids turned into immigration,
    acceptance and the natives' grumbling (engine/migration.py).
+5. A realm that fell this month sends fallen_adult_pct of its adults,
+   fallen_child_pct of its children and fallen_food_pct of its food to the
+   pool; they act from the next month.
 """
 
 import random
@@ -95,6 +98,30 @@ def _flee(state: GameState, rules: BanditsConfig, pool: BanditPool, events: list
     _rescale_workers(state, events)
 
 
+def _fallen_to_the_woods(results: dict[str, TurnResult], rules: BanditsConfig, pool: BanditPool) -> None:
+    """@brief The realms that fell this month (their `game_over` event): part
+    of their people take to the woods with part of the granary.
+    Why: game 34, two fallen realms (103 and 85 people) simply vanished and the
+    pool stayed empty; a neighbour's fall should become everyone's problem."""
+    for result in results.values():
+        state = result.state
+        if not any(event.kind == "game_over" for event in result.events):
+            continue
+        adults = state.adults * rules.fallen_adult_pct // 100
+        children = state.children * rules.fallen_child_pct // 100
+        food = state.food * rules.fallen_food_pct // 100
+        if not adults + children + food:
+            continue
+        state.adults -= adults
+        state.children -= children
+        state.food -= food
+        pool.adults += adults
+        pool.children += children
+        pool.food += food
+        result.events.append(Event("flight", {"adults": adults, "children": children, "merchants": 0}))
+        _rescale_workers(state, result.events)
+
+
 def _weight(state: GameState, rules: BanditsConfig) -> int:
     """@brief How much a realm draws the raiders: what lies exposed, less for its guards."""
     shield_pct = min(rules.max_guard_weight_pct, state.guards() * rules.guard_weight_pct)
@@ -155,7 +182,8 @@ def _pool_month(pool: BanditPool, config: Config, month_of_year: int) -> None:
 def resolve_world(pool: BanditPool | None, results: dict[str, TurnResult], config: Config,
                   turn: int) -> BanditPool | None:
     """@brief The world step of a month, after resolve_month: flight, raids,
-    the pool's month, then the arrivals (stage 2). Changes the realms' new states and appends their events.
+    the pool's month, the arrivals (stage 2), then the people of the realms
+    that fell this month. Changes the realms' new states and appends their events.
     @param pool The pool at the start of the month (None: a game without bandits).
     @param results {realm key: TurnResult} of resolve_month, in the realms' fixed order.
     @param turn The month just resolved (1 = January of the first year).
@@ -173,4 +201,5 @@ def resolve_world(pool: BanditPool | None, results: dict[str, TurnResult], confi
     _pool_month(pool, config, (turn - 1) % 12 + 1)
     if config.migration is not None:
         resolve_arrivals(pool, playing, events, config)
+    _fallen_to_the_woods(results, rules, pool)
     return pool

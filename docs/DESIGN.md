@@ -1277,6 +1277,7 @@ Stage 1 of "Travellers, bandits and migration" (Part 1): flight, the bandits' po
 - After [3] months of deep discontent (peasants: mood below [300]; merchants: below their own threshold) a small share of the class leaves every month: [2 %] of its adults and [1 %] of the realm's children (peasants only: the merchants' children are not counted apart). Elders stay. Integer shares with an accumulator, as births, so a small realm loses someone too.
 - Fugitives leave the realm and join the **bandits' pool**; a merchant who flees is a merchant less (`Workers.trade` down, the market's lots down).
 - Flight comes before revolt: discontent costs something long before the game is lost.
+- **A fallen realm** (decided and built 2026-11-11, after game 34, where two fallen realms of 103 and 85 people simply vanished): the month it falls, [10 %] of its adults and [5 %] of its children join the pool with [25 %] of its food (the pool's food); elders stay; they act from the next month (the last step of `resolve_world`, a `flight` event in the fallen realm). Lab `lab/village_fallen.py`: 25 % toppled a neighbour in 2 of 3 runs without watchtowers, 50 % the whole world; 10 % adds about half the raids and doubles the arrivals with no extra fall. Not a growth engine: slow refugees who seek a home without raiding are left to stage 3. `[bandits] fallen_*_pct`, 0 in games saved before (they replay unchanged). The manual tells it in both languages.
 
 **The pool** (a world state, like the market's warehouse and the land fund)
 

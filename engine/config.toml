@@ -226,6 +226,12 @@ repel_per_guard = 2  # lab: 4 guards repel half the raids or more; 2 cut the loo
 guard_weight_pct = 10
 max_guard_weight_pct = 80
 gastaldo_salary = 2  # as a moderate counsellor of the catalogue (server/council/personas.toml)
+# The month a realm falls, part of its people go to the woods (lab
+# village_fallen, 2026-11-11: 25 % toppled a neighbour in 2 of 3 runs, 50 %
+# the whole world; 10 % doubles the arrivals and adds half the raids).
+fallen_adult_pct = 10
+fallen_child_pct = 5
+fallen_food_pct = 25  # carried away: the pool's food
 
 # The doors and acceptance (village block B+C, stage 2; docs/DESIGN.md, "The
 # doors and acceptance"; values from lab/village_migration.py, 2026-11-10).
