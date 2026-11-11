@@ -12,6 +12,8 @@
 # taxes at 8%, the treasury kept about 4 gold a month and land was out of reach.
 # Small test set (2026-11-07): 2 moderate + 2 extreme per role; a third
 # moderate per role on 2026-11-08, for games of three realms.
+# Five more moderates per role on 2026-11-11, for games of up to eight
+# realms (the draw needs one free moderate per realm and role).
 
 # ------------------------------------------------------------ treasurers
 
@@ -47,6 +49,61 @@ traits = { prudence = 540, loyalty = 560, ambition = 500, honesty = 560, compete
 tier = "medium"
 salary = 2
 resume = "Ha portato i conti di una compagnia di mulattieri tra le valli. Sa quanto vale una soma al passo e quanto al borgo."
+
+[[persona]]
+id = "ottone"
+role = "treasurer"
+name = "Ottone Marchi"
+gender = "m"
+group = "moderate"
+traits = { prudence = 620, loyalty = 580, ambition = 420, honesty = 620, competence = 520 }
+tier = "medium"
+salary = 2
+resume = "Ha tenuto la cassa di una confraternita per vent'anni senza un ammanco. Annota tutto, anche il prezzo di una candela."
+
+[[persona]]
+id = "letizia"
+role = "treasurer"
+name = "Letizia Corsi"
+gender = "f"
+group = "moderate"
+traits = { prudence = 500, loyalty = 560, ambition = 520, honesty = 580, competence = 560 }
+tier = "medium"
+salary = 2
+resume = "Moglie di un mercante di sale, ne ha portato i conti quando lui era in viaggio. Sa che il prezzo di oggi non è quello di domani."
+
+[[persona]]
+id = "rinaldo"
+role = "treasurer"
+name = "Rinaldo Pace"
+gender = "m"
+group = "moderate"
+traits = { prudence = 560, loyalty = 600, ambition = 460, honesty = 540, competence = 540 }
+tier = "medium"
+salary = 2
+resume = "Esattore delle decime per l'abbazia, conosce le scuse di ogni famiglia che non paga. Preferisce chiedere poco a tutti che molto a pochi."
+
+[[persona]]
+id = "cecilia"
+role = "treasurer"
+name = "Cecilia Bardi"
+gender = "f"
+group = "moderate"
+traits = { prudence = 470, loyalty = 540, ambition = 580, honesty = 560, competence = 580 }
+tier = "medium"
+salary = 2
+resume = "Cresciuta tra i banchi del cambio, ha lasciato la città per un borgo più quieto. Pensa che l'oro fermo in cassa sia oro sprecato."
+
+[[persona]]
+id = "baldovino"
+role = "treasurer"
+name = "Baldovino Tosi"
+gender = "m"
+group = "moderate"
+traits = { prudence = 640, loyalty = 600, ambition = 440, honesty = 600, competence = 500 }
+tier = "medium"
+salary = 2
+resume = "Fattore di un grande podere, ha imparato a contare i sacchi prima delle monete. Tiene sempre una scorta per l'anno cattivo."
 
 [[persona]]
 id = "lapo"
@@ -106,6 +163,61 @@ salary = 2
 resume = "Ha guidato i muratori del ponte vecchio e ne va fiero. Preferisce un lavoro fatto presto a uno fatto perfetto."
 
 [[persona]]
+id = "corrado"
+role = "architect"
+name = "Corrado Pieri"
+gender = "m"
+group = "moderate"
+traits = { prudence = 560, loyalty = 560, ambition = 460, honesty = 580, competence = 560 }
+tier = "medium"
+salary = 2
+resume = "Carpentiere navale sceso dalla costa, sa fare molto con poco legno. Odia gli sprechi più delle chiacchiere."
+
+[[persona]]
+id = "margherita"
+role = "architect"
+name = "Margherita Sala"
+gender = "f"
+group = "moderate"
+traits = { prudence = 540, loyalty = 620, ambition = 440, honesty = 620, competence = 520 }
+tier = "medium"
+salary = 2
+resume = "Ha ridisegnato le case del borgo vicino dopo l'incendio. Vuole un tetto per ogni famiglia prima delle opere grandi."
+
+[[persona]]
+id = "arnolfo"
+role = "architect"
+name = "Arnolfo Neri"
+gender = "m"
+group = "moderate"
+traits = { prudence = 600, loyalty = 560, ambition = 460, honesty = 580, competence = 540 }
+tier = "medium"
+salary = 2
+resume = "Cavatore per molti anni, conosce la fatica di ogni blocco di pietra. Costruisce in pietra quando può, e lo ricorda spesso."
+
+[[persona]]
+id = "adelasia"
+role = "architect"
+name = "Adelasia Porro"
+gender = "f"
+group = "moderate"
+traits = { prudence = 520, loyalty = 560, ambition = 540, honesty = 560, competence = 580 }
+tier = "medium"
+salary = 2
+resume = "Ha diretto i lavori di un mulino e di un ponte per i conti del fiume. Pianifica le stagioni come altri pianificano i giorni."
+
+[[persona]]
+id = "tancredi"
+role = "architect"
+name = "Tancredi Mori"
+gender = "m"
+group = "moderate"
+traits = { prudence = 460, loyalty = 540, ambition = 580, honesty = 560, competence = 560 }
+tier = "medium"
+salary = 2
+resume = "Mastro d'ascia girovago, ha lavorato in mezza valle prima di fermarsi. Impaziente con chi rimanda, rispettoso con chi lavora."
+
+[[persona]]
 id = "isotta"
 role = "architect"
 name = "Isotta Brunelli"
@@ -161,6 +273,61 @@ traits = { prudence = 500, loyalty = 580, ambition = 520, honesty = 560, compete
 tier = "medium"
 salary = 2
 resume = "Segretaria del vescovo per molti anni, conosce le parole che calmano e quelle che dividono. Tiene a mente ogni promessa fatta."
+
+[[persona]]
+id = "eleonora"
+role = "chancellor"
+name = "Eleonora Dati"
+gender = "f"
+group = "moderate"
+traits = { prudence = 540, loyalty = 600, ambition = 460, honesty = 620, competence = 560 }
+tier = "medium"
+salary = 2
+resume = "Istitutrice dei figli di un conte, sa spiegare una scelta difficile in parole semplici. Crede che un ordine capito valga due ordini imposti."
+
+[[persona]]
+id = "gherardo"
+role = "chancellor"
+name = "Gherardo Villani"
+gender = "m"
+group = "moderate"
+traits = { prudence = 600, loyalty = 600, ambition = 420, honesty = 580, competence = 540 }
+tier = "medium"
+salary = 2
+resume = "Cancelliere di una piccola pieve, ha visto tre carestie e le loro liti. Pesa le parole come il grano."
+
+[[persona]]
+id = "francesca"
+role = "chancellor"
+name = "Francesca Salvi"
+gender = "f"
+group = "moderate"
+traits = { prudence = 500, loyalty = 560, ambition = 520, honesty = 560, competence = 580 }
+tier = "medium"
+salary = 2
+resume = "Figlia di un oste, ha imparato ad ascoltare chi beve e chi governa. Sa che una voce di piazza corre più veloce di un bando."
+
+[[persona]]
+id = "aldobrando"
+role = "chancellor"
+name = "Aldobrando Feo"
+gender = "m"
+group = "moderate"
+traits = { prudence = 520, loyalty = 580, ambition = 500, honesty = 560, competence = 560 }
+tier = "medium"
+salary = 2
+resume = "Messo di un vescovo, ha passato più tempo in sella che a casa. Cerca sempre la via di mezzo, anche quando non c'è."
+
+[[persona]]
+id = "giovanna"
+role = "chancellor"
+name = "Giovanna Orsi"
+gender = "f"
+group = "moderate"
+traits = { prudence = 580, loyalty = 620, ambition = 440, honesty = 600, competence = 540 }
+tier = "medium"
+salary = 2
+resume = "Ha tenuto i registri del tribunale del contado. Vuole che ogni decisione abbia una ragione scritta e un nome accanto."
 
 [[persona]]
 id = "ottaviano"
@@ -222,3 +389,58 @@ traits = { prudence = 500, loyalty = 540, ambition = 540, honesty = 520, compete
 tier = "medium"
 salary = 2
 resume = "Figlio di un boscaiolo, conosce i sentieri dove si nascondono i fuggiaschi. Ne ha riportati alcuni a casa, altri li ha visti diventare briganti."
+
+[[persona]]
+id = "manfredi"
+role = "gastaldo"
+name = "Manfredi Gatti"
+gender = "m"
+group = "moderate"
+traits = { prudence = 580, loyalty = 560, ambition = 480, honesty = 560, competence = 560 }
+tier = "medium"
+salary = 2
+resume = "Già balestriere di un comune di pianura, sa quanti uomini servono a tenere una porta. Non ama le ronde inutili."
+
+[[persona]]
+id = "sibilla"
+role = "gastaldo"
+name = "Sibilla Rossi"
+gender = "f"
+group = "moderate"
+traits = { prudence = 520, loyalty = 600, ambition = 460, honesty = 600, competence = 540 }
+tier = "medium"
+salary = 2
+resume = "Cresciuta in un mulino sulla strada dei mercanti, ha imparato presto a riconoscere i viandanti onesti. Apre a chi lavora, chiude a chi guarda i granai."
+
+[[persona]]
+id = "ildebrando"
+role = "gastaldo"
+name = "Ildebrando Cava"
+gender = "m"
+group = "moderate"
+traits = { prudence = 500, loyalty = 560, ambition = 520, honesty = 540, competence = 560 }
+tier = "medium"
+salary = 2
+resume = "Cacciatore di lupi sulle colline, conosce i boschi meglio delle strade. Dice che un brigante affamato è più pericoloso di uno sazio."
+
+[[persona]]
+id = "gemma"
+role = "gastaldo"
+name = "Gemma Ferrante"
+gender = "f"
+group = "moderate"
+traits = { prudence = 560, loyalty = 580, ambition = 500, honesty = 580, competence = 540 }
+tier = "medium"
+salary = 2
+resume = "Ha guidato le guardie di una fiera per molte stagioni. Sa che i ladri arrivano dove la merce si vede."
+
+[[persona]]
+id = "berengario"
+role = "gastaldo"
+name = "Berengario Monti"
+gender = "m"
+group = "moderate"
+traits = { prudence = 640, loyalty = 620, ambition = 420, honesty = 580, competence = 500 }
+tier = "medium"
+salary = 2
+resume = "Vecchio sergente tornato al borgo natale, parla poco e osserva molto. Preferisce una guardia in più a un sacco in meno."

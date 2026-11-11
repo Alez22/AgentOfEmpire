@@ -88,7 +88,8 @@ def test_a_gastaldo_of_the_catalogue_in_a_game_with_persons(db, settings):
     meeting.hold_meeting(db, realm_id, FakeClient(), settings)
     model, personality = db.execute("SELECT model, personality FROM actors WHERE realm_id = %s AND role = 'gastaldo'",
                                     (realm_id,)).fetchone()
-    assert personality["persona"] in ("guidalberto", "ermengarda", "lanfranco")
+    moderates = {p["id"] for p in persons.load_catalog() if p["role"] == "gastaldo" and p["group"] == "moderate"}
+    assert personality["persona"] in moderates
     assert model == settings.model_tiers[personality["tier"]]
 
 
