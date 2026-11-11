@@ -121,6 +121,7 @@ def create_game(
     council_models: dict[str, str],
     personas: list[dict] | None = None,
     model_tiers: dict[str, str] | None = None,
+    rhythm: str = "monthly",
 ) -> int:
     """@brief Create a game with its realms, councils, turn 1 and first snapshots.
     @param conn Connection in autocommit mode.
@@ -136,13 +137,15 @@ def create_game(
            and salary; other roles (Voice, people) still use council_models.
     @param model_tiers Tier -> model id ([model_tiers] in council.toml);
            required with personas. The tier is kept with the person.
+    @param rhythm "monthly" or "seasonal": when the sovereign plays
+           (server/sovereign/rhythm.py); the database checks the value.
     @return The new game id.
     """
     config = config_from_dict(raw_config)  # fail before writing anything
     with conn.transaction():
         game_id = conn.execute(
-            "INSERT INTO games (seed, config, engine_version) VALUES (%s, %s, %s) RETURNING id",
-            (seed, Jsonb(raw_config), ENGINE_VERSION),
+            "INSERT INTO games (seed, config, engine_version, rhythm) VALUES (%s, %s, %s, %s) RETURNING id",
+            (seed, Jsonb(raw_config), ENGINE_VERSION, rhythm),
         ).fetchone()[0]
         taken: set[str] = set()
         for index, name in enumerate(realm_names):
@@ -285,7 +288,7 @@ def realm_game_id(conn: psycopg.Connection, realm_id: int) -> int | None:
 def load_game(conn: psycopg.Connection, game_id: int) -> dict | None:
     """@brief Game header, its open turn (None if finished) and its realms."""
     row = conn.execute(
-        "SELECT id, seed, status::text, engine_version, created_at FROM games WHERE id = %s",
+        "SELECT id, seed, status::text, engine_version, created_at, rhythm FROM games WHERE id = %s",
         (game_id,),
     ).fetchone()
     if row is None:
@@ -302,6 +305,7 @@ def load_game(conn: psycopg.Connection, game_id: int) -> dict | None:
         "status": row[2],
         "engine_version": row[3],
         "created_at": row[4],
+        "rhythm": row[5],
         "open_turn": open_turn[0] if open_turn else None,
         "realms": [{"id": r[0], "name": r[1], "player_id": r[2]} for r in realms],
     }

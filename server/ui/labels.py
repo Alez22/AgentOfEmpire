@@ -75,6 +75,12 @@ def month_name(turn: int) -> str:
     return MONTHS[(turn - 1) % 12]
 
 
+def at_month(turn: int) -> str:
+    """@brief "a marzo", "ad aprile": Italian adds a d before a vowel."""
+    name = month_name(turn)
+    return ("ad " if name[0] in "aeiou" else "a ") + name
+
+
 def order_label(order: dict) -> str:
     """@brief 'Costruire una fattoria', 'Tasse al 12%', ..."""
     action = order.get("action")

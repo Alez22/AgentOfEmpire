@@ -2,6 +2,9 @@
    itself every 2 s (HTMX); the first panel without "running" stops. #}
 <div id="government"
   {% if running %}hx-get="/ui/realms/{{ realm_id }}/government/panel" hx-trigger="every 2s" hx-swap="outerHTML"{% endif %}>
+{% if seasonal %}
+<p class="hint">Partita a stagioni: nei mesi automatici gabelle, razione e porte restano come le hai lasciate, anche se un mandato chiede di cambiarle. I mandati guidano il resto: braccia, cantieri, commerci, guardie.</p>
+{% endif %}
 {% for office in offices %}
 {% set who = labels.ROLES[office.role] %}
 <section class="card" style="border-top: 3px solid {{ who.color }}">

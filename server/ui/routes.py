@@ -28,6 +28,7 @@ from engine.turn import food_needed, housing_capacity, jobs_in_sector, season_of
 from server.council import audience, debate, mandates, manual, meeting, people, persons
 from server.council.briefing import GATE_MEMORY_TURNS, months_until_winter
 from server.db import games
+from server.sovereign import auto, rhythm
 from server.sovereign_view import sovereign_state
 from server.ui import labels, map_view, market_view, reversals
 
@@ -79,12 +80,14 @@ def games_page(request: Request, conn=Depends(_connection)):
 
 
 @router.post("/ui/games")
-def create_game(request: Request, realm_name: str = Form("Nord"), conn=Depends(_connection)):
+def create_game(request: Request, realm_name: str = Form("Nord"), game_rhythm: str = Form("monthly"),
+                conn=Depends(_connection)):
     settings = request.app.state.council_settings
     seed = secrets.randbelow(1_000_000)  # a new world each time
     name = realm_name.strip()[:40] or "Nord"
+    chosen = game_rhythm if game_rhythm in ("monthly", "seasonal") else "monthly"
     game_id = games.create_game(conn, load_raw_config(), seed, [name], settings.models,
-                                personas=persons.load_catalog(), model_tiers=settings.model_tiers)
+                                personas=persons.load_catalog(), model_tiers=settings.model_tiers, rhythm=chosen)
     realm_id = games.load_game(conn, game_id)["realms"][0]["id"]
     return _turn_page(realm_id)
 
@@ -97,10 +100,11 @@ def _council_context(request: Request, conn: psycopg.Connection, realm_id: int, 
     context = {
         "realm_id": realm_id,
         # Only a council round counts here; a private audience has its own page.
-        "running": jobs.running_kind(realm_id) in ("meeting", "directive", "debate"),
+        # "auto": an automatic month of a seasonal game, played in the background.
+        "running": jobs.running_kind(realm_id) in ("meeting", "directive", "debate", "auto"),
         # A failed meeting or directive round; audience failures stay on their page.
         "job_error": (jobs.last_error(realm_id, "meeting") or jobs.last_error(realm_id, "directive")
-                      or jobs.last_error(realm_id, "debate")),
+                      or jobs.last_error(realm_id, "debate") or jobs.last_error(realm_id, "auto")),
         "open_turn": game["open_turn"],
         "council": None,
         "messages": [],
@@ -135,6 +139,58 @@ def _council_context(request: Request, conn: psycopg.Connection, realm_id: int, 
     return context
 
 
+QUIET_EVENTS = ("food_spoiled", "season_end", "demography", "worn")
+
+
+def _automatic_months(conn: psycopg.Connection, game_id: int, realm_id: int, turn: int) -> list[dict]:
+    """@brief The automatic months since the sovereign last played, oldest
+    first: the rules' decisions and the loud events of each. A month counts
+    as automatic when its automatic sovereign's message says so."""
+    months = []
+    for past in range(turn - 1, 0, -1):
+        sovereign = [m for m in meeting.list_messages(conn, realm_id, past) if m["kind"] == "sovereign"]
+        if not sovereign or not (sovereign[-1]["payload"] or {}).get("automatic"):
+            break
+        events = [e for e in games.list_events_for_sovereign(conn, game_id, realm_id, past)
+                  if e["realm_id"] == realm_id and e["kind"] not in QUIET_EVENTS]
+        months.append({"turn": past, "lines": sovereign[-1]["payload"].get("lines", []), "events": events})
+    return list(reversed(months))
+
+
+def _start_automatic_month(request: Request, realm_id: int) -> None:
+    """@brief A seasonal game's automatic month runs in the background as soon
+    as its page is seen (the resolve redirects here). Once only: a running job
+    holds the realm, and an approved plan stops it."""
+    jobs = request.app.state.council_jobs
+    if not jobs.reserve(realm_id, "auto"):
+        return
+    pool, client = request.app.state.pool, request.app.state.llm_client
+    settings = request.app.state.council_settings
+
+    def background() -> None:
+        with pool.connection() as conn:
+            auto.play_month(conn, realm_id, client, settings)
+
+    jobs.start(realm_id, background)
+
+
+def _rhythm_context(request: Request, conn: psycopg.Connection, game: dict, realm_id: int, state) -> dict:
+    """@brief What a seasonal game adds to the turn page; nothing for a monthly one."""
+    context = {"automatic": False, "sovereign_reason": None, "next_audience": None, "since_last": []}
+    if game["rhythm"] != "seasonal" or game["open_turn"] is None or state.game_over:
+        return context
+    turn = game["open_turn"]
+    reason = rhythm.sovereign_reason(conn, game["id"], realm_id, turn)
+    context["sovereign_reason"] = reason
+    context["automatic"] = reason is None
+    context["next_audience"] = labels.at_month(rhythm.next_season_start(turn))
+    if reason is not None:
+        context["since_last"] = _automatic_months(conn, game["id"], realm_id, turn)
+    elif not meeting.council_state(conn, realm_id, request.app.state.council_settings).approved:
+        _start_automatic_month(request, realm_id)
+    return context
+
+
 @router.get("/ui/realms/{realm_id}", response_class=HTMLResponse)
 def turn_page(request: Request, realm_id: int, error: str = "", conn=Depends(_connection)):
     game_id = games.realm_game_id(conn, realm_id)
@@ -155,6 +211,7 @@ def turn_page(request: Request, realm_id: int, error: str = "", conn=Depends(_co
         "error": error,
         "nav": "turn",
     }
+    context.update(_rhythm_context(request, conn, game, realm_id, state))
     context.update(_council_context(request, conn, realm_id, game))
     return templates.TemplateResponse(request, "turn.html", context)
 
@@ -339,6 +396,7 @@ def _government_context(request: Request, conn: psycopg.Connection, realm_id: in
         "offices": offices,
         "gate": _gate_card(conn, realm_id) if any(o["role"] == "gastaldo" for o in offices) else None,
         "watch_open": games.load_game_config(conn, game["id"]).bandits is not None,
+        "seasonal": game["rhythm"] == "seasonal",
         "names": games.role_names(conn, realm_id),
         "open_turn": game["open_turn"],
         "running": kind.startswith("mandate:"),

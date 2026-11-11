@@ -9,6 +9,11 @@
 
 {% if error %}<div class="banner error" role="alert">{{ error }}</div>{% endif %}
 {% if state.game_over %}<div class="banner end">{{ labels.GAME_OVER.get(state.game_over, state.game_over) }}</div>{% endif %}
+{% if automatic %}
+<div class="banner info">Mese automatico: il consiglio governa secondo i tuoi mandati e le leggi restano quelle che hai deciso. Torni a decidere {{ next_audience }}, o prima se accade qualcosa di grave.</div>
+{% elif sovereign_reason %}
+<div class="banner info">{{ sovereign_reason }}: decidi tu.</div>
+{% endif %}
 
 <section class="stats" aria-label="Il regno in breve">
   <div class="stat"><div class="label">Cibo</div><div class="value">{{ state.food }}</div></div>
@@ -18,6 +23,20 @@
   <div class="stat"><div class="label">Pietra</div><div class="value">{{ state.stone }}</div></div>
   <div class="stat"><div class="label">Abitanti</div><div class="value">{{ state.children + state.adults + state.elders }}</div></div>
 </section>
+
+{% if since_last %}
+<section class="card">
+  <h2>Dalla tua ultima udienza</h2>
+  {% for month in since_last %}
+  <h3>{{ labels.month_name(month.turn)|capitalize }}</h3>
+  <ul class="events">
+    {% for line in month.lines %}<li>{{ line }}</li>{% endfor %}
+    {% for e in month.events %}<li>{{ labels.event_label(e.kind, e.data) }}</li>{% endfor %}
+    {% if not month.lines and not month.events %}<li>Un mese tranquillo: il piano è passato com'era.</li>{% endif %}
+  </ul>
+  {% endfor %}
+</section>
+{% endif %}
 
 {% if last_month %}
 <section class="card">

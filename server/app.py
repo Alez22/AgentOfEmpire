@@ -15,6 +15,7 @@ from collections.abc import Iterator
 from pathlib import Path
 from contextlib import asynccontextmanager
 from dataclasses import asdict
+from typing import Literal
 
 import psycopg
 from fastapi import Depends, FastAPI, HTTPException, Request
@@ -30,7 +31,7 @@ from server.council.jobs import CouncilJobs
 from server.council.llm import FakeClient, OpenRouterClient
 from server.council.settings import CouncilSettings, load_settings
 from server.db import games
-from server.sovereign import auto
+from server.sovereign import auto, rhythm
 from server.sovereign_view import sovereign_state
 from server.admin.routes import router as admin_router
 from server.ui.routes import router as ui_router
@@ -57,6 +58,8 @@ class CreateGameRequest(BaseModel):
     # Role -> model. None = the models in server/council.toml. Each game keeps
     # the models it was created with, like it keeps its config copy.
     council_models: dict[str, str] | None = None
+    # When the sovereign plays (docs/DESIGN.md, "Seasonal sovereign").
+    rhythm: Literal["monthly", "seasonal"] = "monthly"
 
 
 def _make_llm_client(settings: CouncilSettings):
@@ -133,7 +136,7 @@ def _add_routes(app: FastAPI) -> None:
         catalog = None if body.council_models else persons.load_catalog()
         game_id = games.create_game(
             conn, load_raw_config(), body.seed, body.realm_names, council_models, personas=catalog,
-            model_tiers=request.app.state.council_settings.model_tiers,
+            model_tiers=request.app.state.council_settings.model_tiers, rhythm=body.rhythm,
         )
         return games.load_game(conn, game_id)
 
@@ -281,6 +284,17 @@ def _add_routes(app: FastAPI) -> None:
     def get_council(realm_id: int, turn: int, conn=Depends(_connection)):
         _require_realm_game(conn, realm_id)
         return meeting.list_messages(conn, realm_id, turn)
+
+    @app.get("/realms/{realm_id}/rhythm")
+    def get_rhythm(realm_id: int, conn=Depends(_connection)):
+        """Whose month this is: the sovereign's (with the reason) or automatic."""
+        game_id = _require_realm_game(conn, realm_id)
+        game = games.load_game(conn, game_id)
+        if game["open_turn"] is None:
+            raise HTTPException(409, "the game has no open turn")
+        reason = rhythm.sovereign_reason(conn, game_id, realm_id, game["open_turn"])
+        return {"rhythm": game["rhythm"], "turn": game["open_turn"], "automatic": reason is None,
+                "reason": reason}
 
     @app.post("/realms/{realm_id}/sovereign/auto")
     def play_automatic_month(realm_id: int, request: Request, conn=Depends(_connection)):

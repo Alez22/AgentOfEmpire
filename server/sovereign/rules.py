@@ -10,6 +10,7 @@ R6 tax cuts, R7 buy what runs short, R8 empty buildings, R9 feasts.
 R2b (after game 27): no richer ration when the food does not last.
 R10 (village block A, 2026-11-08): build the market, then staff it.
 R11 (village block B+C, 2026-11-09): build the watchtower after the first raid.
+R12 (seasonal sovereign, 2026-11-11): in an automatic month no law changes.
 """
 
 import copy
@@ -34,6 +35,10 @@ SELL_KEEP_LOTS = 2  # R5: and this many lots more
 GOLD_SHORT_MONTHS = 3  # R5: gold is short below this many months of costs
 MAX_SELL_LOTS = 4
 MERCHANTS_WANTED = 3  # R10: merchants asked for a new market (3 x 3 lots a month)
+# R12: the laws only the sovereign changes in a seasonal game (the same four
+# the reversal line tracks, server/ui/reversals.py).
+LAWS = ("set_tax", "set_merchant_tax", "set_ration", "set_doors")
+LOCKED_LAW = "è una legge della stagione, la cambia solo il sovrano (R12)"
 
 
 @dataclass
@@ -436,13 +441,21 @@ def _richer_ration(month: Month, item: Item, kept: list[Order]) -> str:
     return "con la razione più ricca il cibo non basta (R2b)"
 
 
-def exclusions(month: Month, items: list[Item], granted: dict | None) -> list[tuple[int, str]]:
+def exclusions(month: Month, items: list[Item], granted: dict | None,
+               laws_locked: bool = False) -> list[tuple[int, str]]:
     """@brief Plan items to leave out, with their reasons: (index, reason).
     Only items the engine check accepted; a granted petition runs first.
-    @param granted The granted petition's order, or None."""
+    @param granted The granted petition's order, or None.
+    @param laws_locked True in an automatic month of a seasonal game (R12):
+           every law item goes first, so the other rules weigh the plan
+           without it."""
     first = [parse_order(granted)[0]] if granted else []
     kept = [i for i in items if i.accepted and not (granted and i.raw.get("action") == granted.get("action"))]
     excluded: list[tuple[int, str]] = []
+    if laws_locked:
+        for item in [i for i in kept if i.raw.get("action") in LAWS]:
+            excluded.append((item.index, LOCKED_LAW))
+            kept.remove(item)
 
     def orders_without(item: Item) -> list[Order]:
         return first + [i.order for i in kept if i is not item]

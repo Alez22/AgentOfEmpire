@@ -1270,7 +1270,7 @@ The vision is in Part 1 ("The eras": every class is born from a building; "Trave
 5. UI: kingdom, market page, map sprite, labels. **Built 2026-11-09** after a mockup on the "Pagina Mercato" Design canvas (three artboards beside the approved page): the market page of a realm without its market shows no price, only what the market costs, who builds it, the site's months when it is under construction, and the realm's stores; with it, a "I mercanti" section after the prices (merchants and places, lots this month, the merchants' tax and what they paid last month, their public unrest as a chip, a banner on strike); on the map the market's two hexes in plum with a gold edge and the game-icons "shop" (delapouite, CC BY 3.0), in the legend and the detail card; the kingdom page lists the merchants and their unrest. **Two leaks closed in `server/sovereign_view.py`**: the sovereign's state carried the merchants' mood (now only their unrest) and the land levels (pre-existing, through `GET /state`).
 6. A 12-month game with three automatic realms.
 
-## Seasonal sovereign (spec to approve, 2026-11-11, after game 37)
+## Seasonal sovereign (spec approved and built 2026-11-11, after game 37)
 
 The engine stays monthly and the council meets every month; the sovereign plays four months a year and when something goes wrong. Why: a turn a day makes the village last over a real month, and most months say only "born 1, dead 0" (review 2026-11-10, "Pace"). Game 37 played it with a driver: calm seasons ran by themselves, but in the automatic months the people's petitions and the ministers undid the season's laws (Corvara's 10 % tax back to 7 % three times, Fosca's tax to 25 %, Brenna's normal ration granted a month before its famine). Decided by the user on 2026-11-11: **the season's laws stay locked until the next season; only the sovereign changes a law.**
 
@@ -1303,7 +1303,9 @@ The engine stays monthly and the council meets every month; the sovereign plays 
 
 **Tests** (fake client): which months are the sovereign's (seasons, each alarm, the second flight of a stretch is not one); R12 excludes the four laws and keeps the rest; a petition in an automatic month is dropped with no mood change; a monthly game is unchanged; the turn page box.
 
-**Order of work** (one commit each): the rhythm function and the setting (migration); R12 and the dropped petition in the automatic months; the background run of automatic months; the turn page box; then a game of six realms with the seasonal sovereign.
+**Order of work**: the rhythm function and the setting (migration); R12 and the dropped petition in the automatic months; the background run of automatic months; the turn page box; then a game of six realms with the seasonal sovereign.
+
+**As built** (2026-11-11; the user left the choices to Claude): `server/sovereign/rhythm.py` (pure `why_sovereign`, `alarms`; `sovereign_reason` reads the realm's own events), migration `016_rhythm.sql`, R12 in `rules.exclusions(laws_locked=True)`, the dropped petition and the line for the people in `server/council/people.py`, `"automatic": true` in the payload of the automatic sovereign's message (the box lists the months back to the last one without it). The automatic month starts when the turn page is seen (the resolve redirects there), job kind `auto`; through the API, `GET /realms/{id}/rhythm` says whose month it is and `POST /realms/{id}/sovereign/auto` plays it with the lock. Tests: `tests/test_rhythm.py`, `tests/db/test_seasonal.py`.
 
 ## Bandits, the watchtower, the Gastaldo and the militia (village block B+C, spec approved 2026-11-09)
 

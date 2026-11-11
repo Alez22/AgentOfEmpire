@@ -8,7 +8,7 @@ import psycopg
 from server.council import meeting, people
 from server.council.settings import CouncilSettings
 from server.db import games
-from server.sovereign import rules
+from server.sovereign import rhythm, rules
 from server.ui import labels
 
 NOTHING_TO_SAY = "Il sovrano approva il piano così com'è."
@@ -53,6 +53,9 @@ def _answer_petition(conn, realm_id: int, ctx, items: list[rules.Item], lines: l
 def play_month(conn: psycopg.Connection, realm_id: int, client, settings: CouncilSettings) -> list[str]:
     """@brief Meeting, at most one directive, the petition, the exclusions,
     the approval; then the reasons in a council message of kind 'sovereign'.
+    In an automatic month of a seasonal game the laws stay locked (R12) and
+    there is no petition (server/council/people.py drops it); the message's
+    payload says "automatic", so the sovereign's next month can list it.
     @return The reasons, in Italian.
     @throws meeting.CouncilError (no open turn, plan already approved, ...)
     """
@@ -64,16 +67,18 @@ def play_month(conn: psycopg.Connection, realm_id: int, client, settings: Counci
     if meeting.council_state(conn, realm_id, settings).rounds_held == 0:
         meeting.hold_meeting(conn, realm_id, client, settings)
     ctx = meeting.load_context(conn, realm_id, client, settings)
+    automatic = rhythm.is_automatic(conn, ctx.game_id, realm_id, ctx.turn)
     lines: list[str] = []
     directive = _give_directive(conn, realm_id, client, settings, ctx, lines)
     payload = _latest_plan(conn, realm_id, ctx.turn)
     items = rules.plan_items(payload)
     granted = _answer_petition(conn, realm_id, ctx, items, lines)
-    excluded = rules.exclusions(_month(ctx), items, granted)
+    excluded = rules.exclusions(_month(ctx), items, granted, laws_locked=automatic)
     for index, reason in excluded:
         lines.append(f"Escluso «{labels.order_label(payload['plan'][index]['order'])}»: {reason}.")
     meeting.approve_plan(conn, realm_id, [index for index, _ in excluded])
     rounds = meeting.council_state(conn, realm_id, settings).rounds_held
     meeting.insert_message(ctx, rounds, "sovereign", None, "\n".join(lines) or NOTHING_TO_SAY,
-                           {"lines": lines, "excluded": [index for index, _ in excluded], "directive": directive})
+                           {"lines": lines, "excluded": [index for index, _ in excluded], "directive": directive,
+                            "automatic": automatic})
     return lines

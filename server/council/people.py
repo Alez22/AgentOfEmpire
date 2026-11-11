@@ -30,12 +30,17 @@ from server.council.meeting import (
     render_prompt,
 )
 from server.db import games
+from server.sovereign import rhythm
 
 PEOPLE_ROLE = "people"
 OWN_DECISIONS_TURNS = 2
 # What the people may ask for: what they feel directly, nothing else.
 PETITION_ACTIONS = ("set_tax", "set_ration", "hold_feast")
 MAX_PETITION_CHARS = 300
+# Seasonal games: in an automatic month the people's petition is dropped (only
+# the sovereign changes a law), so the model is told not to waste one.
+NO_CROWN_THIS_MONTH = ("- The crown sits only at the start of a season or when something grave happens: "
+                       "this month nobody answers a petition, so do not write one.")
 
 
 class _PetitionSchema(BaseModel):
@@ -143,6 +148,8 @@ def _facts(ctx: MeetingContext) -> str:
     ]
     if past:
         lines += ["## What you did before"] + decision_lines(past, ctx.turn)
+    if rhythm.is_automatic(ctx.conn, ctx.game_id, ctx.realm_id, ctx.turn):
+        lines.append(NO_CROWN_THIS_MONTH)
     return "\n".join(lines)
 
 
@@ -181,6 +188,10 @@ def decide(ctx: MeetingContext) -> None:
     if reply is not None:
         effort, births = clamp_choice(ctx.state, ctx.config, reply.effort_pct, reply.birth_pct)
         petition, text = _petition_order(ctx, reply.petition)
+        if petition and rhythm.is_automatic(ctx.conn, ctx.game_id, ctx.realm_id, ctx.turn):
+            # Seasonal game, automatic month: only the sovereign changes a law,
+            # and an unanswered petition would cost mood as a refused one.
+            petition, text = None, ""
         reason, source = reply.reason.strip()[:MAX_PETITION_CHARS], "model"
     else:
         effort, births = rule_choice(ctx.state, ctx.config)
