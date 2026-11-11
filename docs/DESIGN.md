@@ -934,6 +934,8 @@ Approved on 2026-11-07. Directives last a month and go to the whole council; aud
 - **Data**: table `mandates` (migration `011`, append-only): request, decision, rewritten mandate, the chancellery's reply. The mandate in force is the latest approved one.
 - **Cost**: one model call per request (about $0.001), none during meetings.
 
+**A recent decision changed** (decided and built 2026-11-11, after game 34, where ministers undid the sovereign's tax, doors and merchants' tax the month after): under a plan item that changes a law the sovereign decided in the last [3] months (an approved plan or a granted petition: the people's tax, the merchants' tax, the ration, the doors), the turn page shows one line, e.g. "Il Tesoriere cambia una tua decisione di luglio: gabella dal 25% al 12%." Information only: the item stays checked, the council sees nothing different, the automatic sovereign is unchanged. Not the workers, buildings or militia (they change often and for good reasons). Not the minister who agrees in words with no order in the plan: only its text says it; the mandate is the lever for a lasting line. `server/ui/reversals.py`; no migration, no model call.
+
 ## Debate on the plan (on request)
 
 Approved on 2026-11-07. Before, the council was one-way: ministers report, the Chancellor writes the plan, the sovereign decides; the ministers saw the plan only the month after and could never answer it.

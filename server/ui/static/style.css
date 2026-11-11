@@ -79,6 +79,7 @@ h3 { font-size: 20px; }
 .plan .who { font-size: 13px; color: var(--muted); }
 .plan .verdict-ok { font-size: 13px; color: var(--ok); }
 .plan .verdict-no { font-size: 13px; color: var(--danger); }
+.plan .reversal { display: block; font-size: 13px; color: var(--gold-strong); }  /* a recent decision of the sovereign changed */
 
 details { border-top: 1px solid var(--line); padding-top: 8px; }
 summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; color: var(--muted); font-size: 14px; }

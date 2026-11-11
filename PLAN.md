@@ -1100,9 +1100,10 @@ A reading of `docs/DESIGN.md`, the notes of games 1–33 and the pages of game 3
 | Archives opened at game end (review 2026-11-10) | phase 4 | the mood curve, the lessons and the secret notes shown to the sovereign when the game ends; the admin view already holds them |
 | A 12-month game played by hand (review 2026-11-10) | before the town | by the user on the current build, noting the minutes per turn and when it gets boring |
 | The counsellors' Italian (review 2026-11-10) | with "Models per tier" | a better model for the text the sovereign reads; today's cost leaves room |
-| Orders reversed by a minister (game 34) | before a game played by hand | a minister undoes a sovereign's directive the next month, or says "obbedisco" with no order in the plan; options: show the sovereign when a plan reverses an order of the last months, flag "agreed in words, no order", or leave it to mandates and say so in the manual |
 
 ## Decisions made (the main ones)
+
+- **Orders reversed by a counsellor (2026-11-11, built):** the turn page says under a plan item when it changes a law the sovereign decided in the last 3 months (tax, merchants' tax, ration, doors); information only (`docs/DESIGN.md`, after "Mandates").
 
 - **A fallen realm's people (2026-11-11, built):** the month a realm falls, 10 % of its adults and 5 % of its children take to the woods with 25 % of its food (lab "the people of a fallen realm": 25 % or more spiralled). Slow refugees as a growth engine left to stage 3.
 

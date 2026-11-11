@@ -144,6 +144,7 @@
                 <span class="who">{{ names.get(item.proposer, labels.ROLES.get(item.proposer, labels.SOVEREIGN).name) }}</span>
                 {% if verdict.accepted %}<span class="verdict-ok">· si può fare</span>
                 {% else %}<span class="verdict-no">· non si può: {{ labels.rejection_label(verdict.code) }}</span>{% endif %}
+                {% if loop.index0 in reversals %}<span class="reversal">{{ reversals[loop.index0] }}</span>{% endif %}
               </span>
             </label>
           </li>

@@ -29,7 +29,7 @@ from server.council import audience, debate, mandates, manual, meeting, people, 
 from server.council.briefing import GATE_MEMORY_TURNS, months_until_winter
 from server.db import games
 from server.sovereign_view import sovereign_state
-from server.ui import labels, map_view, market_view
+from server.ui import labels, map_view, market_view, reversals
 
 TEMPLATES_DIR = Path(__file__).with_name("templates")
 _environment = jinja2.Environment(
@@ -105,6 +105,7 @@ def _council_context(request: Request, conn: psycopg.Connection, realm_id: int, 
         "council": None,
         "messages": [],
         "plan": None,
+        "reversals": {},  # plan index -> line: a counsellor changes a recent decision of the sovereign
         "orders": [],
         "rounds": [],
         "people": None,
@@ -128,6 +129,8 @@ def _council_context(request: Request, conn: psycopg.Connection, realm_id: int, 
     summaries = [m for m in context["messages"] if m["kind"] == "summary"]
     if summaries:
         context["plan"] = summaries[-1]["payload"]
+        context["reversals"] = reversals.reversal_lines(
+            reversals.recent_decisions(conn, realm_id, game["open_turn"]), context["plan"]["plan"], context["names"])
     context["orders"] = games.list_orders(conn, realm_id, game["open_turn"])
     return context
 

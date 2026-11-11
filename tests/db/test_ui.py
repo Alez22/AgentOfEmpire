@@ -125,3 +125,21 @@ def test_unknown_realm_gives_404_page(ui):
 def test_static_files_are_served(ui):
     assert ui.get("/static/style.css").status_code == 200
     assert ui.get("/static/htmx-2.0.11.min.js").status_code == 200
+
+
+def test_recent_decisions_are_the_executed_laws_of_the_last_months(database_url):
+    """Plans approved and petitions granted are the sovereign's decisions; only
+    the laws of the last three months count (server/ui/reversals.py)."""
+    import psycopg
+    from engine.config import load_raw_config
+    from server.db import games
+    from server.ui.reversals import recent_decisions
+    with psycopg.connect(database_url, autocommit=True) as conn:
+        game_id = games.create_game(conn, load_raw_config(), seed=3, realm_names=["Nord"],
+                                    council_models={"chancellor": "m", "treasurer": "m", "architect": "m"})
+        realm_id = conn.execute("SELECT id FROM realms WHERE game_id = %s", (game_id,)).fetchone()[0]
+        games.submit_order(conn, realm_id, {"action": "set_tax", "rate": 25}, 0)
+        games.submit_order(conn, realm_id, {"action": "hold_feast", "gold": 10}, 1)
+        games.resolve_open_turn(conn, game_id)
+        assert recent_decisions(conn, realm_id, 2) == {"set_tax": (1, 25)}
+        assert recent_decisions(conn, realm_id, 5) == {}  # turns 2-4: nothing decided
