@@ -939,6 +939,7 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 5. **C, stone upkeep halved, and D, food yields +1**: no growth; more comfort (fewer reduced months, mood up to 440-506, bigger stocks). D gives the poor sites a year 2 without the reduced ration.
 6. **E, start food +1000**: changes only year 1 (no reduced ration); from year 2 as today.
 7. **No lever reaches the gate of about 200 by month 30**: it would take about 3 times today's births. Population is also near the core's room (5-6 farms, 8-9 houses): growth beyond needs claims.
+8. **Combinations** (`combos`): growth follows the births only (A+D, A+C, A+C+D: 135 at month 30). D removes A's fragility: with A+D no poor site touches the protests (lowest mood 353-364); A+C does not (346).
 
 ### Game 34: three years with studied choices (2026-11-10/11, ended at month 26)
 
@@ -1081,7 +1082,7 @@ A reading of `docs/DESIGN.md`, the notes of games 1–33 and the pages of game 3
 | Jev | phase 4 | technical details, policy schema, waiting-list sign-up |
 | Lost vision sections | before phase 4 | rewrite the parts marked [Lost] in `docs/DESIGN.md` (map, war, victory, diplomacy, espionage); progress rewritten 2026-11-08 ("The eras"), war by era decided |
 | Palace in the engine | phase 4, after the hex grid | fixed building east of the square (approved in direction); a 4-hex rhombus, its place left free in the hex core |
-| A long automatic game (review 2026-11-10) | before the town | 8 realms, 36–48 months, about $3 at game 33's cost ($0.008 a realm a month): does any realm reach the gate of the town (population about 200), do the market, the bandits and the doors come alive with 8 realms |
+| A long automatic game (review 2026-11-10) | before the town | 8 realms, 36–48 months, about $3 at game 33's cost ($0.008 a realm a month): does any realm reach the gate of the town (population about 120 and the other conditions), do the market, the bandits and the doors come alive with 8 realms |
 | A lab on extreme traits (review 2026-11-10) | before hiring and dismissal | same seed, extreme persons instead of the moderates: if the behaviour does not change in a way the sovereign can read, hiring and dismissal do not hold |
 | The court before more economy (review 2026-11-10) | next block of phase 4 | bring forward variable trust and loyalty, hiring and dismissal, ahead of further economic systems |
 | Pace (review 2026-11-10) | before a game with friends | quiet months run by themselves under the mandates, the game stops on events and season ends; how to keep the text readable with 7–8 voices; the length of the village |
@@ -1091,9 +1092,10 @@ A reading of `docs/DESIGN.md`, the notes of games 1–33 and the pages of game 3
 | The counsellors' Italian (review 2026-11-10) | with "Models per tier" | a better model for the text the sovereign reads; today's cost leaves room |
 | Orders reversed by a minister (game 34) | before a game played by hand | a minister undoes a sovereign's directive the next month, or says "obbedisco" with no order in the plan; options: show the sovereign when a plan reverses an order of the last months, flag "agreed in words, no order", or leave it to mandates and say so in the manual |
 | A fallen realm's people (game 34) | with the bandits, stage 3 | today they vanish; part of them into the pool would fill small worlds' pools from the first fall (the spiral the design wants), to tune in the lab |
-| The gate of the town (game 34, lab "village in three years") | before closing the village | a careful realm survives 36 months on every site but grows only to about 120 by month 30 (gate about 200); no single lever reaches it (births +50 %: 135). Options: (a) lower the population threshold, (b) a growth engine (more births, a reachable content band, arrivals), (c) a gate on other conditions (market, a winter without hunger, no revolt, rare resources) |
 
 ## Decisions made (the main ones)
+
+- **The gate of the town (2026-11-11):** a low population minimum [about 120] and the other conditions (a winter without hunger, the market, no revolt, the rare resources): good government, not a headcount (`docs/DESIGN.md`, "The eras"; lab "the village in three years"). Arrivals from fallen realms as the growth engine on top (spec to approve); births +50 % with food yields +1 kept as an option.
 
 - **After game 34 (2026-11-11), built:** a council that no model can reach (every minister failing for a network error or a timeout in the first round) is not a meeting: nothing is stored and it can be held again; `lab/auto_game.py` stops before resolving. R2 lets farmers go to the quarry in winter while the stone covers less than 3 months of upkeep.
 

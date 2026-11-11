@@ -1,8 +1,9 @@
 """@brief The village in three years: does a sensible realm survive the second
 winter, and how far can it grow? (after game 34, 2026-11-11).
 
-Usage: docker compose run --rm -T tests python lab/village_years.py [all]
-       (no argument: today's values only; "all": also the variants)
+Usage: docker compose run --rm -T tests python lab/village_years.py [all | combos]
+       (no argument: today's values only; "all": also the variants one at a
+       time; "combos": the variants that moved something, together)
 
 Why: in game 34 every realm fell, two of them in the second winter, and no
 realm grew past 112 people while the gate of the town asks about 200. Births
@@ -224,11 +225,28 @@ def variants(base):
     }
 
 
+def combos(base):
+    """@brief A changed growth, C and D comfort (lab run of 2026-11-11): together."""
+    one = variants(base)
+    births = one["A: births +50 % (15 -> 22 per 1000 adults a month)"]
+    food_plus_one = {level: value + 1 for level, value in base.levels.food.items()}
+    births_food = _replace(births, "levels", food=food_plus_one)
+    return {
+        "A+D: births +50 %, food yields +1": births_food,
+        "A+C: births +50 %, stone upkeep halved":
+            _replace(births, "needs", stone_upkeep_buildings=2 * base.needs.stone_upkeep_buildings),
+        "A+C+D": _replace(births_food, "needs", stone_upkeep_buildings=2 * base.needs.stone_upkeep_buildings),
+    }
+
+
 def main():
     base = load_config()
     run("today", base)
     if sys.argv[1:] == ["all"]:
         for label, config in variants(base).items():
+            run(label, config)
+    if sys.argv[1:] == ["combos"]:
+        for label, config in combos(base).items():
             run(label, config)
 
 
