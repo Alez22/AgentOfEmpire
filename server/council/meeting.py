@@ -112,6 +112,17 @@ class AlreadyApprovedError(CouncilError):
     pass
 
 
+class CouncilUnreachableError(CouncilError):
+    """The models could not be reached for any minister (network down, every
+    call timed out): the meeting did not take place and may be held again."""
+
+
+# Statuses of a call that never reached the model: no answer, no fault of it.
+UNREACHABLE_STATUSES = ("http_error", "timeout")
+UNREACHABLE_TEXT = ("Il consiglio non ha potuto riunirsi: i consiglieri non si raggiungono "
+                    "(rete assente o nessuna risposta). Riprova tra poco: il mese non è perso.")
+
+
 # JSON schemas sent to the models as the expected answer shape.
 class _NoteSchema(BaseModel):
     to: Literal["treasurer", "architect", "chancellor", "gastaldo"]
@@ -876,8 +887,10 @@ def _absence_text(ctx: MeetingContext, role: str, reason: str) -> str:
 
 
 def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
-                   events: list[dict], directives: list[str]) -> tuple[str, list[dict]]:
-    """@brief One minister speaks. @return (report text, valid proposals)."""
+                   events: list[dict], directives: list[str]) -> tuple[str, list[dict], dict]:
+    """@brief One minister speaks. The report is stored by the caller, once the
+    round is known to take place.
+    @return (report text, valid proposals, message payload)."""
     user = briefing.minister_briefing(
         actor.role, ctx.state, ctx.config, events,
         _history(ctx, actor, ctx.settings.history_turns), directives,
@@ -899,8 +912,7 @@ def _minister_turn(ctx: MeetingContext, actor: Actor, round_number: int,
         report = reply.report
         _store_note(ctx, actor, reply.note)
     payload = {"proposals": valid, "discarded": discarded, "absent": reply is None, "status": status}
-    insert_message(ctx, round_number, "report", actor, report, payload)
-    return report, valid
+    return report, valid, payload
 
 
 def gate_lines(ctx: MeetingContext) -> list[str]:
@@ -1004,14 +1016,24 @@ def _run_round(ctx: MeetingContext, round_number: int) -> None:
         ctx.conn, ctx.game_id, ctx.realm_id, ctx.turn - 1, Clearance.COUNCIL
     )
     directives = _directives(ctx)
-    reports, proposals = {}, []
+    reports, proposals, spoken = {}, [], []
     for role in ministers_of(ctx):
         actor = ctx.actors.get(role)
         if actor is None:
             continue
-        report, valid = _minister_turn(ctx, actor, round_number, events, directives)
+        report, valid, payload = _minister_turn(ctx, actor, round_number, events, directives)
         reports[role] = report
         proposals += [{"proposer": role, "order": order} for order in valid]
+        spoken.append((actor, report, payload))
+    # Why: game 34, a network outage left every minister "absent" and the month
+    # resolved with an empty plan. The first round stops before anything of it
+    # is stored, so the meeting can be held again (_rounds_held stays 0).
+    # Directive rounds are not stopped: their directive is already stored.
+    if round_number == 1 and spoken and all(
+            payload["status"] in UNREACHABLE_STATUSES for _, _, payload in spoken):
+        raise CouncilUnreachableError(UNREACHABLE_TEXT)
+    for actor, report, payload in spoken:
+        insert_message(ctx, round_number, "report", actor, report, payload)
     _chancellor_turn(ctx, round_number, events, directives, reports, proposals)
 
 

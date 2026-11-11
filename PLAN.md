@@ -1078,12 +1078,12 @@ A reading of `docs/DESIGN.md`, the notes of games 1–33 and the pages of game 3
 | A 12-month game played by hand (review 2026-11-10) | before the town | by the user on the current build, noting the minutes per turn and when it gets boring |
 | The counsellors' Italian (review 2026-11-10) | with "Models per tier" | a better model for the text the sovereign reads; today's cost leaves room |
 | Orders reversed by a minister (game 34) | before a game played by hand | a minister undoes a sovereign's directive the next month, or says "obbedisco" with no order in the plan; options: show the sovereign when a plan reverses an order of the last months, flag "agreed in words, no order", or leave it to mandates and say so in the manual |
-| A void month on a network outage (game 34) | before a long game | when the ministers are absent for an HTTP error the month still resolves with an empty plan; options: pause the turn and retry, or keep it as "the council did not meet" |
-| R2 and the stone (game 34) | before the next automatic game | stone upkeep short halves the farms too, so moving farmers to the quarry raises the food; R2 excluded exactly that; options: an R2 exception when stone is short, or the briefing says the halving to the Treasurer |
 | A fallen realm's people (game 34) | with the bandits, stage 3 | today they vanish; part of them into the pool would fill small worlds' pools from the first fall (the spiral the design wants), to tune in the lab |
 | Village viability in year 2 (game 34) | before closing the village | the second winter emptied every granary; with the gate at about 200 people, no realm grew past 112 in 26 months; a lab with the real engine over 36 months before deciding (yields, stone upkeep, the start stock) |
 
 ## Decisions made (the main ones)
+
+- **After game 34 (2026-11-11), built:** a council that no model can reach (every minister failing for a network error or a timeout in the first round) is not a meeting: nothing is stored and it can be held again; `lab/auto_game.py` stops before resolving. R2 lets farmers go to the quarry in winter while the stone covers less than 3 months of upkeep.
 
 - **Language:** code, comments, prompts and this plan are in English. Player-facing text (UI, council replies) is in Italian, because the players are Italian for now.
 - **Stack:** Python with FastAPI, PostgreSQL in Docker, handwritten SQL. UI with Jinja2 templates and HTMX, vendored in the project; we move to TypeScript when the map arrives.

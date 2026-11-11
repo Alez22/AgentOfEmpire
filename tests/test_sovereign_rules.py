@@ -41,6 +41,19 @@ def test_no_farmers_leave_the_fields_in_winter(start_state, config):
     assert _excluded(start_state, config, fewer) == []
 
 
+def test_farmers_may_go_to_the_quarry_in_winter_when_stone_runs_short(start_state, config):
+    """Game 34: short stone halves the farms, so the quarry is the cure for the food."""
+    workers = start_state.workers
+    to_quarry = {"action": "assign_workers", "food": workers.food - 5, "wood": workers.wood, "stone": workers.stone + 5}
+    to_wood = {"action": "assign_workers", "food": workers.food - 5, "wood": workers.wood + 5, "stone": workers.stone}
+    start_state.food = 50_000  # the winter check passes: only the flat rule is weighed
+    start_state.stone = 0
+    assert _excluded(start_state, config, to_quarry) == []  # January
+    assert _excluded(start_state, config, to_wood) == [0]
+    start_state.stone = 5_000
+    assert _excluded(start_state, config, to_quarry) == [0]
+
+
 def test_no_claims_in_winter(start_state, config):
     claim = {"action": "claim_tiles", "count": 1, "direction": "north", "terrain": "plain"}
     assert _excluded(start_state, config, claim) == [0]

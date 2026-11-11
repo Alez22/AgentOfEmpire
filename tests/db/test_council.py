@@ -137,6 +137,21 @@ def test_timeout_makes_the_minister_absent_without_retry(db, realm, settings):
     assert _call_statuses(db, game_id).count("timeout") == 1
 
 
+def test_unreachable_council_is_not_a_meeting_and_may_meet_again(db, realm, settings):
+    """Game 34: a network outage must not pass the month with an empty plan."""
+    _, realm_id = realm
+    down = FakeClient({"treasurer": [LLMError("http_error", "Network is unreachable")],
+                       "architect": [LLMError("timeout", "The read operation timed out")]})
+    with pytest.raises(meeting.CouncilUnreachableError):
+        meeting.hold_meeting(db, realm_id, down, settings)
+    assert all(call["role"] != "chancellor" for call in down.calls)
+    assert _messages(db, realm_id) == []
+    meeting.hold_meeting(db, realm_id, FakeClient(), settings)
+    reports = [m for m in _messages(db, realm_id) if m["kind"] == "report"]
+    assert [r["payload"]["absent"] for r in reports] == [False, False]
+    assert _summary(db, realm_id)["round"] == 1
+
+
 def test_absent_chancellor_gives_the_fixed_template_plan(db, realm, settings):
     _, realm_id = realm
     client = FakeClient({"chancellor": [LLMError("http_error", "HTTP 503")]})

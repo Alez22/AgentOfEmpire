@@ -46,6 +46,11 @@ def play(game_id: int, months: int) -> None:
         print(f"\n== turn {game['open_turn']}")
         for realm in game["realms"]:
             result = call("POST", f"/realms/{realm['id']}/sovereign/auto")
+            if "error" in result:
+                # Why: game 34, an outage passed months with empty councils.
+                # The turn stays open; "go" plays it again from here.
+                print(f"  {realm['name']}: {result}\nstopped before resolving: play this turn again with 'go'")
+                return
             print(f"  {realm['name']}:")
             for line in result.get("lines", [json.dumps(result)]) or ["(plan approved as it is)"]:
                 print(f"    {line}")

@@ -332,11 +332,22 @@ def petition_answer(month: Month, petition: dict, items: list[Item]) -> tuple[st
 
 # ---------------------------------------------------------- exclusions
 
+def _stone_runs_short(month: Month) -> bool:
+    """@brief The stone covers less than BUY_COVER_MONTHS of upkeep (R7's measure)."""
+    return month.state.stone < need_ahead(month.state, month.config, "stone", BUY_COVER_MONTHS)
+
+
 def _farmers_off(month: Month, item: Item) -> str:
     if item.raw.get("action") != "assign_workers" or month_of(month.state.turn) not in FOOD_WATCH_MONTHS:
         return ""
     taken = month.state.workers.food - item.order.food
     if taken <= 0:
+        return ""
+    # Why: stone upkeep left short halves every building, farms included, so
+    # hands moved to the quarry raise the food. Game 34: R2 excluded exactly
+    # that cure (Aurelia, October of year 2, stone 3 of 15) and the realm
+    # starved. The winter check below still weighs the plan as a whole.
+    if _stone_runs_short(month) and item.order.stone > month.state.workers.stone:
         return ""
     return f"toglie {taken} contadini ai campi tra l'autunno e l'inverno (R2)"
 
