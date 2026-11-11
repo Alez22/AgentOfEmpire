@@ -928,6 +928,18 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 6. **The stream decides whether stage 2 matters**: inflow 0 (today's world) 6-14 arrivals in 24 months; inflow 2 a month (for 8 realms) 29-52, raids 53 instead of 21 without watchtowers and no extra fall; inflow 4 without watchtowers 5 realms fall to raids.
 7. **Decided 2026-11-10: no inflow**, the world stays as it is (start pool plus flight); stage 2 stays a small effect. The tuned values of point 4 go into the DESIGN brackets.
 
+### Lab: the village in three years (2026-11-11, after game 34)
+
+`lab/village_years.py`: each of the 8 sites alone for 36 months on the real engine (no market, bandits, arrivals or council), a careful fixed policy: ration by the food's months, the lowest tax that covers the costs, quarry and sawmill hands sized to the upkeep and the next winter's firewood, every other adult on the fields, a farm when the fields are full, a house when fewer than 10 beds are free. Then one lever at a time.
+
+1. **Today every site stands 36 months**: no famine, no stone short, no cold, all calm. The poor-food sites spend 3-6 months a year on the reduced ration with the lowest mood at 358-367, just above the threshold (350). So game 34's falls came from choices, the automatic rules and the outages, not from the economy.
+2. **Growth is flat and the same everywhere**: 108, 116, 124 people at the end of each year (births +11, +13, +14; deaths 3-6); 120 at month 30. Births depend only on adults; the mood never goes below 300 or above 700, so it never changes them.
+3. **A, births +50 % (22 per 1000 adults)**: 135 at month 30, 144 at month 36; the poor sites touch the protests once (mood 346).
+4. **B, the birth bonus from mood 550**: no effect; the policy's mood never goes above about 506 (base 500, almost every factor negative; only the abundant ration, reserves and feasts lift it).
+5. **C, stone upkeep halved, and D, food yields +1**: no growth; more comfort (fewer reduced months, mood up to 440-506, bigger stocks). D gives the poor sites a year 2 without the reduced ration.
+6. **E, start food +1000**: changes only year 1 (no reduced ration); from year 2 as today.
+7. **No lever reaches the gate of about 200 by month 30**: it would take about 3 times today's births. Population is also near the core's room (5-6 farms, 8-9 houses): growth beyond needs claims.
+
 ### Game 34: three years with studied choices (2026-11-10/11, ended at month 26)
 
 Seed 0 (realms 56-58). Claude as sovereign through a driver (my choices first, then the automatic sovereign R1-R11 for the rest; some months approved by hand). Stimuli: Aurelia "open doors" (tower early, doors open, later a golden age: tax 5, abundant ration), Brenna "the merchant" (buy food, sell wood), Corvara "the repentant tyrant" (tax 25 %, petitions refused, then a feast). 453 calls, $0.53 (cap raised to $3 for the game, back to $1). Replay matches. **All three fell**: Brenna month 11, Corvara month 18, Aurelia month 26.
@@ -1079,7 +1091,7 @@ A reading of `docs/DESIGN.md`, the notes of games 1–33 and the pages of game 3
 | The counsellors' Italian (review 2026-11-10) | with "Models per tier" | a better model for the text the sovereign reads; today's cost leaves room |
 | Orders reversed by a minister (game 34) | before a game played by hand | a minister undoes a sovereign's directive the next month, or says "obbedisco" with no order in the plan; options: show the sovereign when a plan reverses an order of the last months, flag "agreed in words, no order", or leave it to mandates and say so in the manual |
 | A fallen realm's people (game 34) | with the bandits, stage 3 | today they vanish; part of them into the pool would fill small worlds' pools from the first fall (the spiral the design wants), to tune in the lab |
-| Village viability in year 2 (game 34) | before closing the village | the second winter emptied every granary; with the gate at about 200 people, no realm grew past 112 in 26 months; a lab with the real engine over 36 months before deciding (yields, stone upkeep, the start stock) |
+| The gate of the town (game 34, lab "village in three years") | before closing the village | a careful realm survives 36 months on every site but grows only to about 120 by month 30 (gate about 200); no single lever reaches it (births +50 %: 135). Options: (a) lower the population threshold, (b) a growth engine (more births, a reachable content band, arrivals), (c) a gate on other conditions (market, a winter without hunger, no revolt, rare resources) |
 
 ## Decisions made (the main ones)
 
