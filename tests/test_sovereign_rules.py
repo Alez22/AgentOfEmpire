@@ -316,3 +316,15 @@ def test_tools_count_the_wood_still_to_be_cut(start_state, config):
     # No woodcutters: the stock alone must cover the firewood, and it does not.
     none = {**full, "food": full["food"] + jobs, "wood": 0}
     assert _excluded(start_state, config, none, improve) == [1]
+
+
+def test_no_build_at_the_cost_of_the_firewood(start_state, config):
+    """R10b, game 40: in January the council's own market (80 wood) leaves the
+    start realm short (150 wood, 36 cut by March, 150 burnt)."""
+    start_state.food, start_state.stone = 50_000, 500
+    market = {"action": "build", "building": "market"}
+    reasons = rules.exclusions(_month(start_state, config), _items(market), None)
+    assert reasons and "(R10b)" in reasons[0][1] and "tagliato fino a primavera (106)" in reasons[0][1]
+    # With wood for the winter and the site, the build stays.
+    start_state.wood = 300
+    assert _excluded(start_state, config, market) == []

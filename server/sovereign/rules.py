@@ -9,6 +9,7 @@ R3 no claims in winter, R4b useless purchases, R5 sell when gold is short,
 R6 tax cuts, R7 buy what runs short, R8 empty buildings, R9 feasts.
 R2b (after game 27): no richer ration when the food does not last.
 R10 (village block A, 2026-11-08): build the market, then staff it.
+R10b (after game 40): no build of the council's at the cost of the firewood.
 R11 (village block B+C, 2026-11-09): build the watchtower after the first raid.
 R12 (seasonal sovereign, 2026-11-11): in an automatic month no law changes.
 R13 (tools, 2026-11-12): no tools for empty places, nor with the firewood short.
@@ -442,14 +443,36 @@ def _idle_tools(month: Month, item: Item, orders: list[Order]) -> str:
     wanted = _improved_jobs(month, spec.sector, building.id) + spec.jobs // 2
     if workers < wanted:
         return f"i suoi posti non sarebbero pieni: {workers} lavoratori, ne servono {wanted} (R13)"
+    short = _firewood_short(month, orders + [item.order])
+    return f"{short} (R13)" if short else ""
+
+
+def _firewood_short(month: Month, orders: list[Order]) -> str:
+    """@brief The firewood check of R13 and R10b: the wood left after the
+    plan, plus the wood the plan's woodcutters cut until spring, against the
+    firewood until spring. Empty when it is enough, else the reason (no rule tag).
+    @param orders The whole plan, the weighed order included."""
+    state, config = month.state, month.config
+    assigned = next((o for o in orders if isinstance(o, AssignWorkersOrder)), state.workers)
     months = months_to_spring(state.turn)
     firewood = need_ahead(state, config, "wood", months)
     workers = Workers(assigned.food, assigned.wood, assigned.stone, assigned.clearing, assigned.trade)
-    left = _remaining(month, orders + [item.order])["wood"] + wood_ahead(state, config, months, workers)
-    if left < firewood:
-        return (f"il legno che resta, con quello tagliato fino a primavera ({left}), "
-                f"non basta per la legna ({firewood}) (R13)")
-    return ""
+    left = _remaining(month, orders)["wood"] + wood_ahead(state, config, months, workers)
+    if left >= firewood:
+        return ""
+    return f"il legno che resta, con quello tagliato fino a primavera ({left}), non basta per la legna ({firewood})"
+
+
+def _cold_build(month: Month, item: Item, orders: list[Order]) -> str:
+    """@brief R10b: no build of the council's own at the cost of the firewood
+    until spring, the check R10 and R11 make on their own directives.
+    Why: game 40, month 2, Elsina's Architect built the market itself and
+    R10's check never ran: 36 wood left, 16 short of the firewood to March.
+    @param orders The plan's other orders (their assignment, their wood)."""
+    if not isinstance(item.order, BuildOrder) or not month.config.buildings[item.order.building].wood:
+        return ""
+    short = _firewood_short(month, orders + [item.order])
+    return f"{short} (R10b)" if short else ""
 
 
 def _useless_buy(month: Month, item: Item, others: list[Order]) -> str:
@@ -515,7 +538,8 @@ def exclusions(month: Month, items: list[Item], granted: dict | None,
     for item in list(kept):
         reason = (_farmers_off(month, item) or _claim_in_winter(month, item) or _tax_cut(month, item)
                   or _empty_building(month, item) or _useless_buy(month, item, orders_without(item))
-                  or _idle_tools(month, item, orders_without(item)))
+                  or _idle_tools(month, item, orders_without(item))
+                  or _cold_build(month, item, orders_without(item)))
         if reason:
             excluded.append((item.index, reason))
             kept.remove(item)
