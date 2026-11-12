@@ -328,3 +328,16 @@ def test_no_build_at_the_cost_of_the_firewood(start_state, config):
     # With wood for the winter and the site, the build stays.
     start_state.wood = 300
     assert _excluded(start_state, config, market) == []
+
+
+def test_no_wood_sale_at_the_cost_of_the_firewood(start_state, config):
+    """R4c, game 41: in January 2 lots of wood (100) leave the start realm
+    short (150 wood, 24 cut before March's fire, 150 burnt)."""
+    _open_market(start_state, config)
+    start_state.food, start_state.stone = 50_000, 500
+    sale = {"action": "trade", "good": "wood", "side": "sell", "lots": 2}
+    reasons = rules.exclusions(_month(start_state, config), _items(sale), None)
+    assert reasons and "(R4c)" in reasons[0][1] and "tagliato fino a primavera (74)" in reasons[0][1]
+    # With wood for the winter and the sale, it stays.
+    start_state.wood = 400
+    assert _excluded(start_state, config, sale) == []

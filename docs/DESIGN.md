@@ -1342,7 +1342,9 @@ The technical progress of the eras: a farm, a sawmill or a quarry is improved in
 
 **The automatic sovereign: R10b** (after game 40) — a build the council plans itself is excluded by the same firewood check, when it costs wood: "il legno che resta, con quello tagliato fino a primavera (…), non basta per la legna (…) (R10b)". Why: R10 and R11 check the firewood before ordering the market or the watchtower, but a market the council planned itself was never checked (game 37: Corvara's market in February, fell to the cold; game 40: Elsina's market in February left 36 wood, 16 short).
 
-Both checks count the cut of every month to spring but the last: the engine burns a month's firewood before that month's production (game 41, March: Corvara's market passed on its March cut and the fire missed 33).
+**The automatic sovereign: R4c** (after game 41) — a wood sale is excluded by the same firewood check: "… (R4c)". Why: R4b weighs wood purchases, R10b builds, R13 tools, and nothing weighed a sale (game 41, February of year 2: Corvara's council sold a wood lot and the fire missed 4, then 23 in March).
+
+The checks count the cut of every month to spring but the last: the engine burns a month's firewood before that month's production (game 41, March: Corvara's market passed on its March cut and the fire missed 33).
 
 **Edge cases**: two improve orders for the same building in one plan: the second is refused (BUSY). An improvement and a build in the same plan compete for the same wood and stone, in the plan's order, as two builds today.
 

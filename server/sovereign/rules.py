@@ -10,6 +10,7 @@ R6 tax cuts, R7 buy what runs short, R8 empty buildings, R9 feasts.
 R2b (after game 27): no richer ration when the food does not last.
 R10 (village block A, 2026-11-08): build the market, then staff it.
 R10b (after game 40): no build of the council's at the cost of the firewood.
+R4c (after game 41): no wood sale at the cost of the firewood.
 R11 (village block B+C, 2026-11-09): build the watchtower after the first raid.
 R12 (seasonal sovereign, 2026-11-11): in an automatic month no law changes.
 R13 (tools, 2026-11-12): no tools for empty places, nor with the firewood short.
@@ -478,6 +479,19 @@ def _cold_build(month: Month, item: Item, orders: list[Order]) -> str:
     return f"{short} (R10b)" if short else ""
 
 
+def _cold_sale(month: Month, item: Item, orders: list[Order]) -> str:
+    """@brief R4c: no wood sold at the cost of the firewood until spring.
+    Why: game 41, February of year 2, Corvara's council sold a wood lot in an
+    automatic month and the fire missed 4, then 23 in March; R4b weighs wood
+    purchases, R10b builds, R13 tools, nothing weighed a sale.
+    @param orders The plan's other orders (their assignment, their wood)."""
+    order = item.order
+    if not isinstance(order, TradeOrder) or order.side != "sell" or order.good != "wood":
+        return ""
+    short = _firewood_short(month, orders + [order])
+    return f"{short} (R4c)" if short else ""
+
+
 def _useless_buy(month: Month, item: Item, others: list[Order]) -> str:
     order = item.order
     if not isinstance(order, TradeOrder) or order.side != "buy" or order.good == "food":
@@ -542,7 +556,8 @@ def exclusions(month: Month, items: list[Item], granted: dict | None,
         reason = (_farmers_off(month, item) or _claim_in_winter(month, item) or _tax_cut(month, item)
                   or _empty_building(month, item) or _useless_buy(month, item, orders_without(item))
                   or _idle_tools(month, item, orders_without(item))
-                  or _cold_build(month, item, orders_without(item)))
+                  or _cold_build(month, item, orders_without(item))
+                  or _cold_sale(month, item, orders_without(item)))
         if reason:
             excluded.append((item.index, reason))
             kept.remove(item)
