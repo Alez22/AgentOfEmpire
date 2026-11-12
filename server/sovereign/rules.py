@@ -22,9 +22,9 @@ from engine.config import Config
 from engine.market import (MarketState, buy_price, check_month_plan, market_status, sell_price, state_after_trades,
                            stock, trade_capacity)
 from engine.orders import AssignWorkersOrder, BuildOrder, ImproveOrder, Order, SetRationOrder, TradeOrder
-from engine.state import GameState
+from engine.state import GameState, Workers
 from engine.territory import building_works
-from engine.turn import (firewood_needed, food_needed, monthly_tax_income, monthly_upkeep, resolve_turn,
+from engine.turn import (expected_output, firewood_needed, food_needed, monthly_tax_income, monthly_upkeep, resolve_turn,
                          season_of, stone_upkeep)
 from server.ui import labels
 
@@ -88,6 +88,21 @@ def need_ahead(state: GameState, config: Config, good: str, months: int) -> int:
     for ahead in range(months):
         later.turn = state.turn + ahead
         total += firewood_needed(later, config)
+    return total
+
+
+def wood_ahead(state: GameState, config: Config, months: int, workers: Workers) -> int:
+    """@brief Wood the woodcutters cut in the next months, this one included,
+    with these workers and no other order.
+    Why: R13 weighed the firewood until spring against the stock alone, so in
+    July it refused the iron axes to a sawmill with ten woodcutters (game 39:
+    Dalmora, 49 wood against 260 of firewood to March)."""
+    later = copy.deepcopy(state)
+    later.workers = workers
+    total = 0
+    for ahead in range(months):
+        later.turn = state.turn + ahead
+        total += expected_output(later, config)["wood"]
     return total
 
 
@@ -427,10 +442,13 @@ def _idle_tools(month: Month, item: Item, orders: list[Order]) -> str:
     wanted = _improved_jobs(month, spec.sector, building.id) + spec.jobs // 2
     if workers < wanted:
         return f"i suoi posti non sarebbero pieni: {workers} lavoratori, ne servono {wanted} (R13)"
-    firewood = need_ahead(state, config, "wood", months_to_spring(state.turn))
-    left = _remaining(month, orders + [item.order])["wood"]
+    months = months_to_spring(state.turn)
+    firewood = need_ahead(state, config, "wood", months)
+    workers = Workers(assigned.food, assigned.wood, assigned.stone, assigned.clearing, assigned.trade)
+    left = _remaining(month, orders + [item.order])["wood"] + wood_ahead(state, config, months, workers)
     if left < firewood:
-        return f"il legno che resta ({left}) non basta per la legna fino a primavera ({firewood}) (R13)"
+        return (f"il legno che resta, con quello tagliato fino a primavera ({left}), "
+                f"non basta per la legna ({firewood}) (R13)")
     return ""
 
 

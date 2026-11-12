@@ -292,9 +292,27 @@ def test_tools_only_where_the_workers_fill_them(start_state, config):
 
 
 def test_no_tools_at_the_cost_of_the_firewood(start_state, config):
-    """R13: in January the start wood is the winter's firewood."""
+    """R13: in January a poor-wood realm's stock is the winter's firewood
+    (the start: 150 wood, 36 cut by March, 150 burnt; 120 wood leaves 6 short)."""
     farm = _building(start_state, "farm")
     start_state.food = 50_000
     start_state.stone = 500
+    start_state.wood = 120
     reasons = rules.exclusions(_month(start_state, config), _items({"action": "improve", "building_id": farm.id}), None)
-    assert reasons and "legna fino a primavera" in reasons[0][1]
+    assert reasons and "tagliato fino a primavera (126)" in reasons[0][1]
+
+
+def test_tools_count_the_wood_still_to_be_cut(start_state, config):
+    """R13, game 39: in July a full sawmill cuts the firewood before winter."""
+    sawmill = _building(start_state, "sawmill")
+    start_state.turn = 7
+    start_state.food, start_state.stone, start_state.wood = 50_000, 500, 60
+    jobs = config.buildings["sawmill"].jobs
+    workers = start_state.workers
+    full = {"action": "assign_workers", "food": workers.food + workers.wood - jobs, "wood": jobs,
+            "stone": workers.stone}
+    improve = {"action": "improve", "building_id": sawmill.id}
+    assert _excluded(start_state, config, full, improve) == []
+    # No woodcutters: the stock alone must cover the firewood, and it does not.
+    none = {**full, "food": full["food"] + jobs, "wood": 0}
+    assert _excluded(start_state, config, none, improve) == [1]
