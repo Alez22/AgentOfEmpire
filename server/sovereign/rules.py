@@ -457,7 +457,10 @@ def _firewood_short(month: Month, orders: list[Order]) -> str:
     months = months_to_spring(state.turn)
     firewood = need_ahead(state, config, "wood", months)
     workers = Workers(assigned.food, assigned.wood, assigned.stone, assigned.clearing, assigned.trade)
-    left = _remaining(month, orders)["wood"] + wood_ahead(state, config, months, workers)
+    # The engine burns a month's firewood before that month's cut, so the
+    # wood cut in the last month before spring warms nobody (game 41, March:
+    # Corvara's market passed on its March cut and the fire missed 33).
+    left = _remaining(month, orders)["wood"] + wood_ahead(state, config, months - 1, workers)
     if left >= firewood:
         return ""
     return f"il legno che resta, con quello tagliato fino a primavera ({left}), non basta per la legna ({firewood})"

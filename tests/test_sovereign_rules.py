@@ -293,13 +293,13 @@ def test_tools_only_where_the_workers_fill_them(start_state, config):
 
 def test_no_tools_at_the_cost_of_the_firewood(start_state, config):
     """R13: in January a poor-wood realm's stock is the winter's firewood
-    (the start: 150 wood, 36 cut by March, 150 burnt; 120 wood leaves 6 short)."""
+    (the start: 150 wood, 24 cut before March's fire, 150 burnt; 120 wood leaves 36 short)."""
     farm = _building(start_state, "farm")
     start_state.food = 50_000
     start_state.stone = 500
     start_state.wood = 120
     reasons = rules.exclusions(_month(start_state, config), _items({"action": "improve", "building_id": farm.id}), None)
-    assert reasons and "tagliato fino a primavera (126)" in reasons[0][1]
+    assert reasons and "tagliato fino a primavera (114)" in reasons[0][1]
 
 
 def test_tools_count_the_wood_still_to_be_cut(start_state, config):
@@ -320,11 +320,11 @@ def test_tools_count_the_wood_still_to_be_cut(start_state, config):
 
 def test_no_build_at_the_cost_of_the_firewood(start_state, config):
     """R10b, game 40: in January the council's own market (80 wood) leaves the
-    start realm short (150 wood, 36 cut by March, 150 burnt)."""
+    start realm short (150 wood, 24 cut before March's fire, 150 burnt)."""
     start_state.food, start_state.stone = 50_000, 500
     market = {"action": "build", "building": "market"}
     reasons = rules.exclusions(_month(start_state, config), _items(market), None)
-    assert reasons and "(R10b)" in reasons[0][1] and "tagliato fino a primavera (106)" in reasons[0][1]
+    assert reasons and "(R10b)" in reasons[0][1] and "tagliato fino a primavera (94)" in reasons[0][1]
     # With wood for the winter and the site, the build stays.
     start_state.wood = 300
     assert _excluded(start_state, config, market) == []
