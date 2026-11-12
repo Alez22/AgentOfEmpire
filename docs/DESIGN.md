@@ -1329,6 +1329,7 @@ The technical progress of the eras: a farm, a sawmill or a quarry is improved in
 - **The building keeps working during the works**; the level counts from the month the works end (event `tools_finished`).
 - **The workers fill the best-equipped buildings first**: the realm assigns workers to a sector, not to a building, so the first ones of the sector stand in the improved buildings. A sawmill that no longer touches a forest offers no jobs and its tools give nothing.
 - Demolishing an improved building loses its tools (the refund is the building's alone).
+- The event `tools_finished` is seen at court, like `building_completed`.
 
 **State**: each building gets `level` (0 = none) and `improving` (months of works left, 0 = none); snapshot format 8, older snapshots load at 0. Games without `[tools]` replay unchanged.
 

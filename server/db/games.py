@@ -29,6 +29,7 @@ EVENT_VISIBILITY = {
     "unrest_changed": "public",
     "game_over": "public",
     "building_completed": "court",
+    "tools_finished": "court",  # like a finished building (docs/DESIGN.md, "Tools")
     "season_end": "court",
     # Births and deaths are seen by everyone in a small town: court level,
     # so the Voice of the square (court clearance) knows them.

@@ -151,3 +151,9 @@ def test_the_map_shows_a_building_s_tools(start_state, config):
     quarry = _first(start_state, "quarry")
     quarry.improving = 2
     assert "Attrezzi nuovi tra 2 mesi" in _building_lines(start_state, config, quarry)
+
+
+def test_the_tools_event_has_an_audience():
+    """Game 39, month 2: the first finished tools stopped the resolution (no visibility decided)."""
+    from server.db.games import EVENT_VISIBILITY
+    assert EVENT_VISIBILITY["tools_finished"] == "court"
