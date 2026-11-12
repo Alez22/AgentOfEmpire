@@ -110,6 +110,12 @@ class DemolishOrder(BaseOrder):
     building_id: int = Field(ge=1)
 
 
+class ImproveOrder(BaseOrder):
+    """The next level of tools of a farm, sawmill or quarry (docs/DESIGN.md, "Tools")."""
+    action: Literal["improve"]
+    building_id: int = Field(ge=1)
+
+
 class TradeOrder(BaseOrder):
     """Buy or sell lots at the common market (engine/market.py). Filled at the
     start of the month, before the realm's other orders."""
@@ -122,7 +128,7 @@ class TradeOrder(BaseOrder):
 Order = Annotated[
     BuildOrder | AssignWorkersOrder | SetTaxOrder | SetRationOrder | HoldFeastOrder
     | SetZonesOrder | DemolishOrder | ClaimTilesOrder | FellForestOrder | TradeOrder
-    | SetMerchantTaxOrder | SetMilitiaOrder | SetDoorsOrder,
+    | SetMerchantTaxOrder | SetMilitiaOrder | SetDoorsOrder | ImproveOrder,
     Field(discriminator="action"),
 ]
 

@@ -22,6 +22,7 @@ from engine.territory import NOT_OWNED, TERRAIN_CHARS, WILD, building_works, cla
 from server.council import map_text
 from server.council.manual import HEX_SIZES_IT
 from server.ui.hex_board import KIND_ICON, SPRITE, hex_board
+from server.ui.labels import TOOLS_IT
 
 TILE_PX = {False: 22, True: 34}  # zoom off / on
 PURPOSE_IT = {"fields": "Campi", "center": "Centro", "houses": "Case", "workshops": "Botteghe", "reserve": "Riserva",
@@ -120,6 +121,13 @@ def _building_lines(state: GameState, config: Config, building) -> list[str]:
         lines.append("Ferma: non tocca più un bosco del regno")
     else:
         lines.append("In uso")
+    # Tools (docs/DESIGN.md, "Tools").
+    levels = config.tools.levels.get(building.kind, []) if config.tools is not None else []
+    if 0 < building.level <= len(levels):
+        lines.append(f"Attrezzi: {TOOLS_IT.get(levels[building.level - 1].name, levels[building.level - 1].name)} "
+                     f"(+{levels[building.level - 1].bonus_pct}% a chi ci lavora)")
+    if building.improving:
+        lines.append(f"Attrezzi nuovi tra {building.improving} mesi")
     return lines
 
 

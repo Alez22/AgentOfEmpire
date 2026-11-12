@@ -38,7 +38,7 @@ MINISTERS = ("treasurer", "architect")
 GASTALDO = "gastaldo"
 ROLE_ACTIONS = {
     "treasurer": ("set_tax", "set_ration", "hold_feast", "trade", "set_merchant_tax"),
-    "architect": ("build", "assign_workers", "set_zones", "claim_tiles", "fell_forest", "demolish"),
+    "architect": ("build", "assign_workers", "set_zones", "claim_tiles", "fell_forest", "demolish", "improve"),
     GASTALDO: ("set_militia", "set_doors"),
 }
 # Orders that exist only on the map: left out of the prompts of games
@@ -49,6 +49,8 @@ MAP_ACTIONS = ("set_zones", "claim_tiles", "fell_forest", "demolish")
 MARKET_ACTIONS = ("trade", "set_merchant_tax")
 # The doors exist only in games with [migration] (village block B+C, stage 2).
 MIGRATION_ACTIONS = ("set_doors",)
+# Tools exist only in games with [tools] (docs/DESIGN.md, "Tools", 2026-11-12).
+TOOLS_ACTIONS = ("improve",)
 ROLE_TITLES = {"treasurer": "Treasurer", "architect": "Architect", "chancellor": "Chancellor", GASTALDO: "Gastaldo"}
 ROLE_DUTIES = {
     "treasurer": "the treasury, taxes, food rations and feasts for the people.",
@@ -543,6 +545,8 @@ def _order_formats(ctx: MeetingContext) -> str:
             text += render_prompt("order_formats_merchant_tax.txt", max_rate=ctx.config.market.max_merchant_tax)
     if ctx.config.map is not None:
         text += render_prompt("order_formats_map.txt", max_claim=ctx.config.map.claim_max_per_order)
+    if ctx.config.tools is not None:
+        text += render_prompt("order_formats_tools.txt")
     if ctx.config.bandits is not None:  # village block B+C
         text += render_prompt("order_formats_watchtower.txt")
         if GASTALDO in ctx.actors:
@@ -558,7 +562,8 @@ def allowed_actions(ctx: MeetingContext, role: str) -> str:
     actions = [a for a in ROLE_ACTIONS[role] if (ctx.config.map is not None or a not in MAP_ACTIONS)
                and (status == "open" or a not in MARKET_ACTIONS)
                and (a != "set_merchant_tax" or _village_market(ctx.config))
-               and (ctx.config.migration is not None or a not in MIGRATION_ACTIONS)]
+               and (ctx.config.migration is not None or a not in MIGRATION_ACTIONS)
+               and (ctx.config.tools is not None or a not in TOOLS_ACTIONS)]
     return ", ".join(actions)
 
 
@@ -595,11 +600,12 @@ def role_expertise(ctx: MeetingContext, role: str) -> str:
     trading once the realm can trade, the village market where it is a building,
     the doors where newcomers can settle (stage 2)."""
     return expertise_block(role, ctx.config.map is not None, market_status(ctx.state, ctx.config) == "open",
-                           _village_market(ctx.config), ctx.config.migration is not None)
+                           _village_market(ctx.config), ctx.config.migration is not None,
+                           ctx.config.tools is not None)
 
 
 def expertise_block(role: str, with_map: bool = False, with_market: bool = False, with_village: bool = False,
-                    with_doors: bool = False) -> str:
+                    with_doors: bool = False, with_tools: bool = False) -> str:
     """@brief What the office's training teaches (a role's craft, the same
     for every holder today; later it can differ by person, in a résumé).
     On the map the Architect's craft adds town planning (expertise_<role>_map.txt);
@@ -609,7 +615,7 @@ def expertise_block(role: str, with_map: bool = False, with_market: bool = False
         return ""
     text = path.read_text()
     for wanted, suffix in ((with_map, "map"), (with_market, "market"), (with_village, "village"),
-                           (with_doors, "doors")):
+                           (with_doors, "doors"), (with_tools, "tools")):
         extra = PROMPTS_DIR / f"expertise_{role}_{suffix}.txt"
         if wanted and extra.exists():
             text += extra.read_text()

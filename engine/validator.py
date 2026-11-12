@@ -17,6 +17,7 @@ from engine.orders import (
     DemolishOrder,
     FellForestOrder,
     HoldFeastOrder,
+    ImproveOrder,
     Order,
     SetDoorsOrder,
     SetMerchantTaxOrder,
@@ -196,6 +197,32 @@ def _apply_demolish(state: GameState, order: DemolishOrder, config: Config) -> O
     return OrderResult(order, True)
 
 
+def _apply_improve(state: GameState, order: ImproveOrder, config: Config) -> OrderResult:
+    """@brief Start the next level of tools of a building (docs/DESIGN.md,
+    "Tools"): paid at once, the building keeps working during the works."""
+    if config.tools is None:
+        return _reject(order, "NO_TOOLS", "this game has no tools")
+    building = next((b for b in state.buildings if b.id == order.building_id), None)
+    if building is None:
+        return _reject(order, "UNKNOWN_BUILDING", f"no building with id {order.building_id}")
+    levels = config.tools.levels.get(building.kind, [])
+    if building.turns_left or building.improving:
+        return _reject(order, "BUSY", f"{building.kind} {building.id} is still being built or improved")
+    if building.level >= len(levels):
+        return _reject(order, "TOP_LEVEL", f"{building.kind} {building.id} has no further tools")
+    step = levels[building.level]
+    if step.needs and not any(b.kind == step.needs and b.turns_left == 0 for b in state.buildings):
+        return _reject(order, "NEEDS_BUILDING", f"{step.name} needs a finished {step.needs}")
+    if state.wood < step.wood or state.stone < step.stone or state.gold < step.gold:
+        return _reject(order, "INSUFFICIENT_RESOURCES",
+                       f"{step.name} needs wood {step.wood}, stone {step.stone}, gold {step.gold}")
+    state.wood -= step.wood
+    state.stone -= step.stone
+    state.gold -= step.gold
+    building.improving = step.build_turns
+    return OrderResult(order, True)
+
+
 def _apply_assign(state: GameState, order: AssignWorkersOrder) -> OrderResult:
     requested = order.food + order.wood + order.stone + order.clearing + order.trade
     if requested > state.free_adults():
@@ -304,6 +331,8 @@ def _apply_one(
         return _apply_claim(state, order, config)
     if isinstance(order, FellForestOrder):
         return _apply_fell(state, order, config)
+    if isinstance(order, ImproveOrder):
+        return _apply_improve(state, order, config)
     if isinstance(order, TradeOrder):
         # Trades are filled by engine/market.py before the turn; one that
         # reaches the turn belongs to a game without a market.

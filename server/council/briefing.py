@@ -231,6 +231,22 @@ def _clearing_part(state: GameState) -> str:
     return f", clearing {state.workers.clearing} (no jobs: they work the clearing queue)" if state.has_map() else ""
 
 
+def _tools_line(state: GameState, config: Config) -> list[str]:
+    """@brief Tools (docs/DESIGN.md, "Tools"): how many buildings of each kind
+    have them; the ids and levels are in the Architect's list of buildings."""
+    if config.tools is None:
+        return []
+    parts = []
+    for kind in config.tools.levels:
+        active = [b for b in state.buildings if b.kind == kind and b.turns_left == 0]
+        if not active:
+            continue
+        improved = sum(1 for b in active if b.level)
+        works = sum(1 for b in active if b.improving)
+        parts.append(f"{kind} {improved} of {len(active)}" + (f" ({works} in works)" if works else ""))
+    return ["- Buildings with tools: " + ", ".join(parts) + "."]
+
+
 def works_lines(state: GameState, config: Config, people=None, territory_summary: bool = True) -> list[str]:
     active = Counter(b.kind for b in state.buildings if b.turns_left == 0)
     building = [f"{b.kind} ({b.turns_left} turns left)" for b in state.buildings if b.turns_left > 0]
@@ -252,6 +268,7 @@ def works_lines(state: GameState, config: Config, people=None, territory_summary
         f"- Wood: {state.wood}. Stone: {state.stone}. Gold: {state.gold}.",
         "- Buildings in use: " + ", ".join(f"{count} {kind}" for kind, count in sorted(active.items())) + ".",
         "- Under construction: " + (", ".join(building) if building else "nothing") + ".",
+        *_tools_line(state, config),
         _space_line(state, config, territory_summary),
         f"- Workers (assigned/jobs): food {state.workers.food}/{jobs_in_sector(state, config, 'food')}, "
         f"wood {state.workers.wood}/{jobs_in_sector(state, config, 'wood')}, "

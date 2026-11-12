@@ -1307,6 +1307,46 @@ The engine stays monthly and the council meets every month; the sovereign plays 
 
 **As built** (2026-11-11; the user left the choices to Claude): `server/sovereign/rhythm.py` (pure `why_sovereign`, `alarms`; `sovereign_reason` reads the realm's own events), migration `016_rhythm.sql`, R12 in `rules.exclusions(laws_locked=True)`, the dropped petition and the line for the people in `server/council/people.py`, `"automatic": true` in the payload of the automatic sovereign's message (the box lists the months back to the last one without it). The automatic month starts when the turn page is seen (the resolve redirects there), job kind `auto`; through the API, `GET /realms/{id}/rhythm` says whose month it is and `POST /realms/{id}/sovereign/auto` plays it with the lock. Tests: `tests/test_rhythm.py`, `tests/db/test_seasonal.py`.
 
+## Tools: improving farms, sawmills and quarries (spec approved 2026-11-12, after game 38)
+
+The technical progress of the eras: a farm, a sawmill or a quarry is improved in levels, and each level raises the yield of the workers in it. The village has the first level; the later ones are unlocked by the town's buildings (the workshop's artisans already make "tools", "The eras"). Idea of the user, 2026-11-12.
+
+**Why**: in 38 games only 4 realms built a second sawmill or quarry and none filled it. A building only offers jobs; the output is the hands times the land's yield, and 80-88 % of the adults stand on the fields (100 people eat about 860 food a month, a fair farmer grows 16). More buildings add places, not output. `lab/village_tools.py` (8 sites, 36 months, game 38's conditions): today's realm is about 6.5 hands short of feeding itself on the normal ration; a farm level of +25 % frees about 4 hands for good and pays back in about 6 months of hand-work; at 60 wood, 40 stone and 20 gold the realms bought 1-3 levels in 36 months, at half that price 2-6 from month 3, at double none. Stone is the bottleneck (wood piles to 300-400, stone stays 50-100), so tools also give a second quarry and the stone trade a reason.
+
+**The levels** (a new `[tools]` section of `engine/config.toml`; values from the lab, to tune in game 39):
+
+| Building | Level 1 (village) | Yield of its workers | Cost | Works |
+| --- | --- | --- | --- | --- |
+| Farm | heavy plough | +25 % | 30 wood, 20 stone, 10 gold | 2 months |
+| Sawmill | iron axes | +50 % | 20 wood, 20 stone, 5 gold | 2 months |
+| Quarry | iron picks | +50 % | 30 wood, 10 stone, 5 gold | 2 months |
+
+- Every finished level costs **1 stone a month** of upkeep, with the building's own (a level is wear too). Unpaid, it wears like the rest.
+- A level may name a building the realm must have finished (`needs`): the way later levels are unlocked by the town (e.g. the mill or the three-field rotation, the water saw, the winch, after the workshop, the temple or the mill). The village has level 1 only, with no `needs`.
+
+**The order** (the Architect's): `{"action": "improve", "building_id": <id>}`, the next level of that building.
+- Refused when: the game has no `[tools]` (games saved before: NO_TOOLS); no building with that id; the building is still a site, or already being improved (BUSY); no next level, or its `needs` building is missing (TOP_LEVEL, NEEDS_BUILDING); not enough wood, stone or gold (INSUFFICIENT_RESOURCES). All or nothing, paid at once, like a build.
+- **The building keeps working during the works**; the level counts from the month the works end (event `tools_finished`).
+- **The workers fill the best-equipped buildings first**: the realm assigns workers to a sector, not to a building, so the first ones of the sector stand in the improved buildings. A sawmill that no longer touches a forest offers no jobs and its tools give nothing.
+- Demolishing an improved building loses its tools (the refund is the building's alone).
+
+**State**: each building gets `level` (0 = none) and `improving` (months of works left, 0 = none); snapshot format 8, older snapshots load at 0. Games without `[tools]` replay unchanged.
+
+**The council**
+- The manual (prompts and the sovereign's page) lists the levels, their yields, costs and upkeep, and that workers fill improved buildings first.
+- The Architect's list of buildings shows each one's level and works; the works briefing (everyone) says how many buildings of each kind have tools, and the expected output already counts them (it runs the engine).
+- The Architect's craft (village): tools raise the yield of the hands already there, so they pay where a building is full; each level is stone every month.
+
+**The automatic sovereign: R13** — an improvement is excluded when the building's sector would not fill the improved buildings: the sector's workers (this plan's assignment, else today's) must reach the jobs of the buildings already improved or being improved, plus half of this one's ("i suoi posti non sarebbero pieni (R13)"). The same idea as R8: no tools for empty places. It is also excluded when the wood left after the plan does not cover the firewood until spring, as R10 for the market (in the lab the poor-wood site bought tools in January with its start wood and fell to the cold).
+
+**Edge cases**: two improve orders for the same building in one plan: the second is refused (BUSY). An improvement and a build in the same plan compete for the same wood and stone, in the plan's order, as two builds today.
+
+**Tests**: the order's checks and costs; works time; the yield of filled-first workers (one improved farm of four, more and fewer workers than its jobs); the stone upkeep; `needs`; a game without `[tools]` unchanged; snapshot round trip and an old snapshot; R13; the manual and the briefing lines; the order's label.
+
+**Order of work**: engine (config, state, order, turn), then the council (manual, briefings, order formats, the Architect's craft), R13, the labels; then game 39, six realms with the seasonal sovereign.
+
+**As built** (2026-11-12): `[tools]` in `engine/config.toml` (`ToolLevel`, `ToolsConfig` in `engine/config.py`), `Building.level` and `Building.improving` (snapshot format 8), `ImproveOrder` and `_apply_improve` in `engine/validator.py`, the works in `_advance_construction`, the filled-first bonus in `_tool_bonus_points` and the upkeep in `stone_upkeep` (`engine/turn.py`). The council: `improve` among the Architect's actions where the game has tools, `prompts/order_formats_tools.txt`, `prompts/expertise_architect_tools.txt`, the manual's "Tools" lines and the page's "Attrezzi" section, the works line "Buildings with tools", the level in the Architect's list of buildings. R13 in `server/sovereign/rules.py`. The UI: the order's and the event's labels, the rejection codes, the tools on the map's building card and on the kingdom page. Tests: `tests/test_tools.py`, R13 in `tests/test_sovereign_rules.py`.
+
 ## Bandits, the watchtower, the Gastaldo and the militia (village block B+C, spec approved 2026-11-09)
 
 Stage 1 of "Travellers, bandits and migration" (Part 1): flight, the bandits' pool, raids, the watchtower, the Gastaldo and the militia. The doors and acceptance (stage 2) wait for this block's multi-realm lab on spirals; travellers and the Gastaldo's news from outside come with the travellers. Values in brackets come from the lab before the engine. Every new rule hangs on a config section `[bandits]`: a game saved before replays unchanged.

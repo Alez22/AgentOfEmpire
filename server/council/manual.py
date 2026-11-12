@@ -14,6 +14,7 @@ feast brings food"); each guess had been patched with a prompt rule.
 from engine.config import Config
 from engine.territory import is_hex
 from server.council.map_text import shape_text
+from server.ui.labels import TOOLS_IT
 
 SEASONS = ("winter", "spring", "summer", "autumn")
 SEASONS_IT = {"winter": "inverno", "spring": "primavera", "summer": "estate", "autumn": "autunno"}
@@ -130,6 +131,8 @@ def prompt_text(config: Config) -> str:
     ]
     if config.needs is not None:
         lines += _needs_lines(config)
+    if config.tools is not None:
+        lines += _tools_lines(config)
     if config.market is not None:
         lines += _market_lines(config)
     if config.map is not None:
@@ -201,6 +204,22 @@ def _needs_lines(config: Config) -> list[str]:
         f"active building{'' if needs.stone_upkeep_buildings == 1 else 's'} needs 1 stone. Without enough stone "
         "the buildings wear and all production falls that month.",
     ]
+
+
+def _tools_lines(config: Config) -> list[str]:
+    """@brief Tools (docs/DESIGN.md, "Tools"): the levels of each building kind."""
+    tools = config.tools
+    lines = ["Tools: a farm, sawmill or quarry can be improved, one level at a time (order \"improve\"):"]
+    for kind, levels in tools.levels.items():
+        for number, level in enumerate(levels, 1):
+            needs = f"; only with a finished {level.needs}" if level.needs else ""
+            lines.append(f"- {kind} level {number}, {level.name.replace('_', ' ')}: its workers yield "
+                         f"{level.bonus_pct}% more; costs wood {level.wood}, stone {level.stone}, gold {level.gold}; "
+                         f"ready in {level.build_turns} months{needs}.")
+    lines.append(f"- The building keeps working during the works. Every finished level needs {tools.stone_per_level} "
+                 "stone a month of upkeep, with the buildings' own. Tools add no jobs: the workers of a sector stand "
+                 "in its improved buildings first. A demolished building loses its tools.")
+    return lines
 
 
 def _market_lines(config: Config) -> list[str]:
@@ -344,6 +363,7 @@ def page_sections(config: Config) -> list[dict]:
             f"{unrest.strike_output_pct - 100}%), dopo {unrest.revolt_turns} la rivolta, la fine del regno.",
         ]},
     ] + ([_needs_section(config)] if config.needs is not None else []) \
+      + ([_tools_section(config)] if config.tools is not None else []) \
       + ([_market_section(config)] if config.market is not None else []) \
       + ([_territory_section(config)] if config.map is not None else []) \
       + ([_bandits_section(config)] if config.bandits is not None else [])
@@ -408,6 +428,25 @@ def _needs_section(config: Config) -> dict:
         "Se il legno non basta, il popolo patisce il freddo e ne soffre subito.",
         f"Manutenzione in pietra: ogni mese {per} vuole 1 pietra. Se la pietra non basta, gli edifici si "
         "consumano e quel mese tutta la produzione cala.",
+    ]}
+
+
+def _tools_section(config: Config) -> dict:
+    tools = config.tools
+    entries = []
+    for kind, levels in tools.levels.items():
+        for number, level in enumerate(levels, 1):
+            needs = f" Solo con {level.needs} finito." if level.needs else ""
+            entries.append({"name": f"{BUILDING_IT.get(kind, kind)}, livello {number}: "
+                                    f"{TOOLS_IT.get(level.name, level.name)}",
+                            "text": f"Chi ci lavora rende il {level.bonus_pct}% in più. Costa {level.wood} legno, "
+                                    f"{level.stone} pietra, {level.gold} oro; pronto in {level.build_turns} mesi.{needs}"})
+    return {"title": "Attrezzi", "entries": entries, "notes": [
+        "Fattorie, segherie e cave si migliorano un livello alla volta; durante i lavori l'edificio continua a lavorare.",
+        f"Ogni livello finito vuole {tools.stone_per_level} pietra al mese di manutenzione, oltre a quella "
+        "degli edifici.",
+        "Gli attrezzi non aggiungono posti di lavoro: i lavoratori di un settore occupano prima gli edifici "
+        "migliorati. Un edificio abbattuto perde i suoi attrezzi.",
     ]}
 
 

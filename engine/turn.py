@@ -115,6 +115,12 @@ def _apply_fixed_rules(state: GameState, config: Config, events: list[Event]) ->
 
 def _advance_construction(state: GameState, config: Config, events: list[Event]) -> None:
     for building in state.buildings:
+        if building.improving:  # tools (docs/DESIGN.md, "Tools"): the level counts once the works end
+            building.improving -= 1
+            if building.improving == 0:
+                building.level += 1
+                events.append(Event("tools_finished", {"kind": building.kind, "id": building.id,
+                                                       "level": building.level}))
         if building.turns_left == 0:
             continue
         building.turns_left -= 1
@@ -166,7 +172,10 @@ def stone_upkeep(state: GameState, config: Config) -> int:
     if config.needs is None:
         return 0
     active_buildings = sum(1 for b in state.buildings if b.turns_left == 0)
-    return active_buildings // config.needs.stone_upkeep_buildings
+    upkeep = active_buildings // config.needs.stone_upkeep_buildings
+    if config.tools is not None:  # each finished level of tools wears too
+        upkeep += sum(b.level for b in state.buildings) * config.tools.stone_per_level
+    return upkeep
 
 
 def _burn_firewood(state: GameState, config: Config, events: list[Event]) -> int:
@@ -201,13 +210,39 @@ def _output_per_worker(state: GameState, config: Config, sector: str, building_k
     return getattr(config.levels, sector)[level]
 
 
+def _tool_bonus_points(state: GameState, config: Config, sector: str, employed: int) -> int:
+    """@brief Sum over the employed workers of their tools' bonus in percent.
+    Workers are assigned to a sector, not a building, so they fill the
+    best-equipped buildings first (docs/DESIGN.md, "Tools"). Buildings that
+    offer no jobs (a sawmill without forest) are skipped, as in jobs_in_sector."""
+    if config.tools is None:
+        return 0
+    bonuses = []
+    for building in state.buildings:
+        spec = config.buildings[building.kind]
+        if building.turns_left or spec.sector != sector or not territory.building_works(state, config, building):
+            continue
+        levels = config.tools.levels.get(building.kind, [])
+        bonus = levels[building.level - 1].bonus_pct if 0 < building.level <= len(levels) else 0
+        bonuses.append((bonus, spec.jobs))
+    points, left = 0, employed
+    for bonus, jobs in sorted(bonuses, reverse=True):
+        taken = min(left, jobs)
+        points += taken * bonus
+        left -= taken
+    return points
+
+
 def _sector_output(
     state: GameState, config: Config, sector: str, building_kind: str, upkeep_paid: bool,
     effort_pct: int = 0, worn_pct: int = 0,
 ) -> int:
     economy = config.economy
     employed = min(getattr(state.workers, sector), jobs_in_sector(state, config, sector))
-    output = employed * _output_per_worker(state, config, sector, building_kind)
+    per_worker = _output_per_worker(state, config, sector, building_kind)
+    output = employed * per_worker
+    # Integer: without tools the bonus is 0 and the output is exactly as before.
+    output += per_worker * _tool_bonus_points(state, config, sector, employed) // 100
     if sector == "food":
         season_pct = {
             "winter": economy.farm_winter_pct,

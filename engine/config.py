@@ -281,6 +281,26 @@ class LevelsConfig:
 
 
 @dataclass(frozen=True)
+class ToolLevel:
+    """One level of tools of a building kind (docs/DESIGN.md, "Tools")."""
+    name: str  # e.g. "heavy_plough"
+    bonus_pct: int  # yield of the building's workers above the land's; a later level replaces it
+    wood: int
+    stone: int
+    gold: int
+    build_turns: int  # months of works; the building keeps working meanwhile
+    needs: str = ""  # a building kind the realm must have finished; "" = none (the village's level)
+
+
+@dataclass(frozen=True)
+class ToolsConfig:
+    """Tools of farms, sawmills and quarries (docs/DESIGN.md, "Tools";
+    lab/village_tools.py, 2026-11-12)."""
+    stone_per_level: int  # stone a month of upkeep for each finished level
+    levels: dict[str, list[ToolLevel]]  # building kind -> its levels, level 1 first
+
+
+@dataclass(frozen=True)
 class Config:
     start: StartConfig
     buildings: dict[str, BuildingConfig]
@@ -304,6 +324,13 @@ class Config:
     bandits: BanditsConfig | None = None
     # Village block B+C, stage 2; None for games saved before: no doors, nobody arrives.
     migration: MigrationConfig | None = None
+    # None for games saved before tools (2026-11-12): no improve order, they replay unchanged.
+    tools: ToolsConfig | None = None
+
+
+def _tools_from_dict(raw: dict) -> ToolsConfig:
+    levels = {kind: [ToolLevel(**level) for level in kind_levels] for kind, kind_levels in raw["levels"].items()}
+    return ToolsConfig(stone_per_level=raw["stone_per_level"], levels=levels)
 
 
 def load_raw_config(path: Path = DEFAULT_CONFIG_PATH) -> dict:
@@ -346,4 +373,5 @@ def config_from_dict(raw: dict) -> Config:
                  if "classes" in raw else None),
         bandits=BanditsConfig(**raw["bandits"]) if "bandits" in raw else None,
         migration=MigrationConfig(**raw["migration"]) if "migration" in raw else None,
+        tools=_tools_from_dict(raw["tools"]) if "tools" in raw else None,
     )

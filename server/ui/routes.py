@@ -459,8 +459,9 @@ def kingdom_page(request: Request, realm_id: int, conn=Depends(_connection)):
     config = games.load_game_config(conn, game_id)
     buildings = {}
     for building in state.buildings:
-        entry = buildings.setdefault(building.kind, {"active": 0, "building": 0})
+        entry = buildings.setdefault(building.kind, {"active": 0, "building": 0, "tools": 0})
         entry["active" if building.turns_left == 0 else "building"] += 1
+        entry["tools"] += building.level > 0
     context = {
         "game": game,
         "realm": next(r for r in game["realms"] if r["id"] == realm_id),

@@ -11,6 +11,7 @@ R2b (after game 27): no richer ration when the food does not last.
 R10 (village block A, 2026-11-08): build the market, then staff it.
 R11 (village block B+C, 2026-11-09): build the watchtower after the first raid.
 R12 (seasonal sovereign, 2026-11-11): in an automatic month no law changes.
+R13 (tools, 2026-11-12): no tools for empty places, nor with the firewood short.
 """
 
 import copy
@@ -20,8 +21,9 @@ from engine import parse_order
 from engine.config import Config
 from engine.market import (MarketState, buy_price, check_month_plan, market_status, sell_price, state_after_trades,
                            stock, trade_capacity)
-from engine.orders import AssignWorkersOrder, BuildOrder, Order, SetRationOrder, TradeOrder
+from engine.orders import AssignWorkersOrder, BuildOrder, ImproveOrder, Order, SetRationOrder, TradeOrder
 from engine.state import GameState
+from engine.territory import building_works
 from engine.turn import (firewood_needed, food_needed, monthly_tax_income, monthly_upkeep, resolve_turn,
                          season_of, stone_upkeep)
 from server.ui import labels
@@ -400,6 +402,38 @@ def _empty_building(month: Month, item: Item) -> str:
     return f"ci sono già {empty} {what} vuoti (R8)"
 
 
+def _improved_jobs(month: Month, sector: str, skip_id: int) -> int:
+    """@brief Jobs of the sector's working buildings that have tools or are getting them."""
+    config, state = month.config, month.state
+    return sum(config.buildings[b.kind].jobs for b in state.buildings
+               if b.id != skip_id and not b.turns_left and (b.level or b.improving)
+               and config.buildings[b.kind].sector == sector and building_works(state, config, b))
+
+
+def _idle_tools(month: Month, item: Item, orders: list[Order]) -> str:
+    """@brief R13: tools only where the workers fill them, and not at the cost
+    of the firewood until spring (lab/village_tools.py: the poor-wood site
+    bought tools in January with its start wood and fell to the cold).
+    @param orders The plan's other orders (their assignment, their wood)."""
+    if not isinstance(item.order, ImproveOrder):
+        return ""
+    config, state = month.config, month.state
+    building = next((b for b in state.buildings if b.id == item.order.building_id), None)
+    if building is None:
+        return ""
+    spec = config.buildings[building.kind]
+    assigned = next((o for o in orders if isinstance(o, AssignWorkersOrder)), state.workers)
+    workers = getattr(assigned, spec.sector)
+    wanted = _improved_jobs(month, spec.sector, building.id) + spec.jobs // 2
+    if workers < wanted:
+        return f"i suoi posti non sarebbero pieni: {workers} lavoratori, ne servono {wanted} (R13)"
+    firewood = need_ahead(state, config, "wood", months_to_spring(state.turn))
+    left = _remaining(month, orders + [item.order])["wood"]
+    if left < firewood:
+        return f"il legno che resta ({left}) non basta per la legna fino a primavera ({firewood}) (R13)"
+    return ""
+
+
 def _useless_buy(month: Month, item: Item, others: list[Order]) -> str:
     order = item.order
     if not isinstance(order, TradeOrder) or order.side != "buy" or order.good == "food":
@@ -462,7 +496,8 @@ def exclusions(month: Month, items: list[Item], granted: dict | None,
 
     for item in list(kept):
         reason = (_farmers_off(month, item) or _claim_in_winter(month, item) or _tax_cut(month, item)
-                  or _empty_building(month, item) or _useless_buy(month, item, orders_without(item)))
+                  or _empty_building(month, item) or _useless_buy(month, item, orders_without(item))
+                  or _idle_tools(month, item, orders_without(item)))
         if reason:
             excluded.append((item.index, reason))
             kept.remove(item)

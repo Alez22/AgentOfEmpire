@@ -203,12 +203,20 @@ def zone_lines(state: GameState, config: Config) -> list[str]:
             f"{_room_text(state, config, zone)}{_unclaimed_text(state, config, zone)}" for zone in state.zones]
 
 
+def _tools(building: Building) -> str:
+    """@brief Tools (docs/DESIGN.md, "Tools"): the level and the works in course."""
+    text = f", tools level {building.level}" if building.level else ""
+    if building.improving:
+        text += f", new tools in {building.improving} months"
+    return text
+
+
 def _status(state: GameState, config: Config, building: Building) -> str:
     if building.turns_left:
         return f", under construction ({building.turns_left} months left)"
     if not building_works(state, config, building):
-        return ", NOT WORKING: it no longer touches a forest of the realm"
-    return ""
+        return ", NOT WORKING: it no longer touches a forest of the realm" + _tools(building)
+    return _tools(building)
 
 
 def building_lines(state: GameState, config: Config) -> list[str]:

@@ -121,6 +121,39 @@ height = 1
 terrain = "plain"
 hex_steps = []
 
+# Tools: farms, sawmills and quarries improved in levels (docs/DESIGN.md,
+# "Tools"; lab/village_tools.py, 2026-11-12: at 60 wood 40 stone 20 gold for
+# the farm's level the realms bought 1-3 levels in 36 months, at half from
+# month 3; stone was the bottleneck). Level 1 is the village's; later levels
+# will name the town building that unlocks them (needs). Without this section
+# (games saved before) there is no improve order.
+[tools]
+stone_per_level = 1  # a month, for each finished level, with the buildings' own upkeep
+
+[[tools.levels.farm]]
+name = "heavy_plough"
+bonus_pct = 25  # lab: frees about 4 farmers a farm
+wood = 30
+stone = 20
+gold = 10
+build_turns = 2
+
+[[tools.levels.sawmill]]
+name = "iron_axes"
+bonus_pct = 50
+wood = 20
+stone = 20
+gold = 5
+build_turns = 2
+
+[[tools.levels.quarry]]
+name = "iron_picks"
+bonus_pct = 50
+wood = 30
+stone = 10
+gold = 5
+build_turns = 2
+
 # The territory (docs/DESIGN.md, "Territory"). Without this section (games
 # saved before) a realm has no map and counts free_tiles instead.
 [map]

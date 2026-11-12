@@ -1,0 +1,2 @@
+Tools (levels, yields and costs in the manual):
+- {{"action": "improve", "building_id": <int>}}   the next level of tools of a farm, sawmill or quarry (its id from the list of buildings): paid at once, ready after its months of works, and the building keeps working meanwhile

@@ -9,6 +9,8 @@ BUILDINGS = {"farm": "fattoria", "sawmill": "segheria", "quarry": "cava", "house
              "watchtower": "torre di guardia"}
 MASCULINE_BUILDINGS = ("market",)  # "Completato un mercato", the others "Completata una ..."
 CLASSES_IT = {"merchants": "I mercanti"}
+# Tools (docs/DESIGN.md, "Tools"): the names of the levels in engine/config.toml.
+TOOLS_IT = {"heavy_plough": "aratro pesante", "iron_axes": "asce di ferro", "iron_picks": "picconi di ferro"}
 GOODS_IT = {"food": "cibo", "wood": "legno", "stone": "pietra"}
 
 
@@ -53,6 +55,11 @@ REJECTIONS = {
     "UNKNOWN_BUILDING": "edificio sconosciuto",
     "NO_MAP": "questo regno non ha una mappa",
     "NO_LAND": "non ci sono abbastanza caselle adatte",
+    # Tools (docs/DESIGN.md, "Tools").
+    "NO_TOOLS": "in questo mondo non ci sono attrezzi",
+    "BUSY": "l'edificio è ancora in costruzione o ha già lavori in corso",
+    "TOP_LEVEL": "l'edificio non ha attrezzi migliori",
+    "NEEDS_BUILDING": "serve prima un altro edificio",
     # Reasons the council module gives for discarded proposals.
     "NOT_ROLE_ACTION": "fuori dalle sue competenze",
     "TOO_MANY_PROPOSALS": "troppe proposte",
@@ -99,6 +106,8 @@ def order_label(order: dict) -> str:
         return f"Abbattere {order.get('count')} caselle di bosco{where}"
     if action == "demolish":
         return f"Abbattere l'edificio n. {order.get('building_id')}"
+    if action == "improve":
+        return f"Attrezzi nuovi per l'edificio n. {order.get('building_id')}"
     if action == "set_tax":
         return f"Tasse al {order.get('rate')}%"
     if action == "set_ration":
@@ -166,6 +175,9 @@ def event_label(kind: str, data: dict) -> str:
         if data.get("kind") in MASCULINE_BUILDINGS:
             return f"Completato un {BUILDINGS.get(data.get('kind'), data.get('kind'))}."
         return f"Completata una {BUILDINGS.get(data.get('kind'), data.get('kind'))}."
+    if kind == "tools_finished":
+        return (f"Attrezzi nuovi per la {BUILDINGS.get(data.get('kind'), data.get('kind'))} n. {data.get('id')}"
+                f" (livello {data.get('level')}): chi ci lavora rende di più.")
     if kind == "season_end":
         return f"Finisce la stagione: {SEASONS.get(data.get('season'), data.get('season'))}."
     if kind == "demography":

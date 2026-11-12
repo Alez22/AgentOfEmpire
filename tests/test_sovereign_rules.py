@@ -267,3 +267,34 @@ def test_r11_builds_the_watchtower_after_the_first_raid(start_state, config):
     start_state.wood = 30  # the firewood comes first
     found = rules.directive(month, [])
     assert found is None or "(R11)" not in found[1]
+
+
+def _building(state, kind):
+    return next(b for b in state.buildings if b.kind == kind)
+
+
+def test_tools_only_where_the_workers_fill_them(start_state, config):
+    """R13: the start's 53 farmers fill an improved farm, its 3 quarrymen do not fill a quarry."""
+    start_state.turn = 5  # May: no firewood ahead to weigh
+    start_state.wood, start_state.stone, start_state.food = 500, 500, 50_000
+    farm, quarry = _building(start_state, "farm"), _building(start_state, "quarry")
+    assert _excluded(start_state, config, {"action": "improve", "building_id": farm.id}) == []
+    assert _excluded(start_state, config, {"action": "improve", "building_id": quarry.id}) == [0]
+    # The plan's own assignment counts: 8 quarrymen fill more than half of its 10 jobs.
+    workers = start_state.workers
+    more = {"action": "assign_workers", "food": workers.food - 5, "wood": workers.wood, "stone": workers.stone + 5}
+    assert _excluded(start_state, config, more, {"action": "improve", "building_id": quarry.id}) == []
+    # Three farms with tools: 50 farmers do not reach a fourth's half (45 + 7).
+    for other in [b for b in start_state.buildings if b.kind == "farm" and b is not farm][:3]:
+        other.level = 1
+    start_state.workers.food = 50
+    assert _excluded(start_state, config, {"action": "improve", "building_id": farm.id}) == [0]
+
+
+def test_no_tools_at_the_cost_of_the_firewood(start_state, config):
+    """R13: in January the start wood is the winter's firewood."""
+    farm = _building(start_state, "farm")
+    start_state.food = 50_000
+    start_state.stone = 500
+    reasons = rules.exclusions(_month(start_state, config), _items({"action": "improve", "building_id": farm.id}), None)
+    assert reasons and "legna fino a primavera" in reasons[0][1]

@@ -47,7 +47,7 @@
   <h2>Edifici e leggi</h2>
   <table class="numbers">
     {% for kind, counts in buildings|dictsort %}
-    <tr><th>{{ labels.BUILDINGS.get(kind, kind)|capitalize }}</th><td>{{ counts.active }}{% if counts.building %} + {{ counts.building }} in costruzione{% endif %}</td></tr>
+    <tr><th>{{ labels.BUILDINGS.get(kind, kind)|capitalize }}</th><td>{{ counts.active }}{% if counts.building %} + {{ counts.building }} in costruzione{% endif %}{% if counts.tools %}, {{ counts.tools }} con attrezzi{% endif %}</td></tr>
     {% endfor %}
     {% if land %}
     <tr><th>Terre del regno</th><td>{{ land.owned }} caselle{% if land.wild %}, {{ land.wild }} da dissodare o abbattere{% endif %}</td></tr>

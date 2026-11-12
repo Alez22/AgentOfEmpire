@@ -23,6 +23,10 @@ class Building:
     id: int = 0
     x: int = -1
     y: int = -1
+    # Tools (docs/DESIGN.md, "Tools"): the level finished (0 = none) and the
+    # months of works left on the next one (0 = none). 0 in games saved before.
+    level: int = 0
+    improving: int = 0
 
 
 @dataclass
