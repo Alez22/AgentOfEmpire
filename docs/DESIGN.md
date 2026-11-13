@@ -1443,6 +1443,67 @@ Stage 2 of "Travellers, bandits and migration" (Part 1, "Migration and the doors
 4. UI after a mockup. Built 2026-11-10 (the doors shown on the kingdom page before the watchtower too).
 5. A 12-month game with three automatic realms.
 
+## Roads of the world: bands, caravans, messengers (spec drafted 2026-11-13, to approve)
+
+Until now the world map is only a backdrop: the bandits are one pool with no place and raid any realm, near or far; a trade reaches the market's warehouse the month it is ordered. This block puts them **on the map**, so distance, roads and the watchtower count, and trade has a latency. Decided with the owner 2026-11-13: a **central fair** (the market's warehouse gets a place), **weeks** inside the month for movement, **three phases**, bands first. Values in brackets come from a lab before the engine. Every new rule hangs on a new config section (`[bands]`, later `[caravans]`): a game saved before replays unchanged with the pool of stage 1.
+
+### Why
+
+- Geography matters: a realm far from the others is safer and trades slower; one by the road trades sooner and risks more.
+- Latency is gameplay: the Treasurer must sell wood *before* winter, not when it is short; today a trade is instant.
+- The watchtower and the militia gain a second use: seeing bands come, escorting caravans.
+- A neighbour's misrule becomes visible: its fugitives camp in the woods next door.
+
+### Time and space
+
+- **Weeks**: the month is split into [4] steps, only for movement and meetings on the map; the realms still resolve a month at a time (`resolve_month`), and the world step (`resolve_world`) runs the weeks after it.
+- **Moving**: [8] hexes a week on plain; forest and hill cost [2], a river hex [3] (no bridges yet); the realms' land is crossed only by a band that raids it. Paths by breadth-first search with the fixed neighbour order of `engine.territory.neighbours`: integer, deterministic, cheap (64 × 64 hexes).
+- **The fair**: the empty middle of the world (the 8 sites ring a 3 × 3 grid, the centre has no realm) gets a hex of its own, the fair (phase 2); in phase 1 nothing changes in the market.
+
+### Phase 1: bands on the map
+
+**The bands** (a world state that replaces the pool when `[bands]` exists)
+
+- A band: id, hex, camp hex, adults, children, food, accumulators (decline, growth, seekers), as the pool's today, but one each. The world state is the list of bands, stored in `bandit_pools` as today (the JSON grows a `bands` list; same table, no migration if the format field allows it).
+- **Born where people leave**: the fugitives of a realm (flight) join the nearest band camped within [6] hexes of its border, or found one on the nearest forest or hill hex outside every realm; the people of a fallen realm found a band on its land. The start wanderers: bands of about `party_size`, camped by the seed in forests and hills away from the sites.
+- **Size**: a band over [2 × party_size] adults splits in two (the new one camps on the next free wood); a band under [3] adults joins the nearest band within [10] hexes. The number of bands stays small.
+- **The month of a band**: as the pool's today, one band at a time (food it eats, natural decline, more in winter, hunger, children growing up).
+
+**Raids by distance**
+
+- At the start of the month each band picks a target: the realm with the highest weight (food and wood in view, less for its guards, as today) divided by its distance in hexes, among the realms within [24] hexes of its camp; ties by the seeded generator. No realm in range, or the band too small: it stays at camp.
+- In the weeks it walks toward the target; when it stands next to the target's land it raids, with all its adults (today's `_raid`: guards stop `repel_per_guard` each, `carry` a raider, food first). One raid a band a month; after it, back to camp.
+- Stopped raiders who stay by the doors, and acceptance (stage 2), take people from the bands within [24] hexes of the realm, the nearest first, instead of the pool; otherwise as today.
+
+**Seeing them** (the rule "the number of bandits is never shown" stays: one sees *bands*, never the world's total)
+
+- A realm sees the bands within [4] hexes of its land; with a finished watchtower within [12] hexes of the tower. A sighting is a court event `band_seen` (where, and a size in words: "una decina", "una ventina"), the week it happens.
+- The Gastaldo's briefing lists this month's sightings; the Voice of the square hears them ("dicono che nel bosco a nord ci siano fuochi").
+- **The world view**: a player sees the bands its realm saw this month, as a red mark; the admin sees every band with its size and target.
+
+**Lab first** (`lab/bands_map.py`, 8 realms, 24 months on the real engine, as the bandits' lab): the bracketed values; raids per realm against today's pool (the neighbours of a realm in crisis should suffer more, the far ones less); that bands do not pile up forever on one realm; that a serene world still has almost no bandits; that a realm without guards feels raids early but survives.
+
+### Phase 2: caravans and the fair (outline, to detail after phase 1)
+
+- The market's warehouse stands at the fair. A sale leaves the realm's store the month it is ordered and walks to the fair as a **caravan**: one caravan a month per realm, carrying up to the lots its merchants can handle (`trade_capacity`). It reaches the warehouse in [2-3] weeks; a purchase walks back the same way. Latency: about one month each way.
+- **A band meeting a caravan** on the same hex in the same week takes the load (a share of it with an escort), and the caravan turns back empty. The seller loses goods not yet arrived. Open: does a buyer whose purchase is robbed lose its gold too? (Probably yes: paid at the fair.)
+- **Escort**: the Gastaldo may send guards with the caravan; each stops raiders as at home.
+- **Faster caravans by the market's tools** (decided 2026-11-13): the market building gets tool levels like farms, sawmills and quarries (the `improve` order, `[tools]`; docs/DESIGN.md, "Tools"), but the bonus is the caravans' speed, e.g. pack mules [+25 %], carts [+50 %, maybe a lot more a trip]. Speed pays twice (less latency and fewer weeks exposed to bands): the lab checks it is not the obvious buy. It sets a real choice between the Treasurer (faster carts) and the Gastaldo (an escort). Roads built by the Architect, faster on one stretch only, are left for later.
+- Seen by its realm all the way; the Treasurer's briefing lists the goods on the road ("due lotti di legna in viaggio, alla fiera a febbraio").
+
+### Phase 3: messengers (with diplomacy)
+
+Letters between realms walk the same roads; a messenger can be stopped or late. Nothing before diplomacy exists.
+
+### Order of work (one commit each, with tests)
+
+1. Lab and values (phase 1).
+2. Engine: bands, movement in weeks, raids by distance, sightings; `[bands]`; old games replay unchanged.
+3. Council: the Gastaldo's sightings, the Voice, the manual, the automatic sovereign (R11 unchanged: the watchtower after the first raid).
+4. UI: bands on the world view (player: seen this month; admin: all), sightings in the chronicle.
+5. A 12-month game with three automatic realms.
+6. Then phase 2, after its own spec.
+
 ## Web UI
 
 Server-rendered pages (FastAPI with Jinja2 templates), phone first, in the style of the mockups: dark ground, gold, Cormorant Garamond titles, one colour per council member. Every action is a plain form followed by a redirect, so it works without JavaScript and reloading the page does not repeat the action; HTMX (vendored, not from a CDN) is used only to refresh the council and audience panels. Approved instead of TypeScript for the prototype: the map will come as a separate component or with the move to TypeScript, without changing the APIs. All text shown to players is in Italian.
