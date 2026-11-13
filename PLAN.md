@@ -139,7 +139,7 @@ Still mandatory before any game with other players: until then, nobody else on T
   - [x] Game 25: three automatic realms, 12 months, real models, $0.21 (see "Game 25")
   - [x] R5b: the sovereign sells a surplus also when gold is not short (decided and built 2026-11-08)
   - [x] A game with R5b (game 26): **no**, R5b never fired: it kept 4 months of gross eating (~3,600 food), Aurelia peaked at 2,626. **Now 2 months** (checked on game 26's states: Aurelia would sell 2 lots in November and 4 in December, the poor realms never; 1 month sold in January in the poor realms too)
-- [ ] **Roads of the world** (decided 2026-11-13; spec drafted in `docs/DESIGN.md`, "Roads of the world", to approve): bandits as bands on the world map, moving in weeks inside the month, raiding by distance, seen near the realm or from the watchtower; then caravans to a central fair (trade latency, robbed caravans turn back); then messengers with diplomacy. Phase 1 first, lab before the engine.
+- [ ] **Roads of the world** (decided 2026-11-13; spec approved in `docs/DESIGN.md`, "Roads of the world"; lab done, see "Lab: bands on the map"; next: the engine): bandits as bands on the world map, moving in weeks inside the month, raiding by distance, seen near the realm or from the watchtower; then caravans to a central fair (trade latency, robbed caravans turn back); then messengers with diplomacy. Phase 1 first, lab before the engine.
 - [ ] **The village, implementation** (decided 2026-11-08): block **A** the market as a building, merchants as a class with their own mood (needed: every class flees by its own discontent), no prices without the market until the travellers exist; then block **B+C** together: bandits (stage 1), watchtower, Gastaldo, militia. Values from a lab before each block.
   - [x] A: spec approved 2026-11-08 in `docs/DESIGN.md`, "The market as a building, merchants and their mood" (unrest ladder per class, trade tax as a share of the margin)
   - [x] A1. Lab `lab/village_market.py` (see "Lab: the village market, block A"): market 80 wood, no stone, 2 months; 6 merchants x 3 lots; merchants' own tax on the trades' value (10 %); a reserved market zone; shocks at half; idle malus only for the crown's fault
@@ -967,6 +967,17 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
    - L3 feasts with the spare gold, L4 strike output 85 %, L5 winter farms 60 %, L6 a normal month at the protests, L8 revolt after 8 months under the threshold, L9 food yields +1: 2, nothing changes (L8 and L9 only move the fall: the strike harvest brings famine).
    - Without R2's rule (the careful 1 / 1.5 months): 0.
 5. **Reading**: the second winter is not a winter problem. It is a village of about 60 adults that carries guards, traders and clearers with no food margin, plus a reduced ration that cannot last 6 months. L1 is the only engine lever that saves the realms; it also makes the reduced ration a state a village can live in (discontented: effort −12 %). Open decision "The second winter".
+
+### Lab: bands on the map (2026-11-13, roads of the world phase 1)
+
+`lab/bands_map.py`: the worlds of `lab/village_fallen.py` (8 realms, realms 1-2 in crisis, falling at month 9), 24 months, 3 seeds, the engine's pool against bands on the map (each band the engine's `BanditPool` with a place; weeks, roads, targets by exposure over distance, sightings).
+
+1. **Distance counts**: with the pool 20-29 % of the raids hit the crisis realms' neighbours (3 and 4), with bands 45-80 %; the far realms (6, 8) are almost never raided. Total raids 33-43 against 23-24 (smaller bands, each raids).
+2. **Too much without a brake**: realm 4, next to fallen realm 1, raided 16-23 times in 24 months, 1,600-2,625 food lost (pool: 875-1,225). A watchtower with 2 guards brings it back to 650-825.
+3. **Brakes**: "rest" (no raid on last month's realm) cuts raids about 20 % and the worst loss by a third; weighting distance less (reach + 24) does nothing useful.
+4. **Deterrence** (a band skips a realm it cannot outnumber): no effect at 2 guards; at 4 guards raids -15-20 %. Needing more than 2 x guards made 4 guards almost immune and stopped raiders (immigration) fell to 0.
+5. **The owner's odds** (raiders / (raiders + k x guards), full loot or nothing, stopped raiders stay at a fixed share): k 1 is weaker than today (4 guards: worst loss 850-1,075 against 525-700); **k 3 brings it to 625-875**. Attempts stay high (22-31, about one a month on the exposed realm), most failing against guards. Stay 10 %: 2-6 citizens in 2 years (today 8-14).
+6. **Chosen 2026-11-13**: odds with a guard worth 3 raiders, stay 10 % without the doors (the doors are for seekers), rest, speed 8 road units a week, range 24, split over 16, merge under 3, sight 4 hexes from the land and 12 from the tower. Walls later raise the guards' weight; religion the stay share.
 
 ### Game 42: the ration cut in October (2026-11-13, 24 months)
 

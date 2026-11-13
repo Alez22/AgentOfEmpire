@@ -1443,7 +1443,7 @@ Stage 2 of "Travellers, bandits and migration" (Part 1, "Migration and the doors
 4. UI after a mockup. Built 2026-11-10 (the doors shown on the kingdom page before the watchtower too).
 5. A 12-month game with three automatic realms.
 
-## Roads of the world: bands, caravans, messengers (spec drafted 2026-11-13, to approve)
+## Roads of the world: bands, caravans, messengers (spec approved 2026-11-13; phase 1 values from the lab)
 
 Until now the world map is only a backdrop: the bandits are one pool with no place and raid any realm, near or far; a trade reaches the market's warehouse the month it is ordered. This block puts them **on the map**, so distance, roads and the watchtower count, and trade has a latency. Decided with the owner 2026-11-13: a **central fair** (the market's warehouse gets a place), **weeks** inside the month for movement, **three phases**, bands first. Values in brackets come from a lab before the engine. Every new rule hangs on a new config section (`[bands]`, later `[caravans]`): a game saved before replays unchanged with the pool of stage 1.
 
@@ -1471,9 +1471,12 @@ Until now the world map is only a backdrop: the bandits are one pool with no pla
 
 **Raids by distance**
 
-- At the start of the month each band picks a target: the realm with the highest weight (food and wood in view, less for its guards, as today) divided by its distance in hexes, among the realms within [24] hexes of its camp; ties by the seeded generator. No realm in range, or the band too small: it stays at camp.
-- In the weeks it walks toward the target; when it stands next to the target's land it raids, with all its adults (today's `_raid`: guards stop `repel_per_guard` each, `carry` a raider, food first). One raid a band a month; after it, back to camp.
-- Stopped raiders who stay by the doors, and acceptance (stage 2), take people from the bands within [24] hexes of the realm, the nearest first, instead of the pool; otherwise as today.
+- At the start of the month each band picks a target: the realm with the highest score, food and wood in view times the raid's odds (below) divided by the road to it, among the realms within 24 road units; ties by the seeded generator. No realm in range, or the band under 3 adults: it stays at camp.
+- **Rest** (lab 2026-11-13): a band does not raid the realm it raided the month before. Without it a realm next to a fallen one was raided almost every month and lost twice today's food.
+- In the weeks it walks toward the target; when it stands next to the target's land it raids with all its adults. One raid a band a month; after it, back to camp.
+- **The raid's odds** (decided with the owner 2026-11-13, replacing `repel_per_guard`): a raid succeeds with probability raiders / (raiders + 3 × guards), drawn with the seeded generator. A guard counts as 3 raiders (arms, walls, knowing the place): with weight 1 four guards let a band of four through one time in two with the full loot, weaker than today (lab). Success: the full loot, `carry` a raider, food first, then wood. Failure: nothing taken. No guards: always success, as today. **The walls**, later, will raise the guards' weight.
+- **Stopped raiders who stay** (decided 2026-11-13): after a failed raid each raider stays as a citizen with a fixed [10 %], beds permitting; the others go back to the band. **The doors do not count here**: they are a political choice for who looks for a home, not for raiders caught at the gate. The share is low for now; religion will raise it later.
+- Acceptance (stage 2, by the doors) takes the seekers from the bands within 24 road units of the realm, the nearest first, instead of the pool; otherwise as today.
 
 **Seeing them** (the rule "the number of bandits is never shown" stays: one sees *bands*, never the world's total)
 
@@ -1481,7 +1484,7 @@ Until now the world map is only a backdrop: the bandits are one pool with no pla
 - The Gastaldo's briefing lists this month's sightings; the Voice of the square hears them ("dicono che nel bosco a nord ci siano fuochi").
 - **The world view**: a player sees the bands its realm saw this month, as a red mark; the admin sees every band with its size and target.
 
-**Lab first** (`lab/bands_map.py`, 8 realms, 24 months on the real engine, as the bandits' lab): the bracketed values; raids per realm against today's pool (the neighbours of a realm in crisis should suffer more, the far ones less); that bands do not pile up forever on one realm; that a serene world still has almost no bandits; that a realm without guards feels raids early but survives.
+**Lab first** (`lab/bands_map.py`, 8 realms, 24 months on the real engine, as the bandits' lab; done 2026-11-13, numbers in `PLAN.md`, "Lab: bands on the map"): the bracketed values; raids per realm against today's pool (the neighbours of a realm in crisis should suffer more, the far ones less); that bands do not pile up forever on one realm; that a serene world still has almost no bandits; that a realm without guards feels raids early but survives.
 
 ### Phase 2: caravans and the fair (outline, to detail after phase 1)
 
