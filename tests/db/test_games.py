@@ -186,11 +186,13 @@ def test_each_realm_of_a_game_starts_on_its_own_site(db):
     assert states[0].square == new_game(config, 6).square  # the first realm keeps the seed's site
 
 
-def _three_realm_game(db):
+def _three_realm_game(db, caravans=False):
     # The market open from the first month, as before village block A
     # (tests/test_village_market.py covers the market building).
     raw = load_raw_config()
     raw["market"]["needs_building"] = False
+    if not caravans:
+        raw.pop("caravans")  # instant, as before caravans
     game_id = create_game(db, raw, seed=0, realm_names=["Nord", "Est", "Sud"], council_models=COUNCIL)
     realm_ids = [r[0] for r in db.execute("SELECT id FROM realms WHERE game_id = %s ORDER BY id", (game_id,))]
     return game_id, realm_ids
@@ -228,6 +230,20 @@ def test_a_game_with_a_market_replays_exactly(db):
         submit_order(db, est, {"action": "trade", "good": "food", "side": "buy", "lots": 3})
         submit_order(db, sud, {"action": "trade", "good": "wood", "side": "buy", "lots": 1})
         resolve_open_turn(db, game_id)
+    assert replay_game(db, game_id) is None
+
+
+def test_a_game_with_caravans_replays_exactly(db):
+    """Roads of the world, phase 2: the market after the world step is stored and replayed."""
+    game_id, (nord, est, sud) = _three_realm_game(db, caravans=True)
+    for turn in range(1, 5):
+        submit_order(db, nord, {"action": "trade", "good": "food", "side": "sell", "lots": 2})
+        submit_order(db, est, {"action": "trade", "good": "food", "side": "buy", "lots": 3})
+        resolve_open_turn(db, game_id)
+    kinds = {row[0] for row in db.execute("SELECT kind FROM events WHERE realm_id = %s", (est,))}
+    assert "caravan_arrived" in kinds or "caravan_robbed" in kinds
+    for state in _market_rows(db, game_id).values():
+        assert all("arriving" not in c for book in state["goods"].values() for c in book["queue"])
     assert replay_game(db, game_id) is None
 
 

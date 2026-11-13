@@ -410,7 +410,7 @@ def play(config, plans, mode, seed, values):
         months = {r.key: RealmMonth(r.state, orders_of(r, config, market) + _doors_orders(r)) for r in live}
         market, results = resolve_month(market, months, config)
         if mode in ("pool", "engine"):
-            pool = resolve_world(pool, results, config, month)
+            pool = resolve_world(pool, results, config, month, market)
             for key, result in results.items():
                 raids = sum(1 for e in result.events if e.kind == "raid")
                 stats["raids"][key] = stats["raids"].get(key, 0) + raids

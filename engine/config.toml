@@ -300,6 +300,14 @@ merge_range = 10
 see = 4
 tower_see = 12
 
+# Roads of the world, phase 2 (docs/DESIGN.md, "Phase 2: caravans and the
+# fair"; lab/caravans_map.py, 2026-11-13): a month of latency both ways, a
+# caravan met near a band loses its load. Needs [bands] and [market].
+[caravans]
+speed = 8  # road units a week, as the bands: every road to the fair is under 4 weeks
+radius = 2  # low on purpose until the sovereigns have tools against bands on the roads
+fair_peace = 6  # lab: a band camped by the fair sat on every road
+
 # on a site with levels. Fair equals the buildings' values above.
 [levels]
 # Food was 14/15/18 (rich 18: game 24 and lab "food", 2026-11-08). Lab

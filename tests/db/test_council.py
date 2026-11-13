@@ -40,6 +40,7 @@ def _open_market_raw() -> dict:
     village block A (the council's side of block A comes in its step 4)."""
     raw = load_raw_config()
     raw["market"]["needs_building"] = False
+    raw.pop("caravans")  # instant, as before caravans: bought wood builds the same month
     return raw
 
 

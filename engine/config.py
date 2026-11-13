@@ -295,6 +295,16 @@ class BandsConfig:
 
 
 @dataclass(frozen=True)
+class CaravansConfig:
+    """Roads of the world, phase 2: trades walk to the fair as caravans
+    (docs/DESIGN.md, "Phase 2: caravans and the fair"; values from
+    lab/caravans_map.py, 2026-11-13). Needs [bands] and [market]."""
+    speed: int  # road units a caravan walks in a week
+    radius: int  # hexes: a caravan is met when a hex it crossed is this near a band
+    fair_peace: int  # hexes around the fair where no band camps
+
+
+@dataclass(frozen=True)
 class LevelsConfig:
     """Output per worker by land level: {"poor": 14, "fair": 15, "rich": 16}."""
     food: dict[str, int]
@@ -351,6 +361,9 @@ class Config:
     # Roads of the world, phase 1 (2026-11-13); None for games saved before:
     # the bandits stay one pool with no place and replay unchanged.
     bands: BandsConfig | None = None
+    # Roads of the world, phase 2 (2026-11-13); None for games saved before:
+    # trades are instant and they replay unchanged.
+    caravans: CaravansConfig | None = None
 
 
 def _tools_from_dict(raw: dict) -> ToolsConfig:
@@ -400,4 +413,5 @@ def config_from_dict(raw: dict) -> Config:
         migration=MigrationConfig(**raw["migration"]) if "migration" in raw else None,
         tools=_tools_from_dict(raw["tools"]) if "tools" in raw else None,
         bands=BandsConfig(**raw["bands"]) if "bands" in raw else None,
+        caravans=CaravansConfig(**raw["caravans"]) if "caravans" in raw else None,
     )

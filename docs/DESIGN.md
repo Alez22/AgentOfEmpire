@@ -1532,7 +1532,7 @@ Values from `lab/caravans_map.py` (PLAN.md, "Lab: caravans meet bands"). Everyth
 
 **Order of work**
 
-1. Engine: `[caravans]`, the fair and its peace, the latency in the market, the legs, the meetings, the events; tests; old games replay unchanged.
+1. Engine: `[caravans]`, the fair and its peace, the latency in the market, the legs, the meetings, the events; tests; old games replay unchanged. **Built 2026-11-13**: `engine/caravans.py` (`caravans_on`: `[caravans]` with `[bands]`, `[market]` and a map; `fair_hex`; the legs, `walk_caravans` each week after the bands, `finish_caravans`); `RoadMap.fair` and the peace in its steps to the land; `Consignment.arriving` (left out of the stored form when False, so old markets compare unchanged), skipped by `stock`, `_take_oldest` and the spoilage; `apply_trade` and the dry run leave bought goods out; `road: true` on `trade_bought` and `trade_on_sale`; `resolve_world(..., market)` and the callers (`server/db/games.py`, `server/db/replay.py`); events `caravan_arrived` and `caravan_robbed` (court). `tests/test_caravans.py`, a replay test with caravans in `tests/db/test_games.py`; the instant market's tests drop `[caravans]`. Games 41-43 replay unchanged.
 2. Council: manual, craft, briefings, Voice.
 3. UI: the fair on the map, labels and chronicle.
 4. A 12-month game with three automatic realms.

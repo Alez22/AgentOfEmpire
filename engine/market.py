@@ -23,6 +23,13 @@ lab/market_closed.py. Pure and integer-only, like the turn.
   merchants' mood (engine/turn.py) lowers their lots when they are
   discontented and stops the market while they strike.
 
+- With [caravans] (roads of the world, phase 2; engine/caravans.py): a sale
+  joins the warehouse marked `arriving` and nobody can buy it this month; a
+  purchase is paid at once but its goods are not added to the store. The
+  world step walks both to and from the fair and clears the mark, removes
+  robbed sales and adds the purchases that arrived. The stored market never
+  holds an arriving consignment.
+
 A month of the whole game (resolve_month): check every realm's trades,
 fill them, give each realm its goods and gold, then resolve each realm's
 turn with its other orders. The replay runs the same function.
@@ -31,6 +38,7 @@ turn with its other orders. The replay runs the same function.
 import copy
 from dataclasses import asdict, dataclass, field
 
+from engine.caravans import caravans_on
 from engine.config import Config
 from engine.orders import Order, TradeOrder
 from engine.people import PeopleChoice
@@ -46,6 +54,9 @@ MERCHANT = ""  # seller of the start stock: nobody is paid for it
 class Consignment:
     seller: str  # realm key (the server uses the realm id as text)
     units: int
+    # With [caravans]: put on sale this month, still on the road to the fair;
+    # nobody can buy it yet. Only between resolve_month and the world step.
+    arriving: bool = False
 
 
 @dataclass
@@ -81,7 +92,14 @@ def new_market(config: Config, realm_count: int) -> MarketState:
 
 
 def market_to_dict(market: MarketState) -> dict:
-    return asdict(market)
+    """@brief The stored form. `arriving` is left out when False (always, once
+    the world step ran), so markets stored before caravans compare unchanged."""
+    data = asdict(market)
+    for book in data["goods"].values():
+        for consignment in book["queue"]:
+            if not consignment["arriving"]:
+                del consignment["arriving"]
+    return data
 
 
 def market_from_dict(data: dict) -> MarketState:
@@ -104,8 +122,10 @@ def sell_price(market: MarketState, config: Config, good: str) -> int:
 
 
 def stock(book: GoodBook, include_start_stock: bool = True) -> int:
-    """@brief Units on sale (the start stock included unless told otherwise)."""
-    return sum(c.units for c in book.queue if include_start_stock or c.seller != MERCHANT)
+    """@brief Units on sale (the start stock included unless told otherwise);
+    goods still on the road to the fair are not on sale yet."""
+    return sum(c.units for c in book.queue
+               if not c.arriving and (include_start_stock or c.seller != MERCHANT))
 
 
 def has_active_market(state: GameState) -> bool:
@@ -230,7 +250,8 @@ def check_month_plan(state: GameState, orders: list[Order], market: MarketState 
     then the other orders on the state the trades leave. For the council's cost
     check and the sovereign's preview; the state is NOT modified.
 
-    Assumption: every accepted purchase is filled in full and the gold of
+    Assumption: every accepted purchase is filled in full (with [caravans] it
+    is paid but its goods arrive at the month's end: not counted) and the gold of
     sales arrives later (the warehouse is shared, so the real fill is known
     only when every realm has traded).
     @return Verdicts in the order of the input list (not the evaluation order,
@@ -271,7 +292,8 @@ def _after_full_fills(state: GameState, trade_results: list[OrderResult], market
             continue
         order = verdict.order
         units = order.lots * lot if order.side == "buy" else -order.lots * lot
-        setattr(trial, order.good, getattr(trial, order.good) + units)
+        if order.side == "sell" or not caravans_on(config):  # with caravans a purchase arrives at the month's end
+            setattr(trial, order.good, getattr(trial, order.good) + units)
         if order.side == "buy":
             trial.gold -= order.lots * buy_price(market, config, order.good)
     return trial
@@ -300,7 +322,7 @@ def _share(asked: dict[str, int], available: int) -> dict[str, int]:
 def _take_oldest(book: GoodBook, units: int) -> dict[str, int]:
     """@brief Remove units from the oldest consignments. @return {seller: units}."""
     taken: dict[str, int] = {}
-    while units > 0 and book.queue:
+    while units > 0 and book.queue and not book.queue[0].arriving:  # this month's sales are at the tail
         first = book.queue[0]
         part = min(units, first.units)
         taken[first.seller] = taken.get(first.seller, 0) + part
@@ -348,7 +370,7 @@ def resolve_market(market: MarketState, requests: dict[str, dict[str, int]],
         for realm in realms:
             lots = requests[realm].get(good, 0)
             if lots < 0:
-                book.queue.append(Consignment(realm, -lots * lot))
+                book.queue.append(Consignment(realm, -lots * lot, arriving=caravans_on(config)))
                 book.last_sold += -lots * lot
                 fills[realm][good] = lots
         asked = {realm: requests[realm][good] for realm in realms if requests[realm].get(good, 0) > 0}
@@ -399,6 +421,8 @@ def _spoil(market: MarketState, config: Config) -> None:
     """@brief Food on sale rots like food in the granaries."""
     book = market.goods["food"]
     for consignment in book.queue:
+        if consignment.arriving:
+            continue  # on the road: two to four weeks, no spoilage (DESIGN, phase 2)
         consignment.units -= consignment.units * config.economy.food_spoilage_pct // 100
     book.queue = [c for c in book.queue if c.units > 0]
 
@@ -407,26 +431,35 @@ def apply_trade(state: GameState, fills: dict[str, int], gold_paid: int, market:
                 config: Config, short: dict[str, int] | None = None) -> list[Event]:
     """@brief Give a realm what the market filled: goods in, the price of its
     purchases out, the gold of its goods sold (this month or earlier) in.
+    With [caravans] the goods bought are only paid here: they walk home and
+    reach the store in the world step (engine/caravans.py).
     @param market The market at the start of the month (its prices).
     @param short {good: units missing from the last lot bought} (short_last_lot).
     @return The realm's trade events.
     """
     lot = config.market.lot_units
     short = short or {}
+    on_road = caravans_on(config)
     events = []
     for good, lots in fills.items():
         if lots > 0:
             units = lots * lot - short.get(good, 0)
             gold = -(-units * buy_price(market, config, good) // lot)  # by the unit, rounded up like the price
-            setattr(state, good, getattr(state, good) + units)
+            if not on_road:  # with caravans the goods arrive in the world step (engine/caravans.py)
+                setattr(state, good, getattr(state, good) + units)
             state.gold -= gold
             data = {"good": good, "lots": lots, "gold": gold}
             if short.get(good):
                 data["units"] = units  # only for a short lot: older events stay as they were
+            if on_road:
+                data["road"] = True  # only with caravans: older events stay as they were
             events.append(Event("trade_bought", data))
         elif lots < 0:
             setattr(state, good, getattr(state, good) + lots * lot)
-            events.append(Event("trade_on_sale", {"good": good, "lots": -lots}))
+            data = {"good": good, "lots": -lots}
+            if on_road:
+                data["road"] = True
+            events.append(Event("trade_on_sale", data))
     if gold_paid:
         state.gold += gold_paid
         events.append(Event("trade_paid", {"gold": gold_paid}))

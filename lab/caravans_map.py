@@ -32,6 +32,8 @@ every road ends. With FAIR_GAPS > 0 no band camps within that many hexes of
 the fair: the hexes near it count as a realm's land for the engine's camp
 choices (start camps, new camps of fugitives, splits), through a hook on
 RoadMap's steps to the land. A fallen realm's band still camps on its land.
+Since the engine's [caravans] (2026-11-13) the engine keeps the fair's
+peace itself (fair_peace 6): "fair gap 0" now runs with it.
 
 Printed per fair gap, seed and speed: the road units from each realm to the fair
 (weeks a leg takes), then per radius the share of legs met, per realm and

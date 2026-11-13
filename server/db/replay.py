@@ -46,7 +46,7 @@ def _replay_month(conn, config, market, pool, states, stored, turn):
         load_people_choice(conn, realm_id, turn))
         for realm_id, state in states.items() if turn + 1 in stored[realm_id]}
     market, results = resolve_month(market, months, config)
-    pool = resolve_world(pool, results, config, turn)
+    pool = resolve_world(pool, results, config, turn, market)
     for key, result in results.items():
         realm_id = int(key)
         states[realm_id] = result.state

@@ -61,6 +61,9 @@ EVENT_VISIBILITY = {
     # Roads of the world: a band seen near the realm or from its watchtower.
     # Court, like a flight: the Voice may tell it; never the world's total.
     "band_seen": "court",
+    # Phase 2: the realm's own caravans, known at court like its trades.
+    "caravan_arrived": "court",
+    "caravan_robbed": "court",
 }
 
 
@@ -483,8 +486,9 @@ def resolve_open_turn(conn: psycopg.Connection, game_id: int) -> TurnSummary:
         # without a market resolves each realm alone, as before.
         market, results = resolve_month(load_market(conn, game_id, turn), months, config)
         # The world step (engine/bandits.py): flight and raids change the
-        # realms' new states before they are stored.
-        pool = resolve_world(load_pool(conn, game_id, turn), results, config, turn)
+        # realms' new states before they are stored; with [caravans] the
+        # trades walk to the fair and back, changing the market too.
+        pool = resolve_world(load_pool(conn, game_id, turn), results, config, turn, market)
         realms_over = [True] * (len(realm_ids) - len(months))  # those already over
         for key, result in results.items():
             realms_over.append(_store_realm_result(conn, game_id, int(key), turn, parsed_by_realm[key], result))

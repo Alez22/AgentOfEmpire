@@ -30,6 +30,10 @@ The month of the world, after every realm's resolve_month, in this order:
 6. A realm that fell this month founds a band on its land with the fallen
    shares of [bandits].
 
+With [caravans] (phase 2, engine/caravans.py) the realms' trades walk to the
+fair and back in the same weeks, after the bands; no band camps within
+fair_peace hexes of the fair.
+
 Cost: one Dijkstra over the 64 x 64 hexes per band to pick a target and
 one per band per week to walk; a breadth-first map of the steps to the
 realms' land once a month. Bands stay few (split and merge): well under a
@@ -43,6 +47,7 @@ import heapq
 import random
 
 from engine.bandits import Band, BanditPool, _flee, _pool_month, pool_from_dict, pool_to_dict
+from engine.caravans import caravans_on, fair_hex, finish_caravans, send_legs, walk_caravans
 from engine.config import BandsConfig, BanditsConfig, Config
 from engine.migration import free_beds, resolve_arrivals
 from engine.state import Event, GameState
@@ -65,6 +70,7 @@ class RoadMap:
         self.land = {key: [(x, y) for y, row in enumerate(state.owned) for x, char in enumerate(row)
                            if char != NOT_OWNED] for key, state in states.items()}
         self.owner = {tile: key for key, tiles in self.land.items() for tile in tiles}
+        self.fair = fair_hex(self) if caravans_on(config) else None  # needs owner and size
         self.steps_to_land = self._steps_to_land()
         self._doorsteps: dict[str, set[tuple[int, int]]] = {}
 
@@ -72,7 +78,9 @@ class RoadMap:
         return 0 <= x < self.size and 0 <= y < self.size
 
     def _steps_to_land(self) -> dict[tuple[int, int], int]:
-        """@brief Hex steps from every hex to the nearest realm's land (breadth-first)."""
+        """@brief Hex steps from every hex to the nearest realm's land (breadth-first).
+        With caravans the hexes within fair_peace of the fair count as 0 steps:
+        no camp choice (start, fugitives, splits) takes them."""
         steps = {tile: 0 for tile in self.owner}
         frontier = list(self.owner)
         while frontier:
@@ -83,6 +91,11 @@ class RoadMap:
                         steps[tile] = steps[here] + 1
                         next_frontier.append(tile)
             frontier = next_frontier
+        if self.fair is not None:
+            peace = self.config.caravans.fair_peace
+            for tile in steps:
+                if hex_distance(*tile, *self.fair) <= peace:
+                    steps[tile] = 0
         return steps
 
     def doorstep(self, key: str) -> set[tuple[int, int]]:
@@ -262,8 +275,9 @@ def _sightings(pool: BanditPool, states: dict[str, GameState], events: dict[str,
 
 
 def _weeks(pool: BanditPool, states: dict[str, GameState], events: dict[str, list[Event]], roads: RoadMap,
-           config: Config, rng: random.Random) -> dict[str, int]:
-    """@brief Step 3: walking, raiding and sightings, week by week.
+           config: Config, rng: random.Random, legs: list, market, results: dict[str, TurnResult]) -> dict[str, int]:
+    """@brief Step 3: walking, raiding, the caravans' legs and sightings, week by week.
+    @param legs The month's caravans (engine/caravans.py; empty without [caravans]).
     @return {realm key: raiders who stayed as citizens}."""
     rules = config.bands
     stayed: dict[str, int] = {}
@@ -280,7 +294,9 @@ def _weeks(pool: BanditPool, states: dict[str, GameState], events: dict[str, lis
             stayed[key] = stayed.get(key, 0) + _raid(states[key], band, config, rng, events[key])
             band.raided = True
             band.x, band.y = band.camp_x, band.camp_y
+        walk_caravans(legs, pool, roads, market, results, config, week, seen)
         _sightings(pool, states, events, roads, rules, week, seen)
+    finish_caravans(legs, market, results, config)
     return stayed
 
 
@@ -359,12 +375,15 @@ def _fallen_found_bands(pool: BanditPool, results: dict[str, TurnResult], rules:
         result.events.append(Event("flight", {"adults": adults, "children": children, "merchants": 0}))
 
 
-def resolve_bands(pool: BanditPool, results: dict[str, TurnResult], config: Config, turn: int) -> BanditPool:
+def resolve_bands(pool: BanditPool, results: dict[str, TurnResult], config: Config, turn: int,
+                  market=None) -> BanditPool:
     """@brief The world step of a month with [bands] (the module's steps 1-6).
     Changes the realms' new states and appends their events.
     @param pool The bandits at the start of the month (not changed: pure).
     @param results {realm key: TurnResult} of resolve_month, in the realms' fixed order.
     @param turn The month just resolved (1 = January of the first year).
+    @param market With [caravans]: the market resolve_month returned, changed
+           here (sales arrived or robbed); None without trades.
     @return The bandits at the start of the next month.
     """
     pool = pool_from_dict(pool_to_dict(pool))  # pure: a deep copy through the stored form
@@ -377,7 +396,8 @@ def resolve_bands(pool: BanditPool, results: dict[str, TurnResult], config: Conf
     rng = random.Random(f"{pool.seed}:bands:{turn}")
     _flight(pool, playing, events, roads, config.bandits, rules)
     _pick_targets(pool, playing, roads, rules)
-    stayed = _weeks(pool, playing, events, roads, config, rng)
+    legs = send_legs(market, results, roads, config) if caravans_on(config) else []
+    stayed = _weeks(pool, playing, events, roads, config, rng, legs, market, results)
     for band in pool.bands:
         _pool_month(band, config, (turn - 1) % 12 + 1)
     _split_and_merge(pool, roads, rules)

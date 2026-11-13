@@ -15,9 +15,9 @@ from engine.market import (MERCHANT, Consignment, RealmMonth, buy_price, check_m
 def config():
     """@brief The market's own mechanics, as before village block A: open from
     the first month, no lot cap, no merchants' tax (tests/test_village_market.py
-    covers the market building)."""
+    covers the market building); instant, as before caravans (tests/test_caravans.py)."""
     base = load_config()
-    return replace(base, market=replace(base.market, needs_building=False))
+    return replace(base, market=replace(base.market, needs_building=False), caravans=None)
 
 
 def _trade(good, side, lots, priority=0):

@@ -223,20 +223,23 @@ def _pool_month(pool: BanditPool, config: Config, month_of_year: int) -> None:
 
 
 def resolve_world(pool: BanditPool | None, results: dict[str, TurnResult], config: Config,
-                  turn: int) -> BanditPool | None:
+                  turn: int, market=None) -> BanditPool | None:
     """@brief The world step of a month, after resolve_month: flight, raids,
     the pool's month, the arrivals (stage 2), then the people of the realms
     that fell this month. Changes the realms' new states and appends their events.
     @param pool The pool at the start of the month (None: a game without bandits).
     @param results {realm key: TurnResult} of resolve_month, in the realms' fixed order.
     @param turn The month just resolved (1 = January of the first year).
+    @param market The market resolve_month returned: with [caravans] the
+           trades walk to the fair in the bands' weeks and it is changed here
+           (engine/caravans.py). Unused otherwise.
     @return The pool at the start of the next month.
     """
     if pool is None or config.bandits is None:
         return pool
     if config.bands is not None:
         from engine.bands import resolve_bands  # engine/bands.py imports this module
-        return resolve_bands(pool, results, config, turn)
+        return resolve_bands(pool, results, config, turn, market)
     rules = config.bandits
     pool = BanditPool(**asdict(pool))  # pure: the caller's pool is not changed
     playing = {key: result.state for key, result in results.items() if not result.state.game_over}
