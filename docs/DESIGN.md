@@ -1486,13 +1486,56 @@ Until now the world map is only a backdrop: the bandits are one pool with no pla
 
 **Lab first** (`lab/bands_map.py`, 8 realms, 24 months on the real engine, as the bandits' lab; done 2026-11-13, numbers in `PLAN.md`, "Lab: bands on the map"): the bracketed values; raids per realm against today's pool (the neighbours of a realm in crisis should suffer more, the far ones less); that bands do not pile up forever on one realm; that a serene world still has almost no bandits; that a realm without guards feels raids early but survives.
 
-### Phase 2: caravans and the fair (outline, to detail after phase 1)
+### Phase 2: caravans and the fair (spec approved 2026-11-13)
 
-- The market's warehouse stands at the fair. A sale leaves the realm's store the month it is ordered and walks to the fair as a **caravan**: one caravan a month per realm, carrying up to the lots its merchants can handle (`trade_capacity`). It reaches the warehouse in [2-3] weeks; a purchase walks back the same way. Latency: about one month each way.
-- **A band meeting a caravan** takes the load (a share of it with an escort), and the caravan turns back empty. **Meeting** (lab `lab/caravans_map.py`, decided 2026-11-13): each week the caravan marks every hex it crossed; it is met when one of them lies within [2] hexes of a band where the band stands at the week's end ("same hex" almost never happens, both jump several hexes a week). **The fair's peace**: no band camps within [6] hexes of the fair (start camps, fugitives' camps, splits), else a band by the fair sits on every road. The radius is low on purpose until the sovereigns have tools against the bands on the roads (an agreement between realms to take in more seekers, patrols, escorts); raise it with them. The seller loses goods not yet arrived. Open: does a buyer whose purchase is robbed lose its gold too? (Probably yes: paid at the fair.)
-- **Escort**: the Gastaldo may send guards with the caravan; each stops raiders as at home.
-- **Faster caravans by the market's tools** (decided 2026-11-13): the market building gets tool levels like farms, sawmills and quarries (the `improve` order, `[tools]`; docs/DESIGN.md, "Tools"), but the bonus is the caravans' speed, e.g. pack mules [+25 %], carts [+50 %, maybe a lot more a trip]. Speed pays twice (less latency and fewer weeks exposed to bands): the lab checks it is not the obvious buy. It sets a real choice between the Treasurer (faster carts) and the Gastaldo (an escort). Roads built by the Architect, faster on one stretch only, are left for later.
-- Seen by its realm all the way; the Treasurer's briefing lists the goods on the road ("due lotti di legna in viaggio, alla fiera a febbraio").
+Values from `lab/caravans_map.py` (PLAN.md, "Lab: caravans meet bands"). Everything hangs on a new section `[caravans]`; without it the market is instant as today and old games replay unchanged. `[caravans]` needs `[bands]`.
+
+**The fair**
+
+- The market's warehouse stands at the fair: the free hex nearest the middle of the map, found again each month from the realms' land (deterministic; it moves only if a realm grows over it).
+- **The fair's peace**: no band camps within [6] hexes of the fair (start camps, fugitives' camps, splits): those hexes count as near a realm's land for the camp choices. A fallen realm's band still camps on its land.
+
+**Two legs a month per realm** (only in a month with trades)
+
+- **Out** (sales): the goods leave the realm's store the month they are ordered, as today, and walk to the fair. They join the warehouse when the caravan arrives: buyers can take them **from the next month**. Today they can be bought the same month.
+- **Back** (purchases): filled at the fair at the start of the month, as today, and **paid at once**; the goods walk home and enter the store when the caravan arrives, at the end of the month: **usable from the next month** (today: the same month). Bought wood cannot be built with, nor bought food eaten, in the month of the order.
+- The road: the cheapest road from the fair to the realm's doorstep (`RoadMap.roads`), walked in the weeks at [8] road units a week, as the bands. Every road is shorter than 4 weeks today (15-27 units); a longer one arrives anyway at the end of the month (the weeks only matter for the meetings). So nothing is on the road when the council plans: no caravan state across months.
+- One caravan per leg, whatever the lots (up to `trade_capacity`, as today).
+
+**Meeting a band**
+
+- Each week the caravan marks every hex it crossed; it is met when one of them lies within [2] hexes of a band (any size above 0 adults) where the band stands at the week's end. Only the first meeting counts. The radius is low on purpose until the sovereigns have tools against the bands on the roads (an agreement between realms to take in more seekers, patrols, escorts); raise it with them.
+- **A met caravan loses its whole load** and goes back empty. The band keeps what it can carry, `adults x carry`, food first (to its food), then wood (burned); the rest is scattered. Stone is left on the road (lost).
+- **Out leg robbed**: the seller's goods never reach the warehouse, so nobody pays for them.
+- **Back leg robbed**: the buyer has already paid at the fair: it loses goods and gold.
+- No odds, no escort for now: a meeting always takes the load.
+
+**Events and what each realm sees** (court events of the realm whose caravan it is)
+
+- `caravan_arrived` (leg, goods and units, week), `caravan_robbed` (leg, goods and units lost, the band's size in words, the week, the hex). A robbing band also counts as seen by that realm this month (`band_seen`, if not already).
+- `trade_on_sale` and `trade_bought` gain a field `road: true` (the goods are on the way): the labels say "in viaggio verso la fiera" / "in viaggio verso casa".
+
+**The engine** (`engine/caravans.py`, called by `resolve_bands` inside the weeks)
+
+- `resolve_market`: a sale's consignment enters the queue marked `arriving`; `_lots_available` and `_take_oldest` skip it this month. `apply_trade` does not add bought goods to the store; `state_after_trades` (the dry run of the validator and the council) does not count them either.
+- `resolve_world` takes the market and returns it with `[caravans]`: arrived consignments lose `arriving`, robbed ones are removed; the purchases arrived are added to the realms' new states. The callers (`server/db/games.py`, `server/db/replay.py`) pass and store the market after the world step.
+- Spoilage at the fair as today; none on the road (two to four weeks).
+
+**Council and UI**
+
+- Manual and Treasurer's craft: the month of latency both ways (sell before the need, buy a month before); the fair is far and the roads may have bands.
+- Treasurer's briefing: last month's caravans, arrived or robbed. The Voice hears a robbed caravan. The Gastaldo's briefing lists the band that robbed.
+- Automatic sovereign: its rules that buy (food when short) now act a month late; checked in the game, no new rule first.
+- UI: the fair on the world view (one icon); the chronicle tells arrivals and robberies.
+
+**Left for later** (each its own decision): escorts and the market's tools (pack mules, carts) for speed; a radius above 2; caravans that last more than a month; spoilage on the road.
+
+**Order of work**
+
+1. Engine: `[caravans]`, the fair and its peace, the latency in the market, the legs, the meetings, the events; tests; old games replay unchanged.
+2. Council: manual, craft, briefings, Voice.
+3. UI: the fair on the map, labels and chronicle.
+4. A 12-month game with three automatic realms.
 
 ### Phase 3: messengers (with diplomacy)
 
