@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{% if admin %}Partita {{ game.id }} · il mondo{% else %}{{ realm.name }} · il mondo{% endif %}{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">{% if admin %}Amministrazione · {% endif %}Partita {{ game.id }}{% if turn %} · turno {{ turn }}{% endif %}</div>
+  <h1>Il mondo</h1>
+  {% if admin %}
+  <p class="hint">Tutti i regni della partita, in chiaro. <a href="/admin/games/{{ game.id }}">← La partita</a></p>
+  {% else %}
+  <p class="hint">Le terre conosciute. Degli altri regni non sai ancora nulla.</p>
+  {% endif %}
+</section>
+
+{% if not board %}
+<section class="card"><p>Questa partita non ha la mappa a esagoni del mondo.</p></section>
+{% else %}{% set g = board %}
+<section class="card" style="padding: 3px; gap: 6px">
+  <div class="map-frame hex-frame">
+    <svg class="world-board" viewBox="0 0 {{ g.width }} {{ g.height }}" role="img"
+         aria-label="Mappa del mondo" style="width: {% if zoom %}{{ (g.width | int) * 2 }}px{% else %}100%{% endif %}">
+      <defs><polygon id="wh" points="{{ g.hex_points }}"/></defs>
+      {% for group in g.groups %}<g class="{{ group.cls }}">{% for h in group.hexes %}<use href="#wh" x="{{ h.x }}" y="{{ h.y }}"/>{% endfor %}</g>
+      {% endfor %}
+      {% for b in g.borders %}<path class="realm-border" d="{{ b.path }}" style="stroke: {{ b.color }}"/>{% endfor %}
+      {% for l in g.letters %}<text class="wl{% if l.site %} site{% endif %}" x="{{ l.x }}" y="{{ l.y }}">{{ l.text }}</text>{% endfor %}
+      {% for b in g.borders %}<text class="realm-name" x="{{ b.label_x }}" y="{{ b.label_y }}" style="fill: {{ b.color }}">{{ b.name }}</text>{% endfor %}
+    </svg>
+  </div>
+  <div class="map-tools" style="padding: 0 6px 6px">
+    <span class="hint">Nord in alto</span>
+    <a href="{{ zoom_href }}">{% if zoom %}Rimpicciolisci{% else %}Ingrandisci{% endif %}</a>
+  </div>
+</section>
+
+{% if admin %}
+<section class="card">
+  <h2>I regni</h2>
+  {% for b in g.borders %}
+  <p style="margin: 0; display: flex; align-items: center; gap: 8px">
+    <span aria-hidden="true" class="zone-swatch" style="--zone: {{ b.color }}; background: {{ b.color }}"></span>
+    {{ b.name }}{% if b.fallen %} <span class="hint">(caduto)</span>{% endif %}
+  </p>
+  {% endfor %}
+</section>
+{% endif %}
+
+<section class="map-legend world-legend" aria-label="Legenda">
+  {% for cls, name in [("h-plain", "Pianura"), ("h-forest", "Bosco"), ("h-hill", "Collina"), ("h-river", "Fiume"),
+                       ("h-wild", "Da dissodare"), ("h-field", "Campi")] %}
+  <span><svg aria-hidden="true" viewBox="-7 -7 14 14"><polygon class="{{ cls }}" points="{{ g.hex_points }}"/></svg>{{ name }}</span>
+  {% endfor %}
+  {% for letter, name in g.legend %}<span><b class="world-letter">{{ letter }}</b>{{ name }}</span>{% endfor %}
+</section>
+{% endif %}
+{% endblock %}

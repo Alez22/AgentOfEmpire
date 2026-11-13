@@ -4,7 +4,7 @@
 <section>
   <div class="kicker">Amministrazione · partita {{ game.id }} · seed {{ game.seed }} · motore {{ game.engine_version }}</div>
   <h1>Partita {{ game.id }}</h1>
-  <p class="hint">Stato: {{ game.status }}{% if game.open_turn %}, turno aperto {{ game.open_turn }}{% endif %}. <a href="/admin">← Tutte le partite</a></p>
+  <p class="hint">Stato: {{ game.status }}{% if game.open_turn %}, turno aperto {{ game.open_turn }}{% endif %}. <a href="/admin">← Tutte le partite</a> · <a href="/admin/games/{{ game.id }}/world">Il mondo</a></p>
 </section>
 
 <section class="card">

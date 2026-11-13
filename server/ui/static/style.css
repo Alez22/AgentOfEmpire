@@ -240,3 +240,23 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
 .doors-box .meaning { font-size: 13px; color: #A9BEDC; text-align: right; max-width: 190px; }
 .doors-box.not-held { background: #2E2718; border-color: #5A4A26; } .doors-box.not-held .meaning { color: #E8C778; }
 .stat.wide { grid-column: span 2; }
+
+/* World view (server/ui/world_view.py): small hexes, plain colours, letters.
+   Brighter fills than the realm board: at 6 units the night shades blur. */
+.world-board { display: block; margin: 0 auto; max-width: none; }
+.world-board use, .world-legend polygon { stroke: #14120E; stroke-width: 0.5; }
+.world-board .h-plain, .world-legend .h-plain { fill: #3A3426; }
+.world-board .h-forest, .world-legend .h-forest { fill: #2C4426; }
+.world-board .h-hill, .world-legend .h-hill { fill: #5A4A35; }
+.world-board .h-river, .world-legend .h-river { fill: #2E5466; }
+.world-board .h-wild, .world-legend .h-wild { fill: #4A4428; }
+.world-board .h-field, .world-legend .h-field { fill: #6B5A2C; }
+.world-board .h-square, .world-board .h-quarry, .world-board .h-sawmill, .world-board .h-market,
+.world-board .h-watch { fill: #4E463A; }
+.world-board .realm-border { fill: none; stroke-width: 1.6; stroke-linecap: round; }
+.world-board .wl { font-family: var(--body); font-size: 7px; font-weight: 700; fill: #F2EBDD; text-anchor: middle; dominant-baseline: central; }
+.world-board .wl.site { opacity: 0.5; }
+.world-board .realm-name { font-family: var(--display); font-size: 10px; font-weight: 700; text-anchor: middle; paint-order: stroke;
+  stroke: #14120E; stroke-width: 2.5px; }
+.world-legend svg { width: 26px; height: 26px; flex-shrink: 0; }
+.world-letter { width: 26px; text-align: center; font-weight: 700; color: var(--text); flex-shrink: 0; }

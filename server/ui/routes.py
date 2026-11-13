@@ -23,14 +23,14 @@ from fastapi.templating import Jinja2Templates
 
 from engine import migration
 from engine.config import load_raw_config
-from engine.territory import owned_count
+from engine.territory import is_hex, owned_count
 from engine.turn import food_needed, housing_capacity, jobs_in_sector, season_of
 from server.council import audience, debate, mandates, manual, meeting, people, persons
 from server.council.briefing import GATE_MEMORY_TURNS, months_until_winter
 from server.db import games
 from server.sovereign import auto, rhythm
 from server.sovereign_view import sovereign_state
-from server.ui import labels, map_view, market_view, reversals
+from server.ui import labels, map_view, market_view, reversals, world_view
 
 TEMPLATES_DIR = Path(__file__).with_name("templates")
 _environment = jinja2.Environment(
@@ -509,6 +509,30 @@ def map_page(request: Request, realm_id: int, b: int | None = None, zone: str | 
         "realm_id": realm_id,
     }
     return templates.TemplateResponse(request, "map.html", context)
+
+
+@router.get("/ui/realms/{realm_id}/world", response_class=HTMLResponse)
+def world_page(request: Request, realm_id: int, zoom: int = 0, conn=Depends(_connection)):
+    """@brief The whole world, small (server/ui/world_view.py). For now a
+    player sees only their own realm on it: only its state is passed, so
+    the other realms never reach this page."""
+    game_id = games.realm_game_id(conn, realm_id)
+    if game_id is None:
+        return _not_found(request, f"il regno {realm_id}")
+    game = games.load_game(conn, game_id)
+    realm = next(r for r in game["realms"] if r["id"] == realm_id)
+    state = games.load_latest_state(conn, realm_id)
+    config = games.load_game_config(conn, game_id)
+    board = None
+    if state.has_map() and is_hex(config):
+        own = {"name": realm["name"], "state": state, "color": world_view.REALM_COLORS[0], "fallen": False}
+        board = world_view.world_board(config, state.terrain, [own])
+    context = {
+        "game": game, "realm": realm, "turn": state.turn, "board": board, "admin": False,
+        "zoom": bool(zoom), "zoom_href": f"/ui/realms/{realm_id}/world" + ("" if zoom else "?zoom=1"),
+        "nav": "world", "realm_id": realm_id,
+    }
+    return templates.TemplateResponse(request, "world.html", context)
 
 
 ICON_AUTHORS = Path(__file__).with_name("static") / "icons" / "AUTHORS.txt"

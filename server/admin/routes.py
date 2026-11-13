@@ -19,11 +19,13 @@ import psycopg
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
+from engine.territory import is_hex
 from server.council import audience, meeting, notes, voice
 from server.council.meeting import render_prompt
 from server.council.personality import TRAITS, trait_word
 from server.db import games
 from server.db.replay import replay_game
+from server.ui import world_view
 from server.ui.routes import templates
 
 router = APIRouter(prefix="/admin", include_in_schema=False)
@@ -100,6 +102,26 @@ def _game_context(conn: psycopg.Connection, game_id: int) -> dict:
 @router.get("/games/{game_id}", response_class=HTMLResponse)
 def admin_game(request: Request, game_id: int, conn=Depends(_admin_connection)):
     return templates.TemplateResponse(request, "admin_game.html", _game_context(conn, game_id))
+
+
+@router.get("/games/{game_id}/world", response_class=HTMLResponse)
+def admin_world(request: Request, game_id: int, zoom: int = 0, conn=Depends(_admin_connection)):
+    """@brief The whole world in the clear: every realm's land, buildings and
+    border, each in its colour (server/ui/world_view.py); fallen realms in grey."""
+    game = _game_or_404(conn, game_id)
+    config = games.load_game_config(conn, game_id)
+    realms, terrain = [], None
+    for index, realm in enumerate(game["realms"]):
+        state = games.load_latest_state(conn, realm["id"])
+        if not state.has_map():
+            continue
+        terrain = terrain or state.terrain
+        realms.append({"name": realm["name"], "state": state, "fallen": state.game_over is not None,
+                       "color": world_view.REALM_COLORS[index % len(world_view.REALM_COLORS)]})
+    board = world_view.world_board(config, terrain, realms) if terrain and is_hex(config) else None
+    context = {"game": game, "turn": game["open_turn"], "board": board, "admin": True, "zoom": bool(zoom),
+               "zoom_href": f"/admin/games/{game_id}/world" + ("" if zoom else "?zoom=1")}
+    return templates.TemplateResponse(request, "world.html", context)
 
 
 @router.post("/games/{game_id}/replay", response_class=HTMLResponse)

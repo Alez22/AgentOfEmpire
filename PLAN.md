@@ -1,6 +1,6 @@
 # AgentOfEmpire – Work plan
 
-Updated 2026-11-13 (game 42: 5 of 6 stand at month 24 with the ration cut in October; councils now read the neighbours' public events under their name).
+Updated 2026-11-13 (work on the interface: the world view, admin in the clear and players their own realm only; the graphic proposals removed from the Pages site).
 
 The prototype is complete and playable from a phone, and the field test is closed. Phase 3 (accounts) is set aside: the game first needs richer dynamics. **Now: phase 4, the market**: the labs are done (`lab/market_sim.py`, `lab/market_closed.py`) and the spec "Market, needs and land levels" is approved (`docs/DESIGN.md`); next, the engine (step 1 built: needs, land levels, a site per realm; steps 2 and 3 built: the market, the `trade` order, market states in the database, game-level resolution and replay; step 4 built: the council trades through the Treasurer, the "Mercato" page; next step 5, a 12-month game with three realms), then a game with three realms. The territory step 1 is done (spec in `docs/DESIGN.md`, "Territory").
 
@@ -13,7 +13,7 @@ This file is the starting point of every work session: read it at the start and 
 | Engine | deterministic monthly simulation: economy, seasons, food spoilage, demography, mood, unrest | `engine/`, values in `engine/config.toml` |
 | Database | PostgreSQL 18.6 in Docker, 12 migrations, row-level security, append-only logs, replay | `db/migrations/`, `server/db/` |
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (GLM 5.3 Flash "high"; the Voice on DeepSeek V4.1 Flash); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
-| UI | phone pages: games, turn, kingdom, map, market, chronicle, audiences; meetings run in the background | `server/ui/` |
+| UI | phone pages: games, turn, kingdom, map, world, market, chronicle, audiences; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing | `server/admin/`, enabled with `ADMIN_VIEW=1` |
 | Tests | 316 tests: engine, database, council with fake models, UI | `tests/` |
 
@@ -82,6 +82,7 @@ The open items below carry over: they are checked and tuned while playing the ne
 - [ ] Tune engine values (food, taxes, mood)
 - [ ] Review the council and square prompts
 - [ ] Polish the UI after the test
+  - [x] World view (2026-11-13): the whole 64 × 64 map with small hexes, terrain as colour, buildings as letters, borders per realm (`server/ui/world_view.py`); admin at `/admin/games/{id}/world` sees every realm (fallen ones in grey), a player at `/ui/realms/{id}/world` (tab "Mondo") only their own realm on the full terrain. Later: neighbours discovered by exploration or diplomacy
 - [ ] Choose models and spending cap for a 120-turn game
 
 ### 3. Before friends – set aside (2026-11-08)
@@ -1118,7 +1119,7 @@ Seed 0 (realms 56-58). Claude as sovereign through a driver (my choices first, t
 ### Presentation page and map graphics (2026-11-08)
 
 - **Presentation page** of the finished game: `docs/index.html`, live at https://alez22.github.io/AgentOfEmpire/ (GitHub Pages from `main` → `/docs`). Eleven chapters in Italian, click-to-open deep dives, a "where we are" section. The vision decisions it needed are in `docs/DESIGN.md` (victory paths, reputation, espionage, eras' names, seasons, battles). The game's name is **AgentOfEmpire**.
-- **Gallery of graphic proposals** at the bottom of the page (temporary, to be removed once chosen): game-icons, Fluent Emoji, Phosphor; public-domain art (Lorenzetti, Très Riches Heures, Bruegel…); Kenney tiles, Watabou, Azgaar. About 6 MB in `docs/assets/proposals/`.
+- **Gallery of graphic proposals** at the bottom of the page (removed from the page 2026-11-13; the files are still in `docs/assets/proposals/`): game-icons, Fluent Emoji, Phosphor; public-domain art (Lorenzetti, Très Riches Heures, Bruegel…); Kenney tiles, Watabou, Azgaar. About 6 MB in `docs/assets/proposals/`.
 - **Map graphics decided** (DESIGN, "Territory" → "Map graphics"): **hexes with game-icons**, **night theme** (`lab/hex_map_mockup.py`, SVG, icons in `lab/assets/game_icons` with `AUTHORS.txt`). The same icon set will serve the UI panels. Explored and set aside: Kenney Tiny Town recoloured with our own pixel buildings and terrain (`lab/tiny_town_mockup.py`, `lab/pixel_*.py`).
 - **Real hex grid in the engine**: spec in DESIGN ("Hex grid"), **approved 2026-11-08**: farm a 7-hex flower, quarry and square 4-hex rhombi; the palace later (its rhombus left free in the new core); old square games kept for replay and reading only (briefing and map page hex only). Footprints as steps in `config.toml` (`hex_steps`), new world files `world_hex.txt` / `core_hex.toml`, text grid with 4-character cells.
   - [x] Step 1, engine (2026-11-08): `[map] grid` ("square" when missing; still "square" in `config.toml` until step 2), `neighbours()`, `hex_distance()`, footprints walked from the anchor, packing in `find_place`, nudge to the 6 neighbours, directions on the 7/4 scale (`engine/territory.py`, `tests/test_hex_grid.py`). Square games unchanged (all old tests pass).
