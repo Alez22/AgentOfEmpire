@@ -601,22 +601,32 @@ def role_expertise(ctx: MeetingContext, role: str) -> str:
     the doors where newcomers can settle (stage 2)."""
     return expertise_block(role, ctx.config.map is not None, market_status(ctx.state, ctx.config) == "open",
                            _village_market(ctx.config), ctx.config.migration is not None,
-                           ctx.config.tools is not None)
+                           ctx.config.tools is not None, ctx.config.bands is not None)
+
+
+def _craft_file(name: str, with_bands: bool) -> Path:
+    """@brief A craft file, or its "_bands" variant in games with bands on the
+    map (roads of the world): the bandits' rules changed there, the old games
+    keep their text."""
+    if with_bands and (PROMPTS_DIR / f"{name}_bands.txt").exists():
+        return PROMPTS_DIR / f"{name}_bands.txt"
+    return PROMPTS_DIR / f"{name}.txt"
 
 
 def expertise_block(role: str, with_map: bool = False, with_market: bool = False, with_village: bool = False,
-                    with_doors: bool = False, with_tools: bool = False) -> str:
+                    with_doors: bool = False, with_tools: bool = False, with_bands: bool = False) -> str:
     """@brief What the office's training teaches (a role's craft, the same
     for every holder today; later it can differ by person, in a résumé).
     On the map the Architect's craft adds town planning (expertise_<role>_map.txt);
-    with a market the Treasurer's adds trading (expertise_<role>_market.txt)."""
-    path = PROMPTS_DIR / f"expertise_{role}.txt"
+    with a market the Treasurer's adds trading (expertise_<role>_market.txt);
+    with bands on the map a file's "_bands" variant replaces it (_craft_file)."""
+    path = _craft_file(f"expertise_{role}", with_bands)
     if not path.exists():
         return ""
     text = path.read_text()
     for wanted, suffix in ((with_map, "map"), (with_market, "market"), (with_village, "village"),
                            (with_doors, "doors"), (with_tools, "tools")):
-        extra = PROMPTS_DIR / f"expertise_{role}_{suffix}.txt"
+        extra = _craft_file(f"expertise_{role}_{suffix}", with_bands)
         if wanted and extra.exists():
             text += extra.read_text()
     return EXPERTISE_INTRO + text
@@ -925,7 +935,8 @@ def gate_lines(ctx: MeetingContext) -> list[str]:
     """@brief The Gastaldo's section, with the realm's own raids, flights and
     arrivals of the last months (read as the server: they are the realm's own events)."""
     rows = ctx.conn.execute(
-        "SELECT turn, kind, data FROM events WHERE realm_id = %s AND kind IN ('raid', 'flight', 'arrival')"
+        "SELECT turn, kind, data FROM events WHERE realm_id = %s"
+        " AND kind IN ('raid', 'flight', 'arrival', 'band_seen')"
         " AND turn >= %s AND turn < %s ORDER BY turn, id",
         (ctx.realm_id, ctx.turn - briefing.GATE_MEMORY_TURNS, ctx.turn),
     ).fetchall()

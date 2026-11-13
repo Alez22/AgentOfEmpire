@@ -287,6 +287,15 @@ def works_lines(state: GameState, config: Config, people=None, territory_summary
 GATE_MEMORY_TURNS = 6  # months of raids and flights in the Gastaldo's briefing
 
 
+def band_size_en(adults: int) -> str:
+    """@brief A band's size in words (roads of the world): seen, not counted."""
+    if adults < 5:
+        return "a small band"
+    if adults < 15:
+        return "a band of about ten"
+    return "a band of about twenty"
+
+
 def _gate_event_text(kind: str, data: dict) -> str:
     if kind == "arrival":  # stage 2
         children = f" and {data['children']} children" if data["children"] else ""
@@ -298,6 +307,12 @@ def _gate_event_text(kind: str, data: dict) -> str:
                  f"{data['children']} children" if data["children"] else "",
                  f"{data['merchants']} merchants" if data["merchants"] else ""]
         return "families left for the woods: " + ", ".join(p for p in parts if p)
+    if kind == "band_seen":  # roads of the world: a size in words, as the people would tell it
+        where = "from the watchtower" if data["tower"] else "near our land"
+        return f"{band_size_en(data['adults'])} seen {where} (week {data['week']})"
+    if data["repelled"] and data.get("stayed"):
+        return (f"a band of {data['raiders']} raiders was driven off by {data['guards']} guards; "
+                f"{data['stayed']} of them stayed as citizens")
     if data["repelled"]:
         return f"a band of {data['raiders']} raiders was driven off by {data['guards']} guards"
     return (f"a band of {data['raiders']} raiders against {data['guards']} guards carried away "
@@ -315,20 +330,31 @@ def _doors_lines(state: GameState, config: Config) -> list[str]:
             f"empty jobs: {migration.empty_jobs(state, config)}."]
 
 
+def _guard_odds_line(config: Config) -> str:
+    """@brief What one guard is worth at the gate: a share of the raiders (the
+    pool) or odds (bands on the map, engine/bands.py)."""
+    rules = config.bandits
+    if config.bands is None:
+        return f"- Each guard stops about {rules.repel_per_guard} raiders; a band is about {rules.party_size}."
+    return (f"- A raid succeeds with the odds raiders against raiders plus {config.bands.guard_worth} for each "
+            f"guard (8 raiders against 4 guards: 8 in 20); a band is about {rules.party_size} men.")
+
+
 def gate_lines(state: GameState, config: Config, past: list[tuple[int, str, dict]]) -> list[str]:
     """@brief The Gastaldo's section (village block B+C): the guard, what lies
-    in view of the bandits, the doors (stage 2), the raids, flights and arrivals of the last months.
-    @param past (turn, kind, data) of the realm's own raid, flight and arrival events, oldest first."""
+    in view of the bandits, the doors (stage 2), the raids, flights, arrivals and bands seen of the last months.
+    @param past (turn, kind, data) of the realm's own raid, flight, arrival and band_seen events, oldest first."""
     rules = config.bandits
     lines = ["## The gate and the guard",
              f"- Guards on duty: {state.guards()} (the militia; every guard is an adult taken from work). "
              f"Adults: {state.adults}, {state.free_adults()} of them free for the Architect's work.",
-             f"- Each guard stops about {rules.repel_per_guard} raiders; a band is about {rules.party_size}.",
+             _guard_odds_line(config),
              f"- In view of the bandits: food {state.food}, wood {state.wood} (they go where much lies exposed)."]
     if config.migration is not None:  # stage 2
         lines += _doors_lines(state, config)
     if not past:
-        lines.append(f"- No raid, no family gone and nobody settled in the last {GATE_MEMORY_TURNS} months.")
+        seen = ", no band seen" if config.bands is not None else ""
+        lines.append(f"- No raid{seen}, no family gone and nobody settled in the last {GATE_MEMORY_TURNS} months.")
     for turn, kind, data in past:
         lines.append(f"- {MONTHS[(turn - 1) % 12]} (turn {turn}): {_gate_event_text(kind, data)}.")
     return lines

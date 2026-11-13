@@ -152,13 +152,7 @@ def _bandits_lines(config: Config) -> list[str]:
         f"to flee: every month about {rules.flee_adult_pct}% of its adults leave for the woods, the peasants with "
         f"{rules.flee_child_pct}% of the children; the elders stay. The merchants flee by their own discontent. "
         "Those who leave become bandits, in a world whose bandits nobody can count.",
-        f"- Bandits raid in bands of about {rules.party_size}, choosing the realms where most food and wood lie "
-        f"exposed and the guard is weakest. Each raider carries away up to {rules.carry} units, food first, "
-        "then wood. Bandits eat what they take; without loot they go hungry and scatter.",
-        f"- Guards (the militia) exist only once the watchtower is finished and the Gastaldo sits on the council: "
-        f"each guard stops {rules.repel_per_guard} raiders, enough guards drive a band off, fewer cut its loot. "
-        "Guards are adults taken from work before the Architect assigns the others, and they produce nothing. "
-        f"The Gastaldo's salary is {rules.gastaldo_salary} gold a month.",
+        *(_bands_lines(config) if config.bands is not None else _pool_raid_lines(config)),
     ]
     if rules.fallen_adult_pct:
         lines.insert(2, f"- When a realm falls, about {rules.fallen_adult_pct}% of its adults and "
@@ -167,6 +161,42 @@ def _bandits_lines(config: Config) -> list[str]:
     if config.migration is not None:
         lines += _arrivals_lines(config)
     return lines
+
+
+def _pool_raid_lines(config: Config) -> list[str]:
+    """@brief Raids of the pool with no place (games before [bands])."""
+    rules = config.bandits
+    return [
+        f"- Bandits raid in bands of about {rules.party_size}, choosing the realms where most food and wood lie "
+        f"exposed and the guard is weakest. Each raider carries away up to {rules.carry} units, food first, "
+        "then wood. Bandits eat what they take; without loot they go hungry and scatter.",
+        f"- Guards (the militia) exist only once the watchtower is finished and the Gastaldo sits on the council: "
+        f"each guard stops {rules.repel_per_guard} raiders, enough guards drive a band off, fewer cut its loot. "
+        "Guards are adults taken from work before the Architect assigns the others, and they produce nothing. "
+        f"The Gastaldo's salary is {rules.gastaldo_salary} gold a month.",
+    ]
+
+
+def _bands_lines(config: Config) -> list[str]:
+    """@brief Bands on the map (roads of the world, engine/bands.py)."""
+    rules, bands = config.bandits, config.bands
+    return [
+        f"- Bandits live in bands camped in the woods and on the hills. Each month a band walks to a realm "
+        f"within about a month's walk (woods, hills and rivers slow it), choosing where most food and wood lie "
+        "exposed and the guard is weakest, nearer realms first. It raids once and goes back to its camp"
+        + (", and never raids the same realm two months in a row." if bands.rest else "."),
+        f"- A raid is a gamble: it succeeds with the odds raiders against raiders plus {bands.guard_worth} for "
+        f"each guard (8 raiders against 4 guards: 8 in 20). If it succeeds each raider carries away up to "
+        f"{rules.carry} units, food first, then wood; if it fails it takes nothing, and each raider stays as "
+        f"a citizen with a chance of {bands.stay_pct}% if there are free beds"
+        + (", whatever the doors" if config.migration is not None else "")
+        + ". Bandits eat what they take; without loot they go hungry and scatter.",
+        f"- A realm sees the bands within {bands.see} hexes of its land, and within {bands.tower_see} of its "
+        "finished watchtower: a sighting is a warning, not a count of the bandits in the world.",
+        "- Guards (the militia) exist only once the watchtower is finished and the Gastaldo sits on the "
+        "council. Guards are adults taken from work before the Architect assigns the others, and they "
+        f"produce nothing. The Gastaldo's salary is {rules.gastaldo_salary} gold a month.",
+    ]
 
 
 def _arrivals_lines(config: Config) -> list[str]:
@@ -181,8 +211,9 @@ def _arrivals_lines(config: Config) -> list[str]:
         "closed takes nobody; normal takes as many as the empty jobs, never beyond the free beds; open fills "
         f"the free beds, beyond the jobs too. Closed doors hold only with at least {rules.closed_min_guards} "
         "guards, with fewer they count as normal.",
-        f"- Of the raiders the guards stop, {rules.keep_normal_pct}% stay with normal doors and "
-        f"{rules.keep_open_pct}% with open doors, as far as the free beds go; closed doors drive them all off.",
+        *([] if config.bands is not None else [
+            f"- Of the raiders the guards stop, {rules.keep_normal_pct}% stay with normal doors and "
+            f"{rules.keep_open_pct}% with open doors, as far as the free beds go; closed doors drive them all off."]),
         f"- When food is short (less than {rules.scarce_food_months} months of eating) or there is no empty "
         "job, the people grumble against the newcomers: the more arrive at once against the population, "
         "the louder they grumble. With enough food and work for all, nobody grumbles.",
@@ -377,13 +408,7 @@ def _bandits_section(config: Config) -> dict:
         f"comincia a fuggire: ogni mese circa il {rules.flee_adult_pct}% dei suoi adulti parte per i boschi, i "
         f"contadini con l'{rules.flee_child_pct}% dei bambini; gli anziani restano. I mercanti fuggono per il loro "
         "scontento. Chi parte diventa brigante, e nessuno sa quanti briganti ci siano al mondo.",
-        f"I briganti assaltano in bande di circa {rules.party_size}, scegliendo i regni dove c'è più cibo e legno "
-        f"in vista e la guardia è più debole. Ogni brigante porta via fino a {rules.carry} unità, prima il cibo, "
-        "poi il legno. I briganti mangiano ciò che rubano; senza bottino fanno la fame e si disperdono.",
-        f"Le guardie (la milizia) esistono solo con la torre di guardia finita e il Gastaldo nel consiglio: ogni "
-        f"guardia ferma {rules.repel_per_guard} briganti; abbastanza guardie respingono la banda, meno guardie "
-        "riducono il bottino. Le guardie sono adulti tolti al lavoro prima che l'Architetta assegni gli altri, e "
-        f"non producono nulla. Il Gastaldo costa {rules.gastaldo_salary} oro al mese di salario.",
+        *(_bands_notes(config) if config.bands is not None else _pool_raid_notes(config)),
     ]
     if rules.fallen_adult_pct:
         notes.insert(1, f"Quando un regno cade, circa il {rules.fallen_adult_pct}% dei suoi adulti e il "
@@ -392,6 +417,42 @@ def _bandits_section(config: Config) -> dict:
     if config.migration is None:
         return {"title": "Briganti", "entries": [], "notes": notes}
     return {"title": "Briganti e arrivi", "entries": [], "notes": notes + _arrivals_notes(config)}
+
+
+def _pool_raid_notes(config: Config) -> list[str]:
+    """@brief Raids of the pool with no place, for the sovereign's page (Italian)."""
+    rules = config.bandits
+    return [
+        f"I briganti assaltano in bande di circa {rules.party_size}, scegliendo i regni dove c'è più cibo e legno "
+        f"in vista e la guardia è più debole. Ogni brigante porta via fino a {rules.carry} unità, prima il cibo, "
+        "poi il legno. I briganti mangiano ciò che rubano; senza bottino fanno la fame e si disperdono.",
+        f"Le guardie (la milizia) esistono solo con la torre di guardia finita e il Gastaldo nel consiglio: ogni "
+        f"guardia ferma {rules.repel_per_guard} briganti; abbastanza guardie respingono la banda, meno guardie "
+        "riducono il bottino. Le guardie sono adulti tolti al lavoro prima che l'Architetta assegni gli altri, e "
+        f"non producono nulla. Il Gastaldo costa {rules.gastaldo_salary} oro al mese di salario.",
+    ]
+
+
+def _bands_notes(config: Config) -> list[str]:
+    """@brief Bands on the map, for the sovereign's page (Italian)."""
+    rules, bands = config.bandits, config.bands
+    return [
+        "I briganti vivono in bande accampate nei boschi e sulle colline. Ogni mese una banda cammina verso un "
+        "regno a circa un mese di strada (boschi, colline e fiumi la rallentano), scegliendo dove c'è più cibo e "
+        "legno in vista e la guardia è più debole, prima i regni vicini. Assalta una volta e torna al campo"
+        + ("; non assalta lo stesso regno due mesi di fila." if bands.rest else "."),
+        f"L'assalto è un azzardo: riesce con la probabilità dei briganti contro i briganti più {bands.guard_worth} "
+        f"per ogni guardia (8 briganti contro 4 guardie: 8 su 20). Se riesce, ogni brigante porta via fino a "
+        f"{rules.carry} unità, prima il cibo, poi il legno; se fallisce non porta via nulla, e ogni brigante "
+        f"resta come cittadino con una probabilità del {bands.stay_pct}% se ci sono letti liberi"
+        + (", qualunque siano le porte" if config.migration is not None else "")
+        + ". I briganti mangiano ciò che rubano; senza bottino fanno la fame e si disperdono.",
+        f"Un regno vede le bande entro {bands.see} caselle dalle sue terre, ed entro {bands.tower_see} dalla "
+        "torre di guardia finita: un avvistamento è un avvertimento, non il conto dei briganti del mondo.",
+        "Le guardie (la milizia) esistono solo con la torre di guardia finita e il Gastaldo nel consiglio. Sono "
+        "adulti tolti al lavoro prima che l'Architetta assegni gli altri, e non producono nulla. Il Gastaldo "
+        f"costa {rules.gastaldo_salary} oro al mese di salario.",
+    ]
 
 
 def _arrivals_notes(config: Config) -> list[str]:
@@ -406,9 +467,10 @@ def _arrivals_notes(config: Config) -> list[str]:
         "non entra nessuno; normali entrano quanti sono i posti di lavoro vuoti, mai oltre i letti liberi; "
         f"aperte si riempiono i letti liberi, anche oltre il lavoro. Le porte chiuse tengono solo con almeno "
         f"{rules.closed_min_guards} guardie, con meno contano come normali.",
-        f"Dei briganti fermati dalle guardie restano il {rules.keep_normal_pct}% con le porte normali e il "
-        f"{rules.keep_open_pct}% con le porte aperte, finché ci sono letti liberi; le porte chiuse li "
-        "cacciano tutti.",
+        *([] if config.bands is not None else [
+            f"Dei briganti fermati dalle guardie restano il {rules.keep_normal_pct}% con le porte normali e il "
+            f"{rules.keep_open_pct}% con le porte aperte, finché ci sono letti liberi; le porte chiuse li "
+            "cacciano tutti."]),
         f"Quando il cibo scarseggia (meno di {rules.scarce_food_months} mesi) o non c'è lavoro libero, il popolo "
         "mormora contro i nuovi venuti: più ne arrivano insieme rispetto alla popolazione, più forte mormora. "
         "Con cibo e lavoro per tutti nessuno mormora.",
