@@ -371,14 +371,16 @@ def _gate_card(conn: psycopg.Connection, realm_id: int) -> dict:
     game_id = games.realm_game_id(conn, realm_id)
     state = games.load_latest_state(conn, realm_id)
     config = games.load_game_config(conn, game_id)
-    last_raid, flights, seen = None, 0, 0
+    last_raid, last_raiders, flights, seen = None, 0, 0, 0
     for turn in range(state.turn - 1, 0, -1):  # newest first
         own = [e for e in games.list_events_for_sovereign(conn, game_id, realm_id, turn) if e["realm_id"] == realm_id]
         if state.turn - turn <= GATE_MEMORY_TURNS:
             flights += sum(1 for e in own if e["kind"] == "flight")
             seen += sum(1 for e in own if e["kind"] == "band_seen")
-        if last_raid is None and any(e["kind"] == "raid" for e in own):
+        raids = [e for e in own if e["kind"] == "raid"]
+        if last_raid is None and raids:
             last_raid = labels.month_name(turn)
+            last_raiders = raids[-1]["data"]["raiders"]
         if last_raid is not None and state.turn - turn >= GATE_MEMORY_TURNS:
             break
     repel = config.bandits.repel_per_guard if config.bandits else 0
@@ -387,10 +389,12 @@ def _gate_card(conn: psycopg.Connection, realm_id: int) -> dict:
             "doors": _doors_card(conn, game_id, realm_id, state, config), "bands": None}
     if config.bands is not None:
         # Roads of the world: guards turn the odds, they stop nobody for sure.
-        # The odds of a band of the usual size (raiders / (raiders + worth x guards)).
-        party = config.bandits.party_size
-        card["bands"] = {"party": party, "seen": seen,
-                         "odds_pct": party * 100 // (party + config.bands.guard_worth * state.militia)}
+        # The odds only of the last band that raided (raiders / (raiders +
+        # worth x guards)): the sovereign knows the bands met, not a typical size.
+        odds_pct = None
+        if last_raiders:
+            odds_pct = last_raiders * 100 // (last_raiders + config.bands.guard_worth * state.militia)
+        card["bands"] = {"raiders": last_raiders, "seen": seen, "odds_pct": odds_pct}
     return card
 
 

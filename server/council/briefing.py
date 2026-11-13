@@ -330,14 +330,24 @@ def _doors_lines(state: GameState, config: Config) -> list[str]:
             f"empty jobs: {migration.empty_jobs(state, config)}."]
 
 
-def _guard_odds_line(config: Config) -> str:
+def _guard_odds_lines(state: GameState, config: Config, past: list[tuple[int, str, dict]]) -> list[str]:
     """@brief What one guard is worth at the gate: a share of the raiders (the
-    pool) or odds (bands on the map, engine/bands.py)."""
+    pool) or odds (bands on the map, engine/bands.py). With bands the odds are
+    counted only on the last band that raided this realm: the council knows
+    the bands the realm has met, never a typical size (game 43: a reference band of 8
+    made the Gastaldi reason on bands nobody had seen)."""
     rules = config.bandits
     if config.bands is None:
-        return f"- Each guard stops about {rules.repel_per_guard} raiders; a band is about {rules.party_size}."
-    return (f"- A raid succeeds with the odds raiders against raiders plus {config.bands.guard_worth} for each "
-            f"guard (8 raiders against 4 guards: 8 in 20); a band is about {rules.party_size} men.")
+        return [f"- Each guard stops about {rules.repel_per_guard} raiders; a band is about {rules.party_size}."]
+    worth = config.bands.guard_worth
+    lines = [f"- A raid succeeds with the odds raiders against raiders plus {worth} for each guard."]
+    raids = [(turn, data) for turn, kind, data in past if kind == "raid"]
+    if raids:
+        turn, data = raids[-1]
+        raiders, guards = data["raiders"], state.guards()
+        lines.append(f"- The last band at the gate ({MONTHS[(turn - 1) % 12]}) had {raiders} raiders: against "
+                     f"today's {guards} guards it would win {raiders} times in {raiders + worth * guards}.")
+    return lines
 
 
 def gate_lines(state: GameState, config: Config, past: list[tuple[int, str, dict]]) -> list[str]:
@@ -348,7 +358,7 @@ def gate_lines(state: GameState, config: Config, past: list[tuple[int, str, dict
     lines = ["## The gate and the guard",
              f"- Guards on duty: {state.guards()} (the militia; every guard is an adult taken from work). "
              f"Adults: {state.adults}, {state.free_adults()} of them free for the Architect's work.",
-             _guard_odds_line(config),
+             *_guard_odds_lines(state, config, past),
              f"- In view of the bandits: food {state.food}, wood {state.wood} (they go where much lies exposed)."]
     if config.migration is not None:  # stage 2
         lines += _doors_lines(state, config)

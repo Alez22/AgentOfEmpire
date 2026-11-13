@@ -24,7 +24,10 @@ def test_the_gastaldo_reads_the_odds_and_the_bands_seen(config):
     seen = {"band": 3, "adults": 9, "week": 2, "x": 18, "y": 8, "tower": True}
     stayed = {"raiders": 8, "guards": 4, "repelled": True, "food": 0, "wood": 0, "stayed": 1}
     text = "\n".join(briefing.gate_lines(state, config, [(4, "band_seen", seen), (5, "raid", stayed)]))
-    assert "8 in 20" in text and "stops about" not in text
+    assert "The last band at the gate (May) had 8 raiders" in text and "win 8 times in 8" in text  # no guards
+    assert "a band is about" not in text and "stops about" not in text
+    quiet = "\n".join(briefing.gate_lines(state, config, [(4, "band_seen", seen)]))
+    assert "The last band at the gate" not in quiet  # only bands met count, never a typical size
     assert "a band of about ten seen from the watchtower (week 2)" in text
     assert "1 of them stayed as citizens" in text
     old = "\n".join(briefing.gate_lines(state, replace(config, bands=None), []))

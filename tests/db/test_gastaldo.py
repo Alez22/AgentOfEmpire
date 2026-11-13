@@ -129,7 +129,15 @@ def test_the_pages_show_the_gastaldo(db, database_url, settings):
         assert "Briganti" in ui.get(f"/ui/realms/{realm_id}/manual").text
         # Roads of the world: with bands the guards turn the odds, they stop nobody for sure.
         government = ui.get(f"/ui/realms/{realm_id}/government/panel").text
-        assert "Una banda di 8 passa" in government and "100%" in government  # no guards yet
+        assert "passa</div>" not in government  # the fixture's raid is at turn 0, before the game: no band met
+        # A band met in month 1: the odds of that band only, never of a typical size.
+        game_id = db.execute("SELECT game_id FROM realms WHERE id = %s", (realm_id,)).fetchone()[0]
+        db.execute("UPDATE snapshots SET state = jsonb_set(state, '{turn}', '2') WHERE realm_id = %s", (realm_id,))
+        db.execute("INSERT INTO events (game_id, realm_id, turn, kind, data, visibility)"
+                   " VALUES (%s, %s, 1, 'raid', %s, 'public')",
+                   (game_id, realm_id, Jsonb({"raiders": 4, "guards": 0, "repelled": False, "food": 100, "wood": 0})))
+        government = ui.get(f"/ui/realms/{realm_id}/government/panel").text
+        assert "La banda dell'ultimo assalto (4) passa" in government and "100%" in government  # no guards yet
         assert "Bande avvistate in 6 mesi" in government and "Fermano" not in government
 
 

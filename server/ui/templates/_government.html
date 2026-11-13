@@ -25,7 +25,9 @@
   <div class="stats two">
     <div class="stat"><div class="label">Di guardia</div><div class="value">{{ gate.guards }} <small>uomini</small></div></div>
     {% if gate.bands %}
-    <div class="stat"><div class="label">Una banda di {{ gate.bands.party }} passa</div><div class="value">{{ gate.bands.odds_pct }}% <small>delle volte</small></div></div>
+    {% if gate.bands.odds_pct is not none %}
+    <div class="stat"><div class="label">La banda dell'ultimo assalto ({{ gate.bands.raiders }}) passa</div><div class="value">{{ gate.bands.odds_pct }}% <small>delle volte</small></div></div>
+    {% endif %}
     {% else %}
     <div class="stat"><div class="label">Fermano</div><div class="value">{{ gate.stops }} <small>briganti</small></div></div>
     {% endif %}

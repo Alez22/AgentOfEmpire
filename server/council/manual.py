@@ -186,7 +186,7 @@ def _bands_lines(config: Config) -> list[str]:
         "exposed and the guard is weakest, nearer realms first. It raids once and goes back to its camp"
         + (", and never raids the same realm two months in a row." if bands.rest else "."),
         f"- A raid is a gamble: it succeeds with the odds raiders against raiders plus {bands.guard_worth} for "
-        f"each guard (8 raiders against 4 guards: 8 in 20). If it succeeds each raider carries away up to "
+        f"each guard. If it succeeds each raider carries away up to "
         f"{rules.carry} units, food first, then wood; if it fails it takes nothing, and each raider stays as "
         f"a citizen with a chance of {bands.stay_pct}% if there are free beds"
         + (", whatever the doors" if config.migration is not None else "")
@@ -442,7 +442,7 @@ def _bands_notes(config: Config) -> list[str]:
         "legno in vista e la guardia è più debole, prima i regni vicini. Assalta una volta e torna al campo"
         + ("; non assalta lo stesso regno due mesi di fila." if bands.rest else "."),
         f"L'assalto è un azzardo: riesce con la probabilità dei briganti contro i briganti più {bands.guard_worth} "
-        f"per ogni guardia (8 briganti contro 4 guardie: 8 su 20). Se riesce, ogni brigante porta via fino a "
+        f"per ogni guardia. Se riesce, ogni brigante porta via fino a "
         f"{rules.carry} unità, prima il cibo, poi il legno; se fallisce non porta via nulla, e ogni brigante "
         f"resta come cittadino con una probabilità del {bands.stay_pct}% se ci sono letti liberi"
         + (", qualunque siano le porte" if config.migration is not None else "")
