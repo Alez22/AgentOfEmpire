@@ -23,6 +23,7 @@
       {% endfor %}
       {% for b in g.borders %}<path class="realm-border" d="{{ b.path }}" style="stroke: {{ b.color }}"/>{% endfor %}
       {% for l in g.letters %}<text class="wl{% if l.site %} site{% endif %}" x="{{ l.x }}" y="{{ l.y }}">{{ l.text }}</text>{% endfor %}
+      {% if g.fair %}<g class="fair-mark"><title>{{ g.fair.title }}</title><circle cx="{{ g.fair.x }}" cy="{{ g.fair.y }}" r="6"/></g>{% endif %}
       {% for m in g.bands %}<g class="band-mark"><title>{{ m.title }}</title><circle cx="{{ m.x }}" cy="{{ m.y }}" r="5"/><text x="{{ m.x }}" y="{{ m.y }}">{{ m.text }}</text></g>{% endfor %}
       {% for b in g.borders %}<text class="realm-name" x="{{ b.label_x }}" y="{{ b.label_y }}" style="fill: {{ b.color }}">{{ b.name }}</text>{% endfor %}
     </svg>
@@ -51,6 +52,7 @@
   <span><svg aria-hidden="true" viewBox="-7 -7 14 14"><polygon class="{{ cls }}" points="{{ g.hex_points }}"/></svg>{{ name }}</span>
   {% endfor %}
   {% for letter, name in g.legend %}<span><b class="world-letter">{{ letter }}</b>{{ name }}</span>{% endfor %}
+  {% if g.fair %}<span><svg aria-hidden="true" viewBox="-7 -7 14 14" class="band-legend"><circle class="fair-dot" r="6"/></svg>La fiera</span>{% endif %}
   {% if bands_legend %}<span><svg aria-hidden="true" viewBox="-7 -7 14 14" class="band-legend"><circle r="5"/></svg>{{ bands_legend }}</span>{% endif %}
 </section>
 {% endif %}

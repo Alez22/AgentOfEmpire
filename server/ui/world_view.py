@@ -23,6 +23,7 @@ per building.
 
 import math
 
+from engine.caravans import caravans_on, fair_hex_of
 from engine.config import Config
 from engine.state import GameState
 from engine.territory import NOT_OWNED, WILD, footprint, neighbours, square_tiles
@@ -100,6 +101,19 @@ def band_marks(bands: list[dict]) -> list[dict]:
     return marks
 
 
+def fair_mark(config: Config, terrain: list[str], realms: list[dict]) -> dict | None:
+    """@brief The fair (roads of the world, phase 2) as the viewer can place it:
+    the free hex nearest the middle among the realms it knows (a player knows
+    only its own land; the fair is in the empty middle of the ring, so they
+    agree unless a realm grows over the middle). None without caravans."""
+    if not caravans_on(config):
+        return None
+    owned = {(x, y) for realm in realms for y, row in enumerate(realm["state"].owned)
+             for x, char in enumerate(row) if char != NOT_OWNED}
+    cx, cy = centre(*fair_hex_of(len(terrain), owned))
+    return {"x": f"{cx:.1f}", "y": f"{cy:.1f}", "title": "La fiera: il magazzino del mercato"}
+
+
 def world_board(config: Config, terrain: list[str], realms: list[dict], bands: list[dict] = ()) -> dict:
     """@brief Everything the template draws in the world SVG.
     @param terrain The world's terrain rows (any realm's state: the same world).
@@ -140,4 +154,5 @@ def world_board(config: Config, terrain: list[str], realms: list[dict], bands: l
     return {"width": f"{width:.0f}", "height": f"{height:.0f}",
             "hex_points": " ".join(f"{px:.2f},{py:.2f}" for px, py in corners(0, 0)),
             "groups": [{"cls": cls, "hexes": hexes} for cls, hexes in groups.items()],
-            "letters": letters, "borders": borders, "legend": LEGEND, "bands": band_marks(list(bands))}
+            "letters": letters, "borders": borders, "legend": LEGEND, "bands": band_marks(list(bands)),
+            "fair": fair_mark(config, terrain, realms)}

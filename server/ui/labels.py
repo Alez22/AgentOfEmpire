@@ -153,7 +153,15 @@ def event_alert(kind: str, data: dict) -> tuple[str, str] | None:
         return "flight", "Fuga"
     if kind == "arrival":  # stage 2
         return "arrival", "Arrivi"
+    if kind == "caravan_robbed":  # roads of the world, phase 2
+        return "raid", "Carovana rapinata"
     return None
+
+
+def goods_it(goods: dict) -> str:
+    """@brief {good: units} in words: "100 cibo e 50 legno"."""
+    parts = [f"{units} {GOODS_IT.get(good, good)}" for good, units in goods.items()]
+    return " e ".join(parts) if len(parts) < 3 else ", ".join(parts[:-1]) + " e " + parts[-1]
 
 
 def band_size_it(adults: int) -> str:
@@ -209,13 +217,24 @@ def event_label(kind: str, data: dict) -> str:
     if kind == "stone_upkeep_short":
         return (f"Mancava la pietra per la manutenzione ({data.get('missing')} su {data.get('needed')}): "
                 "gli edifici si sono consumati e hanno reso meno.")
+    # Roads of the world, phase 2: with caravans the goods are on the road this month.
+    home = " In viaggio verso casa: arrivano a fine mese." if data.get("road") else ""
     if kind == "trade_bought" and data.get("units"):
         return (f"Comprati al mercato {data['units']} di {GOODS_IT.get(data.get('good'), data.get('good'))}"
-                f" (l'ultimo lotto era incompleto) per {data.get('gold')} oro.")
+                f" (l'ultimo lotto era incompleto) per {data.get('gold')} oro.{home}")
     if kind == "trade_bought":
-        return f"Comprati al mercato {lots_of(data.get('lots'), data.get('good'))} per {data.get('gold')} oro."
+        return f"Comprati al mercato {lots_of(data.get('lots'), data.get('good'))} per {data.get('gold')} oro.{home}"
     if kind == "trade_on_sale":
-        return f"Messi in vendita al mercato {lots_of(data.get('lots'), data.get('good'))}."
+        fair = " In viaggio verso la fiera: in vendita dal mese prossimo." if data.get("road") else ""
+        return f"Messi in vendita al mercato {lots_of(data.get('lots'), data.get('good'))}.{fair}"
+    if kind == "caravan_arrived":
+        if data.get("leg") == "out":
+            return f"La carovana è arrivata alla fiera con {goods_it(data.get('goods', {}))}."
+        return f"La carovana è tornata dalla fiera con {goods_it(data.get('goods', {}))}."
+    if kind == "caravan_robbed":
+        way = "diretta alla fiera" if data.get("leg") == "out" else "di ritorno dalla fiera"
+        return (f"{band_size_it(data.get('adults', 0)).capitalize()} ha rapinato la carovana {way}: "
+                f"persi {goods_it(data.get('goods', {}))}.")
     if kind == "trade_paid":
         return f"Il mercato ha pagato {data.get('gold')} oro per la merce venduta."
     if kind == "flight":
@@ -233,7 +252,8 @@ def event_label(kind: str, data: dict) -> str:
                 f"e {data.get('wood')} legno.")
     if kind == "band_seen":
         # Roads of the world: a size in words, never the number of bandits.
-        where = "dalla torre di guardia" if data.get("tower") else "vicino alle nostre terre"
+        where = ("sulla strada della fiera" if data.get("road")
+                 else "dalla torre di guardia" if data.get("tower") else "vicino alle nostre terre")
         return f"Avvistata {band_size_it(data.get('adults', 0))} {where}."
     if kind == "arrival":
         # Village block B+C, stage 2: newcomers from the woods (engine/migration.py).

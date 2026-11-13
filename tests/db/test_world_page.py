@@ -91,3 +91,15 @@ def test_the_admin_sees_every_band_with_its_size(client, database_url):
     page = html.unescape(client.get(f"/admin/games/{game_id}/world").text)
     assert bands and page.count('class="band-mark"') == len(bands)
     assert f"Banda {bands[0]['id']}: {bands[0]['adults']} adulti" in page
+
+
+def test_the_fair_is_on_the_world_view_with_caravans(client, database_url):
+    """Roads of the world, phase 2: the fair in the empty middle, for players and admin alike."""
+    game_id, realms = _game(database_url, load_raw_config())
+    for url in (f"/ui/realms/{realms[0]}/world", f"/admin/games/{game_id}/world"):
+        page = html.unescape(client.get(url).text)
+        assert page.count('class="fair-mark"') == 1 and "La fiera: il magazzino del mercato" in page
+    raw = load_raw_config()
+    raw.pop("caravans")
+    _, old_realms = _game(database_url, raw)
+    assert 'class="fair-mark"' not in client.get(f"/ui/realms/{old_realms[0]}/world").text

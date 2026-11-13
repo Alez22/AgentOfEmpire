@@ -54,8 +54,13 @@ def fair_hex(roads) -> tuple[int, int]:
     """@brief The fair: the free hex nearest the middle of the map, ties by
     (y, x). Found again each month: it moves only if a realm grows over it.
     @param roads An engine.bands.RoadMap (its size and the realms' land)."""
-    middle = roads.size // 2
-    free = ((x, y) for y in range(roads.size) for x in range(roads.size) if (x, y) not in roads.owner)
+    return fair_hex_of(roads.size, roads.owner)
+
+
+def fair_hex_of(size: int, owned) -> tuple[int, int]:
+    """@brief fair_hex from the map's size and the owned hexes (a container of (x, y))."""
+    middle = size // 2
+    free = ((x, y) for y in range(size) for x in range(size) if (x, y) not in owned)
     return min(free, key=lambda tile: (hex_distance(*tile, middle, middle), tile[1], tile[0]))
 
 
