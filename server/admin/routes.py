@@ -104,6 +104,23 @@ def admin_game(request: Request, game_id: int, conn=Depends(_admin_connection)):
     return templates.TemplateResponse(request, "admin_game.html", _game_context(conn, game_id))
 
 
+def _all_bands(conn: psycopg.Connection, game: dict) -> list[dict]:
+    """@brief Every band of the game at its latest stored month, with its
+    adults and target (the admin sees the whole truth; players never do)."""
+    turn = conn.execute("SELECT max(turn) FROM bandit_pools WHERE game_id = %s", (game["id"],)).fetchone()[0]
+    pool = games.load_pool(conn, game["id"], turn) if turn else None
+    if pool is None:
+        return []
+    names = {str(r["id"]): r["name"] for r in game["realms"]}
+    marks = []
+    for band in pool.bands:
+        target = f", ultimo bersaglio {names.get(band.target, band.target)}" if band.target else ""
+        marks.append({"x": band.x, "y": band.y, "text": str(band.adults),
+                      "title": f"Banda {band.id}: {band.adults} adulti, {band.children} bambini, "
+                               f"{band.food} cibo{target}"})
+    return marks
+
+
 @router.get("/games/{game_id}/world", response_class=HTMLResponse)
 def admin_world(request: Request, game_id: int, zoom: int = 0, conn=Depends(_admin_connection)):
     """@brief The whole world in the clear: every realm's land, buildings and
@@ -118,8 +135,11 @@ def admin_world(request: Request, game_id: int, zoom: int = 0, conn=Depends(_adm
         terrain = terrain or state.terrain
         realms.append({"name": realm["name"], "state": state, "fallen": state.game_over is not None,
                        "color": world_view.REALM_COLORS[index % len(world_view.REALM_COLORS)]})
-    board = world_view.world_board(config, terrain, realms) if terrain and is_hex(config) else None
+    board = None
+    if terrain and is_hex(config):
+        board = world_view.world_board(config, terrain, realms, _all_bands(conn, game))
     context = {"game": game, "turn": game["open_turn"], "board": board, "admin": True, "zoom": bool(zoom),
+               "bands_legend": "Banda (adulti dentro)" if config.bands is not None else None,
                "zoom_href": f"/admin/games/{game_id}/world" + ("" if zoom else "?zoom=1")}
     return templates.TemplateResponse(request, "world.html", context)
 

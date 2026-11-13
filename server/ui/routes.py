@@ -371,19 +371,27 @@ def _gate_card(conn: psycopg.Connection, realm_id: int) -> dict:
     game_id = games.realm_game_id(conn, realm_id)
     state = games.load_latest_state(conn, realm_id)
     config = games.load_game_config(conn, game_id)
-    last_raid, flights = None, 0
+    last_raid, flights, seen = None, 0, 0
     for turn in range(state.turn - 1, 0, -1):  # newest first
         own = [e for e in games.list_events_for_sovereign(conn, game_id, realm_id, turn) if e["realm_id"] == realm_id]
         if state.turn - turn <= GATE_MEMORY_TURNS:
             flights += sum(1 for e in own if e["kind"] == "flight")
+            seen += sum(1 for e in own if e["kind"] == "band_seen")
         if last_raid is None and any(e["kind"] == "raid" for e in own):
             last_raid = labels.month_name(turn)
         if last_raid is not None and state.turn - turn >= GATE_MEMORY_TURNS:
             break
     repel = config.bandits.repel_per_guard if config.bandits else 0
-    return {"guards": state.militia, "stops": state.militia * repel, "last_raid": last_raid,
+    card = {"guards": state.militia, "stops": state.militia * repel, "last_raid": last_raid,
             "flights": flights, "months": GATE_MEMORY_TURNS,
-            "doors": _doors_card(conn, game_id, realm_id, state, config)}
+            "doors": _doors_card(conn, game_id, realm_id, state, config), "bands": None}
+    if config.bands is not None:
+        # Roads of the world: guards turn the odds, they stop nobody for sure.
+        # The odds of a band of the usual size (raiders / (raiders + worth x guards)).
+        party = config.bandits.party_size
+        card["bands"] = {"party": party, "seen": seen,
+                         "odds_pct": party * 100 // (party + config.bands.guard_worth * state.militia)}
+    return card
 
 
 def _government_context(request: Request, conn: psycopg.Connection, realm_id: int) -> dict:
@@ -511,6 +519,18 @@ def map_page(request: Request, realm_id: int, b: int | None = None, zone: str | 
     return templates.TemplateResponse(request, "map.html", context)
 
 
+def _bands_seen(conn: psycopg.Connection, game_id: int, realm_id: int, turn: int) -> list[dict]:
+    """@brief The bands this realm saw last month (its own `band_seen` events),
+    where it saw them: never the bands it did not see, never their number."""
+    marks = []
+    for event in games.list_events_for_sovereign(conn, game_id, realm_id, turn - 1):
+        if event["realm_id"] != realm_id or event["kind"] != "band_seen":
+            continue
+        data = event["data"]
+        marks.append({"x": data["x"], "y": data["y"], "text": "B", "title": labels.event_label("band_seen", data)})
+    return marks
+
+
 @router.get("/ui/realms/{realm_id}/world", response_class=HTMLResponse)
 def world_page(request: Request, realm_id: int, zoom: int = 0, conn=Depends(_connection)):
     """@brief The whole world, small (server/ui/world_view.py). For now a
@@ -526,9 +546,10 @@ def world_page(request: Request, realm_id: int, zoom: int = 0, conn=Depends(_con
     board = None
     if state.has_map() and is_hex(config):
         own = {"name": realm["name"], "state": state, "color": world_view.REALM_COLORS[0], "fallen": False}
-        board = world_view.world_board(config, state.terrain, [own])
+        board = world_view.world_board(config, state.terrain, [own], _bands_seen(conn, game_id, realm_id, state.turn))
     context = {
         "game": game, "realm": realm, "turn": state.turn, "board": board, "admin": False,
+        "bands_legend": "Banda avvistata" if config.bands is not None else None,
         "zoom": bool(zoom), "zoom_href": f"/ui/realms/{realm_id}/world" + ("" if zoom else "?zoom=1"),
         "nav": "world", "realm_id": realm_id,
     }

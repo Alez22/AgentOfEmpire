@@ -89,12 +89,25 @@ def _letter(kind: str, tiles: list[tuple[int, int]], site: bool) -> dict:
     return {"x": f"{cx:.1f}", "y": f"{cy:.1f}", "text": LETTER.get(kind, "?"), "site": site}
 
 
-def world_board(config: Config, terrain: list[str], realms: list[dict]) -> dict:
+def band_marks(bands: list[dict]) -> list[dict]:
+    """@brief The bands to draw (roads of the world): a red mark on their hex.
+    @param bands Each {"x", "y", "text", "title"}: the mark's short text (a
+           letter for a player, the adults for the admin) and its tooltip."""
+    marks = []
+    for band in bands:
+        cx, cy = centre(band["x"], band["y"])
+        marks.append({"x": f"{cx:.1f}", "y": f"{cy:.1f}", "text": band["text"], "title": band["title"]})
+    return marks
+
+
+def world_board(config: Config, terrain: list[str], realms: list[dict], bands: list[dict] = ()) -> dict:
     """@brief Everything the template draws in the world SVG.
     @param terrain The world's terrain rows (any realm's state: the same world).
     @param realms The realms to draw, each {"name", "state", "color", "fallen"};
            only these realms' land, buildings and borders are drawn.
-    @return width, height, hex points, hexes grouped by class, letters, borders.
+    @param bands The bands this viewer may see (band_marks): the caller
+           decides, as for the realms (a player: the sightings of last month).
+    @return width, height, hex points, hexes grouped by class, letters, borders, bands.
     """
     cls_of = {}  # (x, y) -> class; the land of a drawn realm overrides the terrain
     letters, borders = [], []
@@ -127,4 +140,4 @@ def world_board(config: Config, terrain: list[str], realms: list[dict]) -> dict:
     return {"width": f"{width:.0f}", "height": f"{height:.0f}",
             "hex_points": " ".join(f"{px:.2f},{py:.2f}" for px, py in corners(0, 0)),
             "groups": [{"cls": cls, "hexes": hexes} for cls, hexes in groups.items()],
-            "letters": letters, "borders": borders, "legend": LEGEND}
+            "letters": letters, "borders": borders, "legend": LEGEND, "bands": band_marks(list(bands))}

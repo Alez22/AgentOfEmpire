@@ -24,9 +24,16 @@
   {% endif %}
   <div class="stats two">
     <div class="stat"><div class="label">Di guardia</div><div class="value">{{ gate.guards }} <small>uomini</small></div></div>
+    {% if gate.bands %}
+    <div class="stat"><div class="label">Una banda di {{ gate.bands.party }} passa</div><div class="value">{{ gate.bands.odds_pct }}% <small>delle volte</small></div></div>
+    {% else %}
     <div class="stat"><div class="label">Fermano</div><div class="value">{{ gate.stops }} <small>briganti</small></div></div>
+    {% endif %}
     <div class="stat"><div class="label">Ultimo assalto</div><div class="value">{{ gate.last_raid or "nessuno" }}</div></div>
     <div class="stat"><div class="label">Fughe in {{ gate.months }} mesi</div><div class="value">{{ gate.flights or "nessuna" }}</div></div>
+    {% if gate.bands %}
+    <div class="stat"><div class="label">Bande avvistate in {{ gate.months }} mesi</div><div class="value">{{ gate.bands.seen or "nessuna" }}</div></div>
+    {% endif %}
     {% if doors %}
     <div class="stat"><div class="label">Letti liberi</div><div class="value">{{ doors.free_beds }}</div></div>
     <div class="stat"><div class="label">Lavori vuoti</div><div class="value">{{ doors.empty_jobs }}</div></div>

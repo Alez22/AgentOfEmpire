@@ -7,7 +7,7 @@
   {% if admin %}
   <p class="hint">Tutti i regni della partita, in chiaro. <a href="/admin/games/{{ game.id }}">← La partita</a></p>
   {% else %}
-  <p class="hint">Le terre conosciute. Degli altri regni non sai ancora nulla.</p>
+  <p class="hint">Le terre conosciute. Degli altri regni non sai ancora nulla.{% if bands_legend %} In rosso le bande avvistate il mese scorso.{% endif %}</p>
   {% endif %}
 </section>
 
@@ -23,6 +23,7 @@
       {% endfor %}
       {% for b in g.borders %}<path class="realm-border" d="{{ b.path }}" style="stroke: {{ b.color }}"/>{% endfor %}
       {% for l in g.letters %}<text class="wl{% if l.site %} site{% endif %}" x="{{ l.x }}" y="{{ l.y }}">{{ l.text }}</text>{% endfor %}
+      {% for m in g.bands %}<g class="band-mark"><title>{{ m.title }}</title><circle cx="{{ m.x }}" cy="{{ m.y }}" r="5"/><text x="{{ m.x }}" y="{{ m.y }}">{{ m.text }}</text></g>{% endfor %}
       {% for b in g.borders %}<text class="realm-name" x="{{ b.label_x }}" y="{{ b.label_y }}" style="fill: {{ b.color }}">{{ b.name }}</text>{% endfor %}
     </svg>
   </div>
@@ -50,6 +51,7 @@
   <span><svg aria-hidden="true" viewBox="-7 -7 14 14"><polygon class="{{ cls }}" points="{{ g.hex_points }}"/></svg>{{ name }}</span>
   {% endfor %}
   {% for letter, name in g.legend %}<span><b class="world-letter">{{ letter }}</b>{{ name }}</span>{% endfor %}
+  {% if bands_legend %}<span><svg aria-hidden="true" viewBox="-7 -7 14 14" class="band-legend"><circle r="5"/></svg>{{ bands_legend }}</span>{% endif %}
 </section>
 {% endif %}
 {% endblock %}

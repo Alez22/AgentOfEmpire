@@ -127,6 +127,10 @@ def test_the_pages_show_the_gastaldo(db, database_url, settings):
             assert response.status_code == 200, page
         assert "Il Gastaldo" in ui.get(f"/ui/realms/{realm_id}/council-panel").text
         assert "Briganti" in ui.get(f"/ui/realms/{realm_id}/manual").text
+        # Roads of the world: with bands the guards turn the odds, they stop nobody for sure.
+        government = ui.get(f"/ui/realms/{realm_id}/government/panel").text
+        assert "Una banda di 8 passa" in government and "100%" in government  # no guards yet
+        assert "Bande avvistate in 6 mesi" in government and "Fermano" not in government
 
 
 def test_the_sovereign_may_give_the_gastaldo_a_mandate(db, settings):

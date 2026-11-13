@@ -260,3 +260,8 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
   stroke: #14120E; stroke-width: 2.5px; }
 .world-legend svg { width: 26px; height: 26px; flex-shrink: 0; }
 .world-letter { width: 26px; text-align: center; font-weight: 700; color: var(--text); flex-shrink: 0; }
+/* Bands on the world view (roads of the world): a red mark, its tooltip in the SVG title. */
+.world-board .band-mark circle, .band-legend circle { fill: #B2402F; stroke: #14120E; stroke-width: 1; }
+.world-board .band-mark text { font-family: var(--body); font-size: 6px; font-weight: 700; fill: #FFF1E8;
+  text-anchor: middle; dominant-baseline: central; }
+.band-legend { width: 26px; height: 26px; flex-shrink: 0; }
