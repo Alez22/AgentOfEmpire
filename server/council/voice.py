@@ -138,6 +138,8 @@ def _last_month(ctx: MeetingContext) -> tuple[int, int]:
     """@brief (missing food %, deaths) of the month just resolved."""
     missing_pct, deaths = 0, 0
     for event in games.list_visible_events(ctx.conn, ctx.game_id, ctx.realm_id, ctx.turn - 1, Clearance.COURT):
+        if event["realm_id"] != ctx.realm_id:
+            continue  # a neighbour's public famine is not this realm's
         if event["kind"] == "famine":
             missing_pct = event["data"].get("missing_pct", 0)
         if event["kind"] == "demography":

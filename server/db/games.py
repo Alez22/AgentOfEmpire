@@ -347,7 +347,17 @@ def list_visible_events(
             (turn,),
         ).fetchall()
     keys = ("id", "realm_id", "turn", "kind", "data", "visibility")
-    return [dict(zip(keys, row)) for row in rows]
+    events = [dict(zip(keys, row)) for row in rows]
+    # Why: public events of every realm come back here. Without the realm's
+    # name the councils read a neighbour's famine or fall as their own (game 41:
+    # after Corvara's revolt four councils said "il regno è caduto"). Names are
+    # read as the server: agent_reader has no grant on realms, and the names
+    # of the realms of a game are no secret.
+    names = dict(conn.execute("SELECT id, name FROM realms WHERE game_id = %s", (game_id,)).fetchall())
+    for event in events:
+        event["realm"] = names.get(event["realm_id"], "")
+        event["own"] = event["realm_id"] == realm_id
+    return events
 
 
 def _insert_order_result(conn, order_id: int, accepted: bool, code: str | None, message: str) -> None:

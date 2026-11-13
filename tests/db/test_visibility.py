@@ -100,3 +100,17 @@ def test_settings_do_not_survive_the_context(db, world):
     assert current_user == "game_admin"
     # The setting exists now but is empty, so using it fails loudly.
     assert db.execute("SELECT current_setting('app.realm_id', true)").fetchone()[0] in ("", None)
+
+
+def test_a_neighbour_s_public_event_carries_its_name(db, world):
+    """Game 41: after Corvara's revolt four councils read its game_over as their own."""
+    from server.council.briefing import events_lines
+    from server.db.games import list_visible_events
+    events = list_visible_events(db, world["game"], world["north"], 1, Clearance.COUNCIL)
+    south = next(e for e in events if e["kind"] == "south_public")
+    assert south["realm"] == "south" and not south["own"]
+    assert next(e for e in events if e["kind"] == "north_public")["own"]
+    text = "\n".join(events_lines(events))
+    mine, news = text.split("## News from the other realms")
+    assert "north_public" in mine and "south_public" not in mine
+    assert "- south: south_public" in news

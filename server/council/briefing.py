@@ -335,12 +335,21 @@ def gate_lines(state: GameState, config: Config, past: list[tuple[int, str, dict
 
 
 def events_lines(events: list[dict]) -> list[str]:
-    """@brief Events of the previous turn already filtered by row-level security."""
-    if not events:
-        return ["## Last month", "- Nothing worth reporting."]
-    return ["## Last month"] + [
-        f"- {event['kind']}: {json.dumps(event['data'], ensure_ascii=False)}" for event in events
+    """@brief Events of the previous turn already filtered by row-level security:
+    the realm's own, then the public news of the other realms under their name.
+    @param events Rows of list_visible_events; one without "own" counts as the realm's."""
+    own = [event for event in events if event.get("own", True)]
+    others = [event for event in events if not event.get("own", True)]
+    lines = ["## Last month"] + [
+        f"- {event['kind']}: {json.dumps(event['data'], ensure_ascii=False)}" for event in own
     ]
+    if not own:
+        lines.append("- Nothing worth reporting.")
+    if others:
+        lines.append("## News from the other realms (public facts; not your realm)")
+        lines += [f"- {event['realm']}: {event['kind']} {json.dumps(event['data'], ensure_ascii=False)}"
+                  for event in others]
+    return lines
 
 
 def history_lines(history: list[str]) -> list[str]:

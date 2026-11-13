@@ -711,6 +711,8 @@ Visibility of engine events (approved). An event kind not listed here stops reso
 
 The `audience` event (**public**: the fact that the sovereign received a counsellor is not a secret, only the words are) is written by the audience module, not by the engine, so it is not in this table (`EVENT_VISIBILITY` in `server/db/games.py`). Events already stored keep their level: the table is append-only.
 
+A council reads the public events of the other realms too, under a section of their own with the realm's name ("News from the other realms"); its "Last month" lists only its own (game 41: with one list, four councils read Corvara's revolt as their own fall, and every neighbour's famine as theirs). The Voice of the square counts only its own realm's famine.
+
 ## HTTP server
 
 The FastAPI server runs in Docker, applies migrations at start and reloads on every code change. Interactive docs at `/docs`. It binds `127.0.0.1:8000` and the PC's Tailscale address. Approved decisions: no authentication while the server is reachable only from the owner's devices; turn resolved by hand.
