@@ -185,7 +185,7 @@ def _rob(leg: Leg, band, tile: tuple[int, int], market, results: dict, config: C
     if (leg.realm, band.id) not in seen:
         seen.add((leg.realm, band.id))
         events.append(Event("band_seen", {"band": band.id, "adults": band.adults, "week": week,
-                                          "x": band.x, "y": band.y, "tower": False}))
+                                          "x": band.x, "y": band.y, "tower": False, "road": True}))
 
 
 def walk_caravans(legs: list[Leg], pool, roads, market, results: dict, config: Config, week: int,

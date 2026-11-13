@@ -10,6 +10,7 @@ from collections import Counter
 
 from engine import migration
 from engine.config import Config
+from engine.caravans import caravans_on
 from engine.market import GOODS, MarketState, buy_price, market_status, sell_price, stock, trade_capacity
 from engine.state import GameState
 from engine.turn import (
@@ -159,6 +160,10 @@ def market_lines(state: GameState, config: Config, market: MarketState | None, r
     waiting = ", ".join(f"{good} {units}" for good, units in own.items() if units)
     lines.append("- Your goods waiting in the warehouse: "
                  + (f"{waiting} (paid when someone buys them)." if waiting else "none."))
+    if caravans_on(config):  # roads of the world, phase 2
+        lines.append("- The warehouse is at the fair: what you sell this month reaches it at the month's end and "
+                     "can be bought from next month; what you buy is paid now and reaches your stores at the "
+                     "month's end, to be used from next month. A caravan robbed on the road loses its load.")
     lines += merchants_lines(state, config)
     lines.append(f"- Your stores: food {state.food}, wood {state.wood}, stone {state.stone}, gold {state.gold}.")
     if config.needs is not None:
@@ -204,8 +209,12 @@ def market_summary_line(config: Config, market: MarketState | None, state: GameS
         return ["- The realm has no market yet: any trade would be refused."]
     prices = ", ".join(f"{good} {buy_price(market, config, good)}/{sell_price(market, config, good)}"
                        for good in GOODS)
-    return [f"- Market prices (buy/sell a lot of {config.market.lot_units}): {prices}. "
-            "Trades run first; the cost check assumes every purchase is filled in full."]
+    if caravans_on(config):  # roads of the world, phase 2: the goods walk home
+        check = ("Trades run first; purchases are paid now but their goods arrive at the month's end: the cost "
+                 "check does not count them for this month's orders.")
+    else:
+        check = "Trades run first; the cost check assumes every purchase is filled in full."
+    return [f"- Market prices (buy/sell a lot of {config.market.lot_units}): {prices}. " + check]
 
 
 def _village(config: Config) -> bool:
@@ -307,8 +316,13 @@ def _gate_event_text(kind: str, data: dict) -> str:
                  f"{data['children']} children" if data["children"] else "",
                  f"{data['merchants']} merchants" if data["merchants"] else ""]
         return "families left for the woods: " + ", ".join(p for p in parts if p)
+    if kind == "caravan_robbed":  # phase 2: on the road to or from the fair
+        way = "to the fair" if data["leg"] == "out" else "home from the fair"
+        goods = ", ".join(f"{units} {good}" for good, units in data["goods"].items())
+        return f"{band_size_en(data['adults'])} robbed our caravan {way} of {goods} (week {data['week']})"
     if kind == "band_seen":  # roads of the world: a size in words, as the people would tell it
-        where = "from the watchtower" if data["tower"] else "near our land"
+        where = ("on the road to the fair" if data.get("road")
+                 else "from the watchtower" if data["tower"] else "near our land")
         return f"{band_size_en(data['adults'])} seen {where} (week {data['week']})"
     if data["repelled"] and data.get("stayed"):
         return (f"a band of {data['raiders']} raiders was driven off by {data['guards']} guards; "

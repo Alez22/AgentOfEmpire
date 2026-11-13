@@ -11,6 +11,7 @@ creates two jobs", "a half-filled farm stays empty", "gold buys grain", "a
 feast brings food"); each guess had been patched with a prompt rule.
 """
 
+from engine.caravans import caravans_on
 from engine.config import Config
 from engine.territory import is_hex
 from server.council.map_text import shape_text
@@ -256,10 +257,12 @@ def _tools_lines(config: Config) -> list[str]:
 def _market_lines(config: Config) -> list[str]:
     """@brief The market rules (engine/market.py), for the prompts."""
     m = config.market
+    when = ("" if caravans_on(config) else ", so what is bought can be used the same month")
     lines = [
         f"Market: one warehouse shared by every realm of the world. Food, wood and stone are traded in lots of "
         f"{m.lot_units}, only by the Treasurer's trade orders. Trades run at the start of the month, before every "
-        "other order, so what is bought can be used the same month.",
+        f"other order{when}.",
+        *_caravans_lines(config),
         f"- Buying costs the price + {m.margin_pct}%, selling pays the price - {m.margin_pct}%. A realm sells "
         "OR buys a good in a month, not both.",
         "- Goods sold leave the stores at once and wait in the warehouse; the seller is paid only when a buyer "
@@ -291,6 +294,42 @@ def _market_lines(config: Config) -> list[str]:
             "ration weigh on them; a busy market cheers them. Their unrest stops at the strike.",
         ]
     return lines
+
+
+def _caravans_lines(config: Config) -> list[str]:
+    """@brief The caravans to the fair (roads of the world, phase 2; engine/caravans.py)."""
+    if not caravans_on(config):
+        return []
+    rules = config.caravans
+    return [
+        "- The warehouse stands at the fair, in the middle of the world. Goods walk there and back by road as "
+        "caravans, two to four weeks each way.",
+        "- Goods sold leave the stores at once but reach the fair only at the month's end: buyers can take them "
+        "from the next month.",
+        "- Goods bought are paid at once at the fair and reach the stores at the month's end: they can be used "
+        "from the next month, not in the month they are bought.",
+        f"- A caravan that passes within {rules.radius} hexes of a band loses its whole load: goods on the way "
+        "to the fair are lost and never paid; goods on the way home are lost with the gold paid for them. No "
+        f"band camps within {rules.fair_peace} hexes of the fair.",
+    ]
+
+
+def _caravans_notes(config: Config) -> list[str]:
+    """@brief The same for the manual page, in Italian."""
+    if not caravans_on(config):
+        return []
+    rules = config.caravans
+    return [
+        "Il magazzino sta alla fiera, al centro del mondo. Le merci ci vanno e ne tornano per strada, in "
+        "carovana: da due a quattro settimane per tratta.",
+        "La merce venduta lascia subito i magazzini del regno ma arriva alla fiera solo a fine mese: i "
+        "compratori possono prenderla dal mese dopo.",
+        "La merce comprata si paga subito alla fiera e arriva nei magazzini a fine mese: si usa dal mese dopo, "
+        "non nel mese in cui si compra.",
+        f"Una carovana che passa entro {rules.radius} caselle da una banda perde tutto il carico: la merce "
+        "diretta alla fiera è persa e nessuno la paga; quella diretta a casa è persa insieme all'oro pagato. "
+        f"Nessuna banda si accampa entro {rules.fair_peace} caselle dalla fiera.",
+    ]
 
 
 def _footprints(config: Config) -> str:
@@ -517,7 +556,8 @@ def _market_section(config: Config) -> dict:
     notes = [
         f"Un solo magazzino per tutti i regni del mondo. Cibo, legno e pietra si scambiano a lotti di "
         f"{m.lot_units}, solo con gli ordini del Tesoriere. Gli scambi avvengono all'inizio del mese, prima di "
-        "ogni altro ordine: ciò che si compra si usa subito.",
+        + ("ogni altro ordine." if caravans_on(config) else "ogni altro ordine: ciò che si compra si usa subito."),
+        *_caravans_notes(config),
         f"Chi compra paga il prezzo più il {m.margin_pct}%, chi vende riceve il prezzo meno il {m.margin_pct}%. "
         "In un mese un bene si compra oppure si vende, non entrambe le cose.",
         "La merce venduta lascia subito i magazzini del regno e aspetta nel magazzino comune: chi vende è "

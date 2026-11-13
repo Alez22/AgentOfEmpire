@@ -19,6 +19,7 @@ from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ValidationError
 
 from engine import check_plans, parse_order
+from engine.caravans import caravans_on
 from engine.market import MarketState, check_month_plan, market_status
 from engine.turn import jobs_at_harvest
 from engine.config import Config
@@ -598,10 +599,12 @@ EXPERTISE_INTRO = (
 def role_expertise(ctx: MeetingContext, role: str) -> str:
     """@brief The craft of a role in this realm: town planning on the map,
     trading once the realm can trade, the village market where it is a building,
-    the doors where newcomers can settle (stage 2)."""
-    return expertise_block(role, ctx.config.map is not None, market_status(ctx.state, ctx.config) == "open",
+    the doors where newcomers can settle (stage 2), the caravans to the fair (phase 2)."""
+    can_trade = market_status(ctx.state, ctx.config) == "open"
+    return expertise_block(role, ctx.config.map is not None, can_trade,
                            _village_market(ctx.config), ctx.config.migration is not None,
-                           ctx.config.tools is not None, ctx.config.bands is not None)
+                           ctx.config.tools is not None, ctx.config.bands is not None,
+                           can_trade and caravans_on(ctx.config))
 
 
 def _craft_file(name: str, with_bands: bool) -> Path:
@@ -614,18 +617,20 @@ def _craft_file(name: str, with_bands: bool) -> Path:
 
 
 def expertise_block(role: str, with_map: bool = False, with_market: bool = False, with_village: bool = False,
-                    with_doors: bool = False, with_tools: bool = False, with_bands: bool = False) -> str:
+                    with_doors: bool = False, with_tools: bool = False, with_bands: bool = False,
+                    with_caravans: bool = False) -> str:
     """@brief What the office's training teaches (a role's craft, the same
     for every holder today; later it can differ by person, in a résumé).
     On the map the Architect's craft adds town planning (expertise_<role>_map.txt);
     with a market the Treasurer's adds trading (expertise_<role>_market.txt);
-    with bands on the map a file's "_bands" variant replaces it (_craft_file)."""
+    with bands on the map a file's "_bands" variant replaces it (_craft_file);
+    with caravans the Treasurer's adds the latency (expertise_<role>_caravans.txt)."""
     path = _craft_file(f"expertise_{role}", with_bands)
     if not path.exists():
         return ""
     text = path.read_text()
     for wanted, suffix in ((with_map, "map"), (with_market, "market"), (with_village, "village"),
-                           (with_doors, "doors"), (with_tools, "tools")):
+                           (with_doors, "doors"), (with_tools, "tools"), (with_caravans, "caravans")):
         extra = _craft_file(f"expertise_{role}_{suffix}", with_bands)
         if wanted and extra.exists():
             text += extra.read_text()
@@ -936,7 +941,7 @@ def gate_lines(ctx: MeetingContext) -> list[str]:
     arrivals of the last months (read as the server: they are the realm's own events)."""
     rows = ctx.conn.execute(
         "SELECT turn, kind, data FROM events WHERE realm_id = %s"
-        " AND kind IN ('raid', 'flight', 'arrival', 'band_seen')"
+        " AND kind IN ('raid', 'flight', 'arrival', 'band_seen', 'caravan_robbed')"
         " AND turn >= %s AND turn < %s ORDER BY turn, id",
         (ctx.realm_id, ctx.turn - briefing.GATE_MEMORY_TURNS, ctx.turn),
     ).fetchall()
