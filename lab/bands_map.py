@@ -33,6 +33,9 @@ raids on the crisis realms' neighbours (realms 3 and 4, next to 2 and 1 on
 the ring), raids seen coming, raids seen coming (a sighting of
 the raiding band in the weeks before), bands and their adults at the peak.
 
+"engine [bands]" runs the engine's own bands (engine/bands.py, built from
+this lab) to check it against the lab's.
+
 Variants (RUNS): the brakes "rest" and "floor", deterrence, and the
 owner's odds (a raid succeeds with raiders / (raiders + k x guards); chosen
 2026-11-13 with k 3 and 10 % of a failed raid's raiders staying; PLAN.md,
@@ -388,19 +391,25 @@ def bands_world(bands, results, config, values, turn, seed, stats):
 # ---- the runs ---------------------------------------------------------------------
 
 def play(config, plans, mode, seed, values):
+    if mode == "engine":  # the engine's [bands] (engine/bands.py), to check it against this lab
+        config = load_config()
     realms = [Realm(str(i + 1), config, i, i, plans[i]) for i in range(REALMS)]
     market = new_market(config, REALMS)
     stats = {"raids": {}, "food": {}, "warned": 0, "bands_peak": 0, "adults_peak": 0,
              "arrived": 0, "from_raids": 0, "repelled": 0, "stayed": 0}
-    pool = new_pool(config, seed, REALMS)
-    bands = start_bands(config, World(config, {r.key: r.state for r in realms}), seed, values)
+    if mode == "engine":
+        pool = new_pool(config, seed, REALMS, [r.state for r in realms])
+    else:
+        pool = new_pool(config, seed, REALMS)
+    bands = [] if mode == "engine" else start_bands(config, World(config, {r.key: r.state for r in realms}),
+                                                     seed, values)
     for month in range(1, MONTHS + 1):
         live = [r for r in realms if not r.state.game_over]
         if not live:
             break
         months = {r.key: RealmMonth(r.state, orders_of(r, config, market) + _doors_orders(r)) for r in live}
         market, results = resolve_month(market, months, config)
-        if mode == "pool":
+        if mode in ("pool", "engine"):
             pool = resolve_world(pool, results, config, month)
             for key, result in results.items():
                 raids = sum(1 for e in result.events if e.kind == "raid")
@@ -408,6 +417,8 @@ def play(config, plans, mode, seed, values):
                 food = sum(e.data["food"] for e in result.events if e.kind == "raid")
                 stats["food"][key] = stats["food"].get(key, 0) + food
             adults, count = pool.adults, 1
+            if mode == "engine":
+                adults, count = sum(b.adults for b in pool.bands), len(pool.bands)
         else:
             bands_world(bands, results, config, values, month, seed, stats)
             adults, count = sum(b.adults for b in bands), len(bands)
@@ -453,6 +464,7 @@ RUNS = {
     "bands, odds stay 10 no rest": ("bands", Values(stay_pct=10)),
     "bands, odds worth 2": ("bands", Values(rest_months=1, stay_pct=10, guard_worth=2)),
     "bands, odds worth 3": ("bands", Values(rest_months=1, stay_pct=10, guard_worth=3)),
+    "engine [bands]": ("engine", Values()),
     "bands, deter 1": ("bands", Values(deter=1)),
     "bands, deter 2": ("bands", Values(deter=2)),
     "bands, rest+deter 1": ("bands", Values(rest_months=1, deter=1)),
@@ -464,7 +476,7 @@ CONFIG = []  # the run's config, for the lab's own raid (set by main)
 
 
 def main():
-    config = load_config()
+    config = dataclasses.replace(load_config(), bands=None)  # the pool as before [bands]: the baseline
     CONFIG.append(config)
     chosen = sys.argv[1:]
     for world, plans in WORLDS.items():

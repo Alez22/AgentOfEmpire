@@ -148,16 +148,23 @@ def _grumbling(state: GameState, config: Config, rules: MigrationConfig, arrived
 
 
 def resolve_arrivals(pool: BanditPool, states: dict[str, GameState], events: dict[str, list[Event]],
-                     config: Config) -> None:
+                     config: Config, raiders_stayed: dict[str, int] | None = None) -> None:
     """@brief The month's arrivals in every realm still playing; changes the
     states, the pool and appends one `arrival` event per realm that took anybody.
     @param pool The world's pool after its month (changed in place).
     @param states {realm key: state} of the realms still playing, in the fixed order.
     @param events {realm key: the realm's events of the month}, with its raids.
+    @param raiders_stayed With [bands]: {realm key: raiders of failed raids who
+           stayed}, already moved into the realm by engine/bands.py (a fixed
+           share, the doors do not count); None: the stopped raiders stay by
+           the doors, from the pool, as in stage 2.
     """
     rules = config.migration
-    from_raids = {key: _stopped_raiders_stay(state, events[key], config, rules, pool)
-                  for key, state in states.items()}
+    if raiders_stayed is not None:
+        from_raids = {key: raiders_stayed.get(key, 0) for key in states}
+    else:
+        from_raids = {key: _stopped_raiders_stay(state, events[key], config, rules, pool)
+                      for key, state in states.items()}
     settled = _seekers_settle(states, config, rules, pool)
     for key, state in states.items():
         adults, children = settled.get(key, (0, 0))

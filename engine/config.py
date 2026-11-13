@@ -273,6 +273,28 @@ class MigrationConfig:
 
 
 @dataclass(frozen=True)
+class BandsConfig:
+    """Roads of the world, phase 1: the bandits as bands on the map
+    (docs/DESIGN.md, "Roads of the world"; values from lab/bands_map.py,
+    2026-11-13). Needs [bandits] and a map; replaces the pool's raids."""
+    weeks: int  # movement steps inside a month
+    speed: int  # road units a band walks in a week
+    road_cost: dict[str, int]  # terrain name -> road units to enter a hex of it
+    range: int  # road units from a band to a realm it may target
+    rest: bool  # a band does not raid the realm it raided the month before
+    guard_worth: int  # in the raid's odds a guard counts as this many raiders
+    stay_pct: int  # chance of each raider of a failed raid to stay as a citizen (doors ignored)
+    join_range: int  # hexes: a realm's fugitives join a band camped this near its land
+    camp_gap: int  # hexes between a new camp and any realm's land
+    start_gap: int  # the same for the start wanderers' camps
+    split_over: int  # a band with more adults splits in two
+    merge_under: int  # a band with fewer adults joins the nearest one; it does not raid
+    merge_range: int  # hexes
+    see: int  # a realm sees bands this many hexes from its land
+    tower_see: int  # and this many from its finished watchtower
+
+
+@dataclass(frozen=True)
 class LevelsConfig:
     """Output per worker by land level: {"poor": 14, "fair": 15, "rich": 16}."""
     food: dict[str, int]
@@ -326,6 +348,9 @@ class Config:
     migration: MigrationConfig | None = None
     # None for games saved before tools (2026-11-12): no improve order, they replay unchanged.
     tools: ToolsConfig | None = None
+    # Roads of the world, phase 1 (2026-11-13); None for games saved before:
+    # the bandits stay one pool with no place and replay unchanged.
+    bands: BandsConfig | None = None
 
 
 def _tools_from_dict(raw: dict) -> ToolsConfig:
@@ -374,4 +399,5 @@ def config_from_dict(raw: dict) -> Config:
         bandits=BanditsConfig(**raw["bandits"]) if "bandits" in raw else None,
         migration=MigrationConfig(**raw["migration"]) if "migration" in raw else None,
         tools=_tools_from_dict(raw["tools"]) if "tools" in raw else None,
+        bands=BandsConfig(**raw["bands"]) if "bands" in raw else None,
     )

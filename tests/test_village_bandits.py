@@ -2,6 +2,9 @@
 watchtower, the Gastaldo and the militia", village block B+C, step 2)."""
 
 import copy
+from dataclasses import replace
+
+import pytest
 
 from engine import parse_order, resolve_turn
 from engine.bandits import BanditPool, new_pool, pool_from_dict, pool_to_dict, resolve_world
@@ -9,6 +12,13 @@ from engine.state import Building, ClassState
 from engine.territory import find_place
 from engine.turn import TurnResult
 from engine.validator import apply_orders
+
+
+@pytest.fixture
+def config(config):
+    """The pool of stage 1 and 2, without places: [bands] (roads of the world,
+    tests/test_bands.py) replaces its raids."""
+    return replace(config, bands=None)
 
 
 def _order(raw):

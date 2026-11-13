@@ -279,7 +279,27 @@ scarce_food_months = 2
 grumble_per_pct = 4  # lab: 10 toppled the open realms with a bigger stream
 accumulate = true  # game 32: rounded down, a pool of 2-5 sent nobody all year
 
-# Output per worker by land level; it replaces output_per_worker for realms
+# Roads of the world, phase 1 (docs/DESIGN.md, "Roads of the world"; values
+# from lab/bands_map.py, 2026-11-13): the bandits as bands on the map, moving
+# in weeks, raiding by distance. Needs [bandits] and [map]. Without this
+# section (games saved before) the bandits stay one pool and raid anyone.
+[bands]
+weeks = 4
+speed = 8  # road units a week: a site's neighbour on the ring is about a month away
+road_cost = { plain = 1, forest = 2, hill = 2, river = 3 }  # no bridges yet
+range = 24
+rest = true  # lab: without it a realm next to a fallen one was raided almost every month
+guard_worth = 3  # odds raiders / (raiders + 3 x guards); lab: 1 made guards weaker than repel_per_guard
+stay_pct = 10  # low for now; religion will raise it
+join_range = 6
+camp_gap = 2
+start_gap = 6
+split_over = 16
+merge_under = 3
+merge_range = 10
+see = 4
+tower_see = 12
+
 # on a site with levels. Fair equals the buildings' values above.
 [levels]
 # Food was 14/15/18 (rich 18: game 24 and lab "food", 2026-11-08). Lab

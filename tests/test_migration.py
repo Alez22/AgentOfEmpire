@@ -5,6 +5,8 @@ the natives' grumbling, set_doors."""
 import copy
 from dataclasses import replace
 
+import pytest
+
 from engine import parse_order
 from engine.bandits import BanditPool, resolve_world
 from engine.migration import doors_in_force, empty_jobs, free_beds, resolve_arrivals
@@ -14,6 +16,13 @@ from engine.territory import find_place
 from engine.turn import TurnResult, food_needed
 from engine.validator import apply_orders
 from server.db.games import EVENT_VISIBILITY
+
+
+@pytest.fixture
+def config(config):
+    """The pool of stage 1 and 2, without places: [bands] (roads of the world,
+    tests/test_bands.py) replaces its raids."""
+    return replace(config, bands=None)
 
 
 def _order(raw):

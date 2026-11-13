@@ -58,6 +58,9 @@ EVENT_VISIBILITY = {
     "raid": "public",
     # Stage 2: newcomers settling are seen by everybody, like a raid.
     "arrival": "public",
+    # Roads of the world: a band seen near the realm or from its watchtower.
+    # Court, like a flight: the Voice may tell it; never the world's total.
+    "band_seen": "court",
 }
 
 
@@ -149,6 +152,7 @@ def create_game(
             (seed, Jsonb(raw_config), ENGINE_VERSION, rhythm),
         ).fetchone()[0]
         taken: set[str] = set()
+        start_states = []  # for the bands' camps (engine/bands.py)
         for index, name in enumerate(realm_names):
             realm_id = conn.execute(
                 "INSERT INTO realms (game_id, name) VALUES (%s, %s) RETURNING id", (game_id, name)
@@ -173,9 +177,10 @@ def create_game(
                     (realm_id, role, model, Jsonb(personality)),
                 )
             _insert_snapshot(conn, game_id, realm_id, state)
+            start_states.append(state)
         if config.market is not None:
             _insert_market(conn, game_id, 1, new_market(config, len(realm_names)))
-        pool = new_pool(config, seed, len(realm_names))
+        pool = new_pool(config, seed, len(realm_names), start_states)
         if pool is not None:
             _insert_pool(conn, game_id, 1, pool)
         conn.execute("INSERT INTO turns (game_id, number) VALUES (%s, 1)", (game_id,))

@@ -211,7 +211,7 @@ def orders_of(realm, config, market):
 def play(rules, plans, label, seed=0):
     # The lab's own acceptance runs on top: the engine's [migration] (built from
     # these values, 2026-11-10) is left out so it does not run twice.
-    config = dataclasses.replace(load_config(), migration=None)
+    config = dataclasses.replace(load_config(), migration=None, bands=None)  # the pool before [bands]
     realms = [Realm(str(i + 1), config, i, i, plans[i]) for i in range(REALMS)]
     market = new_market(config, REALMS)
     pool = new_pool(config, seed, REALMS)

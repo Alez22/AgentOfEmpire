@@ -37,6 +37,30 @@ from engine.turn import TurnResult, _rescale_workers
 WINTER_MONTHS = (12, 1, 2)
 
 
+@dataclass(eq=False)
+class Band:
+    """@brief One band on the map (roads of the world, phase 1; engine/bands.py).
+    It has the pool's fields, so _flee and _pool_month run on it unchanged."""
+    id: int
+    x: int  # where it stands now
+    y: int
+    camp_x: int  # where it goes back after a raid
+    camp_y: int
+    adults: int
+    children: int = 0
+    food: int = 0
+    grow_acc: int = 0
+    decline_acc: int = 0
+    target: str | None = None  # the realm it walks to this month
+    last_target: str | None = None  # the realm it raided last month (the rest rule)
+    raided: bool = False  # it raided this month
+
+    # Two bands of the same size are still two bands: identity, not fields.
+    # Bands are compared through pool_to_dict (replay), never with ==.
+    __eq__ = object.__eq__
+    __hash__ = object.__hash__
+
+
 @dataclass
 class BanditPool:
     """@brief The world's bandits: a game-level state, like the market's warehouse."""
@@ -49,17 +73,34 @@ class BanditPool:
     # Hundredths of a seeker, [adults, children] (stage 2, migration.accumulate);
     # [0, 0] for games saved before.
     seek_acc: list[int] = field(default_factory=lambda: [0, 0])
+    # With [bands] the bandits live in these bands and the fields above
+    # (adults, children, food, accumulators) stay 0; seek_acc is still used.
+    # Empty for games saved before.
+    bands: list[Band] = field(default_factory=list)
+    next_band_id: int = 1
 
 
-def new_pool(config: Config, seed: int, realm_count: int) -> BanditPool | None:
+def new_pool(config: Config, seed: int, realm_count: int,
+             states: list[GameState] | None = None) -> BanditPool | None:
     """@brief The world's wanderers at game start, in proportion to the realms
     (the lab's 5-15 were for 8 realms: one realm alone drew every raid and
-    starved); None for a game without bandits."""
+    starved); None for a game without bandits.
+    @param states The realms' start states; needed with [bands], where the
+           wanderers start as bands camped on the map (engine/bands.py).
+    @throws ValueError with [bands] and no states."""
     if config.bandits is None:
         return None
     rules = config.bandits
     rng = random.Random(f"{seed}:bandits:start")
-    return BanditPool(seed, rng.randint(rules.start_min, rules.start_max) * realm_count // rules.start_realms)
+    wanderers = rng.randint(rules.start_min, rules.start_max) * realm_count // rules.start_realms
+    if config.bands is None:
+        return BanditPool(seed, wanderers)
+    if not states:
+        raise ValueError("bands need the realms' start states to camp on the map")
+    from engine.bands import start_bands  # engine/bands.py imports this module
+    pool = BanditPool(seed, 0)
+    start_bands(pool, config, wanderers, states)
+    return pool
 
 
 def pool_to_dict(pool: BanditPool) -> dict:
@@ -67,7 +108,9 @@ def pool_to_dict(pool: BanditPool) -> dict:
 
 
 def pool_from_dict(data: dict) -> BanditPool:
-    return BanditPool(**data)
+    data = dict(data)
+    bands = [Band(**band) for band in data.pop("bands", [])]
+    return BanditPool(**data, bands=bands)
 
 
 def _leave(acc: int, count: int, pct: int) -> tuple[int, int]:
@@ -191,6 +234,9 @@ def resolve_world(pool: BanditPool | None, results: dict[str, TurnResult], confi
     """
     if pool is None or config.bandits is None:
         return pool
+    if config.bands is not None:
+        from engine.bands import resolve_bands  # engine/bands.py imports this module
+        return resolve_bands(pool, results, config, turn)
     rules = config.bandits
     pool = BanditPool(**asdict(pool))  # pure: the caller's pool is not changed
     playing = {key: result.state for key, result in results.items() if not result.state.game_over}

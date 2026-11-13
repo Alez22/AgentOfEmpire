@@ -150,7 +150,8 @@ WORLDS = {
 
 
 def main():
-    config = load_config()  # stages 1 and 2 as in the engine
+    # Stages 1 and 2 as in the engine, the pool without places (before [bands], 2026-11-13).
+    config = dataclasses.replace(load_config(), bands=None)
     chosen = sys.argv[1:]
     for world, plans in WORLDS.items():
         print(f"\n== {world} (realms 1-2 in crisis, tax 25 %)")

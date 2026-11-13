@@ -1501,7 +1501,7 @@ Letters between realms walk the same roads; a messenger can be stopped or late. 
 ### Order of work (one commit each, with tests)
 
 1. Lab and values (phase 1).
-2. Engine: bands, movement in weeks, raids by distance, sightings; `[bands]`; old games replay unchanged.
+2. Engine: bands, movement in weeks, raids by distance, sightings; `[bands]`; old games replay unchanged. **Built 2026-11-13**: `engine/bands.py` (`RoadMap`: Dijkstra roads over the free hexes, doorsteps, steps to the realms' land, free camps; `resolve_bands`, called by `resolve_world` when the config has `[bands]`); `Band` in `engine/bandits.py`, the pool's `bands` list and `next_band_id` (the pool's own counts stay 0; stored in `bandit_pools` as before, no migration; old pools read with no bands); `new_pool` takes the realms' start states for the start camps; `resolve_arrivals` takes the raiders who stayed (`raiders_stayed`), so the doors do not count for them; a court event `band_seen` (band id, adults, week, hex, seen from the tower) and `stayed` in the raid event; Italian labels with the size in words. `tests/test_bands.py`; the pool's tests run without `[bands]`; games 41 and 42 replay unchanged. Checked against the lab (`lab/bands_map.py engine`): the same shape, raids 17-29 a world, about half on the neighbours of the fallen realms.
 3. Council: the Gastaldo's sightings, the Voice, the manual, the automatic sovereign (R11 unchanged: the watchtower after the first raid).
 4. UI: bands on the world view (player: seen this month; admin: all), sightings in the chronicle.
 5. A 12-month game with three automatic realms.

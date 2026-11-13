@@ -156,6 +156,15 @@ def event_alert(kind: str, data: dict) -> tuple[str, str] | None:
     return None
 
 
+def band_size_it(adults: int) -> str:
+    """@brief A band's size in words (roads of the world): the people guess, they do not count."""
+    if adults < 5:
+        return "una piccola banda"
+    if adults < 15:
+        return "una banda di una decina di briganti"
+    return "una banda di una ventina di briganti"
+
+
 def event_label(kind: str, data: dict) -> str:
     """@brief One sentence per engine event."""
     if kind == "famine":
@@ -214,11 +223,18 @@ def event_label(kind: str, data: dict) -> str:
                  f"{data['children']} bambini" if data.get("children") else "",
                  f"{data['merchants']} mercanti" if data.get("merchants") else ""]
         return "Famiglie partite per i boschi: " + ", ".join(p for p in parts if p) + "."
+    if kind == "raid" and data.get("stayed"):
+        return (f"Una banda di {data.get('raiders')} briganti è stata respinta da {data.get('guards')} guardie; "
+                f"{data['stayed']} sono rimasti a vivere tra noi.")
     if kind == "raid" and data.get("repelled"):
         return f"Una banda di {data.get('raiders')} briganti è stata respinta da {data.get('guards')} guardie."
     if kind == "raid":
         return (f"Una banda di {data.get('raiders')} briganti ha portato via {data.get('food')} cibo "
                 f"e {data.get('wood')} legno.")
+    if kind == "band_seen":
+        # Roads of the world: a size in words, never the number of bandits.
+        where = "dalla torre di guardia" if data.get("tower") else "vicino alle nostre terre"
+        return f"Avvistata {band_size_it(data.get('adults', 0))} {where}."
     if kind == "arrival":
         # Village block B+C, stage 2: newcomers from the woods (engine/migration.py).
         text = f"Sono arrivati a stabilirsi {data.get('adults')} adulti"
