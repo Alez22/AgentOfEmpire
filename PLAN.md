@@ -979,6 +979,19 @@ Values chosen: 80 wood, 2 months, 6 merchants x 3 lots, merchants' tax 10 % with
 5. **The owner's odds** (raiders / (raiders + k x guards), full loot or nothing, stopped raiders stay at a fixed share): k 1 is weaker than today (4 guards: worst loss 850-1,075 against 525-700); **k 3 brings it to 625-875**. Attempts stay high (22-31, about one a month on the exposed realm), most failing against guards. Stay 10 %: 2-6 citizens in 2 years (today 8-14).
 6. **Chosen 2026-11-13**: odds with a guard worth 3 raiders, stay 10 % without the doors (the doors are for seekers), rest, speed 8 road units a week, range 24, split over 16, merge under 3, sight 4 hexes from the land and 12 from the tower. Walls later raise the guards' weight; religion the stay share.
 
+### Lab: caravans meet bands, first run (2026-11-13, `lab/caravans_map.py`)
+
+Option A (decided with the owner 2026-11-13): a caravan is met when a hex it crossed this week lies within a radius of a band, not on the same hex. Observer only, on the real engine's `[bands]`, the 3 worlds of `lab/bands_map.py`, 24 months, every realm a leg out and a leg back every month. Roads to the fair (32, 32): 15-27 units, 2-4 weeks at speed 8.
+
+1. **Legs met, all realms**: radius 2: 0-47 %; radius 4: 0-52 %; radius 6: 17-63 %. Speed 6 instead of 8 changes little.
+2. **The seed decides, not the radius**: the start wanderers camp in the free middle of the map, where the fair is. Seed 1 has a camp 2 hexes from the fair, so every realm's legs are met about a third of the time even at radius 2; seed 2 has no camp within 14 hexes, so almost nothing is met at radius 2-4. Every road ends at the fair: a band near it is on every road.
+3. Most meetings in week 1 (a leg starts at a realm's doorstep, where bands raid, or at the fair).
+4. **Run 2, the fair's peace** (asked by the owner): no band camps within 6 or 10 hexes of the fair (start camps, fugitives' camps, splits). Raids on the realms unchanged (17-30 a world).
+   - Radius 2: 0-1 % of the legs met (1-5 legs of 320 in 24 months): robbery almost never happens.
+   - Radius 4: 5-11 %, all on one or two realms whose road passes a camp (about 40 % of their legs), the others none.
+   - Gap 6 and 10 give the same numbers.
+5. **Chosen 2026-11-13** (the owner): radius **2** and no band camps within **6** hexes of the fair. Low on purpose: the sovereigns have no real tool yet against the bands on the roads; raise the radius later, together with the tools (an agreement between realms to take in more seekers, patrols of soldiers, escorted caravans).
+
 ### Game 43: bands on the map, three automatic realms (2026-11-13, 12 months, $0.31)
 
 Seed 0, Aurelia, Brenna, Corvara (103-105), automatic sovereign, `[bands]` on. 237 calls, $0.31, 7 failed (5 invalid replies, 2 timeouts, GLM Flash, retried). Replay matches. All three stand at month 12, calm, with 993-1427 food.
