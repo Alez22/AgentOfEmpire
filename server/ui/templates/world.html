@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}{% if admin %}Partita {{ game.id }} · il mondo{% else %}{{ realm.name }} · il mondo{% endif %}{% endblock %}
+{% block head %}{% if timelapse and timelapse.refresh %}<meta http-equiv="refresh" content="{{ timelapse.refresh }}">{% endif %}{% endblock %}
 {% block content %}
 <section>
   <div class="kicker">{% if admin %}Amministrazione · {% endif %}Partita {{ game.id }}{% if turn %} · turno {{ turn }}{% endif %}</div>
@@ -18,11 +19,16 @@
   <div class="map-frame hex-frame">
     <svg class="world-board" viewBox="0 0 {{ g.width }} {{ g.height }}" role="img"
          aria-label="Mappa del mondo" style="width: {% if zoom %}{{ (g.width | int) * 2 }}px{% else %}100%{% endif %}">
-      <defs><polygon id="wh" points="{{ g.hex_points }}"/></defs>
+      <defs><polygon id="wh" points="{{ g.hex_points }}"/>
+        {% if moves and moves.raids %}<marker id="raid-head" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L6 3L0 6z"/></marker>{% endif %}</defs>
       {% for group in g.groups %}<g class="{{ group.cls }}">{% for h in group.hexes %}<use href="#wh" x="{{ h.x }}" y="{{ h.y }}"/>{% endfor %}</g>
       {% endfor %}
       {% for b in g.borders %}<path class="realm-border" d="{{ b.path }}" style="stroke: {{ b.color }}"/>{% endfor %}
       {% for l in g.letters %}<text class="wl{% if l.site %} site{% endif %}" x="{{ l.x }}" y="{{ l.y }}">{{ l.text }}</text>{% endfor %}
+      {% if moves %}
+      {% for c in moves.caravans %}<g class="caravan"><title>{{ c.title }}</title><polyline class="caravan-road" points="{{ c.points }}" style="stroke: {{ c.color }}"/>{% if c.robbed %}<text class="caravan-robbed" x="{{ c.end_x }}" y="{{ c.end_y }}">✕</text>{% else %}<circle class="caravan-end" cx="{{ c.end_x }}" cy="{{ c.end_y }}" r="2.5" style="fill: {{ c.color }}"/>{% endif %}</g>{% endfor %}
+      {% for r in moves.raids %}<g class="raid"><title>{{ r.title }}</title><line class="raid-arrow{% if r.repelled %} repelled{% endif %}" x1="{{ r.x1 }}" y1="{{ r.y1 }}" x2="{{ r.x2 }}" y2="{{ r.y2 }}" marker-end="url(#raid-head)"/></g>{% endfor %}
+      {% endif %}
       {% if g.fair %}<g class="fair-mark"><title>{{ g.fair.title }}</title><circle cx="{{ g.fair.x }}" cy="{{ g.fair.y }}" r="6"/></g>{% endif %}
       {% for m in g.bands %}<g class="band-mark"><title>{{ m.title }}</title><circle cx="{{ m.x }}" cy="{{ m.y }}" r="5"/><text x="{{ m.x }}" y="{{ m.y }}">{{ m.text }}</text></g>{% endfor %}
       {% for b in g.borders %}<text class="realm-name" x="{{ b.label_x }}" y="{{ b.label_y }}" style="fill: {{ b.color }}">{{ b.name }}</text>{% endfor %}
@@ -33,6 +39,32 @@
     <a href="{{ zoom_href }}">{% if zoom %}Rimpicciolisci{% else %}Ingrandisci{% endif %}</a>
   </div>
 </section>
+
+{% if admin and timelapse and timelapse.last > 1 %}{% set t = timelapse %}
+<section class="card timelapse">
+  <h2>Timelapse</h2>
+  <p class="hint">Turno {{ t.turn }} di {{ t.last }}: il mondo all'inizio di {{ t.month }}, anno {{ t.year }}.</p>
+  <div class="map-tools">
+    {% if t.prev_href %}<a href="{{ t.prev_href }}">◀ Indietro</a>{% else %}<span></span>{% endif %}
+    {% if t.playing %}<a href="{{ t.pause_href }}">❚❚ Pausa</a>{% else %}<a href="{{ t.play_href }}">▶ Riproduci</a>{% endif %}
+    {% if t.next_href %}<a href="{{ t.next_href }}">Avanti ▶</a>{% else %}<span></span>{% endif %}
+  </div>
+  <form method="get" action="/admin/games/{{ game.id }}/world" class="map-tools">
+    <input type="hidden" name="zoom" value="{{ 1 if zoom else 0 }}">
+    <label>Vai al turno
+      <select name="turn">{% for n in t.turns %}<option value="{{ n }}"{% if n == t.turn %} selected{% endif %}>{{ n }}</option>{% endfor %}</select>
+    </label>
+    <button type="submit">Vai</button>
+  </form>
+  {% if t.turn > 1 %}
+  <h3>Nel mese di {{ labels.month_name(t.turn - 1) }}</h3>
+  {% if moves and (moves.caravans or moves.raids) %}<p class="hint">Sulla mappa: le carovane del mese (tratteggio nel colore del regno; pallino = arrivata, ✕ = rapinata) e gli assalti (freccia rossa; tratteggiata = respinto).</p>{% endif %}
+  {% if moves and moves.pool_adults %}<p class="hint">Briganti nei boschi, fuori dalle bande: {{ moves.pool_adults }} adulti.</p>{% endif %}
+  {% for e in month_events %}<p style="margin: 0"><b>{{ e.realm }}</b>: {{ e.text }}</p>
+  {% else %}<p class="hint">Niente di notevole.</p>{% endfor %}
+  {% endif %}
+</section>
+{% endif %}
 
 {% if admin %}
 <section class="card">

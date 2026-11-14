@@ -25,7 +25,7 @@ from server.council.meeting import render_prompt
 from server.council.personality import TRAITS, trait_word
 from server.db import games
 from server.db.replay import replay_game
-from server.ui import world_view
+from server.ui import labels, world_view
 from server.ui.routes import templates
 
 router = APIRouter(prefix="/admin", include_in_schema=False)
@@ -104,10 +104,12 @@ def admin_game(request: Request, game_id: int, conn=Depends(_admin_connection)):
     return templates.TemplateResponse(request, "admin_game.html", _game_context(conn, game_id))
 
 
-def _all_bands(conn: psycopg.Connection, game: dict) -> list[dict]:
-    """@brief Every band of the game at its latest stored month, with its
-    adults and target (the admin sees the whole truth; players never do)."""
-    turn = conn.execute("SELECT max(turn) FROM bandit_pools WHERE game_id = %s", (game["id"],)).fetchone()[0]
+def _all_bands(conn: psycopg.Connection, game: dict, turn: int | None = None) -> list[dict]:
+    """@brief Every band of the game at the start of `turn` (None: its latest
+    stored month), with its adults and target (the admin sees the whole truth;
+    players never do)."""
+    if turn is None:
+        turn = conn.execute("SELECT max(turn) FROM bandit_pools WHERE game_id = %s", (game["id"],)).fetchone()[0]
     pool = games.load_pool(conn, game["id"], turn) if turn else None
     if pool is None:
         return []
@@ -121,26 +123,107 @@ def _all_bands(conn: psycopg.Connection, game: dict) -> list[dict]:
     return marks
 
 
+# Seconds between two frames of the timelapse: long enough to read the month's
+# events, short enough to watch a 24-month game in under a minute.
+TIMELAPSE_SECONDS = 2
+
+
+def _month_events(conn: psycopg.Connection, game: dict, turn: int) -> list[dict]:
+    """@brief Every event of one month in every realm, read as the server
+    (the admin sees all): each {"key", "realm", "kind", "data"}, where key is
+    the engine's realm key (the realm id as text)."""
+    names = {r["id"]: r["name"] for r in game["realms"]}
+    rows = conn.execute("SELECT realm_id, kind, data FROM events WHERE game_id = %s AND turn = %s ORDER BY id",
+                        (game["id"], turn)).fetchall()
+    return [{"key": str(realm_id), "realm": names.get(realm_id, ""), "kind": kind, "data": data}
+            for realm_id, kind, data in rows]
+
+
+def _notable_lines(events: list[dict]) -> list[dict]:
+    """@brief The month's lines beside the timelapse: the chronicle's boxed
+    events (raids, flights, arrivals, robbed caravans), finished buildings and falls."""
+    lines = []
+    for event in events:
+        kind, data = event["kind"], event["data"]
+        if labels.event_alert(kind, data) is None and kind not in ("building_completed", "game_over"):
+            continue
+        lines.append({"realm": event["realm"], "text": labels.event_label(kind, data)})
+    return lines
+
+
+def _month_moves(conn: psycopg.Connection, config, game: dict, frame: int, realms: list[dict],
+                 events: list[dict]) -> dict:
+    """@brief What moved on the roads in the month before `frame`: the
+    caravans and the raids (world_view.caravan_routes, raid_arrows), and the
+    bandits in the woods, who have no place on the map.
+    Why only the realms whose snapshot is exactly `frame`: those are the
+    realms the world step of that month resolved (a realm fallen earlier
+    gets no more snapshots and was not on the month's RoadMap)."""
+    month_states = {r["key"]: r["state"] for r in realms if r["state"].turn == frame}
+    colors = {r["key"]: r["color"] for r in realms}
+    pool = games.load_pool(conn, game["id"], frame)
+    bands = pool.bands if pool is not None else []
+    return {"caravans": world_view.caravan_routes(config, month_states, events, colors),
+            "raids": world_view.raid_arrows(config, month_states, events, bands),
+            "pool_adults": pool.adults if pool is not None else None}
+
+
+def _timelapse(game_id: int, turn: int, last_turn: int, play: bool, zoom: int) -> dict:
+    """@brief Links and labels of the timelapse controls for the frame `turn`.
+    Frame N is the world at the start of month N (snapshot turn N), so the
+    events beside it are those of month N - 1, the ones that led to it."""
+    base = f"/admin/games/{game_id}/world?zoom={zoom}&turn="
+    playing = play and turn < last_turn  # the last frame stops the play
+    return {"turn": turn, "last": last_turn, "playing": playing,
+            "month": labels.month_name(turn), "year": (turn - 1) // 12 + 1,
+            "prev_href": base + str(turn - 1) if turn > 1 else None,
+            "next_href": base + str(turn + 1) if turn < last_turn else None,
+            "play_href": base + str(1 if turn >= last_turn else turn) + "&play=1",
+            "pause_href": base + str(turn),
+            "refresh": f"{TIMELAPSE_SECONDS};url={base}{turn + 1}&play=1" if playing else None,
+            "turns": list(range(1, last_turn + 1))}
+
+
 @router.get("/games/{game_id}/world", response_class=HTMLResponse)
-def admin_world(request: Request, game_id: int, zoom: int = 0, conn=Depends(_admin_connection)):
+def admin_world(request: Request, game_id: int, zoom: int = 0, turn: int = 0, play: int = 0,
+                conn=Depends(_admin_connection)):
     """@brief The whole world in the clear: every realm's land, buildings and
-    border, each in its colour (server/ui/world_view.py); fallen realms in grey."""
+    border, each in its colour (server/ui/world_view.py); fallen realms in grey.
+    @param turn 0 = the latest state; N = the world at the start of month N
+           (the timelapse: no JavaScript, a page per frame).
+    @param play 1 = the page reloads itself on the next frame (meta refresh)."""
     game = _game_or_404(conn, game_id)
     config = games.load_game_config(conn, game_id)
+    last_turn = games.last_snapshot_turn(conn, game_id)
+    frame = min(turn, last_turn) if turn > 0 else None
     realms, terrain = [], None
     for index, realm in enumerate(game["realms"]):
-        state = games.load_latest_state(conn, realm["id"])
-        if not state.has_map():
+        if frame is None:
+            state = games.load_latest_state(conn, realm["id"])
+        else:
+            state = games.load_state_at(conn, realm["id"], frame)
+        if state is None or not state.has_map():
             continue
         terrain = terrain or state.terrain
-        realms.append({"name": realm["name"], "state": state, "fallen": state.game_over is not None,
+        realms.append({"key": str(realm["id"]), "name": realm["name"], "state": state,
+                       "fallen": state.game_over is not None,
                        "color": world_view.REALM_COLORS[index % len(world_view.REALM_COLORS)]})
-    board = None
+    board, events, moves = None, [], {}
+    if frame and frame > 1:
+        events = _month_events(conn, game, frame - 1)
     if terrain and is_hex(config):
-        board = world_view.world_board(config, terrain, realms, _all_bands(conn, game))
-    context = {"game": game, "turn": game["open_turn"], "board": board, "admin": True, "zoom": bool(zoom),
+        board = world_view.world_board(config, terrain, realms, _all_bands(conn, game, frame))
+        if frame and frame > 1:
+            moves = _month_moves(conn, config, game, frame, realms, events)
+    zoom_query = "" if zoom else "?zoom=1"
+    if frame is not None:
+        zoom_query = f"?zoom={0 if zoom else 1}&turn={frame}"
+    timelapse = _timelapse(game_id, frame or last_turn, last_turn, bool(play), zoom)
+    context = {"game": game, "turn": frame or game["open_turn"], "board": board, "admin": True,
+               "zoom": bool(zoom), "timelapse": timelapse, "moves": moves,
+               "month_events": _notable_lines(events),
                "bands_legend": "Banda (adulti dentro)" if config.bands is not None else None,
-               "zoom_href": f"/admin/games/{game_id}/world" + ("" if zoom else "?zoom=1")}
+               "zoom_href": f"/admin/games/{game_id}/world" + zoom_query}
     return templates.TemplateResponse(request, "world.html", context)
 
 

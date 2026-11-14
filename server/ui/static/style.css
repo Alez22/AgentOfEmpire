@@ -267,3 +267,11 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
 .band-legend { width: 26px; height: 26px; flex-shrink: 0; }
 /* The fair (roads of the world, phase 2): a gold mark in the middle of the world. */
 .world-board .fair-mark circle, .band-legend circle.fair-dot { fill: #D8A944; stroke: #14120E; stroke-width: 1; }
+/* Admin timelapse: the month's caravans (dashed, in the realm's colour) and raids (red arrows). */
+.world-board .caravan-road { fill: none; stroke-width: 1.4; stroke-dasharray: 3 2; stroke-linecap: round; }
+.world-board .caravan-end { stroke: #14120E; stroke-width: 0.8; }
+.world-board .caravan-robbed { font-family: var(--body); font-size: 9px; font-weight: 700; fill: #E5483A;
+  text-anchor: middle; dominant-baseline: central; }
+.world-board .raid-arrow { stroke: #E5483A; stroke-width: 1.4; }
+.world-board .raid-arrow.repelled { stroke-dasharray: 2 2; }
+#raid-head path { fill: #E5483A; }

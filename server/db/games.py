@@ -283,6 +283,22 @@ def load_latest_state(conn: psycopg.Connection, realm_id: int) -> GameState | No
     return state_from_dict(row[0]) if row else None
 
 
+def load_state_at(conn: psycopg.Connection, realm_id: int, turn: int) -> GameState | None:
+    """@brief The realm at the start of `turn`: its latest snapshot not after it.
+    Why "not after" and not "equal": a realm that fell stops getting snapshots,
+    so later turns show it as it was when it fell. None before its first one."""
+    row = conn.execute(
+        "SELECT state FROM snapshots WHERE realm_id = %s AND turn <= %s ORDER BY turn DESC LIMIT 1",
+        (realm_id, turn)).fetchone()
+    return state_from_dict(row[0]) if row else None
+
+
+def last_snapshot_turn(conn: psycopg.Connection, game_id: int) -> int:
+    """@brief The highest snapshot turn of the game (0 if none): the timelapse's last frame."""
+    return conn.execute("SELECT coalesce(max(turn), 0) FROM snapshots WHERE game_id = %s",
+                        (game_id,)).fetchone()[0]
+
+
 def load_game_config(conn: psycopg.Connection, game_id: int) -> Config:
     """@brief The config copy stored with the game (not the current config.toml)."""
     raw_config = conn.execute("SELECT config FROM games WHERE id = %s", (game_id,)).fetchone()[0]
