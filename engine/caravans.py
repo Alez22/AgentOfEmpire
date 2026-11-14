@@ -88,6 +88,15 @@ def _road(roads, start: tuple[int, int], goals: set[tuple[int, int]]) -> list[tu
     return path
 
 
+def road_home_to_fair(roads, key: str) -> list[tuple[int, int]]:
+    """@brief The realm's caravan road, from its doorstep to the fair; empty
+    when the land closes every way. Public: the admin timelapse draws the
+    month's caravans with it (no caravan state is stored), so it must be the
+    very road the legs walk.
+    @param roads An engine.bands.RoadMap of the month (the realms' new states)."""
+    return _road(roads, roads.fair, roads.doorstep(key))[::-1]  # searched from the fair: one search
+
+
 def _sales_on_the_road(market, key: str) -> dict[str, int]:
     """@brief The realm's consignments that joined the warehouse this month."""
     load = {good: sum(c.units for c in market.goods[good].queue if c.arriving and c.seller == key)
@@ -116,14 +125,13 @@ def send_legs(market, results: dict, roads, config: Config) -> list[Leg]:
         if any(_purchases_on_the_road(r.events, lot) for r in results.values()):
             raise ValueError("caravans need the market: pass it to resolve_world")
         return []
-    fair = roads.fair
     legs = []
     for key, result in results.items():
         sales = _sales_on_the_road(market, key)
         purchases = _purchases_on_the_road(result.events, lot)
         if not sales and not purchases:
             continue
-        home_to_fair = _road(roads, fair, roads.doorstep(key))[::-1]  # searched from the fair: one search
+        home_to_fair = road_home_to_fair(roads, key)
         if sales:
             legs.append(Leg(key, "out", sales, home_to_fair))
         if purchases:
