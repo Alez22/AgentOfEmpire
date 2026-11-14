@@ -260,13 +260,34 @@ def test_r11_builds_the_watchtower_after_the_first_raid(start_state, config):
     assert found is None or "(R11)" not in found[1]  # no raid yet
     month.raided = True
     text, reason = rules.directive(month, [])
-    assert "torre di guardia" in text and "(R11)" in reason
+    assert "torre di guardia" in text and "(R11, R11b)" in reason  # May: R11b, no firewood weighed
     planned = _items({"action": "build", "building": "watchtower"})
     found = rules.directive(month, planned)
     assert found is None or "(R11)" not in found[1]  # already in the plan
-    start_state.wood = 30  # the firewood comes first
+    start_state.wood = 30  # not even the site's wood
     found = rules.directive(month, [])
     assert found is None or "(R11)" not in found[1]
+    start_state.turn, start_state.wood = 10, 60  # October: the site's wood, not the firewood to March
+    found = rules.directive(month, [])
+    assert found is None or "(R11)" not in found[1]
+
+
+def test_r11b_a_raided_realm_s_tower_skips_the_firewood_in_summer(start_state, config):
+    """Game 44: R10b struck Corvara's tower from March to September after four raids."""
+    _open_market(start_state, config)
+    start_state.food, start_state.stone, start_state.wood = 50_000, 500, 60  # the site, not the firewood to March
+    tower = {"action": "build", "building": "watchtower"}
+    month = _month(start_state, config)
+    month.raided = True
+    for turn, kept in ((4, True), (8, True), (9, False), (3, False)):  # April, August; September, March
+        start_state.turn = turn
+        reasons = rules.exclusions(month, _items(tower), None)
+        assert (reasons == []) is kept, (turn, reasons)
+        text_reason = rules.directive(month, [])
+        assert (text_reason is not None and "(R11, R11b)" in text_reason[1]) is kept, turn
+    month.raided = False  # never raided: R10b as before, in summer too
+    start_state.turn = 6
+    assert "(R10b)" in rules.exclusions(month, _items(tower), None)[0][1]
 
 
 def _building(state, kind):

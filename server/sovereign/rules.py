@@ -12,6 +12,8 @@ R10 (village block A, 2026-11-08): build the market, then staff it.
 R10b (after game 40): no build of the council's at the cost of the firewood.
 R4c (after game 41): no wood sale at the cost of the firewood.
 R11 (village block B+C, 2026-11-09): build the watchtower after the first raid.
+R11b (after game 44): after a raid, from April to August the watchtower passes
+the firewood check (R10b and R11's own): there is time to send hands to the woods.
 R12 (seasonal sovereign, 2026-11-11): in an automatic month no law changes.
 R13 (tools, 2026-11-12): no tools for empty places, nor with the firewood short.
 """
@@ -39,6 +41,11 @@ SELL_KEEP_LOTS = 2  # R5: and this many lots more
 GOLD_SHORT_MONTHS = 3  # R5: gold is short below this many months of costs
 MAX_SELL_LOTS = 4
 MERCHANTS_WANTED = 3  # R10: merchants asked for a new market (3 x 3 lots a month)
+# R11b: months when a raided realm's watchtower skips the firewood check.
+# Why: game 44, Corvara was raided four times without guards while R10b struck
+# its tower every month from March to September: the check counts only today's
+# woodcutters until March, and in summer the council can still add some (it did).
+TOWER_WARM_MONTHS = (4, 5, 6, 7, 8)
 # R12: the laws only the sovereign changes in a seasonal game (the same four
 # the reversal line tracks, server/ui/reversals.py).
 LAWS = ("set_tax", "set_merchant_tax", "set_ration", "set_doors")
@@ -286,6 +293,12 @@ def _merchants_directive(month: Month, items: list[Item]) -> tuple[str, str] | N
             f"Direttiva: {MERCHANTS_WANTED} mercanti al mercato: è finito ma nessuno ci lavora (R10).")
 
 
+def _tower_skips_firewood(month: Month, building: str) -> bool:
+    """@brief R11b: a raided realm's watchtower, from April to August, is not
+    weighed against the firewood until spring."""
+    return month.raided and building == "watchtower" and month_of(month.state.turn) in TOWER_WARM_MONTHS
+
+
 def _watchtower_directive(month: Month, items: list[Item], left: dict[str, int]) -> tuple[str, str] | None:
     """@brief R11: after the first raid, a watchtower (no guards without it),
     once the wood also covers the firewood until spring, as R10.
@@ -299,11 +312,18 @@ def _watchtower_directive(month: Month, items: list[Item], left: dict[str, int])
     if any(isinstance(i.order, BuildOrder) and i.order.building == "watchtower" for i in items):
         return None
     spec = config.buildings["watchtower"]
+    text = ("Architetta, costruisci la torre di guardia nella sua zona: i briganti hanno già colpito, e senza "
+            "torre non si possono tenere guardie.")
+    if _tower_skips_firewood(month, "watchtower"):  # R11b: summer, time to cut more
+        if left["wood"] < spec.wood or left["stone"] < spec.stone:
+            return None
+        return (text, f"Direttiva: costruire la torre di guardia dopo un assalto: legno ({left['wood']}) e pietra "
+                      f"({left['stone']}) per il cantiere ({spec.wood}, {spec.stone}); d'estate c'è tempo per "
+                      "tagliare la legna dell'inverno (R11, R11b).")
     firewood = need_ahead(month.state, config, "wood", months_to_spring(month.state.turn))
     if left["wood"] < spec.wood + firewood or left["stone"] < spec.stone:
         return None
-    return ("Architetta, costruisci la torre di guardia nella sua zona: i briganti hanno già colpito, e senza "
-            "torre non si possono tenere guardie.",
+    return (text,
             f"Direttiva: costruire la torre di guardia dopo un assalto: legno ({left['wood']}) per il cantiere "
             f"({spec.wood}) e la legna fino a primavera ({firewood}), pietra ({left['stone']}) per il cantiere "
             f"({spec.stone}) (R11).")
@@ -474,6 +494,8 @@ def _cold_build(month: Month, item: Item, orders: list[Order]) -> str:
     R10's check never ran: 36 wood left, 16 short of the firewood to March.
     @param orders The plan's other orders (their assignment, their wood)."""
     if not isinstance(item.order, BuildOrder) or not month.config.buildings[item.order.building].wood:
+        return ""
+    if _tower_skips_firewood(month, item.order.building):  # R11b
         return ""
     short = _firewood_short(month, orders + [item.order])
     return f"{short} (R10b)" if short else ""
