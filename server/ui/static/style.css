@@ -462,7 +462,7 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
 
 /* The Voice of the square: in the square's card and in the sheet, never over the map. */
 .voice-label { margin-top: 8px !important; font: 600 10px/1 var(--body) !important; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted) !important; }
-.voice-full { margin: 0; padding: 12px 14px; border-radius: 6px; background: linear-gradient(180deg, #F3E9D2, #E6D7B5); color: #2B2216;
+p.voice-full {  /* p: beats .sheet-card-text p (light text) inside the square's card */ margin: 0; padding: 12px 14px; border-radius: 6px; background: linear-gradient(180deg, #F3E9D2, #E6D7B5); color: #2B2216;
   font: italic 500 17px/1.35 var(--display); }
 .month-lines a { color: var(--text-soft); text-decoration-color: var(--gold); text-underline-offset: 3px; }
 
