@@ -1,6 +1,7 @@
 """The sovereign's market page (server/ui/market_view.py, templates/market.html)."""
 
 import html
+import re
 from dataclasses import replace
 
 import psycopg
@@ -39,7 +40,7 @@ def test_the_market_page_shows_the_prices(ui, database_url):
     raw["market"]["needs_building"] = False  # open from the first month, as before village block A
     _, (realm_id,) = _game(database_url, raw)
     page = _page(ui, realm_id)
-    assert 'aria-current="page">Mercato</a>' in page
+    assert re.search(r'aria-current="page">\s*<svg[^>]*>.*?</svg>Mercato</a>', page, re.S)  # the tab
     assert "Prezzi del mese" in page and "oro per lotto da 50" in page
     assert "Compri a</div><div class=\"value\">11" in page and "Vendi a</div><div class=\"value\">9" in page
     assert "Nel magazzino 100." in page  # the start stock of one realm
@@ -115,7 +116,7 @@ def test_an_open_market_shows_its_merchants(ui, database_url):
     page = _page(ui, realm_id)
     assert "Prezzi del mese" in page and "I mercanti" in page
     assert "su 6 posti" in page and "Tassa dei mercanti" in page and "calmi" in page
-    map_page = html.unescape(ui.get(f"/ui/realms/{realm_id}/map").text)
+    map_page = html.unescape(ui.get(f"/ui/realms/{realm_id}", params={"b": 13}).text)  # the market's card
     assert "#i-shop" in map_page and "h-market" in map_page
     kingdom = html.unescape(ui.get(f"/ui/realms/{realm_id}/kingdom").text)
     assert "Al mercato (mercanti)" in kingdom and "Malcontento dei mercanti" in kingdom

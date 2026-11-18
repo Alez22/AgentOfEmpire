@@ -19,6 +19,7 @@ from typing import Literal
 
 import psycopg
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
 from psycopg_pool import ConnectionPool
 from pydantic import BaseModel, Field
@@ -105,6 +106,9 @@ def create_app(
             yield
 
     app = FastAPI(title="AgentOfEmpire", lifespan=lifespan)
+    # The realm's map page is ~100 KB of SVG markup; gzip makes it ~15 KB on a
+    # phone. Cost: one compression per response over 1 KB, small CPU.
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
     app.state.admin_view = (os.environ.get("ADMIN_VIEW") == "1") if admin_view is None else admin_view
     _add_routes(app)
     _add_audience_routes(app)

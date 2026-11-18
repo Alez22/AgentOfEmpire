@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}{{ realm.name }} · {{ labels.month_name(state.turn) }}{% endblock %}
+{% block body_class %}realm-home{% endblock %}
+{% block page %}
+{# The realm's first page (server/ui/realm_view.py): the map fills the screen,
+   the HUD and the month's sheet lie on it. Works without JavaScript: every
+   choice is a link, the sheet opens with <details>. #}
+{% set g = map.board %}
+<div class="stage">
+  <svg class="hex-board realm-board" viewBox="0 0 {{ g.width }} {{ g.height }}" preserveAspectRatio="xMidYMid meet"
+       role="group" aria-label="Mappa del regno: tocca un edificio per i dettagli">
+    {% for h in g.hexes %}<polygon class="{{ h.cls }}" points="{{ h.points }}"/>{% endfor %}
+    {% if g.waves %}<path class="waves" d="{{ g.waves | join(' ') }}"/>{% endif %}
+    {% for i in g.icons %}<use href="{{ i.href }}" class="{{ i.cls }}" x="{{ i.x }}" y="{{ i.y }}" width="{{ i.size }}" height="{{ i.size }}"/>{% endfor %}
+    {% for d in g.dimmed %}<polygon class="dim" points="{{ d }}"/>{% endfor %}
+    {% for s in g.lot_lines %}<line class="lot" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}
+    {% for z in g.zones %}<g class="zone{% if z.lit %} lit{% endif %}" style="stroke: {{ z.color }}">{% for s in z.segments %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}</g>{% endfor %}
+    {% for s in g.border %}<line class="border" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}
+    {% for b in g.buildings %}<a href="{{ b.href }}" aria-label="{{ b.label }}" class="map-building" {% if b.selected and chosen is not none %}aria-current="true"{% endif %}>{% for pts in b.polygons %}<polygon class="hit" points="{{ pts }}"/>{% endfor %}</a>{% endfor %}
+    {% if chosen is not none %}{% for b in g.buildings if b.selected %}{% for s in b.outline %}<line class="chosen" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}{% endfor %}{% endif %}
+  </svg>
+</div>
+
+<header class="hud">
+  <div class="hud-title">
+    <h1 class="hud-realm"><a href="/ui" aria-label="Le partite" class="hud-crest">✦</a>{{ realm.name }}</h1>
+    <p class="hud-when"><b>{{ labels.month_name(state.turn)|capitalize }}</b> · {{ season }}<br>
+      {% if winter_in == 0 %}è inverno{% else %}inverno fra {{ winter_in }} {% if winter_in == 1 %}mese{% else %}mesi{% endif %}{% endif %}</p>
+  </div>
+  <ul class="hud-stocks" aria-label="Le scorte del regno">
+    {% for c in chips %}
+    <li class="hud-chip" {% if c.delta is not none %}aria-label="{{ c.name }}: {{ c.value }}, {% if c.delta >= 0 %}più{% else %}meno{% endif %} {{ c.delta|abs }} dal mese scorso"{% endif %}>
+      {% if c.key == "gold" %}<svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#D4AF5A"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="#8A6A26" stroke-width="1.4"/><path d="M12 8.5v7M9.8 10h4.4" stroke="#8A6A26" stroke-width="1.4" stroke-linecap="round"/></svg>
+      {% elif c.key == "people" %}<svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8.5" cy="7.5" r="3" fill="#ECE5D6"/><circle cx="16.5" cy="8.5" r="2.5" fill="#BDB5A3"/><path d="M3 20c0-4 2.5-6.5 5.5-6.5S14 16 14 20z" fill="#ECE5D6"/><path d="M13.6 14.4c.8-.6 1.8-.9 2.9-.9 2.6 0 4.5 2.2 4.5 5.5h-6c0-1.8-.5-3.4-1.4-4.6z" fill="#BDB5A3"/></svg>
+      {% else %}<svg aria-hidden="true" viewBox="0 0 512 512" class="hud-{{ c.key }}"><use href="{{ g.sprite }}#i-{{ {'food': 'wheat', 'wood': 'wood-pile', 'stone': 'stone-pile'}[c.key] }}"/></svg>{% endif %}
+      <span class="sr-only">{{ c.name }}</span><strong>{{ c.value }}</strong>
+      {% if c.delta is not none %}<span class="hud-delta {% if c.delta > 0 %}up{% elif c.delta < 0 %}down{% endif %}" aria-hidden="true">{% if c.delta > 0 %}+{% elif c.delta < 0 %}−{% else %}±{% endif %}{{ c.delta|abs }}</span>{% endif %}
+    </li>
+    {% endfor %}
+    {% if state.unrest != "calm" %}<li class="unrest-chip {{ state.unrest }}">{{ labels.UNREST.get(state.unrest, state.unrest)|capitalize }}</li>{% endif %}
+  </ul>
+  {% if request.app.state.admin_view %}<a class="hud-admin" href="/admin">Amministrazione</a>{% endif %}
+</header>
+
+<section class="sheet" aria-label="Il mese">
+  {% if error %}<div class="banner error" role="alert">{{ error }}</div>{% endif %}
+
+  {% if chosen is not none %}
+  <div class="sheet-card">
+    <svg aria-hidden="true" class="map-picture hex-picture" viewBox="0 0 512 512"><use href="{{ map.detail.icon }}"/></svg>
+    <div class="sheet-card-text">
+      <h2>{{ map.detail.title }}</h2>
+      {% for line in map.detail.lines %}<p>{{ line }}</p>{% endfor %}
+    </div>
+    <a class="sheet-close" href="/ui/realms/{{ realm_id }}" aria-label="Chiudi la scheda">×</a>
+  </div>
+  {% endif %}
+
+  <div class="sheet-peek">
+    <div class="sheet-peek-text">
+      <h2>{{ action.title }}</h2>
+      <p>{{ action.line }}{% if sovereign_reason %} {{ sovereign_reason }}: decidi tu.{% endif %}</p>
+      {% if petition_waiting %}<p class="sheet-alert"><a href="/ui/realms/{{ realm_id }}/council">Il popolo ti rivolge una supplica</a></p>{% endif %}
+      {% if job_error %}<p class="sheet-alert">L'ultima riunione si è interrotta: riprova dal consiglio.</p>{% endif %}
+    </div>
+    {% if action.kind == "post" %}
+    <form method="post" action="{{ action.href }}"><button type="submit" class="primary">{{ action.label }}</button></form>
+    {% elif action.kind == "link" %}
+    <a class="link-button sheet-link" href="{{ action.href }}">{{ action.label }}</a>
+    {% endif %}
+  </div>
+
+  <details class="sheet-more" {% if sheet_open %}open{% endif %}>
+    <summary><span class="sheet-grab" aria-hidden="true"></span>Il mese passato, le udienze, le terre</summary>
+    <div class="sheet-body">
+      {% if since_last %}
+      <section class="sheet-sec">
+        <h3>Dalla tua ultima udienza</h3>
+        {% for month in since_last %}
+        <h4>{{ labels.month_name(month.turn)|capitalize }}</h4>
+        <ul class="events">
+          {% for line in month.lines %}<li>{{ line }}</li>{% endfor %}
+          {% for e in month.events %}<li>{{ labels.event_label(e.kind, e.data) }}</li>{% endfor %}
+          {% if not month.lines and not month.events %}<li>Un mese tranquillo: il piano è passato com'era.</li>{% endif %}
+        </ul>
+        {% endfor %}
+      </section>
+      {% endif %}
+
+      <section class="sheet-sec">
+        <h3>Il mese passato</h3>
+        <ul class="events">
+          {% for e in last_month %}<li>{{ labels.event_label(e.kind, e.data) }}</li>
+          {% else %}<li>Nessuna notizia: è il primo mese.</li>{% endfor %}
+        </ul>
+      </section>
+
+      {% if open_turn %}
+      <section class="sheet-sec">
+        <h3>Udienze private</h3>
+        <div class="audience-links">
+          {% for role in ["treasurer", "architect", "chancellor"] %}
+          {% set who = labels.ROLES[role] %}
+          <a href="/ui/realms/{{ realm_id }}/audience/{{ role }}">
+            <span class="avatar" style="background: {{ who.color }}" aria-hidden="true">{{ who.initial }}</span>{{ names.get(role, who.name) }}
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <section class="sheet-sec">
+        <h3>Le terre del regno</h3>
+        <table class="numbers">
+          <tr><th>Caselle</th><td>{{ map.land.owned }}</td></tr>
+          <tr><th>Prossima casella</th><td>{{ map.land.price }} oro</td></tr>
+          <tr><th>Versati al fondo delle terre</th><td>{{ map.land.paid }} oro</td></tr>
+          <tr><th>Da dissodare o abbattere</th><td>{% if map.land.queued %}{{ map.land.queued }} caselle, {{ map.land.work_left }} mesi di lavoro{% else %}nessuna{% endif %}</td></tr>
+          <tr><th>Adulti a dissodare</th><td>{{ map.land.clearing }}</td></tr>
+        </table>
+      </section>
+
+      <section class="sheet-sec">
+        <h3>Il piano della città</h3>
+        <p class="hint">Il piano lo disegna l'Architetto; tu lo approvi con gli altri ordini. Tocca una zona per vederla sulla mappa.</p>
+        {% for z in map.zones %}
+        <a href="{{ z.href }}" class="zone-row{% if z.lit %} lit{% endif %}" style="--zone: {{ z.color }}" {% if z.lit %}aria-current="true"{% endif %}>
+          <span aria-hidden="true" class="zone-swatch"></span>
+          <span style="display: flex; flex-direction: column; flex-grow: 1">
+            <strong style="font-size: 15px">{{ z.name }}</strong>
+            <span class="hint">{{ z.purpose }}</span>
+          </span>
+          <span style="font-size: 13px; text-align: right">{{ z.room }}</span>
+        </a>
+        {% endfor %}
+      </section>
+    </div>
+  </details>
+</section>
+{% endblock %}

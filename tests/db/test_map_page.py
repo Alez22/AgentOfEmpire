@@ -1,5 +1,6 @@
 """The sovereign's map page (server/ui/map_view.py, templates/map.html)."""
 
+import html
 import re
 from dataclasses import replace
 
@@ -38,7 +39,7 @@ def _square_raw():
 def test_the_map_shows_the_town_and_its_land(ui, database_url):
     realm_id = _realm(database_url, _square_raw())
     page = ui.get(f"/ui/realms/{realm_id}/map").text
-    assert 'aria-current="page">Mappa</a>' in page
+    assert re.search(r'aria-current="page">\s*<svg[^>]*>.*?</svg>Regno</a>', page, re.S)  # the tab
     assert page.count('class="map-building') == 13  # the square and the 12 starting buildings
     assert len(re.findall(r'class="t-river-n[ew]"', page)) == 1 and 't-river-sw' in page  # the bend joins up
     assert "Campi" in page and "posto per 2 fattorie" in page
@@ -79,21 +80,20 @@ def _hex_raw():
 
 def test_a_hex_realm_gets_the_svg_board(ui, database_url):
     realm_id = _realm(database_url, _hex_raw())
-    page = ui.get(f"/ui/realms/{realm_id}/map").text
-    assert 'class="hex-board"' in page and 'class="map-grid"' not in page
+    page = ui.get(f"/ui/realms/{realm_id}/map", params={"b": 12}).text  # redirected to the realm's first page
+    assert 'class="hex-board realm-board"' in page and 'class="map-grid"' not in page
     assert page.count('class="map-building"') == 13  # the square and the 12 starting buildings, as links
     assert page.count('class="hit"') == 4 + 4 * 7 + 2 + 4 + 6  # square, farms, sawmill, quarry, houses
     assert "/static/icons/sprite.svg#i-barn" in page and 'class="border"' in page
-    assert "1 esagono di pianura" in page  # the newest building, a house, is described in hexes
-    assert "Crediti delle icone" in page
+    assert "1 esagono di pianura" in page  # the chosen building, a house, is described in hexes
 
 
 def test_the_hex_board_lights_a_zone_and_the_chosen_building(ui, database_url):
     realm_id = _realm(database_url, _hex_raw())
-    page = ui.get(f"/ui/realms/{realm_id}/map", params={"b": 1, "zone": "Campi", "zoom": 1}).text
+    page = ui.get(f"/ui/realms/{realm_id}/map", params={"b": 1, "zone": "Campi"}).text
     assert page.count('class="zone lit"') == 1 and 'class="chosen"' in page
     assert "Fattoria n. 1" in page and "7 esagoni" in page and "#i-barn" in page
-    assert re.search(r'class="hex-board"[^>]*style="width: \d+px"', page)  # zoomed: natural size, scrolling
+    assert '<details class="sheet-more" open>' in page  # a choice opens the sheet
 
 
 def test_credits_list_every_icon_author(ui):
@@ -116,3 +116,45 @@ def test_a_watchtower_on_the_map_and_its_card(ui, database_url):
     page = ui.get(f"/ui/realms/{realm_id}/map", params={"b": 13}).text
     assert "Torre di guardia n. 1" in page and "Torre di guardia" in page
     assert 'class="h-watch' in page and "#i-watchtower" in page
+
+
+def test_the_realm_opens_on_its_map(ui, database_url):
+    """docs/DESIGN.md, "The map as the realm's first page": HUD, sheet, tab bar."""
+    realm_id = _realm(database_url, _hex_raw())
+    page = html.unescape(ui.get(f"/ui/realms/{realm_id}").text)
+    assert 'class="hex-board realm-board"' in page and 'class="hud"' in page
+    assert re.search(r'aria-current="page">\s*<svg[^>]*>.*?</svg>Regno</a>', page, re.S)
+    assert "Gennaio è aperto" in page or "è aperto" in page
+    assert f'action="/ui/realms/{realm_id}/meeting"' in page and ">Convoca<" in page
+    assert "Nessuna notizia: è il primo mese." in page
+    assert '<details class="sheet-more" >' in page  # closed until a choice opens it
+    assert "Il piano della città" in page and "Le terre del regno" in page
+
+
+def test_the_old_map_link_lands_on_the_realm_page(ui, database_url):
+    realm_id = _realm(database_url, _hex_raw())
+    moved = ui.get(f"/ui/realms/{realm_id}/map", params={"b": 3, "zoom": 1}, follow_redirects=False)
+    assert moved.status_code == 303 and moved.headers["location"] == f"/ui/realms/{realm_id}?b=3"
+
+
+def test_a_square_realm_opens_on_the_council(ui, database_url):
+    realm_id = _realm(database_url, _square_raw())
+    moved = ui.get(f"/ui/realms/{realm_id}", follow_redirects=False)
+    assert moved.headers["location"] == f"/ui/realms/{realm_id}/council"
+
+
+def test_closing_the_month_opens_the_new_month_on_the_map(ui, database_url):
+    realm_id = _realm(database_url, _hex_raw())
+    closed = ui.post(f"/ui/realms/{realm_id}/resolve", follow_redirects=False)
+    assert closed.headers["location"] == f"/ui/realms/{realm_id}"
+    page = html.unescape(ui.get(closed.headers["location"]).text)
+    assert "Febbraio è aperto" in page or "è aperto" in page
+    assert 'class="hud-delta' in page  # the change since the previous month
+
+
+def test_the_more_tab_links_the_other_pages(ui, database_url):
+    realm_id = _realm(database_url, _hex_raw())
+    page = ui.get(f"/ui/realms/{realm_id}/more").text
+    for path in ("kingdom", "government", "world", "manual"):
+        assert f'href="/ui/realms/{realm_id}/{path}"' in page
+    assert re.search(r'aria-current="page">\s*<svg[^>]*>.*?</svg>Altro</a>', page, re.S)

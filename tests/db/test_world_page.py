@@ -2,6 +2,7 @@
 sees every realm, a player only their own."""
 
 import html
+import re
 from dataclasses import replace
 
 import psycopg
@@ -33,7 +34,7 @@ def _game(database_url, raw_config, names=("Nord", "Sud", "Est")) -> tuple[int, 
 def test_a_player_sees_only_their_own_realm(client, database_url):
     _, realms = _game(database_url, load_raw_config())
     page = html.unescape(client.get(f"/ui/realms/{realms[0]}/world").text)
-    assert 'aria-current="page">Mondo</a>' in page
+    assert re.search(r'aria-current="page">\s*<svg[^>]*>.*?</svg>Altro</a>', page, re.S)  # under the tab "Altro"
     assert page.count('<use href="#wh"') == 64 * 64  # the whole world's terrain
     assert page.count('class="realm-border"') == 1
     assert ">Nord</text>" in page and "Sud" not in page and "Est" not in page

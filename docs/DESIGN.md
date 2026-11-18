@@ -1559,7 +1559,8 @@ Server-rendered pages (FastAPI with Jinja2 templates), phone first, in the style
 | Page | Content |
 | --- | --- |
 | `/ui` | games and new game |
-| `/ui/realms/{id}` | the turn: numbers at a glance, last month, what they say in the square, the council (reports, summary, plan with the orders to keep ticked, directives), private audiences, closing the month |
+| `/ui/realms/{id}` | the map of the realm (see "The map as the realm's first page") |
+| `/ui/realms/{id}/council` | the turn: numbers at a glance, last month, what they say in the square, the council (reports, summary, plan with the orders to keep ticked, directives), private audiences, closing the month |
 | `/ui/realms/{id}/kingdom` | resources, people, work, buildings and laws (sovereign view: no mood) |
 | `/ui/realms/{id}/chronicle` | events of all past months |
 | `/ui/realms/{id}/audience/{role}` | private dialogue with one council member |
@@ -1568,3 +1569,17 @@ Server-rendered pages (FastAPI with Jinja2 templates), phone first, in the style
 - **The lock holds for a single server process**: with several processes it must move to the database. A server restart interrupts running meetings; messages already written stay.
 - **Model text is always treated as text**: a model that answers with HTML cannot inject code into the page (there is a test).
 - Reachable from the phone through Tailscale; no accounts yet.
+
+### The map as the realm's first page (spec approved 2026-11-18)
+
+Mockup on real data (game 44, Brenna, September): https://claude.ai/artifact/RFxwvCtJnkxwcMC43W31u2. The board stays an SVG built in Python (`server/ui/hex_board.py`); a small script only moves it.
+
+- **Pages**: `/ui/realms/{id}` is the map (tab "Regno"); the old turn page moves to `/ui/realms/{id}/council` (tab "Consiglio"), and every council action (meeting, directive, debate, approval, petition) redirects there; closing the month and a new game redirect to the map, so the new month opens on what happened. `/ui/realms/{id}/map` redirects to the map (its land table and zone list move into the bottom sheet). Games without a hex map: the map page redirects to the council. A seasonal game's automatic month starts when either page is seen.
+- **Tab bar** at the bottom of every realm page: Regno · Consiglio · Mercato · Cronaca · Altro; "Altro" (`/ui/realms/{id}/more`) links Il regno in cifre, Governo, Mondo, Manuale, the icon credits.
+- **HUD**: realm, month, season, months to winter; food, wood, stone, gold, people with the change since the previous snapshot; the unrest as a chip only when it is not calm.
+- **Bottom sheet**: closed, one line on the month and one action by state (convene the council; the council is meeting → Consiglio; plan ready → "Leggi il piano" on the council page, where approval stays; approved → close the month). Open: the month past (a line with a mark flies the map to it), the Voice of the square in full, the audiences, the realm's land, the town plan. A tapped building shows its card (the lines of `map_view.py`, written by the server in `<template>`, escaped by Jinja).
+- **Board**: (A) seasons as `data-season` and CSS palettes; (F) light gradients per terrain, icon shadows as dark copies (no SVG filters), paper grain in CSS, zone names, the fields zone green (no longer close to the gold border); (E) fog: a ring of 6 hexes beyond the border, darker with distance (terrain only, common to every realm: no leak); (B) CSS motion, about 50 animations: smoke from houses, the river, wheat only when someone works the fields (also the saw and the pick), the tower's lantern, building sites hatched, snow in winter; all off under `prefers-reduced-motion`; (D) the Voice: the realm's latest `voice` message, first sentence on a scroll over the square.
+- **The month's marks (C)**: a pure function `month_marks()` over the sovereign's own events of the last month and the two snapshots: band seen where seen; raid at the gate nearest the band seen, else on the square; arrivals at the gate, else on the square; building finished on the newest building of that kind (the event has no id); tools on their building; building sites on the site; caravan on the first hex of the road to the fair (`road_home_to_fair`); claimed hexes glow and felled forest shows stumps (snapshot diff). Other events only as lines in the sheet.
+- **Script (G)**: `static/map.js`, about 250 lines, no library: pan, pinch, wheel, double tap, tap on building or mark, the sheet, the scroll's place. Without it the page still works: buildings and marks are `?b=id` links.
+- **Cost**: the SVG grows from about 50 to about 100 KB; Starlette's `GZipMiddleware` brings it to about 15 KB.
+- **Phases**, one commit each with green tests: 1 pages, navigation, HUD and sheet on today's board; 2 seasons, relief, fog, zones; 3 motion; 4 marks and the Voice; 5 script and client cards.

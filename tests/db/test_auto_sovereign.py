@@ -35,7 +35,7 @@ def test_three_automatic_realms_play_a_year(api, database_url):
             assert response.status_code == 200, response.text
             assert isinstance(response.json()["lines"], list)
         if turn == 1:
-            page = html.unescape(api.get(f"/ui/realms/{realms[0]}").text)
+            page = html.unescape(api.get(f"/ui/realms/{realms[0]}/council").text)
             assert "Il sovrano automatico ha deciso" in page
         with psycopg.connect(database_url, autocommit=True) as conn:
             for realm_id in realms:

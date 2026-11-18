@@ -54,7 +54,7 @@ def test_games_page_and_new_game(ui):
 
 def test_turn_page_before_the_council(ui):
     realm_id = _new_realm(ui)
-    page = html.unescape(ui.get(f"/ui/realms/{realm_id}").text)
+    page = html.unescape(ui.get(f"/ui/realms/{realm_id}/council").text)
     assert "Valdoro, gennaio" in page
     assert "Convoca il consiglio" in page
     assert "Il consiglio non si è riunito" in page
@@ -74,11 +74,11 @@ def test_full_month_from_the_phone(ui):
     approved = ui.post(f"/ui/realms/{realm_id}/approve",
                        data={"plan_size": "2", "keep": ["1"]}, follow_redirects=False)
     assert approved.status_code == 303
-    page = html.unescape(ui.get(f"/ui/realms/{realm_id}").text)
+    page = html.unescape(ui.get(f"/ui/realms/{realm_id}/council").text)
     assert "Ordini approvati" in page and "Costruire: fattoria" in page
 
     ui.post(f"/ui/realms/{realm_id}/resolve", follow_redirects=False)
-    page = html.unescape(ui.get(f"/ui/realms/{realm_id}").text)
+    page = html.unescape(ui.get(f"/ui/realms/{realm_id}/council").text)
     assert "Valdoro, febbraio" in page
     assert "Il mese scorso" in page and "Andato a male nei granai" in page
     chronicle = ui.get(f"/ui/realms/{realm_id}/chronicle").text

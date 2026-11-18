@@ -89,9 +89,9 @@ def test_debate_from_the_phone(database_url, settings):
 
         ui.post(f"/ui/realms/{realm_id}/meeting")
         settle()
-        assert "Chiedi il parere dei ministri sul piano" in ui.get(f"/ui/realms/{realm_id}").text
+        assert "Chiedi il parere dei ministri sul piano" in ui.get(f"/ui/realms/{realm_id}/council").text
         ui.post(f"/ui/realms/{realm_id}/debate")
         settle()
-        page = html.unescape(ui.get(f"/ui/realms/{realm_id}").text)
+        page = html.unescape(ui.get(f"/ui/realms/{realm_id}/council").text)
         assert "D'accordo con il piano" in page and "approva il piano." in page
         assert "Chiedi il parere dei ministri sul piano" not in page

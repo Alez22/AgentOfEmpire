@@ -94,17 +94,17 @@ def _wait_for_council(api, realm_id):
 
 def test_the_turn_page_plays_the_automatic_months_and_sums_them_up(api):
     game_id, realm_id = _new_game(api, "seasonal")
-    page = html.unescape(api.get(f"/ui/realms/{realm_id}").text)
+    page = html.unescape(api.get(f"/ui/realms/{realm_id}/council").text)
     assert "Inizio dell'inverno: decidi tu." in page
     assert "Mese automatico" not in page
     _play_and_resolve(api, game_id, realm_id)
     for _month in ("febbraio", "marzo"):
-        page = html.unescape(api.get(f"/ui/realms/{realm_id}").text)
+        page = html.unescape(api.get(f"/ui/realms/{realm_id}/council").text)
         assert "Mese automatico" in page and "Torni a decidere ad aprile" in page
         _wait_for_council(api, realm_id)
         assert api.app.state.council_jobs.last_error(realm_id, "auto") == ""
         assert api.post(f"/games/{game_id}/turns/resolve").status_code == 200
-    page = html.unescape(api.get(f"/ui/realms/{realm_id}").text)
+    page = html.unescape(api.get(f"/ui/realms/{realm_id}/council").text)
     assert "Inizio della primavera: decidi tu." in page
     assert "Dalla tua ultima udienza" in page
     assert page.index("Febbraio") < page.index("Marzo")

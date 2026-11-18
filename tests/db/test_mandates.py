@@ -108,4 +108,4 @@ def test_government_page_from_the_phone(database_url, settings):
         page = ui.get(f"/ui/realms/{realm_id}/government").text
         assert "Mandato di prova redatto dalla cancelleria." in page
         assert "&lt;b&gt;sempre&lt;/b&gt;" in page  # the request is shown as text
-        assert "Governo" in ui.get(f"/ui/realms/{realm_id}").text  # the tab
+        assert "/government" in ui.get(f"/ui/realms/{realm_id}/more").text  # under the tab "Altro"

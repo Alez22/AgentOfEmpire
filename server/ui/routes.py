@@ -13,7 +13,7 @@ There is no authentication yet: see the ports comment in compose.yaml.
 import secrets
 from collections.abc import Iterator
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 import jinja2
 import psycopg
@@ -30,7 +30,7 @@ from server.council.briefing import GATE_MEMORY_TURNS, months_until_winter
 from server.db import games
 from server.sovereign import auto, rhythm
 from server.sovereign_view import sovereign_state
-from server.ui import labels, map_view, market_view, reversals, world_view
+from server.ui import labels, map_view, market_view, realm_view, reversals, world_view
 
 TEMPLATES_DIR = Path(__file__).with_name("templates")
 _environment = jinja2.Environment(
@@ -47,7 +47,15 @@ def _connection(request: Request) -> Iterator[psycopg.Connection]:
         yield conn
 
 
-def _turn_page(realm_id: int, error: str = "") -> RedirectResponse:
+def _council_page(realm_id: int, error: str = "") -> RedirectResponse:
+    url = f"/ui/realms/{realm_id}/council"
+    if error:
+        url += f"?error={quote(error)}"
+    return RedirectResponse(url, status_code=303)
+
+
+def _realm_page(realm_id: int, error: str = "") -> RedirectResponse:
+    """@brief The realm's first page, the map: where a new month opens."""
     url = f"/ui/realms/{realm_id}"
     if error:
         url += f"?error={quote(error)}"
@@ -89,7 +97,7 @@ def create_game(request: Request, realm_name: str = Form("Nord"), game_rhythm: s
     game_id = games.create_game(conn, load_raw_config(), seed, [name], settings.models,
                                 personas=persons.load_catalog(), model_tiers=settings.model_tiers, rhythm=chosen)
     realm_id = games.load_game(conn, game_id)["realms"][0]["id"]
-    return _turn_page(realm_id)
+    return _realm_page(realm_id)
 
 
 # -------------------------------------------------------------- turn
@@ -191,7 +199,7 @@ def _rhythm_context(request: Request, conn: psycopg.Connection, game: dict, real
     return context
 
 
-@router.get("/ui/realms/{realm_id}", response_class=HTMLResponse)
+@router.get("/ui/realms/{realm_id}/council", response_class=HTMLResponse)
 def turn_page(request: Request, realm_id: int, error: str = "", conn=Depends(_connection)):
     game_id = games.realm_game_id(conn, realm_id)
     if game_id is None:
@@ -216,6 +224,74 @@ def turn_page(request: Request, realm_id: int, error: str = "", conn=Depends(_co
     return templates.TemplateResponse(request, "turn.html", context)
 
 
+def _own_events(conn: psycopg.Connection, game_id: int, realm_id: int, turn: int) -> list[dict]:
+    """@brief The events of one month the sovereign may see, of their own realm only."""
+    if turn < 1:
+        return []
+    return [e for e in games.list_events_for_sovereign(conn, game_id, realm_id, turn) if e["realm_id"] == realm_id]
+
+
+@router.get("/ui/realms/{realm_id}", response_class=HTMLResponse)
+def realm_page(request: Request, realm_id: int, b: int | None = None, zone: str | None = None, error: str = "",
+               conn=Depends(_connection)):
+    """@brief The realm's first page: the map, the HUD and the month's sheet
+    (server/ui/realm_view.py). b = building to describe, zone = zone to light
+    up; both open the sheet. Games without a hex map open on the council."""
+    game_id = games.realm_game_id(conn, realm_id)
+    if game_id is None:
+        return _not_found(request, f"il regno {realm_id}")
+    game = games.load_game(conn, game_id)
+    state = games.load_latest_state(conn, realm_id)
+    config = games.load_game_config(conn, game_id)
+    if not (state.has_map() and is_hex(config)):
+        return _council_page(realm_id, error)
+    # Same order as the council page: the rhythm may start an automatic month.
+    rhythm_context = _rhythm_context(request, conn, game, realm_id, state)
+    council = _council_context(request, conn, realm_id, game)
+    before = games.load_state_at(conn, realm_id, state.turn - 1) if state.turn > 1 else None
+    council_state = council["council"]
+    action = realm_view.month_action(
+        realm_id, state.turn, game["open_turn"], state.game_over, rhythm_context["automatic"], council["running"],
+        council_state.rounds_held if council_state else 0, council["plan"] is not None,
+        council_state.approved if council_state else False)
+    people_now = council["people"]
+    context = {
+        "game": game,
+        "realm": next(r for r in game["realms"] if r["id"] == realm_id),
+        "state": sovereign_state(state),  # never the full state: no mood
+        "season": labels.SEASONS[season_of(state.turn)],
+        "winter_in": months_until_winter(state.turn),
+        "chips": realm_view.hud_chips(state, before),
+        "action": action,
+        "petition_waiting": bool(people_now and people_now["petition"] and not people_now["answer"]),
+        "job_error": council["job_error"],
+        "last_month": _own_events(conn, game_id, realm_id, state.turn - 1),
+        "since_last": rhythm_context["since_last"],
+        "sovereign_reason": rhythm_context["sovereign_reason"],
+        "open_turn": game["open_turn"],
+        "names": council["names"],
+        "map": map_view.map_page(state, config, realm_id, b, zone, False, False),
+        "chosen": b,
+        "sheet_open": b is not None or zone is not None,
+        "error": error,
+        "nav": "realm",
+        "realm_id": realm_id,
+    }
+    return templates.TemplateResponse(request, "realm.html", context)
+
+
+@router.get("/ui/realms/{realm_id}/more", response_class=HTMLResponse)
+def more_page(request: Request, realm_id: int, conn=Depends(_connection)):
+    """@brief The tab "Altro": the pages that do not fit in the tab bar."""
+    game_id = games.realm_game_id(conn, realm_id)
+    if game_id is None:
+        return _not_found(request, f"il regno {realm_id}")
+    game = games.load_game(conn, game_id)
+    context = {"game": game, "realm": next(r for r in game["realms"] if r["id"] == realm_id),
+               "nav": "more", "realm_id": realm_id}
+    return templates.TemplateResponse(request, "more.html", context)
+
+
 @router.get("/ui/realms/{realm_id}/council-panel", response_class=HTMLResponse)
 def council_panel(request: Request, realm_id: int, conn=Depends(_connection)):
     """@brief Polled by HTMX every 2 s while the council meets."""
@@ -233,7 +309,7 @@ def _start_round(request: Request, realm_id: int, kind: str, check, work,
     @param back Builds the redirect from an error message ("" = none);
            defaults to the turn page.
     """
-    back = back or (lambda error="": _turn_page(realm_id, error))
+    back = back or (lambda error="": _council_page(realm_id, error))
     jobs = request.app.state.council_jobs
     if not jobs.reserve(realm_id, kind):
         return back("Il consiglio è occupato: aspetta che finisca.")
@@ -268,7 +344,7 @@ def give_directive(request: Request, realm_id: int, text: str = Form(...)):
     settings = request.app.state.council_settings
     text = text.strip()[:500]
     if not text:
-        return _turn_page(realm_id, "Scrivi la direttiva prima di inviarla.")
+        return _council_page(realm_id, "Scrivi la direttiva prima di inviarla.")
     return _start_round(
         request, realm_id, "directive",
         lambda conn: meeting.check_directive_allowed(conn, realm_id, settings),
@@ -294,25 +370,25 @@ def approve_plan(request: Request, realm_id: int, plan_size: int = Form(...),
     engine call wants the ones to remove. A wrong plan_size is caught by
     approve_plan(), which checks every position against the stored plan."""
     if request.app.state.council_jobs.is_running(realm_id):
-        return _turn_page(realm_id, "Aspetta che il consiglio finisca.")
+        return _council_page(realm_id, "Aspetta che il consiglio finisca.")
     exclude = [index for index in range(plan_size) if index not in keep]
     try:
         meeting.approve_plan(conn, realm_id, exclude)
     except (meeting.CouncilError, ValueError) as error:
-        return _turn_page(realm_id, str(error))
-    return _turn_page(realm_id)
+        return _council_page(realm_id, str(error))
+    return _council_page(realm_id)
 
 
 @router.post("/ui/realms/{realm_id}/resolve")
 def resolve_turn(request: Request, realm_id: int, conn=Depends(_connection)):
     if request.app.state.council_jobs.is_running(realm_id):
-        return _turn_page(realm_id, "Aspetta che il consiglio finisca prima di chiudere il mese.")
+        return _realm_page(realm_id, "Aspetta che il consiglio finisca prima di chiudere il mese.")
     game_id = games.realm_game_id(conn, realm_id)
     try:
         games.resolve_open_turn(conn, game_id)
     except (games.NoOpenTurnError, games.GamePausedError, games.EngineVersionError) as error:
-        return _turn_page(realm_id, str(error))
-    return _turn_page(realm_id)
+        return _realm_page(realm_id, str(error))
+    return _realm_page(realm_id)
 
 
 @router.post("/ui/realms/{realm_id}/petition")
@@ -321,8 +397,8 @@ def answer_petition(realm_id: int, answer: str = Form(...), conn=Depends(_connec
     try:
         people.answer_petition(conn, realm_id, answer)
     except (meeting.CouncilError, ValueError) as error:
-        return _turn_page(realm_id, str(error))
-    return _turn_page(realm_id)
+        return _council_page(realm_id, str(error))
+    return _council_page(realm_id)
 
 
 # ------------------------------------------------------------- government
@@ -501,7 +577,8 @@ def kingdom_page(request: Request, realm_id: int, conn=Depends(_connection)):
 @router.get("/ui/realms/{realm_id}/map", response_class=HTMLResponse)
 def map_page(request: Request, realm_id: int, b: int | None = None, zone: str | None = None,
              zones: int = 0, zoom: int = 0, conn=Depends(_connection)):
-    """@brief The realm's land, buildings and town plan (server/ui/map_view.py).
+    """@brief The realm's land, buildings and town plan (server/ui/map_view.py),
+    for games on the square grid; a hex game redirects to the realm's first page.
     Every choice is a link: b = building id (0 the square), zone = zone to
     light up, zones = 1 to draw every zone, zoom = 1 for bigger tiles."""
     game_id = games.realm_game_id(conn, realm_id)
@@ -510,6 +587,9 @@ def map_page(request: Request, realm_id: int, b: int | None = None, zone: str | 
     game = games.load_game(conn, game_id)
     state = games.load_latest_state(conn, realm_id)
     config = games.load_game_config(conn, game_id)
+    if state.has_map() and is_hex(config):  # the hex map is the realm's first page now
+        query = urlencode({k: v for k, v in (("b", b), ("zone", zone)) if v is not None})
+        return RedirectResponse(f"/ui/realms/{realm_id}" + (f"?{query}" if query else ""), status_code=303)
     view = (map_view.map_page(state, config, realm_id, b, zone, bool(zones), bool(zoom))
             if state.has_map() else None)
     context = {

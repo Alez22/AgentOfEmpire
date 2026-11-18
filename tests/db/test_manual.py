@@ -79,7 +79,7 @@ def test_manual_page_in_italian(database_url, settings):
         assert "Fattoria." in page and "15 posti di lavoro" in page and "anche se non è piena." in page
         assert "L'oro compra anche cibo, legno e pietra al mercato" in page
         assert "Mercato" in page and "Legna e pietra" in page
-        assert "Manuale" in ui.get(f"/ui/realms/{realm_id}").text  # the tab
+        assert "/manual" in ui.get(f"/ui/realms/{realm_id}/more").text  # under the tab "Altro"
 
 
 def test_the_manual_tells_a_fallen_realms_people_take_to_the_woods():

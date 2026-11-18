@@ -134,7 +134,7 @@ def test_audience_from_the_phone(database_url, settings):
     with TestClient(create_app(database_url, settings, fake)) as ui:
         created = ui.post("/ui/games", data={"realm_name": "Valdoro"}, follow_redirects=False)
         realm_id = int(created.headers["location"].rsplit("/", 1)[1])
-        assert "Udienze private" in html.unescape(ui.get(f"/ui/realms/{realm_id}").text)
+        assert "Udienze private" in html.unescape(ui.get(f"/ui/realms/{realm_id}/council").text)
 
         sent = ui.post(f"/ui/realms/{realm_id}/audience/architect", data={"text": "Che ne pensi?"},
                        follow_redirects=False)
@@ -150,7 +150,7 @@ def test_audience_from_the_phone(database_url, settings):
         assert "Che ne pensi?" in panel and "5 battute rimaste" in panel
 
         # The council panel is not disturbed by an audience, and vice versa.
-        turn_page = html.unescape(ui.get(f"/ui/realms/{realm_id}").text)
+        turn_page = html.unescape(ui.get(f"/ui/realms/{realm_id}/council").text)
         assert "Il consiglio discute" not in turn_page
         assert ui.get(f"/realms/{realm_id}/council/audiences/architect").json()[1]["speaker"] == "actor"
         assert ui.get(f"/ui/realms/{realm_id}/audience/marshal").status_code == 404

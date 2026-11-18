@@ -196,13 +196,13 @@ def test_sovereign_sees_the_people_and_answers_the_petition(database_url, settin
             panel = ui.get(f"/ui/realms/{realm_id}/council-panel").text
             if "hx-trigger" not in panel:
                 break
-        page = html.unescape(ui.get(f"/ui/realms/{realm_id}").text)
+        page = html.unescape(ui.get(f"/ui/realms/{realm_id}/council").text)
         assert "I contadini lavorano svogliati; le famiglie rimandano i figli." in page
         assert "Resa di campi, segheria e cava: -8%" in page  # neutral band: kept at -8
         assert "«Una festa, Maestà, per dimenticare il freddo.»" in page and "Esaudisci" in page
         assert "SEGRETO" not in page
         ui.post(f"/ui/realms/{realm_id}/petition", data={"answer": "refused"})
-        page = html.unescape(ui.get(f"/ui/realms/{realm_id}").text)
+        page = html.unescape(ui.get(f"/ui/realms/{realm_id}/council").text)
         assert "Supplica respinta." in page and "Esaudisci" not in page
         assert ui.get(f"/realms/{realm_id}/people?turn=1").json()["answer"] == "refused"
 

@@ -145,7 +145,7 @@ def test_sovereign_never_sees_the_mood(database_url, settings):
             assert "Umore" not in text and "/ 1000" not in text
         ui.post(f"/ui/realms/{realm_id}/meeting")  # February: the square speaks again
         _wait(ui, realm_id)
-        turn_page = html.unescape(ui.get(f"/ui/realms/{realm_id}").text)
+        turn_page = html.unescape(ui.get(f"/ui/realms/{realm_id}/council").text)
         assert "Malcontento" in turn_page and "Si dice in piazza" in turn_page
         assert "Umore" not in turn_page and "/ 1000" not in turn_page
 
@@ -161,7 +161,7 @@ def test_admin_sees_everything(database_url, settings):
     fake.queue("square_voice", "<i>Grida</i> in piazza")
     with TestClient(create_app(database_url, settings, fake, admin_view=True)) as ui:
         realm_id = _play_one_month(ui)
-        game_id = int(re.search(r"Partita (\d+)", ui.get(f"/ui/realms/{realm_id}").text).group(1))
+        game_id = int(re.search(r"Partita (\d+)", ui.get(f"/ui/realms/{realm_id}/council").text).group(1))
         game_page = html.unescape(ui.get(f"/admin/games/{game_id}").text)
         assert "Umore (nascosto al sovrano)" in game_page and '"mood":' in game_page
         replay = html.unescape(ui.post(f"/admin/games/{game_id}/replay").text)

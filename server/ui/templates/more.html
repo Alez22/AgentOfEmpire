@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ realm.name }} · altro{% endblock %}
+{% block content %}
+<section>
+  <div class="kicker">Partita {{ game.id }}</div>
+  <h1>Altro del regno</h1>
+</section>
+
+<nav class="card more-links" aria-label="Altre pagine del regno">
+  <a href="/ui/realms/{{ realm_id }}/kingdom"><strong>Il regno in cifre</strong><span class="hint">Risorse, popolo, lavoro, edifici e leggi</span></a>
+  <a href="/ui/realms/{{ realm_id }}/government"><strong>Il governo</strong><span class="hint">I consiglieri e i loro mandati</span></a>
+  <a href="/ui/realms/{{ realm_id }}/world"><strong>Il mondo</strong><span class="hint">Tutta la terra conosciuta</span></a>
+  <a href="/ui/realms/{{ realm_id }}/manual"><strong>Il manuale</strong><span class="hint">Come funziona il regno</span></a>
+  <a href="/ui/credits"><strong>Crediti delle icone</strong><span class="hint">Chi ha disegnato le icone della mappa</span></a>
+  <a href="/ui"><strong>Le partite</strong><span class="hint">Torna all'elenco delle partite</span></a>
+</nav>
+{% endblock %}

@@ -275,3 +275,74 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
 .world-board .raid-arrow { stroke: #E5483A; stroke-width: 1.4; }
 .world-board .raid-arrow.repelled { stroke-dasharray: 2 2; }
 #raid-head path { fill: #E5483A; }
+
+/* Tab bar of the realm's pages (docs/DESIGN.md, "The map as the realm's first page"). */
+.has-tabs .page { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); }
+.tabbar {
+  position: fixed; z-index: 20; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-around;
+  padding: 4px max(8px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 4px) max(8px, env(safe-area-inset-left, 0px));
+  background: #17150F; border-top: 1px solid var(--line);
+}
+.tabbar a { min-height: 52px; min-width: 56px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  font-size: 11px; color: var(--muted); text-decoration: none; }
+.tabbar svg { width: 22px; height: 22px; fill: currentColor; }
+.tabbar a[aria-current="page"] { color: var(--gold-strong); }
+.more-links a { display: flex; flex-direction: column; gap: 2px; min-height: 56px; justify-content: center; padding: 8px 12px; border-radius: 10px;
+  background: var(--card-raised); border: 1px solid var(--line-strong); color: var(--text); text-decoration: none; }
+
+/* The realm's first page: the map fills the screen, HUD on top, the month's sheet at the bottom. */
+.realm-home { overflow: hidden; height: 100dvh; }
+.stage { position: fixed; inset: 0; background: var(--ground);
+  padding: 118px 0 calc(env(safe-area-inset-bottom, 0px) + 190px); }
+.realm-board { width: 100%; height: 100%; }
+.hud {
+  position: fixed; z-index: 10; inset: 0 0 auto; display: flex; flex-direction: column; gap: 8px;
+  padding: calc(env(safe-area-inset-top, 0px) + 10px) max(16px, env(safe-area-inset-right, 0px)) 22px max(16px, env(safe-area-inset-left, 0px));
+  background: linear-gradient(180deg, rgba(20, 18, 14, 0.96) 0%, rgba(20, 18, 14, 0.82) 62%, rgba(20, 18, 14, 0) 100%);
+  pointer-events: none;
+}
+.hud > * { pointer-events: auto; }
+.hud-title { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.hud-realm { font-size: 30px; line-height: 1; }
+.hud-crest { color: var(--gold); text-decoration: none; font-size: 0.7em; vertical-align: 0.18em; margin-right: 6px; }
+.hud-when { margin: 0; text-align: right; font: italic 500 16px/1.15 var(--display); color: var(--text-soft); }
+.hud-when b { font-style: normal; font-weight: 600; color: var(--gold-strong); }
+.hud-stocks { display: flex; gap: 6px; margin: 0; padding: 0; list-style: none; overflow-x: auto; scrollbar-width: none; }
+.hud-stocks::-webkit-scrollbar { display: none; }
+.hud-chip { display: flex; align-items: center; gap: 6px; padding: 5px 9px 5px 6px; border-radius: 999px; white-space: nowrap;
+  background: rgba(34, 31, 24, 0.88); border: 1px solid var(--line-strong); font-variant-numeric: tabular-nums; }
+.hud-chip svg { width: 18px; height: 18px; flex-shrink: 0; }
+.hud-chip strong { font-size: 14px; font-weight: 600; }
+.hud-food { fill: #D9B055; } .hud-wood { fill: #B98A5A; } .hud-stone { fill: #A8A090; }
+.hud-delta { font-size: 11px; color: var(--muted); }
+.hud-delta.up { color: var(--ok); } .hud-delta.down { color: var(--danger); }
+.hud-admin { align-self: flex-end; font-size: 12px; }
+
+.sheet {
+  position: fixed; z-index: 15; left: 0; right: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 61px);
+  max-height: calc(100dvh - 150px); overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
+  padding: 12px max(16px, env(safe-area-inset-right, 0px)) 12px max(16px, env(safe-area-inset-left, 0px));
+  background: var(--card); border-top: 1px solid var(--line-strong); border-radius: 18px 18px 0 0;
+  box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.5);
+}
+.sheet > * { max-width: 680px; width: 100%; margin: 0 auto; }
+.sheet-peek { display: flex; align-items: center; gap: 12px; }
+.sheet-peek-text { flex: 1; min-width: 0; }
+.sheet-peek-text h2 { font-size: 22px; font-weight: 600; }
+.sheet-peek-text p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.sheet-alert, .sheet-alert a { color: var(--gold-strong) !important; }
+.sheet-peek .primary { white-space: nowrap; }
+.sheet-link { padding: 0 16px; white-space: nowrap; }
+.sheet-more { border-top: 0; padding-top: 0; }
+.sheet-more summary { min-height: 36px; flex-direction: column; justify-content: center; gap: 6px; font-size: 13px; list-style: none; }
+.sheet-more summary::-webkit-details-marker { display: none; }
+.sheet-grab { width: 40px; height: 4px; border-radius: 2px; background: var(--line-strong); }
+.sheet-body { display: flex; flex-direction: column; gap: 18px; padding-top: 8px; }
+.sheet-sec { display: flex; flex-direction: column; gap: 8px; }
+.sheet-sec h3 { font: 600 12px/1 var(--body); letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+.sheet-sec h4 { margin: 4px 0 0; font: 600 16px/1.1 var(--display); }
+.sheet-card { display: flex; gap: 12px; align-items: flex-start; }
+.sheet-card-text { flex: 1; min-width: 0; }
+.sheet-card-text h2 { font-size: 22px; }
+.sheet-card-text p { margin: 2px 0 0; font-size: 14px; color: var(--text-soft); }
+.sheet-close { min-width: 44px; min-height: 44px; display: grid; place-items: center; font-size: 26px; color: var(--muted); text-decoration: none; }

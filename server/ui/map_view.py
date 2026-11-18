@@ -156,11 +156,15 @@ def map_page(state: GameState, config: Config, realm_id: int, selected: int | No
     tiles, edges = _tiles(state, bounds)
     tile_px = TILE_PX[zoom]
 
+    requested = selected  # links carry only a building the sovereign chose, not the default one
+
     def link(**changes) -> str:
-        params = {"zones": int(show_zones), "zoom": int(zoom), "b": selected, "zone": zone_name}
+        params = {"zones": int(show_zones), "zoom": int(zoom), "b": requested, "zone": zone_name}
         params.update(changes)
         query = {k: v for k, v in params.items() if v not in (None, 0, "")}
-        return f"/ui/realms/{realm_id}/map" + (f"?{urlencode(query)}" if query else "")
+        # On the hex grid the map is the realm's first page (docs/DESIGN.md).
+        page = f"/ui/realms/{realm_id}" if is_hex(config) else f"/ui/realms/{realm_id}/map"
+        return page + (f"?{urlencode(query)}" if query else "")
 
     if selected is None:
         selected = state.buildings[-1].id if state.buildings else 0
