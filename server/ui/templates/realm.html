@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ realm.name }} · {{ labels.month_name(state.turn) }}{% endblock %}
 {% block body_class %}realm-home{% endblock %}
-{% block head %}<script src="/static/map.js" defer></script>{% endblock %}
+{% block head %}<script src="/static/map.js?v={{ static_version() }}" defer></script>{% endblock %}
 {% block page %}
 {# The realm's first page (server/ui/realm_view.py): the map fills the screen,
    the HUD and the month's sheet lie on it. Works without JavaScript: every
@@ -78,9 +78,9 @@
   <ul class="hud-stocks" aria-label="Le scorte del regno">
     {% for c in chips %}
     <li class="hud-chip" {% if c.delta is not none %}aria-label="{{ c.name }}: {{ c.value }}, {% if c.delta >= 0 %}più{% else %}meno{% endif %} {{ c.delta|abs }} dal mese scorso"{% endif %}>
-      {% if c.key == "gold" %}<svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#D4AF5A"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="#8A6A26" stroke-width="1.4"/><path d="M12 8.5v7M9.8 10h4.4" stroke="#8A6A26" stroke-width="1.4" stroke-linecap="round"/></svg>
-      {% elif c.key == "people" %}<svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="8.5" cy="7.5" r="3" fill="#ECE5D6"/><circle cx="16.5" cy="8.5" r="2.5" fill="#BDB5A3"/><path d="M3 20c0-4 2.5-6.5 5.5-6.5S14 16 14 20z" fill="#ECE5D6"/><path d="M13.6 14.4c.8-.6 1.8-.9 2.9-.9 2.6 0 4.5 2.2 4.5 5.5h-6c0-1.8-.5-3.4-1.4-4.6z" fill="#BDB5A3"/></svg>
-      {% else %}<svg aria-hidden="true" viewBox="0 0 512 512" class="hud-{{ c.key }}"><use href="{{ g.sprite }}#i-{{ {'food': 'wheat', 'wood': 'wood-pile', 'stone': 'stone-pile'}[c.key] }}"/></svg>{% endif %}
+      {% if c.key == "gold" %}<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="#D4AF5A"/><circle cx="12" cy="12" r="6.2" fill="none" stroke="#8A6A26" stroke-width="1.4"/><path d="M12 8.5v7M9.8 10h4.4" stroke="#8A6A26" stroke-width="1.4" stroke-linecap="round"/></svg>
+      {% elif c.key == "people" %}<svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24"><circle cx="8.5" cy="7.5" r="3" fill="#ECE5D6"/><circle cx="16.5" cy="8.5" r="2.5" fill="#BDB5A3"/><path d="M3 20c0-4 2.5-6.5 5.5-6.5S14 16 14 20z" fill="#ECE5D6"/><path d="M13.6 14.4c.8-.6 1.8-.9 2.9-.9 2.6 0 4.5 2.2 4.5 5.5h-6c0-1.8-.5-3.4-1.4-4.6z" fill="#BDB5A3"/></svg>
+      {% else %}<svg aria-hidden="true" width="18" height="18" viewBox="0 0 512 512" class="hud-{{ c.key }}"><use href="{{ g.sprite }}#i-{{ {'food': 'wheat', 'wood': 'wood-pile', 'stone': 'stone-pile'}[c.key] }}"/></svg>{% endif %}
       <span class="sr-only">{{ c.name }}</span><strong>{{ c.value }}</strong>
       {% if c.delta is not none %}<span class="hud-delta {% if c.delta > 0 %}up{% elif c.delta < 0 %}down{% endif %}" aria-hidden="true">{% if c.delta > 0 %}+{% elif c.delta < 0 %}−{% else %}±{% endif %}{{ c.delta|abs }}</span>{% endif %}
     </li>
@@ -97,7 +97,7 @@
   {% for c in cards %}
   <template id="card-{{ c.id }}">
     <div class="sheet-card">
-      <svg aria-hidden="true" class="map-picture hex-picture" viewBox="0 0 512 512"><use href="{{ c.icon }}"/></svg>
+      <svg aria-hidden="true" width="56" height="56" class="map-picture hex-picture" viewBox="0 0 512 512"><use href="{{ c.icon }}"/></svg>
       <div class="sheet-card-text"><h2>{{ c.title }}</h2>{% for line in c.lines %}<p>{{ line }}</p>{% endfor %}</div>
       <a class="sheet-close" href="/ui/realms/{{ realm_id }}" aria-label="Chiudi la scheda">×</a>
     </div>
@@ -105,7 +105,7 @@
   {% endfor %}
   {% if chosen is not none %}
   <div class="sheet-card">
-    <svg aria-hidden="true" class="map-picture hex-picture" viewBox="0 0 512 512"><use href="{{ map.detail.icon }}"/></svg>
+    <svg aria-hidden="true" width="56" height="56" class="map-picture hex-picture" viewBox="0 0 512 512"><use href="{{ map.detail.icon }}"/></svg>
     <div class="sheet-card-text">
       <h2>{{ map.detail.title }}</h2>
       {% for line in map.detail.lines %}<p>{{ line }}</p>{% endfor %}

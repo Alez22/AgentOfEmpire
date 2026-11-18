@@ -37,6 +37,18 @@ _environment = jinja2.Environment(
     loader=jinja2.FileSystemLoader(TEMPLATES_DIR), autoescape=True
 )
 _environment.globals["labels"] = labels
+
+STATIC_DIR = Path(__file__).with_name("static")
+
+
+def static_version() -> str:
+    """@brief Version of the page's CSS and script, from their modification
+    times: a new file is a new URL. /static sends no Cache-Control, so a phone
+    otherwise keeps a stale style.css for days (all icons drawn huge)."""
+    return str(max((STATIC_DIR / name).stat().st_mtime_ns for name in ("style.css", "map.js")))
+
+
+_environment.globals["static_version"] = static_version
 templates = Jinja2Templates(env=_environment)
 
 router = APIRouter()

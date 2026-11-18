@@ -177,7 +177,7 @@ def test_the_script_gets_every_card_and_the_frame(ui, database_url):
     realm and puts the Voice's scroll over the square."""
     realm_id = _realm(database_url, _hex_raw())
     page = ui.get(f"/ui/realms/{realm_id}").text
-    assert '<script src="/static/map.js" defer></script>' in page
+    assert re.search(r'<script src="/static/map.js\?v=\d+" defer></script>', page)  # a new file, a new URL
     assert page.count('<template id="card-') == 13  # the square and the 12 starting buildings
     assert re.search(r'data-realm="\d+ \d+ \d+ \d+" data-square="\d+ \d+"', page)
     assert page.count('class="map-building" data-b=') == 13

@@ -8,7 +8,7 @@
 {% block head %}{% endblock %}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Inter:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="/static/style.css">
+<link rel="stylesheet" href="/static/style.css?v={{ static_version() }}">
 <script src="/static/htmx-2.0.11.min.js" defer></script>
 </head>
 {# The realm's pages share the tab bar at the bottom (docs/DESIGN.md, "The map
@@ -30,15 +30,15 @@
 {% set tab = {"turn": "council", "map": "realm", "kingdom": "more", "world": "more", "government": "more", "manual": "more"}.get(nav, nav) %}
 <nav class="tabbar" aria-label="Sezioni del regno">
   <a href="/ui/realms/{{ realm_id }}" {% if tab == "realm" %}aria-current="page"{% endif %}>
-    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 2l8.7 5v10L12 22l-8.7-5V7zm0 2.3L5.3 8.2v7.6l6.7 3.9 6.7-3.9V8.2z"/><path d="M12 7l4.3 2.5v5L12 17l-4.3-2.5v-5z"/></svg>Regno</a>
+    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24"><path d="M12 2l8.7 5v10L12 22l-8.7-5V7zm0 2.3L5.3 8.2v7.6l6.7 3.9 6.7-3.9V8.2z"/><path d="M12 7l4.3 2.5v5L12 17l-4.3-2.5v-5z"/></svg>Regno</a>
   <a href="/ui/realms/{{ realm_id }}/council" {% if tab == "council" %}aria-current="page"{% endif %}>
-    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M12 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM5 7a2.4 2.4 0 1 1 0 4.8A2.4 2.4 0 0 1 5 7zm14 0a2.4 2.4 0 1 1 0 4.8A2.4 2.4 0 0 1 19 7zM7.5 20c0-3.5 2-6 4.5-6s4.5 2.5 4.5 6zM1 19c0-2.8 1.6-4.8 3.6-4.8 1 0 1.9.5 2.5 1.3-.6 1-1 2.2-1.1 3.5zm22 0h-5c-.1-1.3-.5-2.5-1.1-3.5.6-.8 1.5-1.3 2.5-1.3 2 0 3.6 2 3.6 4.8z"/></svg>Consiglio</a>
+    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24"><path d="M12 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM5 7a2.4 2.4 0 1 1 0 4.8A2.4 2.4 0 0 1 5 7zm14 0a2.4 2.4 0 1 1 0 4.8A2.4 2.4 0 0 1 19 7zM7.5 20c0-3.5 2-6 4.5-6s4.5 2.5 4.5 6zM1 19c0-2.8 1.6-4.8 3.6-4.8 1 0 1.9.5 2.5 1.3-.6 1-1 2.2-1.1 3.5zm22 0h-5c-.1-1.3-.5-2.5-1.1-3.5.6-.8 1.5-1.3 2.5-1.3 2 0 3.6 2 3.6 4.8z"/></svg>Consiglio</a>
   <a href="/ui/realms/{{ realm_id }}/market" {% if tab == "market" %}aria-current="page"{% endif %}>
-    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M3 4h18l-1.5 5a2.5 2.5 0 0 1-4.5 1 2.5 2.5 0 0 1-3 1 2.5 2.5 0 0 1-3-1 2.5 2.5 0 0 1-4.5-1zM5 12.5c.8.3 1.7.3 2.5 0V19h9v-6.5c.8.3 1.7.3 2.5 0V21H5z"/></svg>Mercato</a>
+    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24"><path d="M3 4h18l-1.5 5a2.5 2.5 0 0 1-4.5 1 2.5 2.5 0 0 1-3 1 2.5 2.5 0 0 1-3-1 2.5 2.5 0 0 1-4.5-1zM5 12.5c.8.3 1.7.3 2.5 0V19h9v-6.5c.8.3 1.7.3 2.5 0V21H5z"/></svg>Mercato</a>
   <a href="/ui/realms/{{ realm_id }}/chronicle" {% if tab == "chronicle" %}aria-current="page"{% endif %}>
-    <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5zm2 5v1.6h10V8zm0 4v1.6h10V12zm0 4v1.6h7V16z"/></svg>Cronaca</a>
+    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24"><path d="M5 3h11l3 3v15H5zm2 5v1.6h10V8zm0 4v1.6h10V12zm0 4v1.6h7V16z"/></svg>Cronaca</a>
   <a href="/ui/realms/{{ realm_id }}/more" {% if tab == "more" %}aria-current="page"{% endif %}>
-    <svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg>Altro</a>
+    <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="19" cy="12" r="2.2"/></svg>Altro</a>
 </nav>
 {% endif %}
 </body>
