@@ -84,6 +84,7 @@ The open items below carry over: they are checked and tuned while playing the ne
 - [ ] Polish the UI after the test
   - [x] World view (2026-11-13): the whole 64 × 64 map with small hexes, terrain as colour, buildings as letters, borders per realm (`server/ui/world_view.py`); admin at `/admin/games/{id}/world` sees every realm (fallen ones in grey), a player at `/ui/realms/{id}/world` (tab "Mondo") only their own realm on the full terrain. Later: neighbours discovered by exploration or diplomacy
   - [x] The map as the realm's first page (2026-11-18; spec in `docs/DESIGN.md`, "The map as the realm's first page"; mockup https://claude.ai/artifact/RFxwvCtJnkxwcMC43W31u2): `/ui/realms/{id}` is the map with HUD and bottom sheet, the turn page moved to `/council`, a tab bar Regno · Consiglio · Mercato · Cronaca · Altro; seasons, relief, fog, zone names, CSS motion, the month's marks (`server/ui/month_marks.py`), the Voice's scroll, `static/map.js` (pan, pinch, cards, marks). Gzip on. Next: try it on the phone; caravans are marked on the market (the road would need the other realms' land)
+  - [x] The palace from the start (2026-11-18; spec in `docs/DESIGN.md`, "The palace from the start"): `[map] palace_from_square`, its rhombus held by `occupancy()`, `K` in the Architect's map, a line in the manual; the long hall on the map, a tap opens the council; drawn only in games saved before. No cost or rules until the eras
 - [ ] Choose models and spending cap for a 120-turn game
 
 ### 3. Before friends – set aside (2026-11-08)

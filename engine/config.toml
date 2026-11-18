@@ -174,6 +174,9 @@ square_size = 2
 # "square" (games saved before 2026-11-08, with world.txt and core.toml) or "hex" (DESIGN, "Hex grid").
 grid = "hex"
 square_hex_steps = [["E"], ["SE"], ["E", "SE"]]  # a rhombus of 4
+# The palace, the council's seat, from the first month: the square's rhombus
+# two hexes east of it, the place the core leaves free in "Riserva del palazzo".
+palace_from_square = ["E", "E"]
 max_zones = 14  # was 12: the core has 12 zones since the watchtower's (2026-11-09)
 demolish_gold = 10
 demolish_refund_pct = 25  # of the wood and stone the building cost

@@ -171,6 +171,10 @@ class MapConfig:
     # odd-r offset rows, 6 neighbours). Games saved before have no key: square.
     grid: str = "square"
     square_hex_steps: list[list[str]] | None = None  # the square's shape on hexes
+    # Steps from the square's anchor to the palace's (docs/DESIGN.md, "The
+    # palace from the start"); the palace has the square's shape. None for
+    # games saved before 2026-11-18: no palace, replays unchanged.
+    palace_from_square: list[str] | None = None
 
 
 @dataclass(frozen=True)

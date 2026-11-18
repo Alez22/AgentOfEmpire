@@ -156,10 +156,11 @@ def test_the_hex_core_leaves_room_to_grow(hex_world_config):
     assert _room(state, hex_world_config, "market") == 1
 
 
-def test_the_palace_rhombus_is_left_free(hex_world_config):
+def test_the_palace_rhombus_holds_the_palace(hex_world_config):
+    """Left free by the core for the palace, which stands there since 2026-11-18."""
     state = new_game(hex_world_config, seed=42)
     sx, sy = state.square
     taken = occupancy(state, hex_world_config)
     palace = footprint(hex_world_config, "quarry", sx + 2, sy)  # the same rhombus, east of the square
-    assert not any(tile in taken for tile in palace)
+    assert all(taken.get(tile) == "palace" for tile in palace)
     assert {zone_at(state.zones, x, y).name for x, y in palace} == {"Riserva del palazzo"}

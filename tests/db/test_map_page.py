@@ -82,8 +82,8 @@ def test_a_hex_realm_gets_the_svg_board(ui, database_url):
     realm_id = _realm(database_url, _hex_raw())
     page = ui.get(f"/ui/realms/{realm_id}/map", params={"b": 12}).text  # redirected to the realm's first page
     assert 'class="hex-board realm-board"' in page and 'class="map-grid"' not in page
-    assert page.count('class="map-building"') == 13  # the square and the 12 starting buildings, as links
-    assert page.count('class="hit"') == 4 + 4 * 7 + 2 + 4 + 6  # square, farms, sawmill, quarry, houses
+    assert page.count('class="map-building"') == 14  # the square, the palace and the 12 starting buildings
+    assert page.count('class="hit"') == 4 + 4 + 4 * 7 + 2 + 4 + 6  # square, palace, farms, sawmill, quarry, houses
     assert "/static/icons/sprite.svg#i-barn" in page and 'class="border"' in page
     assert "1 esagono di pianura" in page  # the chosen building, a house, is described in hexes
 
@@ -180,7 +180,7 @@ def test_the_script_gets_every_card_and_the_frame(ui, database_url):
     assert re.search(r'<script src="/static/map.js\?v=\d+" defer></script>', page)  # a new file, a new URL
     assert page.count('<template id="card-') == 13  # the square and the 12 starting buildings
     assert re.search(r'data-realm="\d+ \d+ \d+ \d+"', page) and "voice-scroll" not in page
-    assert page.count('class="map-building" data-b=') == 13
+    assert page.count('class="map-building" data-b=') == 14  # the palace too: it leads to the council
     assert ui.get("/static/map.js").status_code == 200
 
 
@@ -194,3 +194,20 @@ def test_the_voice_is_read_on_a_tap_on_the_square(ui, database_url):
     page = ui.get(f"/ui/realms/{realm_id}", params={"b": 0}).text
     assert page.count("In piazza si dice &lt;b&gt;poco&lt;/b&gt;.") == 3  # the shown card, the script's card, the sheet
     assert "voice-scroll" not in page
+
+
+def test_the_palace_opens_the_council(ui, database_url):
+    """docs/DESIGN.md, "The palace from the start": the long hall east of the
+    square, a tap leads to the council; the Architect reads it as K."""
+    realm_id = _realm(database_url, _hex_raw())
+    page = ui.get(f"/ui/realms/{realm_id}").text
+    assert f'href="/ui/realms/{realm_id}/council" aria-label="Il palazzo" class="map-building" data-b="-1"' in page
+    assert page.count('class="h-palace"') == 4 and "#i-viking-longhouse" in page
+
+
+def test_a_game_saved_before_the_palace_still_draws_it(ui, database_url):
+    raw = _hex_raw()
+    del raw["map"]["palace_from_square"]
+    realm_id = _realm(database_url, raw)
+    page = ui.get(f"/ui/realms/{realm_id}").text
+    assert page.count('class="h-palace"') == 4  # the rhombus is free and the realm's: drawn only

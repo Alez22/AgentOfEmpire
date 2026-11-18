@@ -23,7 +23,8 @@ import copy
 from engine.config import Config
 from engine.state import Building, GameState
 from engine.territory import (KIND_PURPOSES, NOT_OWNED, OWNED, TERRAIN_CHARS, WILD, building_works,
-                              claim_price, find_place, footprint, is_hex, neighbours, owned_count, square_tiles,
+                              claim_price, find_place, footprint, is_hex, neighbours, owned_count, palace_tiles,
+                              square_tiles,
                               unclaimed_in_zone, _in_direction)
 
 # Tiles shown around the realm's land: 1 in the Architect's briefing (the
@@ -38,7 +39,8 @@ LETTERS = {"farm": "F", "sawmill": "S", "quarry": "Q", "house": "H", "market": "
 NOT_OWNED_CHARS = {".": ",", "T": "t", "^": "n", "~": "~"}
 DIRECTIONS = ("north", "south", "east", "west")
 LEGEND = ("Legend: realm's land: . plain, T forest, ^ hill, ~ river, w claimed but still wild; "
-          "outside the realm: , plain, t forest, n hill; P square; buildings F farm, S sawmill, Q quarry, "
+          "outside the realm: , plain, t forest, n hill; P square; K palace (the council's seat, nothing "
+          "is built on it); buildings F farm, S sawmill, Q quarry, "
           "H house, M market, G watchtower (lower case while under construction). x is the column, y the row; north is up.")
 HEX_LEGEND = ("The map is made of hexes, as on a honeycomb: odd rows sit half a hex to the east, so every hex "
               "has 6 neighbours (east, west, two above, two below). Each row lists runs of equal hexes with "
@@ -80,6 +82,8 @@ def _map_cells(state: GameState, config: Config, ring: int) -> dict[tuple[int, i
     cells = {(x, y): _cell(state, x, y) for y in range(y1, y2 + 1) for x in range(x1, x2 + 1)}
     for tile in square_tiles(state, config):
         cells[tile] = "P"
+    for tile in palace_tiles(state, config):
+        cells[tile] = "K"
     for building in state.buildings:
         letter = LETTERS[building.kind]
         for tile in footprint(config, building.kind, building.x, building.y):
@@ -113,6 +117,8 @@ def grid_lines(state: GameState, config: Config) -> list[str]:
     cells = {(x, y): _cell(state, x, y) for y in range(y1, y2 + 1) for x in range(x1, x2 + 1)}
     for tile in square_tiles(state, config):
         cells[tile] = "P"
+    for tile in palace_tiles(state, config):
+        cells[tile] = "K"
     for building in state.buildings:
         letter = LETTERS[building.kind]
         for tile in footprint(config, building.kind, building.x, building.y):

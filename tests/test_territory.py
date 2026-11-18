@@ -291,3 +291,19 @@ def test_a_claim_needs_a_zone_or_a_direction(start_state, config):
     assert _claim(start_state, config, zone="Campi", direction="south", terrain="plain", count=1).code == "INVALID_PARAM"
     assert _claim(start_state, config, direction="south", count=1).code == "INVALID_PARAM"
     assert _claim(start_state, config, zone="Nowhere", count=1).code == "UNKNOWN_ZONE"
+
+
+def test_the_palace_stands_from_the_start_and_nothing_is_built_on_it(hex_world_config):
+    """docs/DESIGN.md, "The palace from the start": the rhombus east of the square."""
+    from dataclasses import replace as _replace
+    from engine import new_game
+    from engine.territory import PALACE, occupancy, palace_tiles, place_error, square_tiles
+    state = new_game(hex_world_config, seed=0)
+    sx, sy = state.square
+    tiles = palace_tiles(state, hex_world_config)
+    assert tiles[0] == (sx + 2, sy) and len(tiles) == 4
+    assert not set(tiles) & set(square_tiles(state, hex_world_config))
+    assert all(occupancy(state, hex_world_config)[t] == PALACE for t in tiles)
+    assert place_error(state, hex_world_config, "house", *tiles[0])[0] == "OVERLAP"
+    before = _replace(hex_world_config, map=_replace(hex_world_config.map, palace_from_square=None))
+    assert palace_tiles(state, before) == []  # games saved before: no palace in the engine

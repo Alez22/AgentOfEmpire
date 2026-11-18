@@ -472,3 +472,10 @@ p.voice-full {  /* p: beats .sheet-card-text p (light text) inside the square's 
 .js-map .realm-board:active { cursor: grabbing; }
 .realm-board .map-building.chosen-js polygon.hit { fill: rgba(255, 241, 194, 0.16); stroke: #FFF1C2; stroke-width: 1.5; }
 .month-lines a.lit { color: var(--gold-strong); }
+
+/* The palace, the council's seat (docs/DESIGN.md, "The palace from the start"): a warm stone with a gold edge. */
+.realm-board { --palace-hi: #5A4A30; --palace-lo: #3E3220; }
+.realm-board[data-season="winter"] { --palace-hi: #6A5E4A; --palace-lo: #4A4034; }
+.realm-board .hi-palace { stop-color: var(--palace-hi); } .realm-board .lo-palace { stop-color: var(--palace-lo); }
+.realm-board .h-palace { fill: url(#g-palace); }
+.realm-board polygon.h-palace { stroke: var(--gold); stroke-width: 1.2; }

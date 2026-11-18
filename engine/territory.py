@@ -35,6 +35,7 @@ ZONE_PURPOSES = ("fields", "center", "houses", "workshops", "reserve", "market",
 KIND_PURPOSES = {"farm": ("fields",), "sawmill": ("workshops",), "quarry": ("workshops",),
                  "house": ("houses", "center"), "market": ("market",), "watchtower": ("watch",)}
 SQUARE = "square"
+PALACE = "palace"
 # Shifts tried, in this order, when a building given by coordinates does
 # not fit: one tile north, east, south, west, then the diagonals.
 NUDGES = ((0, -1), (1, 0), (0, 1), (-1, 0), (1, -1), (1, 1), (-1, 1), (-1, -1))
@@ -159,10 +160,21 @@ def square_tiles(state: GameState, config: Config) -> list[tuple[int, int]]:
     return [(sx + dx, sy + dy) for dy in range(size) for dx in range(size)]
 
 
+def palace_tiles(state: GameState, config: Config) -> list[tuple[int, int]]:
+    """@brief The palace's hexes (docs/DESIGN.md, "The palace from the start"):
+    the square's shape, reached from its anchor by [map] palace_from_square.
+    Empty on the square grid and in games saved before the palace."""
+    if not is_hex(config) or config.map.palace_from_square is None or not state.square:
+        return []
+    anchor = _walk(state.square[0], state.square[1], [config.map.palace_from_square])[1]
+    return _walk(anchor[0], anchor[1], config.map.square_hex_steps)
+
+
 def occupancy(state: GameState, config: Config) -> dict[tuple[int, int], str]:
-    """@brief Tile -> what stands on it: a building id as text, or "square".
-    Buildings under construction already hold their tiles."""
+    """@brief Tile -> what stands on it: a building id as text, "square" or
+    "palace". Buildings under construction already hold their tiles."""
     taken = {tile: SQUARE for tile in square_tiles(state, config)}
+    taken.update({tile: PALACE for tile in palace_tiles(state, config)})
     for building in state.buildings:
         for tile in footprint(config, building.kind, building.x, building.y):
             taken[tile] = str(building.id)

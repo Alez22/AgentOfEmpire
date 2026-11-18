@@ -17,20 +17,25 @@ Cost: about 400 hexes and 250 icon references for the start view (ring of
 """
 
 import math
+from dataclasses import replace
 
 from engine.config import Config
 from engine.state import GameState
-from engine.territory import NOT_OWNED, TERRAIN_CHARS, WILD, building_works, footprint, neighbours, square_tiles
+from engine.territory import (NOT_OWNED, OWNED, TERRAIN_CHARS, WILD, building_works, footprint, neighbours,
+                              occupancy, palace_tiles, square_tiles)
 
 RADIUS = 24  # hex centre to corner
 HEX_WIDTH = math.sqrt(3) * RADIUS
 PAD = 12
 TERRAIN_CLASS = {".": "h-plain", "T": "h-forest", "^": "h-hill", "~": "h-river"}
-LOT_CLASS = {"farm": "h-field", "quarry": "h-quarry", "square": "h-square", "sawmill": "h-sawmill",
+LOT_CLASS = {"palace": "h-palace", "farm": "h-field", "quarry": "h-quarry", "square": "h-square", "sawmill": "h-sawmill",
              "house": "h-plain", "market": "h-market", "watchtower": "h-watch"}
 SPRITE = "/static/icons/sprite.svg"
+PALACE_ID = -1  # the palace's id on the page; buildings start at 1, the square is 0
+# The palace's place in games saved before it ([map] palace_from_square), for the drawing only.
+PALACE_STEPS_BEFORE = ["E", "E"]
 # Icon of each building kind for the detail card and the legend.
-KIND_ICON = {"farm": "barn", "house": "family-house", "sawmill": "circular-saw", "quarry": "mining",
+KIND_ICON = {"palace": "viking-longhouse", "farm": "barn", "house": "family-house", "sawmill": "circular-saw", "quarry": "mining",
              "square": "well", "market": "shop", "watchtower": "watchtower"}
 
 
@@ -83,10 +88,10 @@ def _building_icons(kind: str, tiles: list[tuple[int, int]], building_id: int, x
            turns, the pick strikes (CSS classes sway, spin, pick)."""
     cls = "i-building site" if site else "i-building"
     centres = [centre(x, y, x1, y1) for x, y in tiles]
-    if kind == "square":
+    if kind in ("square", "palace"):  # one big icon in the rhombus' middle
         mid_x = sum(c[0] for c in centres) / len(centres)
         mid_y = sum(c[1] for c in centres) / len(centres)
-        return [_icon("well", mid_x, mid_y, 1.9, cls)]
+        return [_icon(KIND_ICON[kind], mid_x, mid_y, 1.9, cls)]
     if kind == "house":
         return [_icon("family-house" if building_id % 2 else "house", *centres[0], 1.25, cls)]
     if kind == "farm":  # the anchor is the flower's centre
@@ -118,9 +123,26 @@ def _owned(state: GameState, x: int, y: int) -> bool:
     return 0 <= x < size and 0 <= y < size and state.owned[y][x] != NOT_OWNED
 
 
+def _palace_hexes(state: GameState, config: Config) -> list[tuple[int, int]]:
+    """@brief The palace's hexes to draw: the engine's, or in a game saved
+    before the palace the same rhombus while it is still the realm's and free."""
+    tiles = palace_tiles(state, config)
+    if tiles or config.map.square_hex_steps is None:
+        return tiles
+    drawn = palace_tiles(state, replace(config, map=replace(config.map, palace_from_square=PALACE_STEPS_BEFORE)))
+    taken = occupancy(state, config)
+    if all(_owned(state, x, y) and state.owned[y][x] == OWNED and (x, y) not in taken for x, y in drawn):
+        return drawn
+    return []
+
+
 def _lots(state: GameState, config: Config) -> list[tuple[str, int, list[tuple[int, int]], bool]]:
-    """@brief (kind, id, hexes, under construction) of the square (id 0) and every building."""
+    """@brief (kind, id, hexes, under construction) of the square (id 0), the
+    palace (PALACE_ID) and every building."""
     lots = [("square", 0, square_tiles(state, config), False)]
+    palace = _palace_hexes(state, config)
+    if palace:
+        lots.append(("palace", PALACE_ID, palace, False))
     for building in state.buildings:
         lots.append((building.kind, building.id, footprint(config, building.kind, building.x, building.y),
                      building.turns_left > 0))
@@ -210,7 +232,7 @@ def _add_motion(motion: dict, kind: str, building_id: int, tiles: list[tuple[int
 
 
 def hex_board(state: GameState, config: Config, bounds: tuple[int, int, int, int], selected: int,
-              zones: list[dict], labels: dict[int, str], link) -> dict:
+              zones: list[dict], labels: dict[int, str], link, palace_href: str = "") -> dict:
     """@brief Everything the template draws in the SVG board.
     @param bounds (x1, y1, x2, y2) world hexes in view.
     @param selected Building id chosen (0 = the square).
@@ -218,6 +240,7 @@ def hex_board(state: GameState, config: Config, bounds: tuple[int, int, int, int
            corners x1..y2), already filtered to the view.
     @param labels Building id -> its name on the page ("Fattoria n. 1"; 0 the square).
     @param link Builds a page link from query changes (b=building id).
+    @param palace_href Where a tap on the palace leads: the council page.
     """
     x1, y1, x2, y2 = bounds
 
@@ -236,7 +259,9 @@ def hex_board(state: GameState, config: Config, bounds: tuple[int, int, int, int
             lot_lines += outline(config, tiles, x1, y1)
         icons += _building_icons(kind, tiles, building_id, x1, y1, site, _working(state, config, building_id))
         _add_motion(motion, kind, building_id, tiles, site, x1, y1)
-        buildings.append({"id": building_id, "label": labels[building_id], "href": link(b=building_id),
+        # The palace is the council's seat: a tap opens the council, not a card.
+        href = palace_href if building_id == PALACE_ID else link(b=building_id)
+        buildings.append({"id": building_id, "label": labels.get(building_id, "Il palazzo"), "href": href,
                           "selected": building_id == selected,
                           "polygons": [_points(*centre(x, y, x1, y1)) for x, y in tiles],
                           "outline": outline(config, tiles, x1, y1) if building_id == selected else []})

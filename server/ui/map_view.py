@@ -221,7 +221,8 @@ def map_page(state: GameState, config: Config, realm_id: int, selected: int | No
             "x1": zone.x1, "y1": zone.y1, "x2": zone.x2, "y2": zone.y2,  # for the hex board
         })
 
-    board = hex_board(state, config, bounds, selected, zones, labels, link) if is_hex(config) else None
+    board = (hex_board(state, config, bounds, selected, zones, labels, link, f"/ui/realms/{realm_id}/council")
+             if is_hex(config) else None)
     if board is not None:  # the detail and legend pictures come from the icon sprite
         detail["icon"] = f"{SPRITE}#i-{KIND_ICON[chosen['kind']]}"
     queue = state.clearing_queue

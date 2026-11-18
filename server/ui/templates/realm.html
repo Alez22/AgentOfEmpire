@@ -12,7 +12,7 @@
        data-season="{{ season_key }}" data-realm="{{ g.realm_box }}" role="group" aria-label="Mappa del regno: tocca un edificio per i dettagli">
     <defs>
       {# Light from above on every hex (F): the stop colours come from the season's palette in style.css. #}
-      {% for t in ["plain", "forest", "hill", "river", "field", "wild", "square", "works", "market", "watch"] %}
+      {% for t in ["plain", "forest", "hill", "river", "field", "wild", "square", "works", "market", "watch", "palace"] %}
       <linearGradient id="g-{{ t }}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="hi-{{ t }}"/><stop offset="1" class="lo-{{ t }}"/></linearGradient>
       {% endfor %}
       <radialGradient id="g-lantern"><stop offset="0" stop-color="#FFE7A3" stop-opacity=".55"/><stop offset="1" stop-color="#FFE7A3" stop-opacity="0"/></radialGradient>

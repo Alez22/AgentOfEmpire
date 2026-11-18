@@ -1583,3 +1583,11 @@ Mockup on real data (game 44, Brenna, September): https://claude.ai/artifact/RFx
 - **Script (G)**: `static/map.js`, about 250 lines, no library: pan, pinch, wheel, double tap, tap on building or mark, the sheet, the scroll's place. Without it the page still works: buildings and marks are `?b=id` links.
 - **Cost**: the SVG grows from about 50 to about 100 KB; Starlette's `GZipMiddleware` brings it to about 15 KB.
 - **Phases**, one commit each with green tests: 1 pages, navigation, HUD and sheet on today's board; 2 seasons, relief, fog, zones; 3 motion; 4 marks and the Voice; 5 script and client cards.
+
+### The palace from the start (spec approved 2026-11-18)
+
+The palace is the town's centre and the council's seat: it stands from the first month, a fixed place like the square, and changes look with the era (village: the long hall; town: the civic clock tower; kingdom: the castle).
+
+- **Engine**: `[map] palace_from_square` (steps from the square's anchor to the palace's, `["E", "E"]`); its shape is the square's rhombus. Its 4 hexes are the rhombus the core already left free in "Riserva del palazzo". `occupancy()` holds them, so nothing is ever built there, even under a redrawn plan. No cost, no upkeep, no rules yet: the era's building site comes with the eras. Games saved before have no key: no palace in the engine, replays unchanged.
+- **Council**: the Architect's text map marks it `K` like the square's `P`; the manual says it is the council's seat and that nothing is built on it.
+- **Map**: drawn with the era's icon (only the long hall until eras exist); a tap opens the council. In games saved before, the page draws it where the rhombus is still free and owned (a drawing only).

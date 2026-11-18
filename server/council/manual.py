@@ -343,7 +343,8 @@ def _shape_rule(config: Config) -> str:
     if is_hex(config):
         return ("The map is made of hexes (odd rows half a hex to the east, 6 neighbours each). A building is "
                 "given by its anchor hex: the farm's centre, the first hex of the others; the square is a "
-                "rhombus of 4 hexes.")
+                "rhombus of 4 hexes." + (" The palace, the council's seat, is a rhombus of 4 hexes east of the "
+                                         "square: nothing is built on it." if config.map.palace_from_square else ""))
     return (f"A building is given by its anchor, its top-left tile; the square is {config.map.square_size} x "
             f"{config.map.square_size}.")
 
@@ -618,7 +619,9 @@ def _territory_section(config: Config) -> dict:
     grid = "La mappa è fatta di esagoni: ognuno ha 6 vicini. " if hex_map else ""
     return {"title": "Territorio", "entries": [], "notes": [
         f"{grid}Il regno possiede caselle di pianura, bosco, collina e fiume. Ingombri: {sizes}; la piazza "
-        f"{square}. Sul fiume e sul bosco non si costruisce.",
+        f"{square}. Sul fiume e sul bosco non si costruisce."
+        + (" Il palazzo, sede del consiglio, c'è dall'inizio: un rombo di 4 esagoni a est della piazza, dove "
+           "non si costruisce." if hex_map and m.palace_from_square else ""),
         "Il piano della città divide la terra in zone (campi, centro, case, botteghe, riserva): un edificio "
         "sta solo in una zona del suo tipo, le case anche nel centro. Lo disegna l'Architetta.",
         f"Annettere una casella confinante costa {m.claim_base_gold} oro, uno in più ogni {m.claim_step_tiles} "
