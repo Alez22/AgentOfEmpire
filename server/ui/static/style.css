@@ -346,3 +346,67 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
 .sheet-card-text h2 { font-size: 22px; }
 .sheet-card-text p { margin: 2px 0 0; font-size: 14px; color: var(--text-soft); }
 .sheet-close { min-width: 44px; min-height: 44px; display: grid; place-items: center; font-size: 26px; color: var(--muted); text-decoration: none; }
+
+/* The realm's board (phase 2): the season's palette (A), light and shadows (F),
+   fog beyond the border (E), zone names. hi = lit top of a hex, lo = its foot. */
+.stage {
+  background:
+    radial-gradient(ellipse at 50% 42%, rgba(120, 100, 60, 0.10) 0%, transparent 45%, rgba(0, 0, 0, 0.6) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .84 0 0 0 0 .77 0 0 0 0 .61 0 0 0 .1 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"),
+    var(--ground);
+}
+.realm-board {
+  --plain-hi: #3A3322; --plain-lo: #29241A; --forest-hi: #2A3A22; --forest-lo: #1D2A17;
+  --hill-hi: #4A3E2E; --hill-lo: #31291F; --river-hi: #24465A; --river-lo: #183240;
+  --field-hi: #5A4824; --field-lo: #3E3118; --wild-hi: #3A3424; --wild-lo: #2A2519;
+  --square-hi: #4D463A; --square-lo: #38332A; --works-hi: #463A2C; --works-lo: #322A20;
+  --market-hi: #4A3A48; --market-lo: #342A33; --watch-hi: #2F3D4A; --watch-lo: #222C36;
+  --tree: #7E9A5A; --hill-icon: #9A8A6E; --wheat: #D9B055; --waves: #6F9CB0;
+  --hex-stroke: rgba(0, 0, 0, 0.35); --fog: #14120E;
+}
+.realm-board[data-season="spring"] {
+  --plain-hi: #34402A; --plain-lo: #252E1D; --forest-hi: #24402A; --forest-lo: #182C1C;
+  --hill-hi: #444231; --hill-lo: #2F2D22; --field-hi: #3D4B25; --field-lo: #2B3519;
+  --tree: #96BE6E; --wheat: #A6C467;
+}
+.realm-board[data-season="autumn"] {
+  --plain-hi: #3E3020; --plain-lo: #2B2116; --forest-hi: #3B2A19; --forest-lo: #291D12;
+  --hill-hi: #483726; --hill-lo: #32261B; --field-hi: #4A3820; --field-lo: #342715;
+  --tree: #CF8540; --wheat: #A88250; --river-hi: #22404F;
+}
+.realm-board[data-season="winter"] {
+  --plain-hi: #545B63; --plain-lo: #3A4047; --forest-hi: #414A52; --forest-lo: #2D343B;
+  --hill-hi: #5F656D; --hill-lo: #41464D; --river-hi: #7D9AAA; --river-lo: #5B7584;
+  --field-hi: #50565D; --field-lo: #3A3F45; --wild-hi: #4E535A; --wild-lo: #393E44;
+  --square-hi: #5A5853; --square-lo: #413F3B; --works-hi: #534D46; --works-lo: #3D3833;
+  --tree: #DCE5EA; --hill-icon: #D3DBE0; --wheat: #8F969D; --waves: transparent;
+  --hex-stroke: rgba(10, 14, 18, 0.35);
+}
+.realm-board .hi-plain { stop-color: var(--plain-hi); } .realm-board .lo-plain { stop-color: var(--plain-lo); }
+.realm-board .hi-forest { stop-color: var(--forest-hi); } .realm-board .lo-forest { stop-color: var(--forest-lo); }
+.realm-board .hi-hill { stop-color: var(--hill-hi); } .realm-board .lo-hill { stop-color: var(--hill-lo); }
+.realm-board .hi-river { stop-color: var(--river-hi); } .realm-board .lo-river { stop-color: var(--river-lo); }
+.realm-board .hi-field { stop-color: var(--field-hi); } .realm-board .lo-field { stop-color: var(--field-lo); }
+.realm-board .hi-wild { stop-color: var(--wild-hi); } .realm-board .lo-wild { stop-color: var(--wild-lo); }
+.realm-board .hi-square { stop-color: var(--square-hi); } .realm-board .lo-square { stop-color: var(--square-lo); }
+.realm-board .hi-works { stop-color: var(--works-hi); } .realm-board .lo-works { stop-color: var(--works-lo); }
+.realm-board .hi-market { stop-color: var(--market-hi); } .realm-board .lo-market { stop-color: var(--market-lo); }
+.realm-board .hi-watch { stop-color: var(--watch-hi); } .realm-board .lo-watch { stop-color: var(--watch-lo); }
+.realm-board polygon { stroke: var(--hex-stroke); }
+.realm-board .h-plain { fill: url(#g-plain); } .realm-board .h-forest { fill: url(#g-forest); }
+.realm-board .h-hill { fill: url(#g-hill); } .realm-board .h-river { fill: url(#g-river); }
+.realm-board .h-field { fill: url(#g-field); } .realm-board .h-wild { fill: url(#g-wild); }
+.realm-board .h-square { fill: url(#g-square); } .realm-board .h-quarry, .realm-board .h-sawmill { fill: url(#g-works); }
+.realm-board .h-market { fill: url(#g-market); } .realm-board .h-watch { fill: url(#g-watch); }
+.realm-board .i-tree { fill: var(--tree); } .realm-board .i-hill { fill: var(--hill-icon); }
+.realm-board .i-wheat { fill: var(--wheat); }
+.realm-board .waves { stroke: var(--waves); stroke-dasharray: 6 5; }
+.realm-board .shadows use { fill: #000; opacity: 0.45; }
+.realm-board polygon.fog { fill: var(--fog); stroke: none; pointer-events: none; }
+.realm-board .border-glow line { stroke: var(--gold); stroke-width: 9; opacity: 0.14; }
+.realm-board .zone-label {
+  font: italic 600 11px var(--display); letter-spacing: 0.14em; text-transform: uppercase; text-anchor: middle;
+  fill: #F4ECD8; paint-order: stroke; stroke: rgba(20, 18, 14, 0.85); stroke-width: 3px;
+  opacity: 0; pointer-events: none; transition: opacity 0.3s;
+}
+.realm-board .zone-label.lit, .realm-board.near .zone-label { opacity: 0.92; }

@@ -25,10 +25,11 @@ from server.ui.hex_board import KIND_ICON, SPRITE, hex_board
 from server.ui.labels import TOOLS_IT
 
 TILE_PX = {False: 22, True: 34}  # zoom off / on
+HEX_RING = 6  # hexes of land shown beyond the realm on the hex board, veiled by the fog
 PURPOSE_IT = {"fields": "Campi", "center": "Centro", "houses": "Case", "workshops": "Botteghe", "reserve": "Riserva",
               "market": "Mercato", "watch": "Guardia"}
-PURPOSE_COLOR = {"fields": "#F2D27A", "center": "#FFF6E0", "houses": "#F2A08A", "workshops": "#E0B98F",
-                 "reserve": "#A9CBE0", "market": "#C9A3E0", "watch": "#B9C79A"}
+PURPOSE_COLOR = {"fields": "#9CCB8A", "center": "#FFF6E0", "houses": "#F2A08A", "workshops": "#E0B98F",
+                 "reserve": "#A9CBE0", "market": "#C9A3E0", "watch": "#9DB2C6"}
 KIND_IT = {"farm": "Fattoria", "house": "Casa", "sawmill": "Segheria", "quarry": "Cava", "market": "Mercato",
            "watchtower": "Torre di guardia"}
 PLURAL_IT = {"farm": ("fattoria", "fattorie"), "house": ("casa", "case"), "sawmill": ("segheria", "segherie"),
@@ -151,7 +152,8 @@ def map_page(state: GameState, config: Config, realm_id: int, selected: int | No
     @param selected Building id chosen by the sovereign (0 = the square; None = the newest building).
     @param zone_name Zone to light up on the map, or None.
     """
-    bounds = map_text._bounds(state, ring=2)
+    # The hex map is the realm's first page: a wider ring for the fog beyond the border.
+    bounds = map_text._bounds(state, ring=HEX_RING if is_hex(config) else 2)
     x1, y1, x2, y2 = bounds
     tiles, edges = _tiles(state, bounds)
     tile_px = TILE_PX[zoom]

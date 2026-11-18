@@ -19,7 +19,7 @@
       {% for h in g.hexes %}<polygon class="{{ h.cls }}" points="{{ h.points }}"/>{% endfor %}
       {% if g.waves %}<path class="waves" d="{{ g.waves | join(' ') }}"/>{% endif %}
       {% for i in g.icons %}<use href="{{ i.href }}" class="{{ i.cls }}" x="{{ i.x }}" y="{{ i.y }}" width="{{ i.size }}" height="{{ i.size }}"/>{% endfor %}
-      {% for d in g.dimmed %}<polygon class="dim" points="{{ d }}"/>{% endfor %}
+      {% for d in g.dimmed %}<polygon class="dim" points="{{ d.points }}"/>{% endfor %}
       {% for s in g.lot_lines %}<line class="lot" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}
       {% for z in g.zones %}<g class="zone{% if z.lit %} lit{% endif %}" style="stroke: {{ z.color }}">{% for s in z.segments %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}</g>{% endfor %}
       {% for s in g.border %}<line class="border" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}

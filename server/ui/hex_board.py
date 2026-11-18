@@ -3,7 +3,8 @@
 The look of lab/hex_map_mockup.py, night theme (docs/DESIGN.md, "Hex grid",
 "Interface"): flat hexes coloured by terrain or lot, game-icons silhouettes
 from the sprite (server/ui/static/icons/sprite.svg, coloured from CSS),
-building lots outlined, the realm's border in gold, land outside it dimmed.
+building lots outlined, the realm's border in gold, land outside it veiled
+by a fog that thickens with the distance from the realm.
 Buildings are <a> links inside the SVG: still no JavaScript.
 
 Pure functions; the template only writes out the lists returned here, so
@@ -117,10 +118,38 @@ def _lots(state: GameState, config: Config) -> list[tuple[str, int, list[tuple[i
     return lots
 
 
-def _terrain_layer(state: GameState, bounds: tuple[int, int, int, int],
-                   lot_of: dict[tuple[int, int], str]) -> tuple[list, list, list, list]:
-    """@brief (hexes, terrain icons, wave paths, dimmed hexes) of the view."""
+# The fog beyond the border (docs/DESIGN.md, "The map as the realm's first
+# page", E): the first hex out is lightly veiled, each step further darker.
+FOG_FIRST, FOG_STEP, FOG_MAX = 0.38, 0.11, 0.94
+
+
+def _steps_from_realm(state: GameState, config: Config, bounds: tuple[int, int, int, int]) -> dict:
+    """@brief Hexes in view -> steps from the realm's nearest hex, by a
+    breadth-first walk from all the realm's hexes at once (linear in the view)."""
     x1, y1, x2, y2 = bounds
+    steps = {(x, y): 0 for y in range(y1, y2 + 1) for x in range(x1, x2 + 1) if _owned(state, x, y)}
+    frontier = list(steps)
+    while frontier:
+        reached = []
+        for x, y in frontier:
+            for tile in neighbours(config, x, y):
+                if tile not in steps and x1 <= tile[0] <= x2 and y1 <= tile[1] <= y2:
+                    steps[tile] = steps[(x, y)] + 1
+                    reached.append(tile)
+        frontier = reached
+    return steps
+
+
+def _fog_opacity(steps: int) -> str:
+    return f"{min(FOG_MAX, FOG_FIRST + (steps - 1) * FOG_STEP):.2f}"
+
+
+def _terrain_layer(state: GameState, config: Config, bounds: tuple[int, int, int, int],
+                   lot_of: dict[tuple[int, int], str]) -> tuple[list, list, list, list]:
+    """@brief (hexes, terrain icons, wave paths, fog hexes) of the view; a fog
+    hex is {"points", "opacity"}, darker the further it lies from the realm."""
+    x1, y1, x2, y2 = bounds
+    steps = _steps_from_realm(state, config, bounds)
     hexes, icons, waves, dimmed = [], [], [], []
     for y in range(y1, y2 + 1):
         for x in range(x1, x2 + 1):
@@ -138,7 +167,7 @@ def _terrain_layer(state: GameState, bounds: tuple[int, int, int, int],
                 elif char == TERRAIN_CHARS["river"]:
                     waves.append(_waves(cx, cy))
             if not _owned(state, x, y):
-                dimmed.append(_points(cx, cy))
+                dimmed.append({"points": _points(cx, cy), "opacity": _fog_opacity(steps.get((x, y), 99))})
     return hexes, icons, waves, dimmed
 
 
@@ -159,7 +188,7 @@ def hex_board(state: GameState, config: Config, bounds: tuple[int, int, int, int
 
     lots = _lots(state, config)
     lot_of = {tile: kind for kind, _, tiles, _ in lots for tile in tiles}
-    hexes, icons, waves, dimmed = _terrain_layer(state, bounds, lot_of)
+    hexes, icons, waves, dimmed = _terrain_layer(state, config, bounds, lot_of)
     lot_lines, buildings = [], []
     for kind, building_id, tiles, site in lots:
         tiles = [tile for tile in tiles if in_view(*tile)]
@@ -174,15 +203,23 @@ def hex_board(state: GameState, config: Config, bounds: tuple[int, int, int, int
                           "outline": outline(config, tiles, x1, y1) if building_id == selected else []})
     realm = [(x, y) for y in range(y1, y2 + 1) for x in range(x1, x2 + 1) if _owned(state, x, y)]
     border = outline(config, realm, x1, y1)
-    zone_outlines = []
+    zone_outlines, zone_labels = [], []
     for zone in zones:
-        if not zone["shown"]:
-            continue
         tiles = [(x, y) for y in range(max(zone["y1"], y1), min(zone["y2"], y2) + 1)
                  for x in range(max(zone["x1"], x1), min(zone["x2"], x2) + 1)]
-        zone_outlines.append({"color": zone["color"], "lit": zone["lit"], "segments": outline(config, tiles, x1, y1)})
+        if not tiles:
+            continue
+        # Names as on an old map, at the zone's middle; shown when the zone is lit or the map is near.
+        centres = [centre(x, y, x1, y1) for x, y in tiles]
+        zone_labels.append({"name": zone["name"], "lit": zone["lit"],
+                            "x": f"{sum(c[0] for c in centres) / len(centres):.1f}",
+                            "y": f"{sum(c[1] for c in centres) / len(centres) + 4:.1f}"})
+        if zone["shown"]:
+            zone_outlines.append({"color": zone["color"], "lit": zone["lit"],
+                                  "segments": outline(config, tiles, x1, y1)})
     width = 2 * PAD + HEX_WIDTH * (x2 - x1 + 1.5)
     height = 2 * PAD + 2 * RADIUS + 1.5 * RADIUS * (y2 - y1)
     return {"width": f"{width:.0f}", "height": f"{height:.0f}", "hexes": hexes, "icons": icons, "waves": waves,
             "dimmed": dimmed, "lot_lines": lot_lines, "border": border, "zones": zone_outlines,
+            "zone_labels": zone_labels,
             "buildings": buildings, "sprite": SPRITE}

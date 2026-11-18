@@ -8,14 +8,25 @@
 {% set g = map.board %}
 <div class="stage">
   <svg class="hex-board realm-board" viewBox="0 0 {{ g.width }} {{ g.height }}" preserveAspectRatio="xMidYMid meet"
-       role="group" aria-label="Mappa del regno: tocca un edificio per i dettagli">
+       data-season="{{ season_key }}" role="group" aria-label="Mappa del regno: tocca un edificio per i dettagli">
+    <defs>
+      {# Light from above on every hex (F): the stop colours come from the season's palette in style.css. #}
+      {% for t in ["plain", "forest", "hill", "river", "field", "wild", "square", "works", "market", "watch"] %}
+      <linearGradient id="g-{{ t }}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="hi-{{ t }}"/><stop offset="1" class="lo-{{ t }}"/></linearGradient>
+      {% endfor %}
+      <radialGradient id="g-sun" cx=".25" cy=".1" r=".9"><stop offset="0" stop-color="#FFF4D6" stop-opacity=".10"/><stop offset=".6" stop-color="#FFF4D6" stop-opacity="0"/></radialGradient>
+    </defs>
     {% for h in g.hexes %}<polygon class="{{ h.cls }}" points="{{ h.points }}"/>{% endfor %}
+    <rect class="light" width="{{ g.width }}" height="{{ g.height }}" fill="url(#g-sun)"/>
+    <g class="shadows" transform="translate(2.2 2.6)" aria-hidden="true">{% for i in g.icons %}<use href="{{ i.href }}" x="{{ i.x }}" y="{{ i.y }}" width="{{ i.size }}" height="{{ i.size }}"/>{% endfor %}</g>
     {% if g.waves %}<path class="waves" d="{{ g.waves | join(' ') }}"/>{% endif %}
     {% for i in g.icons %}<use href="{{ i.href }}" class="{{ i.cls }}" x="{{ i.x }}" y="{{ i.y }}" width="{{ i.size }}" height="{{ i.size }}"/>{% endfor %}
-    {% for d in g.dimmed %}<polygon class="dim" points="{{ d }}"/>{% endfor %}
+    {% for d in g.dimmed %}<polygon class="fog" points="{{ d.points }}" fill-opacity="{{ d.opacity }}"/>{% endfor %}
     {% for s in g.lot_lines %}<line class="lot" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}
     {% for z in g.zones %}<g class="zone{% if z.lit %} lit{% endif %}" style="stroke: {{ z.color }}">{% for s in z.segments %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}</g>{% endfor %}
+    <g class="border-glow">{% for s in g.border %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}</g>
     {% for s in g.border %}<line class="border" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}
+    {% for z in g.zone_labels %}<text class="zone-label{% if z.lit %} lit{% endif %}" x="{{ z.x }}" y="{{ z.y }}">{{ z.name }}</text>{% endfor %}
     {% for b in g.buildings %}<a href="{{ b.href }}" aria-label="{{ b.label }}" class="map-building" {% if b.selected and chosen is not none %}aria-current="true"{% endif %}>{% for pts in b.polygons %}<polygon class="hit" points="{{ pts }}"/>{% endfor %}</a>{% endfor %}
     {% if chosen is not none %}{% for b in g.buildings if b.selected %}{% for s in b.outline %}<line class="chosen" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}{% endfor %}{% endif %}
   </svg>
@@ -70,7 +81,7 @@
     {% endif %}
   </div>
 
-  <details class="sheet-more" {% if sheet_open %}open{% endif %}>
+  <details class="sheet-more">
     <summary><span class="sheet-grab" aria-hidden="true"></span>Il mese passato, le udienze, le terre</summary>
     <div class="sheet-body">
       {% if since_last %}

@@ -93,7 +93,7 @@ def test_the_hex_board_lights_a_zone_and_the_chosen_building(ui, database_url):
     page = ui.get(f"/ui/realms/{realm_id}/map", params={"b": 1, "zone": "Campi"}).text
     assert page.count('class="zone lit"') == 1 and 'class="chosen"' in page
     assert "Fattoria n. 1" in page and "7 esagoni" in page and "#i-barn" in page
-    assert '<details class="sheet-more" open>' in page  # a choice opens the sheet
+    assert 'class="sheet-card"' in page and '<details class="sheet-more">' in page  # the card, the map in view
 
 
 def test_credits_list_every_icon_author(ui):
@@ -127,7 +127,7 @@ def test_the_realm_opens_on_its_map(ui, database_url):
     assert "Gennaio è aperto" in page or "è aperto" in page
     assert f'action="/ui/realms/{realm_id}/meeting"' in page and ">Convoca<" in page
     assert "Nessuna notizia: è il primo mese." in page
-    assert '<details class="sheet-more" >' in page  # closed until a choice opens it
+    assert '<details class="sheet-more">' in page and 'class="sheet-card"' not in page
     assert "Il piano della città" in page and "Le terre del regno" in page
 
 

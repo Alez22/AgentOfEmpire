@@ -235,8 +235,9 @@ def _own_events(conn: psycopg.Connection, game_id: int, realm_id: int, turn: int
 def realm_page(request: Request, realm_id: int, b: int | None = None, zone: str | None = None, error: str = "",
                conn=Depends(_connection)):
     """@brief The realm's first page: the map, the HUD and the month's sheet
-    (server/ui/realm_view.py). b = building to describe, zone = zone to light
-    up; both open the sheet. Games without a hex map open on the council."""
+    (server/ui/realm_view.py). b = building to describe (its card on top of
+    the sheet), zone = zone to light up; the sheet stays closed, so the map
+    shows the choice. Games without a hex map open on the council."""
     game_id = games.realm_game_id(conn, realm_id)
     if game_id is None:
         return _not_found(request, f"il regno {realm_id}")
@@ -260,6 +261,7 @@ def realm_page(request: Request, realm_id: int, b: int | None = None, zone: str 
         "realm": next(r for r in game["realms"] if r["id"] == realm_id),
         "state": sovereign_state(state),  # never the full state: no mood
         "season": labels.SEASONS[season_of(state.turn)],
+        "season_key": season_of(state.turn),  # picks the board's palette (style.css)
         "winter_in": months_until_winter(state.turn),
         "chips": realm_view.hud_chips(state, before),
         "action": action,
@@ -272,7 +274,6 @@ def realm_page(request: Request, realm_id: int, b: int | None = None, zone: str 
         "names": council["names"],
         "map": map_view.map_page(state, config, realm_id, b, zone, False, False),
         "chosen": b,
-        "sheet_open": b is not None or zone is not None,
         "error": error,
         "nav": "realm",
         "realm_id": realm_id,
