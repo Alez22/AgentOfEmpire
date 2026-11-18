@@ -242,13 +242,10 @@ def hex_board(state: GameState, config: Config, bounds: tuple[int, int, int, int
                           "outline": outline(config, tiles, x1, y1) if building_id == selected else []})
     realm = [(x, y) for y in range(y1, y2 + 1) for x in range(x1, x2 + 1) if _owned(state, x, y)]
     border = outline(config, realm, x1, y1)
-    # For the script (static/map.js): the realm's box to frame, the square's middle for the Voice's scroll.
+    # For the script (static/map.js): the realm's box to frame.
     realm_centres = [centre(x, y, x1, y1) for x, y in realm]
-    square_centres = [centre(x, y, x1, y1) for x, y in square_tiles(state, config) if in_view(x, y)]
     realm_box = (f"{min(c[0] for c in realm_centres) - HEX_WIDTH:.0f} {min(c[1] for c in realm_centres) - RADIUS:.0f} "
                  f"{max(c[0] for c in realm_centres) + HEX_WIDTH:.0f} {max(c[1] for c in realm_centres) + RADIUS:.0f}")
-    square_at = (f"{sum(c[0] for c in square_centres) / len(square_centres):.0f} "
-                 f"{sum(c[1] for c in square_centres) / len(square_centres):.0f}") if square_centres else ""
     zone_outlines, zone_labels = [], []
     for zone in zones:
         tiles = [(x, y) for y in range(max(zone["y1"], y1), min(zone["y2"], y2) + 1)
@@ -267,7 +264,7 @@ def hex_board(state: GameState, config: Config, bounds: tuple[int, int, int, int
     height = 2 * PAD + 2 * RADIUS + 1.5 * RADIUS * (y2 - y1)
     return {"width": f"{width:.0f}", "height": f"{height:.0f}", "hexes": hexes, "icons": icons, "waves": waves,
             "dimmed": dimmed, "lot_lines": lot_lines, "border": border, "zones": zone_outlines,
-            "zone_labels": zone_labels, **motion, "realm_box": realm_box, "square_at": square_at,
+            "zone_labels": zone_labels, **motion, "realm_box": realm_box,
             "buildings": buildings, "sprite": SPRITE}
 
 

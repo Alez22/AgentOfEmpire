@@ -1,7 +1,7 @@
 /**
  * @file The realm's map page (docs/DESIGN.md, "The map as the realm's first
  * page", G): pan, pinch, wheel and double tap on the board; building cards
- * and the month's marks without a reload; the Voice's scroll over the square.
+ * and the month's marks without a reload (the square's card carries the Voice).
  *
  * The page works without this script: every tap is a plain link. Here the
  * view is the SVG viewBox, kept at the screen's aspect, so one scale (screen
@@ -16,14 +16,12 @@
   const hud = document.querySelector(".hud");
   const sheet = document.querySelector(".sheet");
   const more = document.querySelector(".sheet-more");
-  const scroll = document.querySelector(".voice-scroll");
   const slot = document.getElementById("card-slot");
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const board = svg.viewBox.baseVal;
   const BOARD_W = board.width, BOARD_H = board.height;
   const realm = svg.dataset.realm.split(" ").map(Number);  // x1 y1 x2 y2 in board units
-  const square = svg.dataset.square ? svg.dataset.square.split(" ").map(Number) : null;
   const NEAR_SCALE = 1.3;  // from here on the zone names are readable
   const TAP_SLOP = 8;      // pixels a finger may move and still tap
 
@@ -43,35 +41,21 @@
     return { min: fitWhole * 0.9, max: Math.max(3.2, fitWhole * 6) };
   }
 
-  /** @brief Write the view into the viewBox, then move what follows the map. */
+  /** @brief Write the view into the viewBox. */
   function apply() {
     const width = svg.clientWidth / view.s, height = svg.clientHeight / view.s;
     svg.setAttribute("viewBox", `${view.x.toFixed(1)} ${view.y.toFixed(1)} ${width.toFixed(1)} ${height.toFixed(1)}`);
     svg.classList.toggle("near", view.s >= NEAR_SCALE);
-    placeScroll();
-  }
-
-  function placeScroll() {
-    if (!scroll || !square) return;
-    const rect = svg.getBoundingClientRect();
-    const sx = rect.left + (square[0] - view.x) * view.s;
-    const sy = rect.top + (square[1] - 18 - view.y) * view.s;
-    const band = freeBand();
-    const shown = sy > band.top + 60 && sy < band.top + band.height && sx > 0 && sx < rect.width;
-    scroll.classList.add("on-map");
-    scroll.style.left = `${sx}px`;
-    scroll.style.top = `${sy}px`;
-    scroll.hidden = !shown;
   }
 
   /** @brief Frame the realm in the free band: the first thing the player sees. */
   function frameRealm() {
     const band = freeBand();
-    const width = realm[2] - realm[0], height = realm[3] - realm[1] + 60;  // 60: room for the scroll
+    const width = realm[2] - realm[0], height = realm[3] - realm[1];
     const { min, max } = limits();
     view.s = Math.min(max, Math.max(min, Math.min(svg.clientWidth / width, band.height / height) * 0.96));
     view.x = (realm[0] + realm[2]) / 2 - svg.clientWidth / 2 / view.s;
-    view.y = (realm[1] + realm[3] - 60) / 2 - (band.top + band.height / 2) / view.s + 30;
+    view.y = (realm[1] + realm[3]) / 2 - (band.top + band.height / 2) / view.s;
     apply();
   }
 
@@ -217,16 +201,6 @@
     });
   });
 
-  if (scroll) {
-    scroll.addEventListener("click", (event) => {
-      event.preventDefault();
-      if (!more) return;
-      more.open = true;
-      document.getElementById("voce").scrollIntoView({ block: "start" });
-    });
-  }
-
-  if (more) more.addEventListener("toggle", placeScroll);
   window.addEventListener("resize", frameRealm);
   frameRealm();
   const lit = new URLSearchParams(window.location.search).get("m");

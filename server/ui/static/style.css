@@ -439,7 +439,7 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
   .snow { display: none; }
 }
 
-/* The realm's board, phase 4: the month's marks (C) and the Voice's scroll (D). */
+/* The realm's board, phase 4: the month's marks (C); the Voice (D) in the square's card. */
 .realm-board .claim-glow { fill: #E8C778; stroke: none; opacity: 0.45; animation: aoe-claim 2.4s ease-in-out infinite; }
 .realm-board .stump { fill: #A88A62; }
 .realm-board .raid-path { fill: none; stroke: var(--danger); stroke-width: 2.4; stroke-dasharray: 7 5; stroke-linecap: round;
@@ -460,27 +460,15 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
 @keyframes aoe-march { to { stroke-dashoffset: -18; } }
 @keyframes aoe-pulse { 0% { transform: scale(0.6); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
 
-/* Without the script the scroll waits under the HUD; map.js moves it over the square. */
-.voice-scroll {
-  position: fixed; z-index: 9; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 112px); transform: translateX(-50%);
-  width: min(240px, 70vw); padding: 8px 12px 9px; border-radius: 4px; text-decoration: none;
-  background: linear-gradient(180deg, #F3E9D2, #E6D7B5); color: #2B2216; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
-  font: italic 500 15px/1.25 var(--display);
-}
-.voice-scroll::before, .voice-scroll::after { content: ""; position: absolute; top: 3px; bottom: 3px; width: 7px; background: #C9B78E; border-radius: 3px; }
-.voice-scroll::before { left: -4px; } .voice-scroll::after { right: -4px; }
-.voice-scroll small { display: block; margin-bottom: 3px; font: 600 9.5px/1 var(--body); letter-spacing: 0.16em; text-transform: uppercase; color: #7A5E2E; }
-.voice-scroll span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.voice-scroll.on-map { transform: translate(-50%, calc(-100% - 14px)); }
+/* The Voice of the square: in the square's card and in the sheet, never over the map. */
+.voice-label { margin-top: 8px !important; font: 600 10px/1 var(--body) !important; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted) !important; }
 .voice-full { margin: 0; padding: 12px 14px; border-radius: 6px; background: linear-gradient(180deg, #F3E9D2, #E6D7B5); color: #2B2216;
   font: italic 500 17px/1.35 var(--display); }
 .month-lines a { color: var(--text-soft); text-decoration-color: var(--gold); text-underline-offset: 3px; }
-@media (prefers-reduced-motion: reduce) { .voice-scroll { transition: none; } }
 
 /* The realm's board, phase 5: static/map.js owns the view (G). */
 .js-map .stage { padding: 0; }
 .js-map .realm-board { touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
 .js-map .realm-board:active { cursor: grabbing; }
 .realm-board .map-building.chosen-js polygon.hit { fill: rgba(255, 241, 194, 0.16); stroke: #FFF1C2; stroke-width: 1.5; }
-.voice-scroll[hidden] { display: none; }
 .month-lines a.lit { color: var(--gold-strong); }

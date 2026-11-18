@@ -9,7 +9,7 @@
 {% set g = map.board %}
 <div class="stage">
   <svg class="hex-board realm-board" viewBox="0 0 {{ g.width }} {{ g.height }}" preserveAspectRatio="xMidYMid meet"
-       data-season="{{ season_key }}" data-realm="{{ g.realm_box }}" data-square="{{ g.square_at }}" role="group" aria-label="Mappa del regno: tocca un edificio per i dettagli">
+       data-season="{{ season_key }}" data-realm="{{ g.realm_box }}" role="group" aria-label="Mappa del regno: tocca un edificio per i dettagli">
     <defs>
       {# Light from above on every hex (F): the stop colours come from the season's palette in style.css. #}
       {% for t in ["plain", "forest", "hill", "river", "field", "wild", "square", "works", "market", "watch"] %}
@@ -63,12 +63,6 @@
   {% endif %}
 </div>
 
-{% if voice %}
-<a class="voice-scroll" href="#voce" aria-label="La Voce della piazza: leggi tutto">
-  <small>La Voce della piazza</small><span>{{ voice.first }}</span>
-</a>
-{% endif %}
-
 <header class="hud">
   <div class="hud-title">
     <h1 class="hud-realm"><a href="/ui" aria-label="Le partite" class="hud-crest">✦</a>{{ realm.name }}</h1>
@@ -98,7 +92,8 @@
   <template id="card-{{ c.id }}">
     <div class="sheet-card">
       <svg aria-hidden="true" width="56" height="56" class="map-picture hex-picture" viewBox="0 0 512 512"><use href="{{ c.icon }}"/></svg>
-      <div class="sheet-card-text"><h2>{{ c.title }}</h2>{% for line in c.lines %}<p>{{ line }}</p>{% endfor %}</div>
+      <div class="sheet-card-text"><h2>{{ c.title }}</h2>{% for line in c.lines %}<p>{{ line }}</p>{% endfor %}
+        {% if c.id == 0 and voice %}<p class="voice-label">La Voce della piazza</p><p class="voice-full">{{ voice.full }}</p>{% endif %}</div>
       <a class="sheet-close" href="/ui/realms/{{ realm_id }}" aria-label="Chiudi la scheda">×</a>
     </div>
   </template>
@@ -109,6 +104,7 @@
     <div class="sheet-card-text">
       <h2>{{ map.detail.title }}</h2>
       {% for line in map.detail.lines %}<p>{{ line }}</p>{% endfor %}
+      {% if chosen == 0 and voice %}<p class="voice-label">La Voce della piazza</p><p class="voice-full">{{ voice.full }}</p>{% endif %}
     </div>
     <a class="sheet-close" href="/ui/realms/{{ realm_id }}" aria-label="Chiudi la scheda">×</a>
   </div>

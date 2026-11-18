@@ -174,11 +174,23 @@ def test_the_board_moves_where_people_live_and_work(ui, database_url):
 
 def test_the_script_gets_every_card_and_the_frame(ui, database_url):
     """Phase 5 (G): static/map.js shows a card without a reload, frames the
-    realm and puts the Voice's scroll over the square."""
+    realm; nothing lies over the square."""
     realm_id = _realm(database_url, _hex_raw())
     page = ui.get(f"/ui/realms/{realm_id}").text
     assert re.search(r'<script src="/static/map.js\?v=\d+" defer></script>', page)  # a new file, a new URL
     assert page.count('<template id="card-') == 13  # the square and the 12 starting buildings
-    assert re.search(r'data-realm="\d+ \d+ \d+ \d+" data-square="\d+ \d+"', page)
+    assert re.search(r'data-realm="\d+ \d+ \d+ \d+"', page) and "voice-scroll" not in page
     assert page.count('class="map-building" data-b=') == 13
     assert ui.get("/static/map.js").status_code == 200
+
+
+def test_the_voice_is_read_on_a_tap_on_the_square(ui, database_url):
+    """Nothing lies over the square; its card carries what the square says."""
+    realm_id = _realm(database_url, _hex_raw())
+    with psycopg.connect(database_url, autocommit=True) as conn:
+        game_id = conn.execute("SELECT game_id FROM realms WHERE id = %s", (realm_id,)).fetchone()[0]
+        conn.execute("INSERT INTO council_messages (game_id, realm_id, turn, content, visibility, kind)"
+                     " VALUES (%s, %s, 1, %s, 'court', 'voice')", (game_id, realm_id, "In piazza si dice <b>poco</b>."))
+    page = ui.get(f"/ui/realms/{realm_id}", params={"b": 0}).text
+    assert page.count("In piazza si dice &lt;b&gt;poco&lt;/b&gt;.") == 3  # the shown card, the script's card, the sheet
+    assert "voice-scroll" not in page
