@@ -16,6 +16,16 @@
       {% endfor %}
       <radialGradient id="g-lantern"><stop offset="0" stop-color="#FFE7A3" stop-opacity=".55"/><stop offset="1" stop-color="#FFE7A3" stop-opacity="0"/></radialGradient>
       <pattern id="g-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#3A3020"/><line x1="0" y1="0" x2="0" y2="6" stroke="#C9A54E" stroke-width="1.6" opacity=".55"/></pattern>
+      {# The month's marks (C): one small glyph per kind of mark. #}
+      <symbol id="m-band" viewBox="0 0 24 24"><path d="M12 3c-3.3 0-5.5 2.7-5.5 6.2 0 1.6.4 3 1.2 4.1L5 21h14l-2.7-7.7c.8-1.1 1.2-2.5 1.2-4.1C17.5 5.7 15.3 3 12 3zm-2.6 7.2c.6-.5 1.6-.5 2.1.1-.6.5-1.6.5-2.1-.1zm3.1.1c.5-.6 1.5-.6 2.1-.1-.5.6-1.5.6-2.1.1z"/></symbol>
+      <symbol id="m-shield" viewBox="0 0 24 24"><path d="M12 2.5l8 3v6c0 5-3.4 8.8-8 10-4.6-1.2-8-5-8-10v-6zm-1.2 12.7l5.4-5.4-1.4-1.4-4 4-2-2-1.4 1.4z"/></symbol>
+      <symbol id="m-arrive" viewBox="0 0 24 24"><circle cx="8" cy="6" r="2.6"/><circle cx="16" cy="6" r="2.6"/><path d="M4.5 20l1.2-8.2c.2-1.2 1.2-2 2.3-2s2.1.8 2.3 2L11.5 20zM12.5 20l1.2-8.2c.2-1.2 1.2-2 2.3-2s2.1.8 2.3 2L19.5 20z"/></symbol>
+      <symbol id="m-flight" viewBox="0 0 24 24"><circle cx="9" cy="5" r="2.6"/><path d="M8 9h3.5l3 4 4 1-.6 2-5-1.3-1.6-2-.8 3.6 3 2.7V23h-2.2v-3.2l-3.4-3-1.1 3.7L3 22l-.6-2 3-1.2z"/></symbol>
+      <symbol id="m-hammer" viewBox="0 0 24 24"><path d="M13.5 3.5l6 6-2.4 2.4-1.6-1.6-8.8 8.8a1.7 1.7 0 0 1-2.4-2.4l8.8-8.8-1.6-1.6z"/></symbol>
+      <symbol id="m-star" viewBox="0 0 24 24"><path d="M12 2l2.6 6.6L21.5 9l-5.3 4.5 1.7 6.9L12 16.6l-5.9 3.8 1.7-6.9L2.5 9l6.9-.4z"/></symbol>
+      <symbol id="m-cart" viewBox="0 0 24 24"><path d="M2 6h13v9H2zm13 3h4l3 3.5V15h-7z"/><circle cx="6" cy="17.5" r="2.3"/><circle cx="17.5" cy="17.5" r="2.3"/></symbol>
+      <symbol id="m-flag" viewBox="0 0 24 24"><path d="M6 21V3h1.6v1.2h11.4l-2.6 4.4 2.6 4.4H7.6V21z"/></symbol>
+      <symbol id="m-stump" viewBox="0 0 24 24"><ellipse cx="12" cy="9" rx="7" ry="3"/><path d="M5 9v7c0 1.7 3.1 3 7 3s7-1.3 7-3V9c0 1.7-3.1 3-7 3S5 10.7 5 9z" opacity=".7"/></symbol>
       <radialGradient id="g-sun" cx=".25" cy=".1" r=".9"><stop offset="0" stop-color="#FFF4D6" stop-opacity=".10"/><stop offset=".6" stop-color="#FFF4D6" stop-opacity="0"/></radialGradient>
     </defs>
     {% for h in g.hexes %}<polygon class="{{ h.cls }}" points="{{ h.points }}"/>{% endfor %}
@@ -26,6 +36,8 @@
     {% if g.waves %}<path class="waves" d="{{ g.waves | join(' ') }}"/>{% endif %}
     {% for i in g.icons %}<use href="{{ i.href }}" class="{{ i.cls }}" x="{{ i.x }}" y="{{ i.y }}" width="{{ i.size }}" height="{{ i.size }}"{% if i.delay %} style="animation-delay: {{ i.delay }}s"{% endif %}/>{% endfor %}
     <g class="smoke" aria-hidden="true">{% for p in g.smoke %}<circle cx="{{ p.cx }}" cy="{{ p.cy }}" r="2.6" style="animation-delay: {{ p.delay }}s"/>{% endfor %}</g>
+    {% for pts in marks.glow %}<polygon class="claim-glow" points="{{ pts }}"/>{% endfor %}
+    {% for s in marks.stumps %}<use href="#m-stump" class="stump" x="{{ s.x }}" y="{{ s.y }}" width="14" height="14"/>{% endfor %}
     {% for d in g.dimmed %}<polygon class="fog" points="{{ d.points }}" fill-opacity="{{ d.opacity }}"/>{% endfor %}
     {% for s in g.lot_lines %}<line class="lot" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}
     {% for z in g.zones %}<g class="zone{% if z.lit %} lit{% endif %}" style="stroke: {{ z.color }}">{% for s in z.segments %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}</g>{% endfor %}
@@ -33,12 +45,28 @@
     {% for s in g.border %}<line class="border" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}
     {% for z in g.zone_labels %}<text class="zone-label{% if z.lit %} lit{% endif %}" x="{{ z.x }}" y="{{ z.y }}">{{ z.name }}</text>{% endfor %}
     {% for b in g.buildings %}<a href="{{ b.href }}" aria-label="{{ b.label }}" class="map-building" {% if b.selected and chosen is not none %}aria-current="true"{% endif %}>{% for pts in b.polygons %}<polygon class="hit" points="{{ pts }}"/>{% endfor %}</a>{% endfor %}
+    <g class="marks">
+      {% for d in marks.paths %}<path class="raid-path" d="{{ d }}"/>{% endfor %}
+      {% for p in marks.pins %}
+      <a href="?m={{ p.id }}" class="pin pin-{{ p.tone }}{% if p.id == lit_mark %} lit{% endif %}" id="mark-{{ p.id }}" aria-label="{{ p.text }}">
+        <circle class="pin-pulse" cx="{{ p.cx }}" cy="{{ p.cy }}" r="13"/>
+        <circle class="pin-disc" cx="{{ p.cx }}" cy="{{ p.cy }}" r="13"/>
+        <use href="#m-{{ p.glyph }}" class="pin-glyph" x="{{ p.cx|float - 8.5 }}" y="{{ p.cy|float - 8.5 }}" width="17" height="17"/>
+      </a>
+      {% endfor %}
+    </g>
     {% if chosen is not none %}{% for b in g.buildings if b.selected %}{% for s in b.outline %}<line class="chosen" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}{% endfor %}{% endif %}
   </svg>
   {% if season_key == "winter" %}
   <div class="snow" aria-hidden="true">{% for n in range(36) %}<i style="left: {{ (n * 37) % 100 }}%; animation-duration: {{ 7 + (n * 13) % 8 }}s; animation-delay: -{{ (n * 7) % 12 }}s; opacity: {{ 0.35 + (n % 5) * 0.1 }}"></i>{% endfor %}</div>
   {% endif %}
 </div>
+
+{% if voice %}
+<a class="voice-scroll" href="#voce" aria-label="La Voce della piazza: leggi tutto">
+  <small>La Voce della piazza</small><span>{{ voice.first }}</span>
+</a>
+{% endif %}
 
 <header class="hud">
   <div class="hud-title">
@@ -108,11 +136,21 @@
 
       <section class="sheet-sec">
         <h3>Il mese passato</h3>
-        <ul class="events">
-          {% for e in last_month %}<li>{{ labels.event_label(e.kind, e.data) }}</li>
+        <ul class="events month-lines">
+          {% for e in last_month %}
+          {% if loop.index0 in event_marks %}<li><a href="?m={{ event_marks[loop.index0] }}">{{ labels.event_label(e.kind, e.data) }}</a></li>
+          {% else %}<li>{{ labels.event_label(e.kind, e.data) }}</li>{% endif %}
           {% else %}<li>Nessuna notizia: è il primo mese.</li>{% endfor %}
+          {% for p in marks.pins if p.event is none %}<li><a href="?m={{ p.id }}">{{ p.text }}</a></li>{% endfor %}
         </ul>
       </section>
+
+      {% if voice %}
+      <section class="sheet-sec" id="voce">
+        <h3>La Voce della piazza</h3>
+        <p class="voice-full">{{ voice.full }}</p>
+      </section>
+      {% endif %}
 
       {% if open_turn %}
       <section class="sheet-sec">

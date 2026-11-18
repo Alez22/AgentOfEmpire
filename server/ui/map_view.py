@@ -213,7 +213,7 @@ def map_page(state: GameState, config: Config, realm_id: int, selected: int | No
         detail["icon"] = f"{SPRITE}#i-{KIND_ICON[chosen['kind']]}"
     queue = state.clearing_queue
     return {
-        "board": board, "sprite": SPRITE,
+        "board": board, "sprite": SPRITE, "bounds": bounds,
         "cols": x2 - x1 + 1, "rows": y2 - y1 + 1, "tile_px": tile_px,
         "tiles": tiles, "edges": edges, "buildings": buildings, "zones": zones, "detail": detail,
         "land": {"owned": owned_count(state), "price": claim_price(state, config), "paid": state.land_paid_total,

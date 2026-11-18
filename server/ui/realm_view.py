@@ -7,6 +7,8 @@ never the mood); the sheet's action follows the council's state, while the
 approval itself stays on the council page.
 """
 
+import re
+
 from server.ui import labels
 
 # (key, Italian name) of the HUD's stocks, in the order they are shown.
@@ -28,6 +30,15 @@ def hud_chips(state, before) -> list[dict]:
     was = _stocks(before) if before is not None else None
     return [{"key": key, "name": name, "value": now[key], "delta": None if was is None else now[key] - was[key]}
             for key, name in HUD_STOCKS]
+
+
+def voice_scroll(text: str | None) -> dict | None:
+    """@brief The Voice of the square on its scroll: the first sentence over
+    the square, the whole text in the sheet. None when the square has not spoken."""
+    if not text:
+        return None
+    first = re.split(r"(?<=[.!?])\s", text.strip(), maxsplit=1)[0]
+    return {"first": first, "full": text.strip()}
 
 
 def month_action(realm_id: int, turn: int, open_turn: int | None, game_over: str | None, automatic: bool,

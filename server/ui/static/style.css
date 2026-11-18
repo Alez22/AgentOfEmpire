@@ -438,3 +438,41 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
   .realm-board *, .snow i { animation: none !important; }
   .snow { display: none; }
 }
+
+/* The realm's board, phase 4: the month's marks (C) and the Voice's scroll (D). */
+.realm-board .claim-glow { fill: #E8C778; stroke: none; opacity: 0.45; animation: aoe-claim 2.4s ease-in-out infinite; }
+.realm-board .stump { fill: #A88A62; }
+.realm-board .raid-path { fill: none; stroke: var(--danger); stroke-width: 2.4; stroke-dasharray: 7 5; stroke-linecap: round;
+  animation: aoe-march 1.4s linear infinite; }
+.realm-board .pin-disc { stroke-width: 1.5; }
+.realm-board .pin.lit .pin-disc { stroke-width: 3.5; }
+.realm-board .pin-pulse { fill: none; stroke-width: 2; transform-box: fill-box; transform-origin: center;
+  animation: aoe-pulse 2s ease-out infinite; }
+.realm-board .pin-danger .pin-disc { fill: #3A1D17; stroke: var(--danger); }
+.realm-board .pin-danger .pin-glyph, .realm-board .pin-danger .pin-pulse { fill: var(--danger); stroke: var(--danger); }
+.realm-board .pin-ok .pin-disc { fill: #1E2B1A; stroke: var(--ok); }
+.realm-board .pin-ok .pin-glyph { fill: var(--ok); } .realm-board .pin-ok .pin-pulse { stroke: var(--ok); }
+.realm-board .pin-new .pin-disc { fill: #2B2416; stroke: var(--gold-strong); }
+.realm-board .pin-new .pin-glyph { fill: var(--gold-strong); } .realm-board .pin-new .pin-pulse { stroke: var(--gold-strong); }
+.realm-board .pin-pulse { fill: none !important; }
+.realm-board .pin:focus-visible .pin-disc { stroke: #FFF1C2; stroke-width: 3.5; }
+@keyframes aoe-claim { 0%, 100% { opacity: 0.25; } 50% { opacity: 0.7; } }
+@keyframes aoe-march { to { stroke-dashoffset: -18; } }
+@keyframes aoe-pulse { 0% { transform: scale(0.6); opacity: 0.8; } 100% { transform: scale(1.8); opacity: 0; } }
+
+/* Without the script the scroll waits under the HUD; map.js moves it over the square. */
+.voice-scroll {
+  position: fixed; z-index: 9; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 112px); transform: translateX(-50%);
+  width: min(240px, 70vw); padding: 8px 12px 9px; border-radius: 4px; text-decoration: none;
+  background: linear-gradient(180deg, #F3E9D2, #E6D7B5); color: #2B2216; box-shadow: 0 6px 20px rgba(0, 0, 0, 0.45);
+  font: italic 500 15px/1.25 var(--display);
+}
+.voice-scroll::before, .voice-scroll::after { content: ""; position: absolute; top: 3px; bottom: 3px; width: 7px; background: #C9B78E; border-radius: 3px; }
+.voice-scroll::before { left: -4px; } .voice-scroll::after { right: -4px; }
+.voice-scroll small { display: block; margin-bottom: 3px; font: 600 9.5px/1 var(--body); letter-spacing: 0.16em; text-transform: uppercase; color: #7A5E2E; }
+.voice-scroll span { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.voice-scroll.on-map { transform: translate(-50%, calc(-100% - 14px)); }
+.voice-full { margin: 0; padding: 12px 14px; border-radius: 6px; background: linear-gradient(180deg, #F3E9D2, #E6D7B5); color: #2B2216;
+  font: italic 500 17px/1.35 var(--display); }
+.month-lines a { color: var(--text-soft); text-decoration-color: var(--gold); text-underline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .voice-scroll { transition: none; } }

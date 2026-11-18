@@ -262,3 +262,31 @@ def hex_board(state: GameState, config: Config, bounds: tuple[int, int, int, int
             "dimmed": dimmed, "lot_lines": lot_lines, "border": border, "zones": zone_outlines,
             "zone_labels": zone_labels, **motion,
             "buildings": buildings, "sprite": SPRITE}
+
+
+def place_marks(month: dict, bounds: tuple[int, int, int, int]) -> dict:
+    """@brief The month's marks (server/ui/month_marks.py) in SVG units of the
+    view; marks outside the view are left out. A raid that came from a band
+    seen gets a curved path from the band to the gate.
+    @return {"pins", "paths", "glow" (hex points), "stumps" (centres)}.
+    """
+    x1, y1, x2, y2 = bounds
+
+    def in_view(x: int, y: int) -> bool:
+        return x1 <= x <= x2 and y1 <= y <= y2
+
+    pins, paths = [], []
+    for mark in month["marks"]:
+        if not in_view(mark["x"], mark["y"]):
+            continue
+        cx, cy = centre(mark["x"], mark["y"], x1, y1)
+        cx, cy = cx + mark["dx"], cy + mark["dy"]
+        pins.append({**mark, "cx": f"{cx:.1f}", "cy": f"{cy:.1f}"})
+        if mark["from"] is not None and in_view(*mark["from"]):
+            bx, by = centre(*mark["from"], x1, y1)
+            mx, my = (bx + cx) / 2 + 26, (by + cy) / 2
+            paths.append(f"M{bx:.1f} {by - 6:.1f} Q{mx:.1f} {my:.1f} {cx + 4:.1f} {cy + 10:.1f}")
+    glow = [_points(*centre(x, y, x1, y1)) for x, y in month["claimed"] if in_view(x, y)]
+    stumps = [{"x": f"{cx - 7:.1f}", "y": f"{cy - 4:.1f}"}
+              for cx, cy in (centre(x, y, x1, y1) for x, y in month["felled"] if in_view(x, y))]
+    return {"pins": pins, "paths": paths, "glow": glow, "stumps": stumps}

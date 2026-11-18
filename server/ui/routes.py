@@ -30,7 +30,7 @@ from server.council.briefing import GATE_MEMORY_TURNS, months_until_winter
 from server.db import games
 from server.sovereign import auto, rhythm
 from server.sovereign_view import sovereign_state
-from server.ui import labels, map_view, market_view, realm_view, reversals, world_view
+from server.ui import hex_board, labels, map_view, market_view, month_marks, realm_view, reversals, world_view
 
 TEMPLATES_DIR = Path(__file__).with_name("templates")
 _environment = jinja2.Environment(
@@ -231,13 +231,24 @@ def _own_events(conn: psycopg.Connection, game_id: int, realm_id: int, turn: int
     return [e for e in games.list_events_for_sovereign(conn, game_id, realm_id, turn) if e["realm_id"] == realm_id]
 
 
+def _latest_voice(conn: psycopg.Connection, realm_id: int, turn: int) -> str | None:
+    """@brief What the square said last: this month's Voice if the council has
+    met, else last month's."""
+    for month in (turn, turn - 1):
+        voices = [m for m in meeting.list_messages(conn, realm_id, month) if m["kind"] == "voice"]
+        if voices:
+            return voices[-1]["content"]
+    return None
+
+
 @router.get("/ui/realms/{realm_id}", response_class=HTMLResponse)
-def realm_page(request: Request, realm_id: int, b: int | None = None, zone: str | None = None, error: str = "",
-               conn=Depends(_connection)):
+def realm_page(request: Request, realm_id: int, b: int | None = None, zone: str | None = None, m: str = "",
+               error: str = "", conn=Depends(_connection)):
     """@brief The realm's first page: the map, the HUD and the month's sheet
     (server/ui/realm_view.py). b = building to describe (its card on top of
-    the sheet), zone = zone to light up; the sheet stays closed, so the map
-    shows the choice. Games without a hex map open on the council."""
+    the sheet), zone = zone to light up, m = the month's mark to light up; the
+    sheet stays closed, so the map shows the choice. Games without a hex map
+    open on the council."""
     game_id = games.realm_game_id(conn, realm_id)
     if game_id is None:
         return _not_found(request, f"il regno {realm_id}")
@@ -256,6 +267,9 @@ def realm_page(request: Request, realm_id: int, b: int | None = None, zone: str 
         council_state.rounds_held if council_state else 0, council["plan"] is not None,
         council_state.approved if council_state else False)
     people_now = council["people"]
+    last_month = _own_events(conn, game_id, realm_id, state.turn - 1)
+    view = map_view.map_page(state, config, realm_id, b, zone, False, False)
+    marks = hex_board.place_marks(month_marks.month_marks(last_month, state, before, config), view["bounds"])
     context = {
         "game": game,
         "realm": next(r for r in game["realms"] if r["id"] == realm_id),
@@ -267,12 +281,16 @@ def realm_page(request: Request, realm_id: int, b: int | None = None, zone: str 
         "action": action,
         "petition_waiting": bool(people_now and people_now["petition"] and not people_now["answer"]),
         "job_error": council["job_error"],
-        "last_month": _own_events(conn, game_id, realm_id, state.turn - 1),
+        "last_month": last_month,
+        "marks": marks,
+        "event_marks": {pin["event"]: pin["id"] for pin in marks["pins"] if pin["event"] is not None},
+        "lit_mark": m,
+        "voice": realm_view.voice_scroll(_latest_voice(conn, realm_id, state.turn)),
         "since_last": rhythm_context["since_last"],
         "sovereign_reason": rhythm_context["sovereign_reason"],
         "open_turn": game["open_turn"],
         "names": council["names"],
-        "map": map_view.map_page(state, config, realm_id, b, zone, False, False),
+        "map": view,
         "chosen": b,
         "error": error,
         "nav": "realm",
