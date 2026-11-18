@@ -416,12 +416,13 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
 .realm-board .scaffold { fill: url(#g-hatch); stroke: #C9A54E; stroke-width: 1.2; stroke-dasharray: 3 3; }
 .realm-board .lantern { fill: url(#g-lantern); animation: aoe-glow 3s ease-in-out infinite; }
 .realm-board .waves { animation: aoe-flow 3.2s linear infinite; }
-.realm-board .smoke circle { fill: #CFC6B4; opacity: 0; transform-box: fill-box; transform-origin: center;
+/* Pivots come from the markup, in board units (hex_board.PIVOTS): no transform-box. */
+.realm-board .smoke circle { fill: #CFC6B4; opacity: 0;
   animation: aoe-puff 4.2s ease-out infinite; }
 .realm-board[data-season="winter"] .smoke circle { fill: #E6EBEE; }
-.realm-board .sway { transform-box: fill-box; transform-origin: 50% 90%; animation: aoe-sway 3.6s ease-in-out infinite; }
-.realm-board .spin { transform-box: fill-box; transform-origin: center; animation: aoe-spin 2.4s linear infinite; }
-.realm-board .pick { transform-box: fill-box; transform-origin: 30% 80%; animation: aoe-pick 1.6s ease-in-out infinite; }
+.realm-board .sway { animation: aoe-sway 3.6s ease-in-out infinite; }
+.realm-board .spin { animation: aoe-spin 2.4s linear infinite; }
+.realm-board .pick { animation: aoe-pick 1.6s ease-in-out infinite; }
 .realm-board[data-season="winter"] .sway { animation: none; }  /* nothing grows in the winter fields */
 .snow { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
 .snow i { position: absolute; top: -10px; width: 3px; height: 3px; border-radius: 50%; background: #F2F5F7;
@@ -446,7 +447,7 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
   animation: aoe-march 1.4s linear infinite; }
 .realm-board .pin-disc { stroke-width: 1.5; }
 .realm-board .pin.lit .pin-disc { stroke-width: 3.5; }
-.realm-board .pin-pulse { fill: none; stroke-width: 2; transform-box: fill-box; transform-origin: center;
+.realm-board .pin-pulse { fill: none; stroke-width: 2;
   animation: aoe-pulse 2s ease-out infinite; }
 .realm-board .pin-danger .pin-disc { fill: #3A1D17; stroke: var(--danger); }
 .realm-board .pin-danger .pin-glyph, .realm-board .pin-danger .pin-pulse { fill: var(--danger); stroke: var(--danger); }

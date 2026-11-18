@@ -166,7 +166,8 @@ def test_the_board_moves_where_people_live_and_work(ui, database_url):
     worked farms, the saw turns and the pick strikes; snow in January."""
     realm_id = _realm(database_url, _hex_raw())
     page = ui.get(f"/ui/realms/{realm_id}").text
-    assert page.count('r="2.6" style="animation-delay') == 6 * 3
+    assert page.count('r="2.6" style="transform-origin') == 6 * 3
+    assert re.search(r'class="i-wheat sway" [^>]*style="transform-origin: [\d.]+px [\d.]+px; animation-delay', page)
     assert page.count("i-wheat sway") == 4 * 6
     assert "i-building spin" in page and "i-building pick" in page
     assert 'data-season="winter"' in page and 'class="snow"' in page

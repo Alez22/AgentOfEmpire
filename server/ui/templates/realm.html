@@ -35,8 +35,8 @@
     {% for l in g.lanterns %}<circle class="lantern" cx="{{ l.cx }}" cy="{{ l.cy }}" r="34"/>{% endfor %}
     <g class="shadows" transform="translate(2.2 2.6)" aria-hidden="true">{% for i in g.icons %}<use href="{{ i.href }}" x="{{ i.x }}" y="{{ i.y }}" width="{{ i.size }}" height="{{ i.size }}"/>{% endfor %}</g>
     {% if g.waves %}<path class="waves" d="{{ g.waves | join(' ') }}"/>{% endif %}
-    {% for i in g.icons %}<use href="{{ i.href }}" class="{{ i.cls }}" x="{{ i.x }}" y="{{ i.y }}" width="{{ i.size }}" height="{{ i.size }}"{% if i.delay %} style="animation-delay: {{ i.delay }}s"{% endif %}/>{% endfor %}
-    <g class="smoke" aria-hidden="true">{% for p in g.smoke %}<circle cx="{{ p.cx }}" cy="{{ p.cy }}" r="2.6" style="animation-delay: {{ p.delay }}s"/>{% endfor %}</g>
+    {% for i in g.icons %}<use href="{{ i.href }}" class="{{ i.cls }}" x="{{ i.x }}" y="{{ i.y }}" width="{{ i.size }}" height="{{ i.size }}"{% if i.style %} style="{{ i.style }}"{% endif %}/>{% endfor %}
+    <g class="smoke" aria-hidden="true">{% for p in g.smoke %}<circle cx="{{ p.cx }}" cy="{{ p.cy }}" r="2.6" style="transform-origin: {{ p.cx }}px {{ p.cy }}px; animation-delay: {{ p.delay }}s"/>{% endfor %}</g>
     {% for pts in marks.glow %}<polygon class="claim-glow" points="{{ pts }}"/>{% endfor %}
     {% for s in marks.stumps %}<use href="#m-stump" class="stump" x="{{ s.x }}" y="{{ s.y }}" width="14" height="14"/>{% endfor %}
     {% for d in g.dimmed %}<polygon class="fog" points="{{ d.points }}" fill-opacity="{{ d.opacity }}"/>{% endfor %}
@@ -50,7 +50,7 @@
       {% for d in marks.paths %}<path class="raid-path" d="{{ d }}"/>{% endfor %}
       {% for p in marks.pins %}
       <a href="?m={{ p.id }}" class="pin pin-{{ p.tone }}{% if p.id == lit_mark %} lit{% endif %}" id="mark-{{ p.id }}" aria-label="{{ p.text }}">
-        <circle class="pin-pulse" cx="{{ p.cx }}" cy="{{ p.cy }}" r="13"/>
+        <circle class="pin-pulse" cx="{{ p.cx }}" cy="{{ p.cy }}" r="13" style="transform-origin: {{ p.cx }}px {{ p.cy }}px"/>
         <circle class="pin-disc" cx="{{ p.cx }}" cy="{{ p.cy }}" r="13"/>
         <use href="#m-{{ p.glyph }}" class="pin-glyph" x="{{ p.cx|float - 8.5 }}" y="{{ p.cy|float - 8.5 }}" width="17" height="17"/>
       </a>

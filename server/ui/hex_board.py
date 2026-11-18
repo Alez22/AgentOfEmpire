@@ -72,11 +72,25 @@ def outline(config: Config, tiles: list[tuple[int, int]], x1: int, y1: int) -> l
     return segments
 
 
+# Pivot of each moving icon, as a share of its size from its centre: the wheat
+# bends at its foot, the pick swings from its handle, the saw turns on its axle.
+PIVOTS = {"sway": (0.0, 0.4), "pick": (-0.2, 0.3), "spin": (0.0, 0.0)}
+
+
 def _icon(name: str, cx: float, cy: float, scale: float, cls: str, delay: float | None = None) -> dict:
-    """@param delay Seconds of animation delay, so moving icons do not move in step."""
+    """@param delay Seconds of animation delay, so moving icons do not move in step.
+    A moving icon gets its pivot in board units (style): transform-box: fill-box
+    on <use> is computed wrongly by some phone browsers, and the icons then
+    swing around a far point."""
     size = RADIUS * scale
+    style = ""
+    for motion, (px, py) in PIVOTS.items():
+        if motion in cls.split():
+            style = f"transform-origin: {cx + px * size:.1f}px {cy + py * size:.1f}px;"
+    if delay is not None:
+        style += f" animation-delay: {delay:.2f}s;"
     return {"href": f"{SPRITE}#i-{name}", "x": f"{cx - size / 2:.1f}", "y": f"{cy - size / 2:.1f}",
-            "size": f"{size:.1f}", "cls": cls, "delay": None if delay is None else f"{delay:.2f}"}
+            "size": f"{size:.1f}", "cls": cls, "style": style.strip()}
 
 
 def _building_icons(kind: str, tiles: list[tuple[int, int]], building_id: int, x1: int, y1: int,
