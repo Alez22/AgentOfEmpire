@@ -1,6 +1,6 @@
 # AgentOfEmpire – Work plan
 
-Updated 2026-11-13 (work on the interface: the world view, admin in the clear and players their own realm only; the graphic proposals removed from the Pages site).
+Updated 2026-11-18 (the map is the realm's first page: HUD, sheet, seasons, motion, the month's marks, pan and zoom).
 
 The prototype is complete and playable from a phone, and the field test is closed. Phase 3 (accounts) is set aside: the game first needs richer dynamics. **Now: phase 4, the market**: the labs are done (`lab/market_sim.py`, `lab/market_closed.py`) and the spec "Market, needs and land levels" is approved (`docs/DESIGN.md`); next, the engine (step 1 built: needs, land levels, a site per realm; steps 2 and 3 built: the market, the `trade` order, market states in the database, game-level resolution and replay; step 4 built: the council trades through the Treasurer, the "Mercato" page; next step 5, a 12-month game with three realms), then a game with three realms. The territory step 1 is done (spec in `docs/DESIGN.md`, "Territory").
 
@@ -13,7 +13,7 @@ This file is the starting point of every work session: read it at the start and 
 | Engine | deterministic monthly simulation: economy, seasons, food spoilage, demography, mood, unrest | `engine/`, values in `engine/config.toml` |
 | Database | PostgreSQL 18.6 in Docker, 12 migrations, row-level security, append-only logs, replay | `db/migrations/`, `server/db/` |
 | LLM council | Treasurer, Architect, Chancellor and Voice of the square on OpenRouter (GLM 5.3 Flash "high"; the Voice on DeepSeek V4.1 Flash); secret lessons revised at season end; private audiences | `server/council/`, settings in `server/council.toml` |
-| UI | phone pages: games, turn, kingdom, map, world, market, chronicle, audiences; meetings run in the background | `server/ui/` |
+| UI | phone pages: games, the realm's map (first page), council, kingdom, world, market, chronicle, audiences; a tab bar at the bottom; meetings run in the background | `server/ui/` |
 | Admin | everything visible: full state, prompts, calls, costs, lessons, audiences, replay; per-agent page with system prompts, traits and last briefing; world timelapse (`/admin/games/{id}/world?turn=N&play=1`, a page per month, meta refresh, no JavaScript; the month's caravans redrawn on the same road as the engine, `road_home_to_fair`, and raid arrows) | `server/admin/`, enabled with `ADMIN_VIEW=1` |
 | Tests | 316 tests: engine, database, council with fake models, UI | `tests/` |
 
@@ -83,6 +83,7 @@ The open items below carry over: they are checked and tuned while playing the ne
 - [ ] Review the council and square prompts
 - [ ] Polish the UI after the test
   - [x] World view (2026-11-13): the whole 64 × 64 map with small hexes, terrain as colour, buildings as letters, borders per realm (`server/ui/world_view.py`); admin at `/admin/games/{id}/world` sees every realm (fallen ones in grey), a player at `/ui/realms/{id}/world` (tab "Mondo") only their own realm on the full terrain. Later: neighbours discovered by exploration or diplomacy
+  - [x] The map as the realm's first page (2026-11-18; spec in `docs/DESIGN.md`, "The map as the realm's first page"; mockup https://claude.ai/artifact/RFxwvCtJnkxwcMC43W31u2): `/ui/realms/{id}` is the map with HUD and bottom sheet, the turn page moved to `/council`, a tab bar Regno · Consiglio · Mercato · Cronaca · Altro; seasons, relief, fog, zone names, CSS motion, the month's marks (`server/ui/month_marks.py`), the Voice's scroll, `static/map.js` (pan, pinch, cards, marks). Gzip on. Next: try it on the phone; caravans are marked on the market (the road would need the other realms' land)
 - [ ] Choose models and spending cap for a 120-turn game
 
 ### 3. Before friends – set aside (2026-11-08)

@@ -291,6 +291,7 @@ def realm_page(request: Request, realm_id: int, b: int | None = None, zone: str 
         "open_turn": game["open_turn"],
         "names": council["names"],
         "map": view,
+        "cards": map_view.building_cards(state, config),
         "chosen": b,
         "error": error,
         "nav": "realm",

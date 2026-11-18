@@ -127,7 +127,8 @@ def test_the_realm_opens_on_its_map(ui, database_url):
     assert "Gennaio è aperto" in page or "è aperto" in page
     assert f'action="/ui/realms/{realm_id}/meeting"' in page and ">Convoca<" in page
     assert "Nessuna notizia: è il primo mese." in page
-    assert '<details class="sheet-more">' in page and 'class="sheet-card"' not in page
+    assert '<details class="sheet-more">' in page
+    assert page.count('class="sheet-card"') == 13  # only the hidden cards for the script, none shown
     assert "Il piano della città" in page and "Le terre del regno" in page
 
 
@@ -169,3 +170,15 @@ def test_the_board_moves_where_people_live_and_work(ui, database_url):
     assert page.count("i-wheat sway") == 4 * 6
     assert "i-building spin" in page and "i-building pick" in page
     assert 'data-season="winter"' in page and 'class="snow"' in page
+
+
+def test_the_script_gets_every_card_and_the_frame(ui, database_url):
+    """Phase 5 (G): static/map.js shows a card without a reload, frames the
+    realm and puts the Voice's scroll over the square."""
+    realm_id = _realm(database_url, _hex_raw())
+    page = ui.get(f"/ui/realms/{realm_id}").text
+    assert '<script src="/static/map.js" defer></script>' in page
+    assert page.count('<template id="card-') == 13  # the square and the 12 starting buildings
+    assert re.search(r'data-realm="\d+ \d+ \d+ \d+" data-square="\d+ \d+"', page)
+    assert page.count('class="map-building" data-b=') == 13
+    assert ui.get("/static/map.js").status_code == 200

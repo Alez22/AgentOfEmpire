@@ -146,6 +146,19 @@ def _room_it(state: GameState, config: Config, zone) -> str:
     return ("posto per " + ", ".join(parts)) if parts else "nessun posto"
 
 
+def building_cards(state: GameState, config: Config) -> list[dict]:
+    """@brief The card of every building and of the square, for the realm's
+    first page: the script shows one on a tap without a reload.
+    @return [{"id", "title", "icon", "lines"}], the same lines as map_page's detail."""
+    cards = [{"id": 0, "title": "Piazza", "icon": f"{SPRITE}#i-{KIND_ICON['square']}",
+              "lines": ["Il cuore della città: gli edifici nuovi sorgono il più vicino possibile"]}]
+    for building in state.buildings:
+        cards.append({"id": building.id, "title": f"{KIND_IT[building.kind]} n. {building.id}",
+                      "icon": f"{SPRITE}#i-{KIND_ICON[building.kind]}",
+                      "lines": _building_lines(state, config, building)})
+    return cards
+
+
 def map_page(state: GameState, config: Config, realm_id: int, selected: int | None, zone_name: str | None,
              show_zones: bool, zoom: bool) -> dict:
     """@brief Everything the map template draws.

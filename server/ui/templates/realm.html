@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}{{ realm.name }} · {{ labels.month_name(state.turn) }}{% endblock %}
 {% block body_class %}realm-home{% endblock %}
+{% block head %}<script src="/static/map.js" defer></script>{% endblock %}
 {% block page %}
 {# The realm's first page (server/ui/realm_view.py): the map fills the screen,
    the HUD and the month's sheet lie on it. Works without JavaScript: every
@@ -8,7 +9,7 @@
 {% set g = map.board %}
 <div class="stage">
   <svg class="hex-board realm-board" viewBox="0 0 {{ g.width }} {{ g.height }}" preserveAspectRatio="xMidYMid meet"
-       data-season="{{ season_key }}" role="group" aria-label="Mappa del regno: tocca un edificio per i dettagli">
+       data-season="{{ season_key }}" data-realm="{{ g.realm_box }}" data-square="{{ g.square_at }}" role="group" aria-label="Mappa del regno: tocca un edificio per i dettagli">
     <defs>
       {# Light from above on every hex (F): the stop colours come from the season's palette in style.css. #}
       {% for t in ["plain", "forest", "hill", "river", "field", "wild", "square", "works", "market", "watch"] %}
@@ -44,7 +45,7 @@
     <g class="border-glow">{% for s in g.border %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}</g>
     {% for s in g.border %}<line class="border" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}
     {% for z in g.zone_labels %}<text class="zone-label{% if z.lit %} lit{% endif %}" x="{{ z.x }}" y="{{ z.y }}">{{ z.name }}</text>{% endfor %}
-    {% for b in g.buildings %}<a href="{{ b.href }}" aria-label="{{ b.label }}" class="map-building" {% if b.selected and chosen is not none %}aria-current="true"{% endif %}>{% for pts in b.polygons %}<polygon class="hit" points="{{ pts }}"/>{% endfor %}</a>{% endfor %}
+    {% for b in g.buildings %}<a href="{{ b.href }}" aria-label="{{ b.label }}" class="map-building" data-b="{{ b.id }}" {% if b.selected and chosen is not none %}aria-current="true"{% endif %}>{% for pts in b.polygons %}<polygon class="hit" points="{{ pts }}"/>{% endfor %}</a>{% endfor %}
     <g class="marks">
       {% for d in marks.paths %}<path class="raid-path" d="{{ d }}"/>{% endfor %}
       {% for p in marks.pins %}
@@ -92,6 +93,16 @@
 <section class="sheet" aria-label="Il mese">
   {% if error %}<div class="banner error" role="alert">{{ error }}</div>{% endif %}
 
+  <div id="card-slot"></div>
+  {% for c in cards %}
+  <template id="card-{{ c.id }}">
+    <div class="sheet-card">
+      <svg aria-hidden="true" class="map-picture hex-picture" viewBox="0 0 512 512"><use href="{{ c.icon }}"/></svg>
+      <div class="sheet-card-text"><h2>{{ c.title }}</h2>{% for line in c.lines %}<p>{{ line }}</p>{% endfor %}</div>
+      <a class="sheet-close" href="/ui/realms/{{ realm_id }}" aria-label="Chiudi la scheda">×</a>
+    </div>
+  </template>
+  {% endfor %}
   {% if chosen is not none %}
   <div class="sheet-card">
     <svg aria-hidden="true" class="map-picture hex-picture" viewBox="0 0 512 512"><use href="{{ map.detail.icon }}"/></svg>

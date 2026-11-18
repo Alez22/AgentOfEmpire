@@ -476,3 +476,11 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
   font: italic 500 17px/1.35 var(--display); }
 .month-lines a { color: var(--text-soft); text-decoration-color: var(--gold); text-underline-offset: 3px; }
 @media (prefers-reduced-motion: reduce) { .voice-scroll { transition: none; } }
+
+/* The realm's board, phase 5: static/map.js owns the view (G). */
+.js-map .stage { padding: 0; }
+.js-map .realm-board { touch-action: none; cursor: grab; user-select: none; -webkit-user-select: none; }
+.js-map .realm-board:active { cursor: grabbing; }
+.realm-board .map-building.chosen-js polygon.hit { fill: rgba(255, 241, 194, 0.16); stroke: #FFF1C2; stroke-width: 1.5; }
+.voice-scroll[hidden] { display: none; }
+.month-lines a.lit { color: var(--gold-strong); }
