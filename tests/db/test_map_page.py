@@ -158,3 +158,14 @@ def test_the_more_tab_links_the_other_pages(ui, database_url):
     for path in ("kingdom", "government", "world", "manual"):
         assert f'href="/ui/realms/{realm_id}/{path}"' in page
     assert re.search(r'aria-current="page">\s*<svg[^>]*>.*?</svg>Altro</a>', page, re.S)
+
+
+def test_the_board_moves_where_people_live_and_work(ui, database_url):
+    """Phase 3 (B): smoke over the 6 start houses, the wheat sways on the 4
+    worked farms, the saw turns and the pick strikes; snow in January."""
+    realm_id = _realm(database_url, _hex_raw())
+    page = ui.get(f"/ui/realms/{realm_id}").text
+    assert page.count('r="2.6" style="animation-delay') == 6 * 3
+    assert page.count("i-wheat sway") == 4 * 6
+    assert "i-building spin" in page and "i-building pick" in page
+    assert 'data-season="winter"' in page and 'class="snow"' in page

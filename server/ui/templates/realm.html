@@ -14,13 +14,18 @@
       {% for t in ["plain", "forest", "hill", "river", "field", "wild", "square", "works", "market", "watch"] %}
       <linearGradient id="g-{{ t }}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" class="hi-{{ t }}"/><stop offset="1" class="lo-{{ t }}"/></linearGradient>
       {% endfor %}
+      <radialGradient id="g-lantern"><stop offset="0" stop-color="#FFE7A3" stop-opacity=".55"/><stop offset="1" stop-color="#FFE7A3" stop-opacity="0"/></radialGradient>
+      <pattern id="g-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="6" height="6" fill="#3A3020"/><line x1="0" y1="0" x2="0" y2="6" stroke="#C9A54E" stroke-width="1.6" opacity=".55"/></pattern>
       <radialGradient id="g-sun" cx=".25" cy=".1" r=".9"><stop offset="0" stop-color="#FFF4D6" stop-opacity=".10"/><stop offset=".6" stop-color="#FFF4D6" stop-opacity="0"/></radialGradient>
     </defs>
     {% for h in g.hexes %}<polygon class="{{ h.cls }}" points="{{ h.points }}"/>{% endfor %}
+    {% for pts in g.scaffolds %}<polygon class="scaffold" points="{{ pts }}"/>{% endfor %}
     <rect class="light" width="{{ g.width }}" height="{{ g.height }}" fill="url(#g-sun)"/>
+    {% for l in g.lanterns %}<circle class="lantern" cx="{{ l.cx }}" cy="{{ l.cy }}" r="34"/>{% endfor %}
     <g class="shadows" transform="translate(2.2 2.6)" aria-hidden="true">{% for i in g.icons %}<use href="{{ i.href }}" x="{{ i.x }}" y="{{ i.y }}" width="{{ i.size }}" height="{{ i.size }}"/>{% endfor %}</g>
     {% if g.waves %}<path class="waves" d="{{ g.waves | join(' ') }}"/>{% endif %}
-    {% for i in g.icons %}<use href="{{ i.href }}" class="{{ i.cls }}" x="{{ i.x }}" y="{{ i.y }}" width="{{ i.size }}" height="{{ i.size }}"/>{% endfor %}
+    {% for i in g.icons %}<use href="{{ i.href }}" class="{{ i.cls }}" x="{{ i.x }}" y="{{ i.y }}" width="{{ i.size }}" height="{{ i.size }}"{% if i.delay %} style="animation-delay: {{ i.delay }}s"{% endif %}/>{% endfor %}
+    <g class="smoke" aria-hidden="true">{% for p in g.smoke %}<circle cx="{{ p.cx }}" cy="{{ p.cy }}" r="2.6" style="animation-delay: {{ p.delay }}s"/>{% endfor %}</g>
     {% for d in g.dimmed %}<polygon class="fog" points="{{ d.points }}" fill-opacity="{{ d.opacity }}"/>{% endfor %}
     {% for s in g.lot_lines %}<line class="lot" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}
     {% for z in g.zones %}<g class="zone{% if z.lit %} lit{% endif %}" style="stroke: {{ z.color }}">{% for s in z.segments %}<line x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}</g>{% endfor %}
@@ -30,6 +35,9 @@
     {% for b in g.buildings %}<a href="{{ b.href }}" aria-label="{{ b.label }}" class="map-building" {% if b.selected and chosen is not none %}aria-current="true"{% endif %}>{% for pts in b.polygons %}<polygon class="hit" points="{{ pts }}"/>{% endfor %}</a>{% endfor %}
     {% if chosen is not none %}{% for b in g.buildings if b.selected %}{% for s in b.outline %}<line class="chosen" x1="{{ s.x1 }}" y1="{{ s.y1 }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}"/>{% endfor %}{% endfor %}{% endif %}
   </svg>
+  {% if season_key == "winter" %}
+  <div class="snow" aria-hidden="true">{% for n in range(36) %}<i style="left: {{ (n * 37) % 100 }}%; animation-duration: {{ 7 + (n * 13) % 8 }}s; animation-delay: -{{ (n * 7) % 12 }}s; opacity: {{ 0.35 + (n % 5) * 0.1 }}"></i>{% endfor %}</div>
+  {% endif %}
 </div>
 
 <header class="hud">

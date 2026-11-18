@@ -410,3 +410,31 @@ pre.code { margin: 8px 0 0; padding: 12px; border-radius: 8px; background: var(-
   opacity: 0; pointer-events: none; transition: opacity 0.3s;
 }
 .realm-board .zone-label.lit, .realm-board.near .zone-label { opacity: 0.92; }
+
+/* The realm's board, phase 3: ambient motion (B). CSS only, about 50
+   animations on the start realm; all still under prefers-reduced-motion. */
+.realm-board .scaffold { fill: url(#g-hatch); stroke: #C9A54E; stroke-width: 1.2; stroke-dasharray: 3 3; }
+.realm-board .lantern { fill: url(#g-lantern); animation: aoe-glow 3s ease-in-out infinite; }
+.realm-board .waves { animation: aoe-flow 3.2s linear infinite; }
+.realm-board .smoke circle { fill: #CFC6B4; opacity: 0; transform-box: fill-box; transform-origin: center;
+  animation: aoe-puff 4.2s ease-out infinite; }
+.realm-board[data-season="winter"] .smoke circle { fill: #E6EBEE; }
+.realm-board .sway { transform-box: fill-box; transform-origin: 50% 90%; animation: aoe-sway 3.6s ease-in-out infinite; }
+.realm-board .spin { transform-box: fill-box; transform-origin: center; animation: aoe-spin 2.4s linear infinite; }
+.realm-board .pick { transform-box: fill-box; transform-origin: 30% 80%; animation: aoe-pick 1.6s ease-in-out infinite; }
+.realm-board[data-season="winter"] .sway { animation: none; }  /* nothing grows in the winter fields */
+.snow { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.snow i { position: absolute; top: -10px; width: 3px; height: 3px; border-radius: 50%; background: #F2F5F7;
+  animation: aoe-fall linear infinite; }
+@keyframes aoe-flow { to { stroke-dashoffset: -22; } }
+@keyframes aoe-puff { 0% { opacity: 0; transform: translate(0, 0) scale(0.5); } 15% { opacity: 0.55; }
+  100% { opacity: 0; transform: translate(7px, -22px) scale(1.7); } }
+@keyframes aoe-sway { 0%, 100% { transform: skewX(0); } 50% { transform: skewX(-7deg); } }
+@keyframes aoe-spin { to { transform: rotate(360deg); } }
+@keyframes aoe-pick { 0%, 60%, 100% { transform: rotate(0); } 75% { transform: rotate(-14deg); } }
+@keyframes aoe-glow { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+@keyframes aoe-fall { to { transform: translate(30px, 110vh); } }
+@media (prefers-reduced-motion: reduce) {
+  .realm-board *, .snow i { animation: none !important; }
+  .snow { display: none; }
+}

@@ -20,7 +20,7 @@ import math
 
 from engine.config import Config
 from engine.state import GameState
-from engine.territory import NOT_OWNED, TERRAIN_CHARS, WILD, footprint, neighbours, square_tiles
+from engine.territory import NOT_OWNED, TERRAIN_CHARS, WILD, building_works, footprint, neighbours, square_tiles
 
 RADIUS = 24  # hex centre to corner
 HEX_WIDTH = math.sqrt(3) * RADIUS
@@ -67,17 +67,20 @@ def outline(config: Config, tiles: list[tuple[int, int]], x1: int, y1: int) -> l
     return segments
 
 
-def _icon(name: str, cx: float, cy: float, scale: float, cls: str) -> dict:
+def _icon(name: str, cx: float, cy: float, scale: float, cls: str, delay: float | None = None) -> dict:
+    """@param delay Seconds of animation delay, so moving icons do not move in step."""
     size = RADIUS * scale
     return {"href": f"{SPRITE}#i-{name}", "x": f"{cx - size / 2:.1f}", "y": f"{cy - size / 2:.1f}",
-            "size": f"{size:.1f}", "cls": cls}
+            "size": f"{size:.1f}", "cls": cls, "delay": None if delay is None else f"{delay:.2f}"}
 
 
 def _building_icons(kind: str, tiles: list[tuple[int, int]], building_id: int, x1: int, y1: int,
-                    site: bool) -> list[dict]:
+                    site: bool, working: bool = False) -> list[dict]:
     """@brief The icons of one lot: the barn in the farm's centre and wheat
     around it, saw and log pile, pick and stones, a house, the square's well,
-    the watchtower."""
+    the watchtower.
+    @param working Someone works there this month: the wheat sways, the saw
+           turns, the pick strikes (CSS classes sway, spin, pick)."""
     cls = "i-building site" if site else "i-building"
     centres = [centre(x, y, x1, y1) for x, y in tiles]
     if kind == "square":
@@ -88,11 +91,17 @@ def _building_icons(kind: str, tiles: list[tuple[int, int]], building_id: int, x
         return [_icon("family-house" if building_id % 2 else "house", *centres[0], 1.25, cls)]
     if kind == "farm":  # the anchor is the flower's centre
         wheat = "i-wheat site" if site else "i-wheat"
+        if working:
+            return [_icon("barn", *centres[0], 1.2, cls)] + [
+                _icon("wheat", cx, cy, 1.05, wheat + " sway", (index * 0.37 + building_id * 0.2) % 1.8)
+                for index, (cx, cy) in enumerate(centres[1:])]
         return [_icon("barn", *centres[0], 1.2, cls)] + [_icon("wheat", cx, cy, 1.05, wheat) for cx, cy in centres[1:]]
     if kind == "sawmill":
-        return [_icon("circular-saw", *centres[0], 1.15, cls), _icon("wood-pile", *centres[1], 1.2, cls)]
+        return [_icon("circular-saw", *centres[0], 1.15, cls + (" spin" if working else "")),
+                _icon("wood-pile", *centres[1], 1.2, cls)]
     if kind == "quarry":
-        return [_icon("mining" if index == 0 else "stone-pile", cx, cy, 1.1, cls)
+        return [_icon("mining" if index == 0 else "stone-pile", cx, cy, 1.1,
+                      cls + (" pick" if working and index == 0 else ""))
                 for index, (cx, cy) in enumerate(centres)]
     if kind == "watchtower":
         return [_icon("watchtower", *centres[0], 1.25, cls)]
@@ -171,6 +180,35 @@ def _terrain_layer(state: GameState, config: Config, bounds: tuple[int, int, int
     return hexes, icons, waves, dimmed
 
 
+def _working(state: GameState, config: Config, building_id: int) -> bool:
+    """@brief Someone works at this finished building this month: its sector
+    has workers and the building can produce (a sawmill still by the forest)."""
+    building = next((b for b in state.buildings if b.id == building_id), None)
+    if building is None or building.turns_left > 0:
+        return False
+    sector = config.buildings[building.kind].sector
+    if sector not in ("food", "wood", "stone"):
+        return False
+    return getattr(state.workers, sector) > 0 and building_works(state, config, building)
+
+
+def _add_motion(motion: dict, kind: str, building_id: int, tiles: list[tuple[int, int]], site: bool,
+                x1: int, y1: int) -> None:
+    """@brief The moving bits of one lot (docs/DESIGN.md, "The map as the
+    realm's first page", B): three puffs of smoke over a lived-in house, the
+    watchtower's lantern, the hatched hexes of a building site."""
+    centres = [centre(x, y, x1, y1) for x, y in tiles]
+    if site:
+        motion["scaffolds"] += [_points(cx, cy) for cx, cy in centres]
+        return
+    cx, cy = centres[0]
+    if kind == "house":
+        motion["smoke"] += [{"cx": f"{cx + 6:.1f}", "cy": f"{cy - 12:.1f}", "delay": f"{puff * 1.4 + building_id % 3 * 0.5:.1f}"}
+                            for puff in range(3)]
+    elif kind == "watchtower":
+        motion["lanterns"].append({"cx": f"{cx:.1f}", "cy": f"{cy - 8:.1f}"})
+
+
 def hex_board(state: GameState, config: Config, bounds: tuple[int, int, int, int], selected: int,
               zones: list[dict], labels: dict[int, str], link) -> dict:
     """@brief Everything the template draws in the SVG board.
@@ -189,14 +227,15 @@ def hex_board(state: GameState, config: Config, bounds: tuple[int, int, int, int
     lots = _lots(state, config)
     lot_of = {tile: kind for kind, _, tiles, _ in lots for tile in tiles}
     hexes, icons, waves, dimmed = _terrain_layer(state, config, bounds, lot_of)
-    lot_lines, buildings = [], []
+    lot_lines, buildings, motion = [], [], {"smoke": [], "lanterns": [], "scaffolds": []}
     for kind, building_id, tiles, site in lots:
         tiles = [tile for tile in tiles if in_view(*tile)]
         if not tiles:
             continue
         if len(tiles) > 1:
             lot_lines += outline(config, tiles, x1, y1)
-        icons += _building_icons(kind, tiles, building_id, x1, y1, site)
+        icons += _building_icons(kind, tiles, building_id, x1, y1, site, _working(state, config, building_id))
+        _add_motion(motion, kind, building_id, tiles, site, x1, y1)
         buildings.append({"id": building_id, "label": labels[building_id], "href": link(b=building_id),
                           "selected": building_id == selected,
                           "polygons": [_points(*centre(x, y, x1, y1)) for x, y in tiles],
@@ -221,5 +260,5 @@ def hex_board(state: GameState, config: Config, bounds: tuple[int, int, int, int
     height = 2 * PAD + 2 * RADIUS + 1.5 * RADIUS * (y2 - y1)
     return {"width": f"{width:.0f}", "height": f"{height:.0f}", "hexes": hexes, "icons": icons, "waves": waves,
             "dimmed": dimmed, "lot_lines": lot_lines, "border": border, "zones": zone_outlines,
-            "zone_labels": zone_labels,
+            "zone_labels": zone_labels, **motion,
             "buildings": buildings, "sprite": SPRITE}
