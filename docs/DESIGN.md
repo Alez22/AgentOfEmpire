@@ -2,7 +2,7 @@
 
 Formerly "Il Consiglio del Regno – Handoff di design" (Claude Docs).
 
-> **Reconstructed on 2026-11-07.** The original doc was deleted by mistake. This version is rebuilt from the session transcript: every section read in full or written during the session is complete. Parts of the **game vision** were only ever seen as an outline. Those parts are marked **[Lost]**, with the fragments that survive, and need to be rewritten. **2026-11-19**: the small fragments were rewritten from what is built, or removed where Part 2 now covers them; the large sections still marked (military dynamics, randomness, victory, diplomacy, espionage) are being rewritten one at a time. Numbers in the prototype sections match the code as of this date (`engine/config.toml`, `server/council.toml`).
+> **Reconstructed on 2026-11-07.** The original doc was deleted by mistake. This version is rebuilt from the session transcript: every section read in full or written during the session is complete. Parts of the **game vision** were only ever seen as an outline. Those parts are marked **[Lost]**, with the fragments that survive, and need to be rewritten. **2026-11-19**: the small fragments were rewritten from what is built, or removed where Part 2 now covers them; the large sections (diplomacy, espionage, military dynamics, randomness, victory) were rewritten on 2026-11-19 and 2026-11-20 with the user's choices. No [Lost] part remains. Numbers in the prototype sections match the code as of this date (`engine/config.toml`, `server/council.toml`).
 
 The game's name is **AgentOfEmpire** (decided 2026-11-08; "Il Consiglio del Regno" is no longer a name for it). The presentation page of the finished game is [`index.html`](index.html) (GitHub Pages, Italian).
 
@@ -145,22 +145,38 @@ Rewritten 2026-11-20.
 
 ## Victory conditions
 
-The modes *[Lost]*. **No victory** *[Lost]* at the end *[Lost]*.
+Rewritten 2026-11-20 (the original modes and rules were lost; the choices below were made by the user on 2026-11-20). Values in brackets are starting points. **No victory is decided before the end, except Dominion.**
 
-### Modes
-
-*[Lost: six items.]*
-
-### Rules
-
-*[Lost: five items.]*
-
-**Decided 2026-11-08** (presentation page, replaces the lost modes for now): several paths to victory, and each game picks some of them at the start.
+**Decided 2026-11-08** (presentation page): several paths to victory, and each game picks some of them at the start.
 
 - **Dominion**: control of the neighbouring realms.
 - **Prosperity**: the richest and most populous realm at the end of the game (10 years by default).
 - **Prestige**: the strongest reputation and alliances.
 - **Endurance**: reaching the end with the same dynasty on the throne.
+
+### Titles, not a single winner
+
+Each path chosen for the game gives its own title ("Prosperity to Brenna, Prestige to Corvara"). Several players can win something, and staying behind, a legitimate strategy ("The eras"), has a prize.
+
+### Two times
+
+- **Dominion, with a countdown**: it opens when a realm controls [half the realms of the game], annexed or under tribute. The countdown lasts [12] months and is public: the others have a year to ally against it. If it reaches zero, the game ends and Dominion takes all. No global pause during a countdown ("Decisions", 3).
+- **The other three paths** are judged at the end of the game (10 years by default).
+
+### Measures: public facts of the engine, never a model's judgement
+
+- **Prosperity**: rank by population plus rank by wealth (gold, goods at market prices, buildings); the lowest sum wins, ties broken by the era reached. Transparent, and gold alone does not win.
+- **Prestige**: from the public register ("Diplomacy"): months of honoured treaties and alliances in force at the end, minus breaches and treachery.
+- **Endurance**: every sovereign still on the throne with the same dynasty (no coup, deposition or annexation). A shared title: modest, but it rewards good government.
+
+### The defeated
+
+- A sovereign deposed or annexed leads a faction in exile ("Revolt and coup"). Winning the throne back starts a new dynasty: no Endurance, the other titles still open.
+- **Automatic realms can win titles**: without real rivals the victories would be worth nothing.
+
+### The end of the game
+
+The archives open: the mood curve, the secret lessons, the notes between counsellors, and the forgeries of the double agents with the truth beside them ("Espionage").
 
 ## Economy and trade
 
