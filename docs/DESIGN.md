@@ -202,14 +202,64 @@ Later: passage over land, a joint embargo, tribute (born from war), clauses of s
 
 ## Espionage
 
-The spy does not *[Lost]*; **the engine** *[Lost]*. No *[Lost]*.
+Rewritten 2026-11-19 from the surviving headings (two kinds, access, missions, discovery, double agents), the mockup `mockups/Spie.dc.html` (a network of informants, intercepted council lines with missing words, "Porta al consiglio") and the choices made by the user on 2026-11-19. Values in brackets are starting points for a lab.
 
-- **Two kinds of** *[spies / information]*: *[Lost: two items.]*
-- **Access and** *[Lost]*: *[Lost: three items.]*
-- **Missions**: *[Lost: four items.]*
-- **Discovery**: *[Lost: three items.]*
-- **Double agents**: *[Lost: three items.]*
 - **Decided 2026-11-08** (presentation page): spies bring estimates of other armies that may be old or wrong; there are double agents, missions that get discovered, and information bought from unhappy ministers.
+
+**The spy is not an agent: the engine decides.** A spy invents nothing. The engine picks what it finds with the seeded generator, so replay stays exact. A finding is a **true fact of the other realm copied to the spying realm** at the sovereign's secret level: a leak inside the database, and row-level security stays the only door. No model call.
+
+**The network reports to the sovereign.** No new minister: the sovereign orders the missions and reads the reports. The sovereign chooses whether to bring a report to the council ("Porta al consiglio"), so the sovereign may know what the ministers do not, and may mislead them by sharing a wrong report.
+
+**By era**: no spies in the village (only travellers' rumours); the network begins with the town hall; in the kingdom independent journalism adds its own sources (below).
+
+**Two kinds of spy**
+
+- **The infiltrator**: a person sent into the other realm, as a migrant through the doors or as a merchant at the fair. The target's open doors help it in; the target's Gastaldo hunts it ("The Gastaldo and the watchtower").
+- **The bought informant**: someone inside the other council, an unhappy minister. Second stage: it needs variable trust and loyalty.
+
+**Access**
+
+| Access | How | What it sees |
+| --- | --- | --- |
+| Gate / fair | an infiltrator | public facts earlier, granaries and wood by eye |
+| Court | an infiltrator unfound for [N] months | court events, building sites, the army estimated |
+| Council | a bought minister (second stage) | council lines, plans, treaties |
+
+**The sovereign's secret is never reachable**: the sovereign's orders, directives, mandates and audiences never reach a spy.
+
+**Missions**
+
+1. **Estimate**: army, granaries, wood. A number with an error and a date, never exact.
+2. **Intercept**: a true line from the target's council (reports, debate, secret notes), or the letter of a messenger stopped on the road. The engine picks one line a month and blanks words, more the shallower the access, numbers first. Example: «Il grano basta fino a ……, non oltre. Se compriamo pietra per le mura ……… la razione ridotta a gennaio.»
+3. **Uncover treaties**: secret ones too, once they exist ("Diplomacy").
+4. **Sow rumours** (with the press): a false fact spread through travellers, such as an invented famine or mobilisation. It arrives with the press, not in the first stage.
+
+Sabotage belongs to the military section.
+
+**Cost**: every spy costs **gold every month** [amount], one more use for the gold that piles up today.
+
+**Discovery**
+
+- Every month a chance (seeded generator), by the target Gastaldo's vigilance, the doors, the depth of access (deeper is riskier) and the mission (an intercept risks more than an estimate).
+- A spy found: the sovereign expels it, imprisons it (the realm of origin will know) or turns it into a double agent (decided 2026-11-08).
+- A spy imprisoned in public is a fact of the public register, beside the treaties ("Diplomacy").
+
+**Double agents** (realm A sent the spy, realm B caught it and turned it)
+
+- From then on B's sovereign decides what passes to A:
+  - **Chosen truth** (first stage): B sees the true lines the spy would intercept and picks which pass. Only true text reaches A, so its form is flawless; B deceives by omission.
+  - **Old truth** (first stage): a true line from months ago, passed as recent.
+  - **Forgery** (second stage): B's sovereign writes in one line *what* A should believe; the **same minister of B** that A believes it intercepts (same person, model and persona prompt, with its last true council lines as examples) rewrites it in its own voice, then the usual words are blanked. Why: a line written by a person is told apart from a model's at once, so a forgery would be exposed by its style instead of by the facts. For automatic realms the content comes from a catalogue of forgeries, the rewriting is the same. One call of the minister's model per forgery; the model is told to keep the dictated fact.
+- The turned spy also tells B which missions A orders: the questions reveal the intentions.
+- A gets no direct sign. A finds out only by comparing sources (travellers, another spy, the market, public facts), plus a monthly chance that the spy is burned, higher after forgeries.
+- Every turned or forged report is stored with the truth beside it: A sees an ordinary intercept, the admin and the replay see everything. At game end the opened archives can show A which line was a forgery.
+
+**The press** (proposal, 2026-11-19): in the town the sovereign can make a finding public by a communiqué, at its own risk (it may be false or come from a double agent; when facts contradict it, the square notices). In the kingdom the independent journalist has its own sources (unhappy ministers, leaks, the court), never the sovereign's network, and publishes spy scandals (spies caught, networks uncovered).
+
+**Stages**
+
+1. Infiltrators, estimate, intercept, discovery, expel / imprison / turn, chosen and old truth.
+2. Bought ministers (after variable trust), secret treaties, forgeries; sowing rumours with the press.
 
 ## Progress
 
@@ -286,7 +336,7 @@ Replaces the lost items of this section. Values in brackets are starting points 
 - **Press by era** (idea, 2026-11-07): how information spreads depends on the era.
   - **First era, no press**: nothing is announced. The people, and the other states, know only rumours (the Voice of the square, travellers, spies).
   - **Second era, the press is born**: the government can issue **communiqués** that the people read, also as propaganda, and send communiqués to other states. A communiqué may lie: when the facts contradict it, the square notices and trust in the sovereign falls. Foreign press brings other states' communiqués.
-  - **Third era, journalism**: besides the government's press an **independent channel** appears, which publishes what it finds out (leaks, spies, unhappy ministers), including what the sovereign would rather hide.
+  - **Third era, journalism**: besides the government's press an **independent channel** appears, which publishes what it finds out (leaks, unhappy ministers, spy scandals; never the sovereign's own network, see "Espionage"), including what the sovereign would rather hide.
   - Fits the existing pieces: visibility levels (a communiqué moves a fact to public or foreign), leaks, reputation and diplomacy. Open: cost of a journalist agent (one more call per turn, cheap tier), how credibility is measured, how much the sovereign has to read.
 - **The expert of the land** (idea, 2026-11-08): hired in a later era, maps the hidden land levels of the own realm and of the neighbours (see "Land levels" in "Economy and trade").
 
