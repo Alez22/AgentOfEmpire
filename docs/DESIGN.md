@@ -92,19 +92,56 @@ The automatic sovereign comes in two versions, technically identical (same counc
 
 ## Military dynamics
 
-War is about **preparation** *[Lost: rest of the paragraph, beginning "the sovereign…"]*.
+Rewritten 2026-11-20 (the original section was lost; the choices below were made by the user on 2026-11-20). Values in brackets are starting points for a lab.
+
+War is about **preparation**: the sovereign decides **whether and against whom**, the Marshal **how** (recruiting, marching, defending), the engine resolves. Nobody commands a battle: the turn is monthly and asynchronous. One arrives prepared, with soldiers, weapons, walls, stores, allies and information. The review of 2026-11-10 found war is where a model adds least, so war stays simple in the engine and rich in the choices before it.
 
 **Decided 2026-11-08**: no war in the village (only a militia against bandits, once the Gastaldo exists); war begins in the town (sacks, land, tributes, sieges); annexing a whole realm only for a kingdom. See "War by era" in "Progress".
 
-- *[Lost: four items.]*
+**The army**
+
+- **One kind of unit: the soldier**, born from the barracks. A soldier is armed (weapons from the artisans) or not ("peasants with pitchforks"). The Gastaldo's militia stays the home defence.
+- **Armies move like bands** ("Roads of the world"): companies of [10] on the hexes, in weeks, with the same terrain costs and paths. They are seen in the same ranges (near the border, or from the watchtower); a sighting is a court event and raises an alarm.
+- **Soldiers cost**: food and pay in gold every month, and hands taken from the fields. Unpaid, their mood falls and they desert to the bands (a deserter is a more dangerous bandit).
+
+**The battle: one formula, as the raids**
+
+- Odds of winning = strength A / (strength A + strength D), drawn with the seeded generator.
+- **Strength** = soldiers × weapons × walls (defender only) × supply × season, the shape of the raid's odds ("Phase 1: bands on the map").
+- **The loser is not wiped out**: it retreats with bounded losses. Losses hit mood and demography.
+
+**What war takes** (town)
+
+- **Sack**: a raid by an army. It takes food, wood, gold and rare resources, and damages one building.
+- **Land**: border hexes of the loser pass to the winner (contested borders).
+- **Tribute**: after a victory the Ambassador imposes a one-way exchange treaty for N months; breaking it is a breach in the register ("Diplomacy").
+- **Siege**: the army camps next to the walls. The besieged gets no caravans, works only the fields inside the walls and eats its stores; the besieger eats too, with food carried from home. A siege ends in surrender (terms set by the winner), an assault (a battle against the walls) or by lifting it. A damaged palace stops its functions until repaired ("The eras").
+- **Kingdom, annexation**: the surrender of a realm after a siege; the defeated sovereign leads a faction in exile ("Revolt and coup"). Details with the victory section.
+
+**Declaring war**
+
+- A declaration goes through the Ambassador, as a letter: surprise is lost (the letter arrives before the army), reputation is not.
+- Attacking undeclared, or under non-aggression, is **treachery**, recorded in the public register.
+- This is the moral choice of war: surprise against reputation.
+
+**The political cost**: deaths lower the mood; merchants get angry when trade stops; the clergy preaches against unjust wars; the Marshal's ambition grows with the army, and with it the risk of a coup (kingdom).
+
+**No pause**: in an asynchronous game nobody stops the month (the mockup's "Consiglio d'urgenza (pausa)" is dropped). At the start of the month the Marshal gets **standing defence orders**: meet the enemy in the field, or hold the walls. An army sighted raises an alarm for the next month (the seasonal sovereign's alarms).
+
+**Lab first**: 8 scripted realms, one aggressive, 36 months: war must not feed itself (the rich conquering everyone), the defender's advantage must be enough, an army must really cost.
+
 - **Information**: the army sits in reserved tiles. The enemy estimates it through spies and border observation, with estimates that may be old or wrong; the Marshal can inflate them to get resources. Deceptions are possible, such as proclaiming in the square a mobilisation that does not exist.
-- *[Lost: one item.]*
 
 ### Randomness
 
-*[Lost: five items.]*
+Rewritten 2026-11-20.
 
 - **Decided 2026-11-08** (presentation page): battles have a share of chance, but reward the side that arrived better prepared. Chance comes from the engine's seeded generator, so replay stays exact.
+- **One source of chance**: the seeded generator, for battles, raids, discovery of spies and every other draw.
+- **Nobody sees the odds**, neither the sovereign nor the council, as with the mood. The Marshal speaks of "strong" and "weak", and may be wrong or inflate.
+- **Preparation outweighs chance**: weapons, walls, supply and season multiply the strength.
+- **Never all at once**: the loser retreats; no single battle erases an army.
+- **Chance in the information too**: old estimates, turned spies, fake mobilisations. One can lose by believing the enemy weaker than it is.
 
 ## Victory conditions
 
