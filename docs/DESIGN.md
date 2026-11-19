@@ -2,7 +2,7 @@
 
 Formerly "Il Consiglio del Regno – Handoff di design" (Claude Docs).
 
-> **Reconstructed on 2026-11-07.** The original doc was deleted by mistake. This version is rebuilt from the session transcript: every section read in full or written during the session is complete. Parts of the **game vision** were only ever seen as an outline. Those parts are marked **[Lost]**, with the fragments that survive, and need to be rewritten. Numbers in the prototype sections match the code as of this date (`engine/config.toml`, `server/council.toml`).
+> **Reconstructed on 2026-11-07.** The original doc was deleted by mistake. This version is rebuilt from the session transcript: every section read in full or written during the session is complete. Parts of the **game vision** were only ever seen as an outline. Those parts are marked **[Lost]**, with the fragments that survive, and need to be rewritten. **2026-11-19**: the small fragments were rewritten from what is built, or removed where Part 2 now covers them; the large sections still marked (military dynamics, randomness, victory, diplomacy, espionage) are being rewritten one at a time. Numbers in the prototype sections match the code as of this date (`engine/config.toml`, `server/council.toml`).
 
 The game's name is **AgentOfEmpire** (decided 2026-11-08; "Il Consiglio del Regno" is no longer a name for it). The presentation page of the finished game is [`index.html`](index.html) (GitHub Pages, Italian).
 
@@ -14,9 +14,9 @@ Part 1 is the vision for the full game. Part 2 is the specification of what is b
 
 ## Concept
 
-A strategy game in which the player is the **sovereign** and governs through a **council of ministers**, each an LLM agent with a personality, by giving orders, approving plans and intervening in the debate. *[Lost: the rest of the first paragraph.]*
+A strategy game in which the player is the **sovereign** and governs through a **council of ministers**, each an LLM agent with a personality, by giving orders, approving plans and intervening in the debate.
 
-Multiplayer *[Lost: details]*: each player leads a **state**, formed by **a single city**.
+Multiplayer and asynchronous (see "Turn structure"): each player leads a **state**, formed by **a single city**; the states no human leads are automatic.
 
 ## Actors
 
@@ -47,7 +47,7 @@ Each role also sees different information: the Treasurer the consumption at ever
 **Role and person** (principle, 2026-11-07): a role is the office (title, duties, obligations such as the Chancellor's impartiality, allowed orders) and never changes during a game; a person fills it and has its own traits, résumé and, later, name. Today the role lives in the code (`ROLE_TITLES`, `ROLE_DUTIES`, `ROLE_ACTIONS` in `server/council/meeting.py`) and in the role's prompt templates; the person in the `actors` row of the game (traits). When counsellors can be hired and dismissed, the role data moves to one file (e.g. `server/council/roles.toml`) and persons stay in the database.
 
 
-*[Lost: intro sentence, beginning "Every minister…".]* A personality has three layers:
+Every minister is a person with a personality, kept apart from the office it fills. A personality has three layers:
 
 1. **Role** (fixed): skills, allowed actions, visibility level of information. The same for every Treasurer.
 2. **Traits** (numeric axes): caution/boldness, loyalty, ambition, honesty, competence.
@@ -62,7 +62,7 @@ Lifecycle:
 
 ## Turn structure
 
-A year of play is **12 turns** (one turn = one month). *[Lost: rest of the sentence.]*
+A year of play is **12 turns** (one turn = one month).
 
 - **In-season turns (8 per year)**: diplomacy, military strategy, construction, other operations. A main theme per season (decided 2026-11-08 with the presentation page): summer for military campaigns, winter for diplomacy and preparation.
 - **Season-end turns (4 per year)**: season report: demography, class mood, harvest, story from the Voice of the square.
@@ -71,15 +71,14 @@ A year of play is **12 turns** (one turn = one month). *[Lost: rest of the sente
 
 ### Role of Jev
 
-With turns, Jev is used mainly to **reduce costs**, not to *[Lost: rest of the paragraph]*. See also "Architecture" and the Jev decision under "Decisions".
+With turns, Jev is used mainly to **reduce costs**: it takes the month's small, typed decisions that would otherwise need a model call (today fixed rules do it). See also "Architecture" and the Jev decision under "Decisions".
 
 ## Map, states and automatic states
 
-A game has **8 states**, some *[Lost]*, on a **200 × 200** *[grid]* with seas, *[Lost]*.
+A game has **up to 8 states**, some human and some automatic, on a **64 × 64** hex world ("Territory" and "Hex grid" in Part 2; the original plan was a 200 × 200 grid with seas).
 
-- **Sizing**: each state starts from a core of about 16 × 16 tiles and can grow to about 40 × 40. Symmetric starts: similar resources and at least one reachable neighbour. The size adapts to the number of players.
+- **Sizing**: each state starts from a core (built: 12 × 12; originally about 16 × 16) and grows by claiming land. Symmetric starts: similar resources and at least one reachable neighbour. The size adapts to the number of players.
 - **Main screen**: your own state in tiles, with fortifications, town hall, public square, production (sawmill, mill…) and a military area, with resources that change over time. Zooming out or a button opens the world map with the other states.
-- *[Lost: four more items.]*
 - **First step, approved 2026-11-08**: see "Territory: map, town plan, expansion" in Part 2.
 
 ### Automatic states
@@ -88,9 +87,8 @@ Automatic states use **the same architecture as human players**, with a sovereig
 
 The automatic sovereign comes in two versions, technically identical (same council reports, orders through the Chancellor); only personality and permissions change.
 
-- *[Lost: first version.]*
+- **Stand-in sovereign**: keeps a human realm going while its player is absent or on vacation, inside the player's directives and mandates ("Decisions", 3). Today: the fixed rules R1–R13 ("Automatic sovereign" and "Seasonal sovereign" in Part 2).
 - **Full sovereign**: leads the automatic states, with a three-layer personality and the same powers as a human.
-- *[Lost: two more items.]*
 
 ## Military dynamics
 
@@ -156,11 +154,51 @@ From the labs `lab/market_sim.py` and `lab/market_closed.py` (numbers in `PLAN.m
 
 ## Diplomacy
 
-Each state has a **reputation** *[Lost]*, similar to *[Lost]*.
-
-*[Lost: three items.]*
+Rewritten 2026-11-19 (the original section was lost; the choices below were made by the user on 2026-11-19). Values in brackets are starting points for the lab.
 
 - **Decided 2026-11-08** (presentation page): whoever breaks pacts finds fewer and fewer allies; reputation is the memory other realms keep of how a state honours its treaties.
+
+**Why it matters**: the review of 2026-11-10 found almost no interaction between players. Diplomacy is the first place where one realm talks to another, and where a model adds most.
+
+**By era**
+
+- **Village**: no diplomacy. Realms meet only at the market and through travellers' rumours.
+- **Town**: the **Ambassador** joins the council; treaties and messengers begin.
+- **Kingdom**: as in the town, plus tributes imposed after a war and annexation ("War by era").
+
+**Negotiating**
+
+- **Everything goes through the Ambassador**, humans included: no direct letters between sovereigns. The sovereign speaks to another realm only by ordering its Ambassador.
+- A proposal has **terms from a fixed catalogue** (so the engine can enforce them) and a letter in Italian, written by the Ambassador.
+- The letter travels as a **messenger** on the roads (roads phase 3): late by distance, and a band can stop it.
+- The other realm's Ambassador brings it to its council, which accepts, refuses or counter-proposes.
+- **The sovereign always signs**, on both sides. In the debate the Treasurer may call the deal a bad bargain, and the Chancellor sees the conflicts on resources.
+- **One letter and one answer a month per pair of realms**: it keeps cost and text low.
+
+**Treaties, first catalogue**
+
+| Treaty | Terms | What the engine does |
+| --- | --- | --- |
+| **Exchange** | X of a good a month for Y of another (or gold), for N months | direct caravans between the two realms on the roads; a robbed caravan is not a breach |
+| **Non-aggression** | N months | attacking is a public breach |
+| **Alliance** | mutual defence, N months | the ally is warned of an attack and may join (needs war) |
+
+Later: passage over land, a joint embargo, tribute (born from war), clauses of shared information. **Secret treaties come after espionage**: a treaty is public; a secret one (sovereign's secret level) can be found by spies and then weighs on the reputation.
+
+**Breaking a treaty**
+
+- **Honest notice**: a warning of [2] months; no harm to the reputation, some anger among the merchants if an exchange stops.
+- **Breach**: not delivering, or attacking under non-aggression. A public fact, carried by travellers and later by the press.
+
+**Reputation: public facts, no hidden score**
+
+- There is no number. A **public register** holds the facts: treaties signed, honoured, given notice, breached, with their months.
+- Every council and every automatic sovereign reads the register and judges in its own way, as the Voice reads the mood: the engine records, the agents interpret.
+- The **Prestige** victory counts from the register (months of honoured treaties, alliances); the details belong to the victory section.
+
+**Automatic states**: fixed rules cannot judge a treaty, so an automatic realm with an Ambassador has an LLM Ambassador too. One more call a month, only for realms that have the Ambassador and only in months with mail.
+
+**Before the engine: a lab** (like `lab/urban_probe.py`): two LLM Ambassadors (GLM 5.3 Flash) negotiate an exchange of wood for stone on real states of a game. It measures whether the proposals are valid and sensible, how many letters a deal takes, and the cost.
 
 ## Espionage
 
@@ -366,7 +404,7 @@ How many really arrive depends on the policy and on the realm's **attraction** (
 - **Events**: what happens in the month goes to the event bus and opens the next turn as a report or an alarm.
 - **Rejections**: the validator returns the reason to the council, so the ministers correct their plans.
 
-The step from *[Lost]* to **approved plan**: an order *[Lost]* during the *[Lost]*.
+The step from an order to an **approved plan** is described in Part 2 ("LLM council", "Flow", and "Debate on the plan").
 
 ## People and demography
 
@@ -397,13 +435,9 @@ Canvas "Il Consiglio del Regno" with four screens, now in [`mockups/`](mockups/)
 
 The mockups predate the switch to monthly turns (they show weeks and real-time rates). The prototype UI keeps their style: dark ground `#14120E`, gold `#D4AF5A`, Cormorant Garamond for titles, Inter for text, one colour per council member.
 
-## Lessons from *[Lost]*
-
-*[Lost: section title and four items.]*
-
 ## Models and costs
 
-Each actor has a **level of** *[Lost]* given by *[Lost]*.
+Each actor has a **tier of model** given by its person (`low`, `medium`, `high` in the catalog, mapped to models in `[model_tiers]`; see "Persons").
 
 | Tier | Example | Price (input / output per 1M tokens) | Proposed use |
 | --- | --- | --- | --- |

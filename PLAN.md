@@ -1,6 +1,6 @@
 # AgentOfEmpire – Work plan
 
-Updated 2026-11-18 (the map is the realm's first page: HUD, sheet, seasons, motion, the month's marks, pan and zoom).
+Updated 2026-11-19 (the [Lost] sections of the design: small fragments cleaned, diplomacy rewritten; a progress map of every system by era).
 
 The prototype is complete and playable from a phone, and the field test is closed. Phase 3 (accounts) is set aside: the game first needs richer dynamics. **Now: phase 4, the market**: the labs are done (`lab/market_sim.py`, `lab/market_closed.py`) and the spec "Market, needs and land levels" is approved (`docs/DESIGN.md`); next, the engine (step 1 built: needs, land levels, a site per realm; steps 2 and 3 built: the market, the `trade` order, market states in the database, game-level resolution and replay; step 4 built: the council trades through the Treasurer, the "Mercato" page; next step 5, a 12-month game with three realms), then a game with three realms. The territory step 1 is done (spec in `docs/DESIGN.md`, "Territory").
 
@@ -1222,7 +1222,7 @@ A reading of `docs/DESIGN.md`, the notes of games 1–33 and the pages of game 3
 | Tiles and workers | decided 2026-11-08 | answered by the territory (claiming, clearing, demolition; see `docs/DESIGN.md`); idle adults still open. Was: game 7: overbuilding with no staff and a housing dead end once tiles run out. Options: show the Architect unstaffed jobs, allow demolition, a way to gain tiles; also idle adults (extend the fixed rule to wood and stone, or leave them to the Architect) |
 | Automatic sovereigns | phase 3 | personality, models, budget |
 | Jev | phase 4 | technical details, policy schema, waiting-list sign-up |
-| Lost vision sections | before phase 4 | rewrite the parts marked [Lost] in `docs/DESIGN.md` (map, war, victory, diplomacy, espionage); progress rewritten 2026-11-08 ("The eras"), war by era decided |
+| Lost vision sections | before phase 4 | rewrite the parts marked [Lost] in `docs/DESIGN.md` (map, war, victory, diplomacy, espionage); progress rewritten 2026-11-08 ("The eras"), war by era decided. **2026-11-19**: the small fragments rewritten or removed; **diplomacy rewritten and decided** (no diplomacy in the village; everything through the Ambassador; three treaties: exchange, non-aggression, alliance; reputation as a public register of facts, no hidden score; secret treaties after espionage; an LLM Ambassador for automatic realms; a negotiation lab before the engine). Order of the rest: espionage, war (with randomness), victory. A map of every system by era: https://claude.ai/artifact/5H7HEbPVGZmgEQpoPCqcGQ |
 | Palace in the engine | phase 4, after the hex grid | fixed building east of the square (approved in direction); a 4-hex rhombus, its place left free in the hex core |
 | A long automatic game (review 2026-11-10) | before the town | 8 realms, 36–48 months, about $3 at game 33's cost ($0.008 a realm a month): does any realm reach the gate of the town (population about 120 and the other conditions), do the market, the bandits and the doors come alive with 8 realms |
 | A lab on extreme traits (review 2026-11-10) | before hiring and dismissal | same seed, extreme persons instead of the moderates: if the behaviour does not change in a way the sovereign can read, hiring and dismissal do not hold |
