@@ -140,6 +140,13 @@ p { margin: 0; }
 .more .body p { color: var(--ink-soft); }
 @media (prefers-reduced-motion: reduce) { .more summary::after { transition: none; } }
 
+/* Screenshots of the real game (docs/img, taken from the phone UI).
+   Width and height are set in the markup so the page does not jump while they load. */
+.shot { margin: 0; display: grid; gap: 0.6rem; }
+.shot img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 4px; }
+.shot.narrow { max-width: 26rem; }
+.shot figcaption { color: var(--ink-faint); font-size: 0.85rem; }
+
 /* Status */
 .status { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 1.4rem; }
 .status ul { margin: 0; padding-left: 1.1rem; color: var(--ink-soft); display: grid; gap: 0.35rem; }
@@ -156,6 +163,10 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
   <h1>AgentOfEmpire</h1>
   <p class="thesis">Non muovi pedine. Governi persone che a volte ti obbediscono.</p>
   <p class="lede">Un gioco di strategia a turni in cui sei il sovrano di una città stato. Non costruisci e non combatti con le tue mani: dai ordini a un consiglio di ministri. Ognuno ha un carattere, una memoria e interessi suoi. Fuori dal palazzo c'è un popolo che ti giudica e ci sono altri sette regni che ti osservano.</p>
+  <figure class="shot">
+    <img src="img/realm-autumn.webp?v=1" width="660" height="609" alt="La mappa a esagoni di un villaggio in autunno: boschi, cave, campi con i granai, case attorno al pozzo della piazza, il palazzo del consiglio, la torre di guardia lungo il fiume.">
+    <figcaption>La prima pagina del gioco: il tuo villaggio, casella per casella, in autunno.</figcaption>
+  </figure>
   <p class="roster">
     <span><i class="dot" style="background:var(--gold)"></i>Cancelliere</span>
     <span><i class="dot" style="background:var(--treasurer)"></i>Tesoriere</span>
@@ -210,6 +221,10 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
     <p class="quote">«Finché c'è pane, il re faccia come gli pare», dice la vecchia al pozzo.</p>
     <p class="quote-source">Dalla piazza di una partita di prova, gennaio. I due ministri, nel rapporto successivo, hanno ripreso la storia della legna cara.</p>
   </figure>
+  <figure class="shot narrow">
+    <img src="img/square-voice.webp?v=1" width="700" height="760" alt="Il riquadro «Si dice in piazza» di una partita di prova, a dicembre: la tassa si sente ancora, il pane non manca, al mercato sono arrivati legname e pietra.">
+    <figcaption>La Voce della piazza come appare nel gioco, dicembre di una partita di prova.</figcaption>
+  </figure>
   <div class="more">
     <details><summary>Il popolo decide</summary><div class="body">
   <p>Il popolo non si limita a parlare. Ogni mese decide quanto impegnarsi nei campi, se fare figli o rimandare, e qualche volta ti porta una petizione: meno tasse, una razione più generosa, una festa. Se la esaudisci si calma, se la respingi lo ricorderà.</p>
@@ -241,6 +256,10 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
       <span><i class="swatch"></i>Mese di stagione: costruire, trattare, armarsi</span>
       <span><i class="swatch end"></i>Fine stagione: il resoconto, il racconto della piazza, le lezioni del consiglio</span>
     </div>
+  </figure>
+  <figure class="shot">
+    <img src="img/realm-winter.webp?v=1" width="660" height="609" alt="La stessa mappa del villaggio d'inverno: neve sugli alberi e sui campi, il fiume ghiacciato.">
+    <figcaption>Lo stesso villaggio d'inverno: i campi non danno e serve legna da ardere.</figcaption>
   </figure>
   <div class="more">
     <details><summary>Le stagioni</summary><div class="body">
@@ -277,6 +296,10 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
     <h2 id="c6">Gli altri sette regni</h2>
   </div>
   <p>Una partita ha otto regni su una mappa condivisa, partenze simmetriche e almeno un vicino raggiungibile. Alcuni sono guidati da altri giocatori, gli altri da sovrani automatici che usano la stessa architettura: un consiglio, gli stessi rapporti, un carattere. C'è il re guerrafondaio e c'è il mercante pacifico.</p>
+  <figure class="shot">
+    <img src="img/world.webp?v=1" width="1000" height="862" alt="Il mondo di una partita con otto regni automatici: i confini colorati dei regni, i fiumi, le carovane tratteggiate verso la fiera al centro, le bande di briganti come cerchi rossi e una razzia che punta su Corvara. Tre regni in basso, caduti, sono grigi.">
+    <figcaption>Il mondo visto dall'amministrazione, agosto del secondo anno: due carovane vanno alla fiera al centro, le bande (in rosso) girano tra i regni e una razzia punta su Corvara. I regni in grigio sono già caduti.</figcaption>
+  </figure>
   <div class="more">
     <details><summary>Diplomazia</summary><div class="body"><p>Dalla città in poi tutto passa per l'Ambasciatore, anche per i giocatori umani: nessun sovrano scrive direttamente a un altro. Una proposta è una lettera che viaggia con un messaggero sulle strade, arriva in ritardo e può essere fermata dai briganti. Si scambiano merci, si firmano patti di non aggressione e alleanze, e firma sempre il sovrano.</p><p>La reputazione non è un numero. È un registro pubblico di patti firmati, onorati, disdetti con preavviso o traditi, e ogni regno lo legge a modo suo. Chi rompe i patti trova sempre meno alleati.</p></div></details>
     <details><summary>Carovane e fiera</summary><div class="body"><p>Le merci viaggiano: le carovane portano i carichi alla fiera comune lungo le strade, impiegano un mese e possono essere derubate dalle bande. Più avanti si potranno tagliare le rotte o chiuderle con un embargo. I mercanti, se il commercio si ferma, si arrabbiano.</p></div></details>
