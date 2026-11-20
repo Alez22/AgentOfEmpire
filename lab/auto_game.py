@@ -46,6 +46,11 @@ def play(game_id: int, months: int) -> None:
         print(f"\n== turn {game['open_turn']}")
         for realm in game["realms"]:
             result = call("POST", f"/realms/{realm['id']}/sovereign/auto")
+            if result.get("error") == 409 and "already approved" in result.get("detail", ""):
+                # Why: game 46, the driver died mid-turn; realms already
+                # played this turn are skipped when the turn is resumed.
+                print(f"  {realm['name']}: already played this turn")
+                continue
             if "error" in result:
                 # Why: game 34, an outage passed months with empty councils.
                 # The turn stays open; "go" plays it again from here.
