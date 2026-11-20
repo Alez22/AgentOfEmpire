@@ -31,11 +31,12 @@ def _month(ctx: meeting.MeetingContext) -> rules.Month:
     return rules.Month(ctx.state, ctx.config, ctx.market, str(ctx.realm_id), raided, guess)
 
 
-def _give_directive(conn, realm_id: int, client, settings: CouncilSettings, ctx, lines: list[str]) -> str | None:
+def _give_directive(conn, realm_id: int, client, settings: CouncilSettings, ctx, lines: list[str],
+                    laws_locked: bool = False) -> str | None:
     """@brief R7 or R5, when the council may still take a directive."""
     if settings.max_directives_per_turn < 1 or meeting.council_state(conn, realm_id, settings).approved:
         return None
-    found = rules.directive(_month(ctx), rules.plan_items(_latest_plan(conn, realm_id, ctx.turn)))
+    found = rules.directive(_month(ctx), rules.plan_items(_latest_plan(conn, realm_id, ctx.turn)), laws_locked)
     if found is None:
         return None
     text, reason = found
@@ -74,7 +75,7 @@ def play_month(conn: psycopg.Connection, realm_id: int, client, settings: Counci
     ctx = meeting.load_context(conn, realm_id, client, settings)
     automatic = rhythm.is_automatic(conn, ctx.game_id, realm_id, ctx.turn)
     lines: list[str] = []
-    directive = _give_directive(conn, realm_id, client, settings, ctx, lines)
+    directive = _give_directive(conn, realm_id, client, settings, ctx, lines, laws_locked=automatic)
     payload = _latest_plan(conn, realm_id, ctx.turn)
     items = rules.plan_items(payload)
     granted = _answer_petition(conn, realm_id, ctx, items, lines)

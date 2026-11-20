@@ -152,6 +152,7 @@ def test_petitions_on_taxes_and_rations(start_state, config):
 def test_a_directive_buys_the_stone_that_runs_short(start_state, config):
     _open_market(start_state, config)
     start_state.stone, start_state.gold = 0, 500
+    start_state.food = 50_000  # no hunger: R2d would come first
     text, reason = rules.directive(_month(start_state, config), [])
     assert "compra" in text and "pietra" in text and "(R7)" in reason
 
@@ -165,6 +166,35 @@ def test_a_directive_sells_a_surplus_when_gold_is_short(start_state, config):
     start_state.stone = rules.need_ahead(start_state, config, "stone", 6) + 100
     text, _ = rules.directive(_month(start_state, config), [])
     assert text == "Tesoriere, vendi al mercato 4 lotti di legno."
+
+
+def test_no_food_sold_when_the_food_does_not_reach_spring(start_state, config):
+    """R2c, game 46: Fosca in October, 169 food, put 3 lots on sale."""
+    _open_market(start_state, config)
+    sale = {"action": "trade", "good": "food", "side": "sell", "lots": 1}
+    start_state.turn, start_state.food = 10, 170  # October, short
+    reasons = [r for _, r in rules.exclusions(_month(start_state, config), _items(sale), None)]
+    assert len(reasons) == 1 and "(R2c)" in reasons[0]
+    start_state.food = 50_000
+    assert _excluded(start_state, config, sale) == []
+
+
+def _directive_reason(month, items=(), laws_locked=False) -> str:
+    found = rules.directive(month, list(items), laws_locked)
+    return found[1] if found else ""
+
+
+def test_a_directive_cuts_the_ration_when_the_food_does_not_last(start_state, config):
+    """R2d, game 46: the rules never cut the ration; Dalmora starved on the normal one."""
+    start_state.turn, start_state.food = 12, 500  # December: to the end of March
+    text, reason = rules.directive(_month(start_state, config), [])
+    assert "razione ridotta" in text and "(R2d)" in reason
+    assert "(R2d)" in _directive_reason(rules.Month(start_state, config, None, "1"))  # no market needed
+    cut = _items({"action": "set_ration", "ration": "reduced"})
+    assert "(R2d)" not in _directive_reason(_month(start_state, config), cut)  # the plan already cuts
+    assert "(R2d)" not in _directive_reason(_month(start_state, config), laws_locked=True)  # R12: a law
+    start_state.food = 50_000
+    assert "(R2d)" not in _directive_reason(_month(start_state, config))
 
 
 def test_no_directive_without_a_market(start_state, config):
@@ -199,8 +229,8 @@ def test_a_large_surplus_is_sold_even_with_gold_enough(start_state, config):
     month.market.goods["stone"].price = 1  # stone is cheap: not sold off
     text, reason = rules.directive(month, [])
     assert text == "Tesoriere, vendi al mercato 4 lotti di cibo." and "(R5b)" in reason
-    start_state.food = 0  # nothing that would still reach the spring
-    assert rules.directive(month, []) is None
+    start_state.food = 0  # nothing that would still reach the spring: no sale, the cut instead (R2d)
+    assert "(R2d)" in rules.directive(month, [])[1]
 
 
 def test_food_sells_down_to_what_reaches_the_spring(start_state, config):
@@ -224,7 +254,7 @@ def test_food_sells_down_to_what_reaches_the_spring(start_state, config):
     # A plan that cuts the ration does not make room for a sale (game 29, Brenna).
     start_state.ration = "normal"
     start_state.food -= 3 * lot  # one lot short of the spring at the normal ration
-    assert rules.directive(month, []) is None
+    assert "(R2d)" in rules.directive(month, [])[1]  # no sale: the cut (October, to the end of March)
     assert rules.directive(month, _items({"action": "set_ration", "ration": "reduced"})) is None
 
 

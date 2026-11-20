@@ -16,6 +16,8 @@ R11b (after game 44): after a raid, from April to August the watchtower passes
 the firewood check (R10b and R11's own): there is time to send hands to the woods.
 R12 (seasonal sovereign, 2026-11-11): in an automatic month no law changes.
 R13 (tools, 2026-11-12): no tools for empty places, nor with the firewood short.
+R2c, R2d (after game 46): no food sale when the food does not reach spring;
+a directive to cut the ration when the food does not last with today's.
 The winter check guesses the people's effort from last month's harvest
 (after game 46): the effort of this month is never known, as for a player.
 """
@@ -358,14 +360,40 @@ def _watchtower_directive(month: Month, items: list[Item], left: dict[str, int])
             f"({spec.stone}) (R11).")
 
 
-def directive(month: Month, items: list[Item]) -> tuple[str, str] | None:
+def _ration_directive(month: Month, items: list[Item]) -> tuple[str, str] | None:
+    """@brief R2d: the food does not last with the plan's ration (October to
+    March: to the end of March; other months: this month and one more), and
+    the plan does not cut it: ask the Treasurer for the reduced ration.
+    Why: game 46, the rules only struck orders and never cut the ration, so a
+    council that did not propose the cut kept the normal ration into famine
+    (Dalmora: 1174 food in December, 45 in February; Fosca five months of
+    famine). The lab with a careful cut kept 8 sites of 8 standing
+    (lab/second_winter.py, 2026-11-20); game 42's October cuts by hand, 4 of 6."""
+    rations = [i.order.ration for i in items if isinstance(i.order, SetRationOrder)]
+    planned = rations[-1] if rations else month.state.ration
+    if planned == "reduced":
+        return None
+    if food_lasts(month, [i.order for i in items]):
+        return None
+    return ("Tesoriere, proponi la razione ridotta: con quella di oggi il cibo non basta.",
+            "Direttiva: razione ridotta: con quella di oggi il cibo non basta (R2d).")
+
+
+def directive(month: Month, items: list[Item], laws_locked: bool = False) -> tuple[str, str] | None:
     """@brief At most one directive: (text for the council, reason) or None.
-    R10 first where the market is a building (no trade without it), R11 after
-    a raid, then R7 before R5: a need first."""
+    R2d first (hunger comes before everything, and needs no market), then R10
+    where the market is a building (no trade without it), R11 after a raid,
+    then R7 before R5: a need first.
+    @param laws_locked True in an automatic month of a seasonal game (R12):
+           the ration is a law, so R2d stays silent."""
+    accepted = [i for i in items if i.accepted]
+    if not laws_locked:
+        cut = _ration_directive(month, accepted)
+        if cut:
+            return cut
     status = market_status(month.state, month.config)
     if month.market is None or status == "none":
         return None
-    accepted = [i for i in items if i.accepted]
     left = _remaining(month, [i.order for i in accepted])
     if status == "unbuilt":
         return _market_directive(month, accepted, left)
@@ -543,6 +571,21 @@ def _cold_sale(month: Month, item: Item, orders: list[Order]) -> str:
     return f"{short} (R4c)" if short else ""
 
 
+def _hungry_sale(month: Month, item: Item, orders: list[Order]) -> str:
+    """@brief R2c: no food sold when, with the sale, the food does not reach
+    the end of the next March.
+    Why: game 46, Fosca in October (169 food) put 3 lots of food on sale and
+    starved. R2 drops an order only when the food lasts without it, so a
+    realm already short let every sale pass.
+    @param orders The plan's other orders."""
+    order = item.order
+    if not isinstance(order, TradeOrder) or order.side != "sell" or order.good != "food":
+        return ""
+    if food_lasts(month, orders + [order], to_spring=True):
+        return ""
+    return "con questa vendita il cibo non arriva alla prossima primavera (R2c)"
+
+
 def _useless_buy(month: Month, item: Item, others: list[Order]) -> str:
     order = item.order
     if not isinstance(order, TradeOrder) or order.side != "buy" or order.good == "food":
@@ -608,7 +651,8 @@ def exclusions(month: Month, items: list[Item], granted: dict | None,
                   or _empty_building(month, item) or _useless_buy(month, item, orders_without(item))
                   or _idle_tools(month, item, orders_without(item))
                   or _cold_build(month, item, orders_without(item))
-                  or _cold_sale(month, item, orders_without(item)))
+                  or _cold_sale(month, item, orders_without(item))
+                  or _hungry_sale(month, item, orders_without(item)))
         if reason:
             excluded.append((item.index, reason))
             kept.remove(item)
