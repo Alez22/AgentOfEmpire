@@ -39,7 +39,8 @@
     <tr><th>Nelle cave</th><td>{{ state.workers.stone }} / {{ jobs.stone }} posti</td></tr>
     {% if land %}<tr><th>A dissodare</th><td>{{ state.workers.clearing }}</td></tr>{% endif %}
     {% if village_market %}<tr><th>Al mercato (mercanti)</th><td>{{ state.workers.trade }} / {{ jobs.trade }} posti</td></tr>{% endif %}
-    <tr><th>Senza lavoro</th><td>{{ state.adults - state.workers.food - state.workers.wood - state.workers.stone - state.workers.clearing - state.workers.trade }}</td></tr>
+    {% if town_hall and town_hall.builders %}<tr><th>Al cantiere del municipio</th><td>{{ town_hall.builders }}</td></tr>{% endif %}
+    <tr><th>Senza lavoro</th><td>{{ state.adults - state.workers.food - state.workers.wood - state.workers.stone - state.workers.clearing - state.workers.trade - (town_hall.builders if town_hall else 0) }}</td></tr>
   </table>
 </section>
 
@@ -59,4 +60,22 @@
     {% if doors %}<tr><th>Porte</th><td>{{ doors }}</td></tr>{% endif %}
   </table>
 </section>
+
+{% if town_hall %}
+<section class="card">
+  <h2>Il municipio</h2>
+  {% if state.era == "town" %}
+  <p>Il municipio è finito: il regno è una città.</p>
+  {% elif state.town_hall_site %}
+  <p>Cantiere aperto: mancano {{ state.town_hall_site }} mesi di lavori. {{ town_hall.builders }} adulti lavorano lì e basta; uno sciopero ferma i lavori.</p>
+  {% else %}
+  <p>Il passaggio alla città: {{ town_hall.spec.wood }} legno, {{ town_hall.spec.stone }} pietra, {{ town_hall.spec.gold }} oro, {{ town_hall.spec.build_turns }} mesi, {{ town_hall.spec.builders }} adulti al cantiere per tutto il tempo.</p>
+  <ul class="events">
+    {% for text, met in town_hall.conditions %}
+    <li>{{ "✓" if met else "✗" }} {{ text|capitalize }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+</section>
+{% endif %}
 {% endblock %}

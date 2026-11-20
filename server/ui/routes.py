@@ -600,6 +600,9 @@ def kingdom_page(request: Request, realm_id: int, conn=Depends(_connection)):
         "newcomers": (_arrivals(conn, game_id, realm_id, state.turn, NEWCOMERS_MONTHS)
                       if config.migration is not None else None),
         "newcomers_months": NEWCOMERS_MONTHS,
+        # The passage to the town (engine/eras.py): the conditions while the site may open.
+        "town_hall": ({"spec": config.town_hall, "conditions": labels.town_hall_conditions_it(state, config),
+                       "builders": state.builders_on_site()} if config.town_hall is not None else None),
         "nav": "kingdom",
         "realm_id": realm_id,
     }

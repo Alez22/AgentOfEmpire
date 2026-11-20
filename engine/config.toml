@@ -154,6 +154,19 @@ stone = 10
 gold = 5
 build_turns = 2
 
+# The town hall site: the passage from the village to the town (docs/DESIGN.md,
+# "The town hall site", 2026-11-20). First values, to tune in a game. The other
+# conditions (a market, no hunger since the last winter began, no strike) are
+# rules in engine/eras.py. Without this section (games saved before) there is
+# no town hall order.
+[town_hall]
+min_population = 120  # lab/village_years.py: about 120 at month 30 on every site
+wood = 200
+stone = 150
+gold = 100
+build_turns = 6  # the design's 6-8 months
+builders = 10  # hands off the fields: the realm is weaker during the site
+
 # The territory (docs/DESIGN.md, "Territory"). Without this section (games
 # saved before) a realm has no map and counts free_tiles instead.
 [map]

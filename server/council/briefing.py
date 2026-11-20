@@ -8,7 +8,7 @@ import copy
 import json
 from collections import Counter
 
-from engine import migration
+from engine import eras, migration
 from engine.config import Config
 from engine.caravans import caravans_on
 from engine.market import GOODS, MarketState, buy_price, market_status, sell_price, stock, trade_capacity
@@ -295,7 +295,24 @@ def works_lines(state: GameState, config: Config, territory_summary: bool = True
         f"- Housing: {state.population()} people, {housing_capacity(state, config)} places.",
         *([needs_line(state, config)] if config.needs is not None else []),
         "- Building costs: " + "; ".join(costs) + ".",
+        *town_hall_lines(state, config),
     ]
+
+
+def town_hall_lines(state: GameState, config: Config) -> list[str]:
+    """@brief The passage to the town (engine/eras.py): the conditions one by
+    one while the site may still open, the works while it runs."""
+    spec = config.town_hall
+    if spec is None or state.era != eras.VILLAGE:
+        return [] if spec is None else ["- The realm is a town: the town hall stands."]
+    if state.town_hall_site:
+        return [f"- The town hall site: {state.town_hall_site} months of works left; {state.builders_on_site()} "
+                "adults work on it and nowhere else. A strike stops the works."]
+    conditions = "; ".join(f"{text}: {'yes' if met else 'NOT YET'}"
+                           for _, text, met in eras.town_hall_conditions(state, config))
+    return [f"- The town hall (the passage to the town; build town_hall): wood {spec.wood}, stone {spec.stone}, "
+            f"gold {spec.gold}, {spec.build_turns} months, {spec.builders} adults off the work for the whole site. "
+            f"Conditions: {conditions}."]
 
 
 GATE_MEMORY_TURNS = 6  # months of raids and flights in the Gastaldo's briefing

@@ -548,6 +548,8 @@ def _order_formats(ctx: MeetingContext) -> str:
         text += render_prompt("order_formats_map.txt", max_claim=ctx.config.map.claim_max_per_order)
     if ctx.config.tools is not None:
         text += render_prompt("order_formats_tools.txt")
+    if ctx.config.town_hall is not None and ctx.state.era == "village":  # the passage to the town
+        text += render_prompt("order_formats_town_hall.txt")
     if ctx.config.bandits is not None:  # village block B+C
         text += render_prompt("order_formats_watchtower.txt")
         if GASTALDO in ctx.actors:

@@ -1,0 +1,2 @@
+The town hall (the passage to the town; conditions and cost in the manual and in your briefing):
+- {{"action": "build", "building": "town_hall"}}   no zone and no place: the village palace is rebuilt where it stands

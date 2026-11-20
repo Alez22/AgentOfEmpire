@@ -28,14 +28,14 @@ RADIUS = 24  # hex centre to corner
 HEX_WIDTH = math.sqrt(3) * RADIUS
 PAD = 12
 TERRAIN_CLASS = {".": "h-plain", "T": "h-forest", "^": "h-hill", "~": "h-river"}
-LOT_CLASS = {"palace": "h-palace", "farm": "h-field", "quarry": "h-quarry", "square": "h-square", "sawmill": "h-sawmill",
+LOT_CLASS = {"palace": "h-palace", "town_hall": "h-palace", "farm": "h-field", "quarry": "h-quarry", "square": "h-square", "sawmill": "h-sawmill",
              "house": "h-plain", "market": "h-market", "watchtower": "h-watch"}
 SPRITE = "/static/icons/sprite.svg"
 PALACE_ID = -1  # the palace's id on the page; buildings start at 1, the square is 0
 # The palace's place in games saved before it ([map] palace_from_square), for the drawing only.
 PALACE_STEPS_BEFORE = ["E", "E"]
 # Icon of each building kind for the detail card and the legend.
-KIND_ICON = {"palace": "viking-longhouse", "farm": "barn", "house": "family-house", "sawmill": "circular-saw", "quarry": "mining",
+KIND_ICON = {"palace": "viking-longhouse", "town_hall": "clock-tower", "farm": "barn", "house": "family-house", "sawmill": "circular-saw", "quarry": "mining",
              "square": "well", "market": "shop", "watchtower": "watchtower"}
 
 
@@ -102,7 +102,7 @@ def _building_icons(kind: str, tiles: list[tuple[int, int]], building_id: int, x
            turns, the pick strikes (CSS classes sway, spin, pick)."""
     cls = "i-building site" if site else "i-building"
     centres = [centre(x, y, x1, y1) for x, y in tiles]
-    if kind in ("square", "palace"):  # one big icon in the rhombus' middle
+    if kind in ("square", "palace", "town_hall"):  # one big icon in the rhombus' middle
         mid_x = sum(c[0] for c in centres) / len(centres)
         mid_y = sum(c[1] for c in centres) / len(centres)
         return [_icon(KIND_ICON[kind], mid_x, mid_y, 1.9, cls)]
@@ -156,7 +156,10 @@ def _lots(state: GameState, config: Config) -> list[tuple[str, int, list[tuple[i
     lots = [("square", 0, square_tiles(state, config), False)]
     palace = _palace_hexes(state, config)
     if palace:
-        lots.append(("palace", PALACE_ID, palace, False))
+        # The town hall replaces the village palace on its hexes (engine/eras.py):
+        # scaffolds while the site runs, the civic clock tower once it stands.
+        kind = "town_hall" if state.era == "town" else "palace"
+        lots.append((kind, PALACE_ID, palace, state.town_hall_site > 0))
     for building in state.buildings:
         lots.append((building.kind, building.id, footprint(config, building.kind, building.x, building.y),
                      building.turns_left > 0))

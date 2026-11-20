@@ -337,6 +337,18 @@ class ToolsConfig:
 
 
 @dataclass(frozen=True)
+class TownHallConfig:
+    """The passage from the village to the town (docs/DESIGN.md, "The town
+    hall site"): the village palace rebuilt as the town hall."""
+    min_population: int
+    wood: int
+    stone: int
+    gold: int
+    build_turns: int  # months of works; a strike month does not count
+    builders: int  # adults taken off the work for the whole site, as the guards
+
+
+@dataclass(frozen=True)
 class Config:
     start: StartConfig
     buildings: dict[str, BuildingConfig]
@@ -368,6 +380,9 @@ class Config:
     # Roads of the world, phase 2 (2026-11-13); None for games saved before:
     # trades are instant and they replay unchanged.
     caravans: CaravansConfig | None = None
+    # The passage to the town (2026-11-20); None for games saved before: no
+    # town hall order, they replay unchanged.
+    town_hall: TownHallConfig | None = None
 
 
 def _tools_from_dict(raw: dict) -> ToolsConfig:
@@ -418,4 +433,5 @@ def config_from_dict(raw: dict) -> Config:
         tools=_tools_from_dict(raw["tools"]) if "tools" in raw else None,
         bands=BandsConfig(**raw["bands"]) if "bands" in raw else None,
         caravans=CaravansConfig(**raw["caravans"]) if "caravans" in raw else None,
+        town_hall=TownHallConfig(**raw["town_hall"]) if "town_hall" in raw else None,
     )

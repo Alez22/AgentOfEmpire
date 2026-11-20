@@ -19,7 +19,7 @@ known before production is computed.
 import copy
 from dataclasses import dataclass
 
-from engine import territory
+from engine import eras, territory
 from engine.config import ClassConfig, Config
 from engine.orders import Order
 from engine.people import PeopleChoice
@@ -114,6 +114,7 @@ def _apply_fixed_rules(state: GameState, config: Config, events: list[Event]) ->
 
 
 def _advance_construction(state: GameState, config: Config, events: list[Event]) -> None:
+    eras.advance_town_hall(state, events)
     for building in state.buildings:
         if building.improving:  # tools (docs/DESIGN.md, "Tools"): the level counts once the works end
             building.improving -= 1
@@ -300,6 +301,8 @@ def _consume_food(state: GameState, config: Config, events: list[Event]) -> tupl
     missing_pct = (needed - state.food) * 100 // needed
     state.food = 0
     events.append(Event("famine", {"missing_pct": missing_pct}))
+    if config.town_hall is not None:  # games saved before keep their snapshots unchanged
+        state.last_famine_turn = state.turn
     return needed, missing_pct
 
 

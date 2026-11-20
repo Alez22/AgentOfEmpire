@@ -16,6 +16,7 @@ R11b (after game 44): after a raid, from April to August the watchtower passes
 the firewood check (R10b and R11's own): there is time to send hands to the woods.
 R12 (seasonal sovereign, 2026-11-11): in an automatic month no law changes.
 R13 (tools, 2026-11-12): no tools for empty places, nor with the firewood short.
+R14 (the town hall, 2026-11-20): open the site once the realm is ready.
 R2c, R2d (after game 46): no food sale when the food does not reach spring;
 a directive to cut the ration when the food does not last with today's.
 The winter check guesses the people's effort from last month's harvest
@@ -25,7 +26,7 @@ The winter check guesses the people's effort from last month's harvest
 import copy
 from dataclasses import dataclass
 
-from engine import parse_order
+from engine import eras, parse_order
 from engine.config import Config
 from engine.market import (MarketState, buy_price, check_month_plan, market_status, sell_price, state_after_trades,
                            stock, trade_capacity)
@@ -360,6 +361,44 @@ def _watchtower_directive(month: Month, items: list[Item], left: dict[str, int])
             f"({spec.stone}) (R11).")
 
 
+def town_hall_ready(month: Month, orders: list[Order]) -> bool:
+    """@brief R14's test: every condition of the town hall holds (engine/eras.py),
+    the cost is left after the plan, and with the site in the plan the food
+    still lasts (the winter check runs the order, builders off the work), the
+    firewood holds to spring (as R10b) and the stone left covers its upkeep
+    for BUY_COVER_MONTHS (R7's measure).
+    Why the stone: lab/town_hall_passage.py, a site opened in December with
+    150 of 158 stone and 200 of 228 wood: cold, worn walls, revolt in five
+    months with 1,000 food in store.
+    @param orders The plan without the town hall."""
+    spec, state = month.config.town_hall, month.state
+    if spec is None or state.era != eras.VILLAGE or state.town_hall_site:
+        return False
+    if eras.town_hall_missing(state, month.config):
+        return False
+    left = _remaining(month, orders)
+    stone_upkeep = need_ahead(state, month.config, "stone", BUY_COVER_MONTHS)
+    if left["wood"] < spec.wood or left["stone"] < spec.stone + stone_upkeep or left["gold"] < spec.gold:
+        return False
+    with_site = orders + [parse_order({"action": "build", "building": "town_hall"})[0]]
+    return food_lasts(month, with_site) and not _firewood_short(month, with_site)
+
+
+def _town_hall_directive(month: Month, items: list[Item]) -> tuple[str, str] | None:
+    """@brief R14: open the town hall site once town_hall_ready says so.
+    Why: the passage to the town is the goal of the village; an automatic
+    realm must be able to reach it (docs/DESIGN.md, "The town hall site")."""
+    if any(isinstance(i.order, BuildOrder) and i.order.building == "town_hall" for i in items):
+        return None
+    if not town_hall_ready(month, [i.order for i in items]):
+        return None
+    spec = month.config.town_hall
+    return ("Architetta, apri il cantiere del municipio: il regno è pronto per diventare una città.",
+            f"Direttiva: aprire il cantiere del municipio: il regno ha ogni condizione e il necessario "
+            f"({spec.wood} legno, {spec.stone} pietra, {spec.gold} oro), e cibo, legna e pietra bastano anche "
+            f"con {spec.builders} adulti al cantiere (R14).")
+
+
 def _ration_directive(month: Month, items: list[Item]) -> tuple[str, str] | None:
     """@brief R2d: the food does not last with the plan's ration (October to
     March: to the end of March; other months: this month and one more), and
@@ -401,8 +440,8 @@ def directive(month: Month, items: list[Item], laws_locked: bool = False) -> tup
         staff = _merchants_directive(month, accepted)
         if staff:
             return staff
-    return (_watchtower_directive(month, accepted, left) or _buy_directive(month, accepted, left)
-            or _sell_directive(month, accepted, left))
+    return (_watchtower_directive(month, accepted, left) or _town_hall_directive(month, accepted)
+            or _buy_directive(month, accepted, left) or _sell_directive(month, accepted, left))
 
 
 # ------------------------------------------------------------ petition

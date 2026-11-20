@@ -6,8 +6,8 @@ new engine value shows up (ugly but visible) instead of crashing the page.
 """
 
 BUILDINGS = {"farm": "fattoria", "sawmill": "segheria", "quarry": "cava", "house": "casa", "market": "mercato",
-             "watchtower": "torre di guardia"}
-MASCULINE_BUILDINGS = ("market",)  # "Completato un mercato", the others "Completata una ..."
+             "watchtower": "torre di guardia", "town_hall": "municipio"}
+MASCULINE_BUILDINGS = ("market", "town_hall")  # "Completato un mercato", the others "Completata una ..."
 CLASSES_IT = {"merchants": "I mercanti"}
 # Tools (docs/DESIGN.md, "Tools"): the names of the levels in engine/config.toml.
 TOOLS_IT = {"heavy_plough": "aratro pesante", "iron_axes": "asce di ferro", "iron_picks": "picconi di ferro"}
@@ -58,6 +58,8 @@ REJECTIONS = {
     # Tools (docs/DESIGN.md, "Tools").
     "NO_TOOLS": "in questo mondo non ci sono attrezzi",
     "BUSY": "l'edificio è ancora in costruzione o ha già lavori in corso",
+    # The town hall site (engine/eras.py).
+    "NOT_READY": "il regno non è ancora pronto per il municipio",
     "TOP_LEVEL": "l'edificio non ha attrezzi migliori",
     "NEEDS_BUILDING": "serve prima un altro edificio",
     # Reasons the council module gives for discarded proposals.
@@ -192,6 +194,8 @@ def event_label(kind: str, data: dict) -> str:
         if data.get("kind") in MASCULINE_BUILDINGS:
             return f"Completato un {BUILDINGS.get(data.get('kind'), data.get('kind'))}."
         return f"Completata una {BUILDINGS.get(data.get('kind'), data.get('kind'))}."
+    if kind == "era_reached":
+        return "Il municipio è finito: il villaggio è diventato una città."
     if kind == "tools_finished":
         return (f"Attrezzi nuovi per la {BUILDINGS.get(data.get('kind'), data.get('kind'))} n. {data.get('id')}"
                 f" (livello {data.get('level')}): chi ci lavora rende di più.")
@@ -297,3 +301,14 @@ def people_words(effort_pct: int, birth_pct: int) -> str:
 
 
 PETITION_ANSWERS = {"granted": "esaudita", "refused": "respinta"}
+
+
+def town_hall_conditions_it(state, config) -> list[tuple[str, bool]]:
+    """@brief The town hall's conditions (engine/eras.py) in Italian, each with whether it holds."""
+    from engine import eras
+    words = {"population": f"almeno {config.town_hall.min_population} abitanti (oggi {state.population()})"
+             if config.town_hall else "",
+             "market": "un mercato finito",
+             "hunger": "nessuna fame dall'inizio dell'ultimo inverno (ottobre)",
+             "unrest": "nessuno sciopero"}
+    return [(words.get(key, text), met) for key, text, met in eras.town_hall_conditions(state, config)]

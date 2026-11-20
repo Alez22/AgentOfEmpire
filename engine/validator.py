@@ -9,7 +9,7 @@ import copy
 from dataclasses import dataclass
 
 from engine.config import Config
-from engine import territory
+from engine import eras, territory
 from engine.orders import (
     AssignWorkersOrder,
     BuildOrder,
@@ -81,7 +81,33 @@ def _place_on_map(state: GameState, order: BuildOrder, config: Config) -> tuple[
     return place, None
 
 
+def _apply_town_hall(state: GameState, order: BuildOrder, config: Config) -> OrderResult:
+    """@brief Open the town hall site (engine/eras.py): the conditions, the
+    cost paid at once, the builders taken off the work from this month."""
+    spec = config.town_hall
+    if spec is None:
+        return _reject(order, "UNKNOWN_BUILDING", "no town hall in this game")
+    if state.era != eras.VILLAGE or state.town_hall_site:
+        return _reject(order, "ONE_PER_REALM", "the town hall stands already, or its site is open")
+    missing = eras.town_hall_missing(state, config)
+    if missing:
+        return _reject(order, "NOT_READY", "the realm is not ready: " + "; ".join(missing))
+    if state.adults - state.guards() < spec.builders:
+        return _reject(order, "NOT_ENOUGH_WORKERS", f"the site needs {spec.builders} builders")
+    if state.wood < spec.wood or state.stone < spec.stone or state.gold < spec.gold:
+        return _reject(order, "INSUFFICIENT_RESOURCES",
+                       f"town_hall needs wood {spec.wood}, stone {spec.stone}, gold {spec.gold}")
+    state.wood -= spec.wood
+    state.stone -= spec.stone
+    state.gold -= spec.gold
+    state.town_hall_site = spec.build_turns
+    state.builders = spec.builders
+    return OrderResult(order, True)
+
+
 def _apply_build(state: GameState, order: BuildOrder, config: Config) -> OrderResult:
+    if order.building == "town_hall":
+        return _apply_town_hall(state, order, config)
     if order.building not in config.buildings:
         # A game saved before the market building has none in its config.
         return _reject(order, "UNKNOWN_BUILDING", f"no {order.building} in this game")

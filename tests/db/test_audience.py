@@ -154,3 +154,13 @@ def test_audience_from_the_phone(database_url, settings):
         assert "Il consiglio discute" not in turn_page
         assert ui.get(f"/realms/{realm_id}/council/audiences/architect").json()[1]["speaker"] == "actor"
         assert ui.get(f"/ui/realms/{realm_id}/audience/marshal").status_code == 404
+
+
+def test_the_kingdom_page_shows_the_town_hall(db, database_url, realm, settings):
+    """The passage to the town (docs/DESIGN.md, "The town hall site"): the
+    conditions on the kingdom page, a fresh village meets few of them."""
+    _, realm_id = realm
+    with TestClient(create_app(database_url, settings, FakeClient())) as ui:
+        page = html.unescape(ui.get(f"/ui/realms/{realm_id}/kingdom").text)
+    assert "<h2>Il municipio</h2>" in page
+    assert "✗ Un mercato finito" in page and "✓ Nessuno sciopero" in page

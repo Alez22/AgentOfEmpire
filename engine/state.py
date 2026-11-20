@@ -138,6 +138,14 @@ class GameState:
     # Hundredths of a stopped raider staying (stage 2, migration.accumulate).
     # 0 for games saved before.
     keep_acc: int = 0
+    # The passage to the town (engine/eras.py): the era, the months of works
+    # left on the town hall (0 = no site), the adults on the site (taken off
+    # the work after the guards) and the last month with a famine (0 = never).
+    # "village", 0, 0, 0 for games saved before.
+    era: str = "village"
+    town_hall_site: int = 0
+    builders: int = 0
+    last_famine_turn: int = 0
 
     def has_map(self) -> bool:
         return bool(self.terrain)
@@ -149,9 +157,14 @@ class GameState:
         """@brief Guards on duty: the militia, never more than the adults."""
         return min(self.militia, self.adults)
 
+    def builders_on_site(self) -> int:
+        """@brief Adults on the town hall site, after the guards (engine/eras.py)."""
+        return min(self.builders, self.adults - self.guards())
+
     def free_adults(self) -> int:
-        """@brief Adults the Architect may assign: the engine takes the guards first."""
-        return self.adults - self.guards()
+        """@brief Adults the Architect may assign: the engine takes the guards
+        first, then the town hall's builders."""
+        return self.adults - self.guards() - self.builders_on_site()
 
 
 def new_game(config: Config, seed: int, site_index: int | None = None) -> GameState:

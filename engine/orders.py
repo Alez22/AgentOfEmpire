@@ -20,7 +20,8 @@ class BaseOrder(BaseModel):
 
 class BuildOrder(BaseOrder):
     action: Literal["build"]
-    building: Literal["farm", "sawmill", "quarry", "house", "market", "watchtower"]
+    # "town_hall": the village palace rebuilt (engine/eras.py); zone and place are ignored.
+    building: Literal["farm", "sawmill", "quarry", "house", "market", "watchtower", "town_hall"]
     # On the map: the zone to build in and, optionally, the top-left tile.
     # Without them the engine picks the place nearest the square.
     zone: str | None = None

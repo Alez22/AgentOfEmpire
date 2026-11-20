@@ -140,7 +140,24 @@ def prompt_text(config: Config) -> str:
         lines += _territory_lines(config)
     if config.bandits is not None:
         lines += _bandits_lines(config)
+    if config.town_hall is not None:
+        lines += _town_hall_lines(config)
     return "\n".join(lines) + "\n"
+
+
+def _town_hall_lines(config: Config) -> list[str]:
+    """@brief The passage to the town (engine/eras.py, docs/DESIGN.md "The town hall site")."""
+    spec = config.town_hall
+    return [
+        "The town hall: the passage from the village to the town (order: build town_hall). The village palace "
+        f"is rebuilt on its own place: costs wood {spec.wood}, stone {spec.stone}, gold {spec.gold}, paid at once; "
+        f"{spec.build_turns} months of works.",
+        f"- It may open only with at least {spec.min_population} people, a finished market, no hunger since the "
+        "last winter began (October), and no strike.",
+        f"- For the whole site {spec.builders} adults work on it and nowhere else, as the guards: fewer hands on "
+        "the fields, so the food must last without them. A strike stops the works.",
+        "- When it is finished the realm is a town, and every realm knows it.",
+    ]
 
 
 def _bandits_lines(config: Config) -> list[str]:
@@ -437,7 +454,23 @@ def page_sections(config: Config) -> list[dict]:
       + ([_tools_section(config)] if config.tools is not None else []) \
       + ([_market_section(config)] if config.market is not None else []) \
       + ([_territory_section(config)] if config.map is not None else []) \
-      + ([_bandits_section(config)] if config.bandits is not None else [])
+      + ([_bandits_section(config)] if config.bandits is not None else []) \
+      + ([_town_hall_section(config)] if config.town_hall is not None else [])
+
+
+def _town_hall_section(config: Config) -> dict:
+    spec = config.town_hall
+    return {"title": "Il municipio", "entries": [
+        {"name": "Il cantiere del municipio",
+         "text": f"Il palazzo del villaggio rifatto come municipio, al suo posto. Costa {spec.wood} legno, "
+                 f"{spec.stone} pietra, {spec.gold} oro, pagati subito; {spec.build_turns} mesi di lavori."},
+    ], "notes": [
+        f"Si apre solo con almeno {spec.min_population} abitanti, un mercato finito, nessuna fame dall'inizio "
+        "dell'ultimo inverno (ottobre) e nessuno sciopero.",
+        f"Per tutto il cantiere {spec.builders} adulti lavorano lì e basta, come le guardie: meno braccia nei campi. "
+        "Uno sciopero ferma i lavori.",
+        "Quando è finito il villaggio diventa una città, e tutti i regni lo sanno.",
+    ]}
 
 
 def _bandits_section(config: Config) -> dict:

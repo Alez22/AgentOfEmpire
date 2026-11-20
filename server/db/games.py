@@ -61,6 +61,8 @@ EVENT_VISIBILITY = {
     "raid": "public",
     # Stage 2: newcomers settling are seen by everybody, like a raid.
     "arrival": "public",
+    # The passage to the town: public, like the era (docs/DESIGN.md, "The eras").
+    "era_reached": "public",
     # Roads of the world: a band seen near the realm or from its watchtower.
     # Court, like a flight: the Voice may tell it; never the world's total.
     "band_seen": "court",
