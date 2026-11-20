@@ -29,6 +29,7 @@
   --marshal: #E07A4F;
   --architect: #7DB3E0;
   --ambassador: #C3A2E0;
+  --gastaldo: #B4A3D6;
   --display: "Cormorant Garamond", "Garamond", "Times New Roman", serif;
   --body: "Inter", "Segoe UI", system-ui, sans-serif;
   --step-0: 1rem;
@@ -159,6 +160,7 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
     <span><i class="dot" style="background:var(--gold)"></i>Cancelliere</span>
     <span><i class="dot" style="background:var(--treasurer)"></i>Tesoriere</span>
     <span><i class="dot" style="background:var(--architect)"></i>Architetto</span>
+    <span><i class="dot" style="background:var(--gastaldo)"></i>Gastaldo</span>
     <span><i class="dot" style="background:var(--marshal)"></i>Maresciallo</span>
     <span><i class="dot" style="background:var(--ambassador)"></i>Ambasciatore</span>
   </p>
@@ -188,7 +190,7 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
     <p class="numeral">Capitolo II</p>
     <h2 id="c2">Persone, non funzioni</h2>
   </div>
-  <p>Un ruolo è una carica: il Tesoriere tiene i conti, l'Architetto costruisce, il Maresciallo comanda l'esercito, l'Ambasciatore tratta con gli altri regni. Chi occupa la carica è una persona, con un nome, una storia e cinque tratti: prudenza o audacia, lealtà, ambizione, onestà, competenza.</p>
+  <p>Un ruolo è una carica: il Tesoriere tiene i conti, l'Architetto costruisce, il Gastaldo sorveglia le porte e la milizia, il Maresciallo comanda l'esercito, l'Ambasciatore tratta con gli altri regni. Chi occupa la carica è una persona, con un nome, una storia e cinque tratti: prudenza o audacia, lealtà, ambizione, onestà, competenza.</p>
   <p>All'inizio il consiglio è fatto di moderati. Più avanti assumerai: tra i candidati ci sono i profili più estremi, brillanti e pericolosi, e il curriculum può mentire. Capirai chi hai davanti solo col tempo. Licenziare costa: chi esce si porta via i segreti del consiglio e può venderli a un rivale.</p>
   <div class="more">
     <details><summary>Udienze private</summary><div class="body"><p>Puoi parlare a tu per tu con un consigliere. Tutti sapranno che lo hai ricevuto, nessuno saprà cosa vi siete detti. Lui può tacere o abbellire, mai cambiare i numeri.</p></div></details>
@@ -276,8 +278,8 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
   </div>
   <p>Una partita ha otto regni su una mappa condivisa, partenze simmetriche e almeno un vicino raggiungibile. Alcuni sono guidati da altri giocatori, gli altri da sovrani automatici che usano la stessa architettura: un consiglio, gli stessi rapporti, un carattere. C'è il re guerrafondaio e c'è il mercante pacifico.</p>
   <div class="more">
-    <details><summary>Diplomazia</summary><div class="body"><p>L'Ambasciatore negozia accordi bilaterali, come grano in cambio del passaggio sul fiume. Ogni regno ha una reputazione: chi rompe i patti trova sempre meno alleati.</p></div></details>
-    <details><summary>Rotte commerciali</summary><div class="body"><p>Rendono a ogni turno finché i confini restano aperti. Si possono tagliare, razziare, chiudere con un embargo. I mercanti, se il commercio si ferma, si arrabbiano.</p></div></details>
+    <details><summary>Diplomazia</summary><div class="body"><p>Dalla città in poi tutto passa per l'Ambasciatore, anche per i giocatori umani: nessun sovrano scrive direttamente a un altro. Una proposta è una lettera che viaggia con un messaggero sulle strade, arriva in ritardo e può essere fermata dai briganti. Si scambiano merci, si firmano patti di non aggressione e alleanze, e firma sempre il sovrano.</p><p>La reputazione non è un numero. È un registro pubblico di patti firmati, onorati, disdetti con preavviso o traditi, e ogni regno lo legge a modo suo. Chi rompe i patti trova sempre meno alleati.</p></div></details>
+    <details><summary>Carovane e fiera</summary><div class="body"><p>Le merci viaggiano: le carovane portano i carichi alla fiera comune lungo le strade, impiegano un mese e possono essere derubate dalle bande. Più avanti si potranno tagliare le rotte o chiuderle con un embargo. I mercanti, se il commercio si ferma, si arrabbiano.</p></div></details>
     <details><summary>Spionaggio</summary><div class="body"><p>Le spie portano stime dell'esercito altrui, a volte vecchie, a volte sbagliate. Ci sono doppiogiochisti, missioni scoperte e informazioni comprate da ministri scontenti.</p></div></details>
     <details><summary>Segreti</summary><div class="body"><p>Ogni informazione nasce con un livello. Un agente non può rivelare quello che non ha mai ricevuto, ma una fuga di notizie può far salire un segreto di livello.</p></div></details>
   </div>
@@ -304,7 +306,13 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
   <p>La guerra si gioca soprattutto nella preparazione: reclutare toglie braccia ai campi, i soldati vanno pagati e nutriti, le mura richiedono pietra e mesi di cantiere. L'esercito sta nelle sue caselle, e il nemico lo conosce solo attraverso le spie e l'osservazione dei confini.</p>
   <div class="more">
     <details><summary>Stime gonfiate e finte mobilitazioni</summary><div class="body">
-  <p>Il Maresciallo può gonfiare le stime per ottenere più risorse. Anche tu puoi ingannare: proclamare in piazza una mobilitazione che non esiste, per vedere chi si muove. La battaglia ha la sua parte di caso, ma premia chi è arrivato meglio preparato.</p>
+  <p>Il Maresciallo può gonfiare le stime per ottenere più risorse. Anche tu puoi ingannare: proclamare in piazza una mobilitazione che non esiste, per vedere chi si muove. La battaglia ha la sua parte di caso, ma premia chi è arrivato meglio preparato, e chi perde si ritira: nessuna battaglia cancella un esercito.</p>
+    </div></details>
+    <details><summary>Dichiarare o tradire</summary><div class="body">
+  <p>Una dichiarazione di guerra parte come lettera dell'Ambasciatore e arriva prima dell'esercito: perdi la sorpresa, non la reputazione. Attaccare senza dichiarare, o sotto un patto di non aggressione, è tradimento, e finisce nel registro pubblico.</p>
+    </div></details>
+    <details><summary>Saccheggi e assedi</summary><div class="body">
+  <p>La guerra comincia nella città. Un esercito può saccheggiare, prendere terre di confine, imporre un tributo o assediare le mura: chi è assediato non riceve carovane e vive delle sue scorte, chi assedia mangia quello che si è portato da casa. Solo un regno può annettere un altro regno.</p>
     </div></details>
   </div>
 </section>
@@ -314,7 +322,7 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
     <p class="numeral">Capitolo VIII</p>
     <h2 id="c8">Tre ere</h2>
   </div>
-  <p>Il regno passa per tre ere. Salire richiede risorse ed edifici chiave, sblocca nuove costruzioni e cambia l'aspetto della città. Tutti vedono chi è avanzato. In ogni era cambia anche il modo in cui le notizie viaggiano.</p>
+  <p>Il regno passa per tre ere. Si sale aprendo il cantiere del nuovo palazzo, dal municipio al castello: mesi di lavoro pubblici, in cui il regno è più debole e i vicini lo vedono. Ogni era sblocca nuove costruzioni e cambia l'aspetto della città, e non si perde mai. In ogni era cambia anche il modo in cui le notizie viaggiano.</p>
   <figure class="exhibit" aria-label="Le tre ere">
     <ol class="ladder">
       <li><span class="rung">Villaggio</span><span class="rung-text">Niente stampa. Si sa solo quello che corre di bocca in bocca: la piazza, i viaggiatori, le spie.</span></li>
@@ -345,6 +353,11 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
   <p>Un regime militare tiene a bada il popolo, ma ogni soldato costa, i soldati sono una classe con il suo umore e un Maresciallo con un grande esercito comincia a fare pensieri ambiziosi. Se perdi insieme la fiducia del popolo e quella del consiglio, un ministro può tentare il colpo di stato con l'appoggio di una classe scontenta.</p>
     </div></details>
   </div>
+  <div class="more">
+    <details><summary>Chi se ne va</summary><div class="body">
+  <p>Il malcontento costa prima della rivolta. Dopo mesi difficili le famiglie se ne vanno nei boschi e diventano briganti, che girano in bande sulla mappa e assaltano chi ha granai pieni e poche guardie. Il malgoverno di un vicino diventa un problema tuo. Il Gastaldo decide quanti uomini tenere di guardia e quanto aprire le porte: con le porte aperte un brigante fermato può diventare un cittadino.</p>
+    </div></details>
+  </div>
   <p>Chi perde il trono non esce dal gioco. Ricomincia alla guida di una fazione in esilio, che cerca di riprendersi il regno.</p>
 </section>
 
@@ -354,6 +367,7 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
     <h2 id="c10">Come si vince</h2>
   </div>
   <p>Ci sono più strade, e ogni partita può sceglierne alcune all'inizio. Si può vincere per dominio, controllando i regni vicini; per prosperità, con il regno più ricco e popoloso alla fine dei dieci anni; per prestigio, con la reputazione e le alleanze più solide; o semplicemente per durata, arrivando in fondo con la stessa dinastia sul trono.</p>
+  <p>Non c'è un solo vincitore: ogni strada scelta dà il suo titolo, e i titoli si contano su fatti pubblici del gioco, mai sul giudizio di un modello. Solo il dominio può chiudere la partita prima: quando un regno controlla metà dei regni parte un conto alla rovescia pubblico di un anno, e gli altri hanno quel tempo per allearsi contro di lui.</p>
   <p class="soft">Nessuna strada è sicura, perché tutte passano per le stesse persone: un consiglio che ti segue, un popolo che ti sopporta e dei vicini che non hanno ancora deciso cosa fare di te.</p>
 </section>
 
@@ -380,12 +394,16 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
     <div>
       <h3>C'è già</h3>
       <ul>
-        <li>Una città con Cancelliere, Tesoriere e Architetto</li>
+        <li>Un villaggio con Cancelliere, Tesoriere e Architetto</li>
         <li>Persone con tratti, storia e stipendio</li>
         <li>Udienze private, mandati, note segrete, dibattito sul piano</li>
         <li>La Voce della piazza e il popolo che decide</li>
-        <li>Mappa a caselle e piano urbano</li>
-        <li>Tre regni allo stesso mercato, guidati dal sovrano automatico</li>
+        <li>La mappa del regno come prima pagina, con stagioni, nebbia e piano urbano</li>
+        <li>La torre di guardia, il Gastaldo, la milizia e le porte</li>
+        <li>Briganti in bande sulla mappa, nati dal malcontento</li>
+        <li>Il mercato e le carovane alla fiera</li>
+        <li>Otto regni guidati dal sovrano automatico</li>
+        <li>Il cantiere del municipio, il passaggio alla città</li>
       </ul>
     </div>
     <div>
@@ -394,7 +412,7 @@ footer { padding-block: 2.5rem 4rem; color: var(--ink-faint); font-size: 0.85rem
         <li>Maresciallo, esercito e guerra</li>
         <li>Ambasciatore, trattati e reputazione</li>
         <li>Spie e fughe di notizie</li>
-        <li>Altre classi sociali, ere e stampa</li>
+        <li>Altre classi sociali, la città, il regno e la stampa</li>
         <li>Assunzioni e licenziamenti</li>
         <li>Multigiocatore e condizioni di vittoria</li>
       </ul>
