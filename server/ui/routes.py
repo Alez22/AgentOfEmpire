@@ -159,7 +159,7 @@ def _council_context(request: Request, conn: psycopg.Connection, realm_id: int, 
     return context
 
 
-QUIET_EVENTS = ("food_spoiled", "season_end", "demography", "worn")
+QUIET_EVENTS = ("food_spoiled", "season_end", "demography", "worn", "harvest")
 
 
 def _automatic_months(conn: psycopg.Connection, game_id: int, realm_id: int, turn: int) -> list[dict]:

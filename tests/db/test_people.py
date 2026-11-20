@@ -135,9 +135,11 @@ def test_council_hears_the_people_and_the_petition(db, realm, settings):
     assert "the peasants work reluctantly" in treasurer
     assert '"Maestà, la gabella ci strangola." (not answered yet)' in treasurer
     assert "this order runs first: set_tax 5" in treasurer
-    # The harvest estimate counts the people's effort. Seed 8: a site rich in
-    # food (19 per farmer): 53 x 19 x 50 % = 503, x 97 % = 487.
-    assert "Harvest expected this month if nothing changes: 487 food" in treasurer
+    # The estimate leaves the effort out: the present in words, the past in
+    # numbers (docs/DESIGN.md). Seed 8: a site rich in food (19 per farmer):
+    # 53 x 19 x 50 % = 503; with the effort -3 % it would be 487.
+    assert "Harvest expected this month if nothing changes and the people work as usual: 503 food" in treasurer
+    assert "487" not in treasurer
     assert "perché sì" not in treasurer  # the model's reason is for the admin only
 
 
@@ -198,7 +200,7 @@ def test_sovereign_sees_the_people_and_answers_the_petition(database_url, settin
                 break
         page = html.unescape(ui.get(f"/ui/realms/{realm_id}/council").text)
         assert "I contadini lavorano svogliati; le famiglie rimandano i figli." in page
-        assert "Resa di campi, segheria e cava: -8%" in page  # neutral band: kept at -8
+        assert "Resa di campi" not in page  # this month's numbers stay hidden (docs/DESIGN.md)
         assert "«Una festa, Maestà, per dimenticare il freddo.»" in page and "Esaudisci" in page
         assert "SEGRETO" not in page
         ui.post(f"/ui/realms/{realm_id}/petition", data={"answer": "refused"})

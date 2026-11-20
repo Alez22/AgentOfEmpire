@@ -23,7 +23,12 @@ def _month(ctx: meeting.MeetingContext) -> rules.Month:
     raided = ctx.conn.execute(
         "SELECT EXISTS (SELECT 1 FROM events WHERE realm_id = %s AND kind = 'raid')", (ctx.realm_id,)
     ).fetchone()[0]
-    return rules.Month(ctx.state, ctx.config, ctx.market, str(ctx.realm_id), raided)
+    last_harvest = ctx.conn.execute(
+        "SELECT data FROM events WHERE realm_id = %s AND kind = 'harvest' AND turn = %s",
+        (ctx.realm_id, ctx.turn - 1),
+    ).fetchone()
+    guess = rules.effort_guess_pct(last_harvest[0] if last_harvest else None)
+    return rules.Month(ctx.state, ctx.config, ctx.market, str(ctx.realm_id), raided, guess)
 
 
 def _give_directive(conn, realm_id: int, client, settings: CouncilSettings, ctx, lines: list[str]) -> str | None:

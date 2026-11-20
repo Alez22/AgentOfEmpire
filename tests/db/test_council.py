@@ -531,11 +531,11 @@ def test_briefings_show_the_harvest_and_the_empty_jobs(db, realm, settings):
     treasurer, architect = client.calls[0]["user"], client.calls[1]["user"]
     # 53 farmers x 16 x 50 % = 424; 1600 + 424 - 860 eaten = 1164, minus 2 % rot = 1141.
     # (Seed 3: a site with every land level fair, so the yields are the buildings' own.)
-    assert ("Harvest expected this month if nothing changes: 424 food (winter: farms yield 50%). "
-            "After eating and rot the store would go from 1600 to about 1141: it shrinks.") in treasurer
+    assert ("Harvest expected this month if nothing changes and the people work as usual: 424 food "
+            "(winter: farms yield 50%). After eating and rot the store would go from 1600 to about 1141: it shrinks.") in treasurer
     assert "Without any harvest it would last about 1.8 months." in treasurer
     assert "Jobs without workers: food 7, wood 6, stone 7, trade 0." in architect  # no market yet: no places
-    assert "Expected this month if nothing changes: food +424, wood +24, stone +12." in architect
+    assert "Expected this month if nothing changes and the people work as usual: food +424, wood +24, stone +12." in architect
 
 
 def test_orders_that_change_nothing_leave_the_plan(db, realm, settings):

@@ -16,6 +16,8 @@ R11b (after game 44): after a raid, from April to August the watchtower passes
 the firewood check (R10b and R11's own): there is time to send hands to the woods.
 R12 (seasonal sovereign, 2026-11-11): in an automatic month no law changes.
 R13 (tools, 2026-11-12): no tools for empty places, nor with the firewood short.
+The winter check guesses the people's effort from last month's harvest
+(after game 46): the effort of this month is never known, as for a player.
 """
 
 import copy
@@ -25,6 +27,7 @@ from engine import parse_order
 from engine.config import Config
 from engine.market import (MarketState, buy_price, check_month_plan, market_status, sell_price, state_after_trades,
                            stock, trade_capacity)
+from engine.people import PeopleChoice
 from engine.orders import AssignWorkersOrder, BuildOrder, ImproveOrder, Order, SetRationOrder, TradeOrder
 from engine.state import GameState, Workers
 from engine.territory import building_works
@@ -69,6 +72,30 @@ class Month:
     market: MarketState | None
     realm_key: str
     raided: bool = False  # the realm has suffered a raid (R11); the server reads its events
+    # The people's effort the winter check assumes, guessed from last month's
+    # harvest (effort_guess_pct); 0 = the usual work.
+    effort_guess_pct: int = 0
+
+
+def effort_guess_pct(last_harvest: dict | None) -> int:
+    """@brief The effort the people showed last month, from its "harvest"
+    event: the yield against the usual work's, in percent. Never above 0: a
+    careful sovereign does not count on a zeal that may not last.
+
+    Why: game 46, Corvara (turn 15) granted a ration petition on a trial
+    month at the usual work while the people worked at -25 %, and starved.
+    The true effort of this month is hidden from players and rules alike
+    (docs/DESIGN.md, "The people's effort is never a number"); last month's
+    harvest is a known number.
+    @param last_harvest The event's data; None in the first month.
+    """
+    if not last_harvest:
+        return 0
+    usual = sum(last_harvest["with_usual_work"].values())
+    if usual == 0:
+        return 0
+    actual = last_harvest["food"] + last_harvest["wood"] + last_harvest["stone"]
+    return min(0, actual * 100 // usual - 100)
 
 
 def month_of(turn: int) -> int:
@@ -136,7 +163,8 @@ def food_lasts(month: Month, orders: list[Order], to_spring: bool = False) -> bo
     trades = [o for o in orders if isinstance(o, TradeOrder)]
     others = [o for o in orders if not isinstance(o, TradeOrder)]
     trial = state_after_trades(month.state, trades, month.market, month.config, month.realm_key)
-    result = resolve_turn(trial, others, month.config)
+    guessed = PeopleChoice(effort_pct=month.effort_guess_pct)  # the same effort every month to spring
+    result = resolve_turn(trial, others, month.config, guessed)
     if _famine(result):
         return False
     now = month_of(month.state.turn)
@@ -152,7 +180,7 @@ def food_lasts(month: Month, orders: list[Order], to_spring: bool = False) -> bo
     for _ in range(months_left):
         if later.game_over:
             return False
-        result = resolve_turn(later, [], month.config)
+        result = resolve_turn(later, [], month.config, guessed)
         if _famine(result):
             return False
         later = result.state
@@ -215,7 +243,8 @@ def _food_lots_to_sell(month: Month, orders: list[Order], left_food: int) -> int
     if month.state.ration == "reduced":
         normal = copy.deepcopy(month.state)
         normal.ration = "normal"
-        trial = Month(normal, month.config, month.market, month.realm_key)
+        trial = Month(normal, month.config, month.market, month.realm_key,
+                      effort_guess_pct=month.effort_guess_pct)
     # Why: game 29, Brenna's plan cut the ration to reduced, so the food
     # "lasted" and the realm was told to sell 4 lots in November and December.
     orders = [o for o in orders if not (isinstance(o, SetRationOrder) and o.ration == "reduced")]

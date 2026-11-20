@@ -737,8 +737,8 @@ def insert_message(ctx: MeetingContext, round_number: int, kind: str,
 
 
 def _people_kwargs(ctx: MeetingContext) -> dict:
-    choice, lines = people_this_month(ctx)
-    return {"people": choice, "people_lines": lines}
+    _, lines = people_this_month(ctx)  # the choice itself is never shown: only its words
+    return {"people_lines": lines}
 
 
 def people_this_month(ctx: MeetingContext) -> tuple[object, list[str]]:

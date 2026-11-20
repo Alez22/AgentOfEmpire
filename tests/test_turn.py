@@ -137,3 +137,18 @@ def test_configs_saved_before_the_shock_keep_their_rules():
         del raw["mood"][key]
     old = config_from_dict(raw)
     assert (old.mood.famine_shock_per_missing_pct, old.mood.death_shock) == (0, 0)
+
+
+def test_the_harvest_event_shows_the_yield_beside_the_usual_work(config):
+    """The past in numbers (docs/DESIGN.md, "The people's effort is never a
+    number"): the month's yield with the effort, and the usual work's."""
+    from engine.people import PeopleChoice
+    from engine.turn import expected_output
+    state = new_game(config, seed=5)
+    unwilling = PeopleChoice(effort_pct=-25)
+    result = resolve_turn(state, [], config, unwilling)
+    harvest = next(e.data for e in result.events if e.kind == "harvest")
+    actual = expected_output(state, config, unwilling)
+    assert {good: harvest[good] for good in ("food", "wood", "stone")} == actual
+    assert harvest["with_usual_work"] == expected_output(state, config)
+    assert harvest["food"] < harvest["with_usual_work"]["food"]

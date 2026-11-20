@@ -337,6 +337,7 @@ Replaces the lost items of this section. Values in brackets are starting points 
 - **Requirements to open it** (village → town): a minimum population [about 120], a winter without hunger, the market built, no revolt in course, and the rare resources of the recipe (below). Town → kingdom: more of everything, the walls, perhaps a year of stability.
 - **The gate is good government, not a headcount** (decided 2026-11-11, after game 34 and the lab "the village in three years"). Births are about 15 a month per 1000 adults, so a careful realm grows about 8 people a year: 120 at month 30 on every site, whatever the land (`lab/village_years.py`; about 200 would take some 12 years, and no single lever reached it, births +50 % gave 135). So the population is a low minimum, reachable around year 2½–3 by a realm with no famine, and the passage is earned by the other conditions. Growth stays an advantage (more hands, more taxes) and a realm hit by famine or flight reaches the minimum later. Arrivals from fallen realms (Part 1, "Travellers, bandits and migration") are the planned growth engine on top; more births (+50 %, safe for the poor sites only with food yields +1) stay an option, not decided.
 - **An era is never lost.** If a siege or a revolt damages the palace, its functions stop until it is repaired (e.g. no communiqués): a suspension, not a downgrade.
+- **The town hall's advancements** (2026-11-20): the first is **the census**, the month-by-month record of the realm in numbers (see "The people's effort is never a number" in "The people decide"). Cost and time to tune; the other advancements of the town hall are still to decide.
 
 **Rare resources in the recipes**
 
@@ -1118,12 +1119,20 @@ Approved on 2026-11-07, after game 4: the square's opinion must turn into what t
 
 **Who sees what**
 
-- **Sovereign**: on the turn page, the behaviour in words ("I contadini lavorano svogliati; le famiglie rimandano i figli"), the numbers in a "I conti" box, and the petition with "Esaudisci" and "Respingi". JSON: `GET /realms/{id}/people?turn=N`, `POST /realms/{id}/people/petition`.
-- **Council**: "## The people this month" in every briefing (behaviour in words, the petition and what granting it would do); the harvest estimate includes the people's effort.
+- **Sovereign**: on the turn page, the behaviour in words ("I contadini lavorano svogliati; le famiglie rimandano i figli") and the petition with "Esaudisci" and "Respingi"; no numbers (below). JSON: `GET /realms/{id}/people?turn=N`, `POST /realms/{id}/people/petition` (the JSON keeps the numbers for the lab and the admin).
+- **Council**: "## The people this month" in every briefing (behaviour in words, the petition and what granting it would do); the harvest estimate is at the usual work.
 - **Square**: the next month it is told what the people did and how the crown answered, and tells it.
 - **Admin**: everything, including the model's reason and whether the model or the rules decided (turn page, agents page).
 
 **Games saved before** have no `[people]` section in their config: the people decide nothing and their results do not change.
+
+**The people's effort is never a number** (decided with the user 2026-11-20, after game 46). The present is told in words, the past in numbers: how hard the people work this month is for the governors to sense, and they must imagine that low spirits yield less.
+
+- **This month**: sovereign and council know the farmers, the season and the tools; every estimate (the harvest, the works' output) is at the usual work, said so in the line. The effort comes only in words ("lavorano svogliati").
+- **Last month**: the engine's `harvest` event (council clearance) gives the yield of fields, sawmills and quarries and, beside it, what the usual work would have given ("Raccolto: 240 cibo … (col lavoro solito: 300 …)"). Comparing the two is how one learns what the mood costs. In the village this one month is all the memory there is.
+- **The census** (a town hall advancement, decided 2026-11-20; not built yet): the month-by-month record of population, harvests and stores, for the sovereign (a table or chart) and the council (a trend line). Writing and administration come with the town hall, so the village stays an era of instinct and the record is one of the gains of the passage.
+- **The automatic sovereign** guesses the effort from last month's harvest (`effort_guess_pct` in `server/sovereign/rules.py`: the yield against the usual work's, never above 0) and runs its winter check with it. Why: game 46, Corvara granted a ration petition on a trial at the usual work while the people worked at −25 %, and starved. Giving it the true effort would have been cheating.
+- **Admin**: the numbers stay on the admin turn page.
 
 **Next behaviours** (after a played test): tax evasion (part of the taxes not collected), emigration (families leave after long, deep discontent; decided 2026-11-08: they join the world's pool of bandits, see "Travellers, bandits and migration" in Part 1), voluntary work (a site finishes a month early when the mood is high). The strike stays as the fixed extreme of the unrest ladder.
 

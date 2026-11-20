@@ -35,6 +35,9 @@ EVENT_VISIBILITY = {
     # so the Voice of the square (court clearance) knows them.
     "demography": "court",
     "food_spoiled": "council",
+    # The month's yield beside the usual work's: the past in numbers, known
+    # to the council and the sovereign, never to other realms.
+    "harvest": "council",
     "upkeep_unpaid": "council",
     "rule_workers_to_food": "council",
     "workers_rescaled": "council",

@@ -58,16 +58,21 @@ def _farm_season_pct(turn: int, config: Config) -> int:
             "summer": economy.farm_summer_pct, "autumn": economy.farm_autumn_pct}[season_of(turn)]
 
 
-def food_outlook_line(state: GameState, config: Config, people=None) -> str:
-    """@brief This month's harvest and where the store would end, if nothing changes."""
-    harvest = expected_output(state, config, people)["food"]  # the people's effort included
+def food_outlook_line(state: GameState, config: Config) -> str:
+    """@brief This month's harvest with the usual work and where the store
+    would end, if nothing changes. The people's effort is left out on
+    purpose: the present is told in words, the past in numbers (docs/DESIGN.md,
+    "The people's effort is never a number"); the council reads the effort in
+    "The people this month" and last month's "harvest" event."""
+    harvest = expected_output(state, config)["food"]
     needed = food_needed(state, config)
     left = max(0, state.food + harvest - needed)
     left -= left * config.economy.food_spoilage_pct // 100
     trend = "it grows" if left > state.food else "it shrinks" if left < state.food else "it holds"
-    return (f"- Harvest expected this month if nothing changes: {harvest} food "
+    return (f"- Harvest expected this month if nothing changes and the people work as usual: {harvest} food "
             f"({season_of(state.turn)}: farms yield {_farm_season_pct(state.turn, config)}%). "
-            f"After eating and rot the store would go from {state.food} to about {left}: {trend}.\n"
+            f"After eating and rot the store would go from {state.food} to about {left}: {trend}. "
+            f"People who work unwillingly harvest less: compare last month's harvest with its usual work.\n"
             + season_outlook_line(state, config, harvest))
 
 
@@ -107,7 +112,7 @@ def registry_lines(state: GameState, config: Config) -> list[str]:
             f"Housing: {state.population()} people, {places} places, {max(0, places - state.population())} free."]
 
 
-def treasury_lines(state: GameState, config: Config, people=None) -> list[str]:
+def treasury_lines(state: GameState, config: Config) -> list[str]:
     return [
         "## Treasury and people",
         f"- Gold: {state.gold}. Tax income per month at {state.tax_rate}%: "
@@ -118,7 +123,7 @@ def treasury_lines(state: GameState, config: Config, people=None) -> list[str]:
         f"{food_needed(state, config)}. Without any harvest it would last about "
         f"{_reserve_months_text(state, config)} months. "
         f"Stored food rots by {config.economy.food_spoilage_pct}% per month.",
-        food_outlook_line(state, config, people),
+        food_outlook_line(state, config),
         *ration_lines(state, config),
         f"- Tax rate: {state.tax_rate}% (maximum {config.economy.max_tax_rate}%). Ration: {state.ration}.",
         *([map_text.price_line(state, config)] if state.has_map() else []),
@@ -256,11 +261,11 @@ def _tools_line(state: GameState, config: Config) -> list[str]:
     return ["- Buildings with tools: " + ", ".join(parts) + "."]
 
 
-def works_lines(state: GameState, config: Config, people=None, territory_summary: bool = True) -> list[str]:
+def works_lines(state: GameState, config: Config, territory_summary: bool = True) -> list[str]:
     active = Counter(b.kind for b in state.buildings if b.turns_left == 0)
     building = [f"{b.kind} ({b.turns_left} turns left)" for b in state.buildings if b.turns_left > 0]
     idle = state.free_adults() - state.workers.total()  # guards are not idle (village block B+C)
-    output = expected_output(state, config, people)
+    output = expected_output(state, config)  # the usual work: see food_outlook_line
     # Jobs (or housing) per building: without them a model once said "a farm
     # creates two jobs" (it has 15) and never built one (game 7).
     costs = [
@@ -285,8 +290,8 @@ def works_lines(state: GameState, config: Config, people=None, territory_summary
         f"Adults: {state.adults}, without work: {idle}. Workers beyond the jobs produce nothing.",
         f"- Jobs without workers: food {_vacant(state, config, 'food')}, wood {_vacant(state, config, 'wood')}, "
         f"stone {_vacant(state, config, 'stone')}{trade_vacant}.",
-        f"- Expected this month if nothing changes: food +{output['food']}, wood +{output['wood']}, "
-        f"stone +{output['stone']}.",
+        f"- Expected this month if nothing changes and the people work as usual: food +{output['food']}, "
+        f"wood +{output['wood']}, stone +{output['stone']}.",
         f"- Housing: {state.population()} people, {housing_capacity(state, config)} places.",
         *([needs_line(state, config)] if config.needs is not None else []),
         "- Building costs: " + "; ".join(costs) + ".",
@@ -452,7 +457,7 @@ def minister_briefing(
     role: str, state: GameState, config: Config, events: list[dict],
     history: list[str], directives: list[str], lessons: list[str],
     audiences: list[str] = (), audience_facts: list[str] = (), square_voices: list = (),
-    people=None, people_lines: list[str] = (), note_lines: list[str] = (), market: list[str] = (),
+    people_lines: list[str] = (), note_lines: list[str] = (), market: list[str] = (),
     gate: list[str] = (),
 ) -> str:
     """@brief Full briefing of a minister; each role sees only its own section.
@@ -461,11 +466,11 @@ def minister_briefing(
     @param gate The Gastaldo's section (gate_lines), if any.
     """
     if role == "treasurer":
-        section = treasury_lines(state, config, people) + list(market)
+        section = treasury_lines(state, config) + list(market)
     elif role == "gastaldo":
         section = list(gate)
     else:
-        section = works_lines(state, config, people, territory_summary=False)
+        section = works_lines(state, config, territory_summary=False)
         if state.has_map():
             section = section + map_text.architect_lines(state, config)
     lines = (header_lines(state) + lessons_lines(lessons) + section + events_lines(events)
@@ -479,7 +484,7 @@ def chancellor_briefing(
     state: GameState, config: Config, events: list[dict], directives: list[str],
     reports: dict[str, str], proposals: list[dict], check_lines: list[str], lessons: list[str],
     audiences: list[str] = (), audience_facts: list[str] = (), square_voices: list = (),
-    people=None, people_lines: list[str] = (), note_lines: list[str] = (), market: list[str] = (),
+    people_lines: list[str] = (), note_lines: list[str] = (), market: list[str] = (),
     gate: list[str] = (),
 ) -> str:
     """@brief The Chancellor sees both sections, the reports, the proposals
@@ -488,7 +493,7 @@ def chancellor_briefing(
     @param gate The Gastaldo's section, once it sits (village block B+C).
     """
     lines = (header_lines(state) + lessons_lines(lessons)
-             + treasury_lines(state, config, people) + works_lines(state, config, people) + list(gate))
+             + treasury_lines(state, config) + works_lines(state, config) + list(gate))
     lines += (events_lines(events) + square_lines(list(square_voices)) + list(people_lines)
               + audience_lines(list(audiences)) + list(note_lines)
               + audience_fact_lines(list(audience_facts)) + directive_lines(directives))

@@ -111,16 +111,16 @@ def _briefing(ctx: MeetingContext, actor) -> str:
     previous audiences (the current one included, up to the new line)."""
     events = games.list_visible_events(ctx.conn, ctx.game_id, ctx.realm_id, ctx.turn - 1, Clearance.COUNCIL)
     lessons = [memory.lesson_line(lesson) for lesson in memory.current_lessons(ctx.conn, actor.id)]
-    choice, people_lines = people_this_month(ctx)
+    _, people_lines = people_this_month(ctx)  # words only, never the effort number
     if actor.role == "treasurer":
-        sections = briefing.treasury_lines(ctx.state, ctx.config, choice)
+        sections = briefing.treasury_lines(ctx.state, ctx.config)
     elif actor.role == "architect":
-        sections = briefing.works_lines(ctx.state, ctx.config, choice)
+        sections = briefing.works_lines(ctx.state, ctx.config)
     elif actor.role == "gastaldo":
         sections = gate_lines(ctx)
     else:
-        sections = (briefing.treasury_lines(ctx.state, ctx.config, choice)
-                    + briefing.works_lines(ctx.state, ctx.config, choice))
+        sections = (briefing.treasury_lines(ctx.state, ctx.config)
+                    + briefing.works_lines(ctx.state, ctx.config))
     sections = sections + people_lines + _note_lines(ctx, actor)
     dialogue = memory.audience_dialogue(
         ctx.conn, actor.id, ctx.turn - memory.AUDIENCE_HISTORY_TURNS, ctx.turn

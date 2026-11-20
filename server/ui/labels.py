@@ -199,6 +199,10 @@ def event_label(kind: str, data: dict) -> str:
         return f"Finisce la stagione: {SEASONS.get(data.get('season'), data.get('season'))}."
     if kind == "demography":
         return f"Nati {data.get('births')}, morti {data.get('deaths')}."
+    if kind == "harvest":
+        usual = data.get("with_usual_work", {})
+        return (f"Raccolto: {data.get('food')} cibo, {data.get('wood')} legna, {data.get('stone')} pietra"
+                f" (col lavoro solito: {usual.get('food')}, {usual.get('wood')}, {usual.get('stone')}).")
     if kind == "food_spoiled":
         return f"Andato a male nei granai: {data.get('amount')} cibo."
     if kind == "upkeep_unpaid":

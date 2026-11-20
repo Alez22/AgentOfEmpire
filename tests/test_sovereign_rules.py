@@ -116,6 +116,26 @@ def test_the_winter_check(start_state, config):
     assert not rules.food_lasts(_month(start_state, config), [])
 
 
+def test_the_effort_guessed_from_last_month():
+    usual = {"food": 300, "wood": 60, "stone": 40}
+    assert rules.effort_guess_pct(None) == 0  # the first month: the usual work
+    assert rules.effort_guess_pct({"food": 225, "wood": 45, "stone": 30, "with_usual_work": usual}) == -25
+    # Zeal is not counted on: it may not last.
+    assert rules.effort_guess_pct({"food": 315, "wood": 63, "stone": 42, "with_usual_work": usual}) == 0
+    nothing = {"food": 0, "wood": 0, "stone": 0}
+    assert rules.effort_guess_pct({**nothing, "with_usual_work": nothing}) == 0
+
+
+def test_the_winter_check_counts_the_guessed_effort(start_state, config):
+    """Game 46, Corvara: a trial at the usual work passed while the people
+    worked at -25 %, and the month starved. With the guess it fails."""
+    start_state.food = 0
+    while not rules.food_lasts(_month(start_state, config), []):  # the least food to the end of March
+        start_state.food += 50
+    unwilling = rules.Month(start_state, config, new_market(config, 1), "1", effort_guess_pct=-25)
+    assert not rules.food_lasts(unwilling, [])
+
+
 def test_petitions_on_taxes_and_rations(start_state, config):
     start_state.council_salary = 0
     month = _month(start_state, config)

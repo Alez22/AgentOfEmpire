@@ -269,6 +269,25 @@ def _produce(state: GameState, config: Config, upkeep_paid: bool, effort_pct: in
     state.stone += _sector_output(state, config, "stone", "quarry", upkeep_paid, effort_pct, worn_pct)
 
 
+def _harvest_event(state: GameState, config: Config, upkeep_paid: bool, effort_pct: int,
+                   worn_pct: int) -> Event:
+    """@brief What production yields this month, and what it would have
+    yielded with the usual work (effort 0). Call it just before _produce:
+    _sector_output changes nothing, so "food", "wood", "stone" are exactly
+    what _produce adds.
+
+    Why: the present is told in words, the past in numbers (docs/DESIGN.md,
+    "The people's effort is never a number"). Nobody sees this month's
+    effort; next month the council sees this harvest beside the usual one.
+    """
+    sectors = (("food", "farm"), ("wood", "sawmill"), ("stone", "quarry"))
+    actual = {sector: _sector_output(state, config, sector, kind, upkeep_paid, effort_pct, worn_pct)
+              for sector, kind in sectors}
+    usual = {sector: _sector_output(state, config, sector, kind, upkeep_paid, 0, worn_pct)
+             for sector, kind in sectors}
+    return Event("harvest", {**actual, "with_usual_work": usual})
+
+
 def _consume_food(state: GameState, config: Config, events: list[Event]) -> tuple[int, int]:
     """@brief Eat this month's food; a shortfall becomes famine.
     @return (food needed this month, missing food in percent 0..100).
@@ -653,6 +672,7 @@ def resolve_turn(state: GameState, orders: list[Order], config: Config,
     cold_pct = _burn_firewood(new_state, config, events)
     worn_pct = _pay_stone_upkeep(new_state, config, events)
     effort_pct, birth_pct, petition_mood = _people_effects(config, people)
+    events.append(_harvest_event(new_state, config, upkeep_paid, effort_pct, worn_pct))
     _produce(new_state, config, upkeep_paid, effort_pct, worn_pct)
     territory.clear_land(new_state, config, events)
     needed, missing_pct = _consume_food(new_state, config, events)

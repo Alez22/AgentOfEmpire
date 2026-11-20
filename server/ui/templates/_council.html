@@ -80,14 +80,10 @@
     {% if people %}
     <article class="card people" style="border-top: 3px solid {{ labels.ROLES.people.color }}">
       <div class="kicker">Il popolo questo mese</div>
+      {# Words only: this month's numbers are hidden from the sovereign too
+         (docs/DESIGN.md, "The people's effort is never a number"); the
+         admin turn page keeps them. #}
       <p class="report">{{ labels.people_words(people.effort_pct, people.birth_pct) }}</p>
-      <details>
-        <summary>I conti</summary>
-        <ul class="events">
-          <li>Resa di campi, segheria e cava: {{ "%+d"|format(people.effort_pct) }}%</li>
-          <li>Nascite del mese: {{ people.birth_pct }}% del solito</li>
-        </ul>
-      </details>
       {% if people.petition %}
       <h3>Una supplica al sovrano</h3>
       <p class="directive">«{{ people.petition_text }}»</p>
